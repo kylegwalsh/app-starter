@@ -1,0 +1,27 @@
+{
+  "name": "my-app",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "backend": "pnpm --filter backend",
+    "web": "pnpm --filter web",
+    "build": "sst build",
+    "dev": "sst dev",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "lint": "turbo lint"
+  },
+  "devDependencies": {
+    "@lib/eslint-config": "workspace:*",
+    "@lib/typescript-config": "workspace:*",
+    "@pulumi/aws": "^6.80.0",
+    "@types/aws-lambda": "8.10.149",
+    "prettier": "^3.5.1",
+    "sst": "3.14.12",
+    "turbo": "^2.5.3",
+    "typescript": "5.7.3"
+  },
+  "packageManager": "pnpm@10.4.1",
+  "engines": {
+    "node": ">=20"
+  }
+}

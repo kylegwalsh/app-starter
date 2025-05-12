@@ -1,0 +1,20 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "visualstudioexptteam.vscodeintellicode",
+    "formulahendry.auto-close-tag",
+    "mikestead.dotenv",
+    "vincaslt.highlight-matching-tag",
+    "wayou.vscode-todo-highlight",
+    "steoates.autoimport",
+    "formulahendry.auto-rename-tag",
+    "streetsidesoftware.code-spell-checker",
+    "eamodio.gitlens",
+    "christian-kohler.path-intellisense",
+    "natqe.reload",
+    "msjsdiag.vscode-react-native",
+    "ms-vsliveshare.vsliveshare",
+    "prisma.prisma"
+  ]
+}

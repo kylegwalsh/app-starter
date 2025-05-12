@@ -1,0 +1,95 @@
+{
+  "search.followSymlinks": false,
+  "files.exclude": {
+    "**/.next": false,
+    ".yarn": false,
+    "**/yarn-error.log": false,
+    "**/node_modules": false,
+    "**/yarn.lock": false,
+    "**/.husky": false,
+    ".git": true,
+    "**/.build": false,
+    "**/.DS_Store": true,
+    "**/dist": false
+  },
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "html",
+    "typescriptreact",
+    "typescript"
+  ],
+  "terminal.integrated.env.osx": {
+    "AWS_PROFILE": "odin"
+  },
+  "terminal.integrated.env.windows": {
+    "AWS_PROFILE": "odin"
+  },
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "cSpell.words": [
+    "authed",
+    "AWSX",
+    "browserless",
+    "capsolver",
+    "contactformsubmitter",
+    "crawlee",
+    "deepmerge",
+    "domcontentloaded",
+    "headful",
+    "hookform",
+    "iframes",
+    "incrby",
+    "ingestor",
+    "libquery",
+    "lightbox",
+    "linkbuild",
+    "manypkg",
+    "networkidle",
+    "nextjs",
+    "ohash",
+    "openai",
+    "pageview",
+    "posthog",
+    "pulumi",
+    "Recaptchas",
+    "Runtimes",
+    "SERPER",
+    "sonner",
+    "sparticuz",
+    "superjson",
+    "templating",
+    "TRPC",
+    "typecheck",
+    "Xvfb"
+  ],
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
+  "biome.enabled": false,
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}

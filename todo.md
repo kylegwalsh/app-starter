@@ -1,0 +1,10 @@
+- Posthog error tracking + analytics
+- Config + env
+- Core logic / shared logic
+- OpenAPI routes for tRPC
+- tsconfig + eslint
+- react query
+- cursor rules
+- consider barrel files
+- Readme's
+- Clean up vs code files and remove .gitkeeps
