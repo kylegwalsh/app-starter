@@ -2,7 +2,7 @@
 - Config + env
 - Core logic / shared logic
 - OpenAPI routes for tRPC
-- tsconfig + eslint
+- add some eslint custom rules based on other repos
 - react query
 - cursor rules
 - consider barrel files

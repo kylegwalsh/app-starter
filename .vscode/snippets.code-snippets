@@ -62,16 +62,6 @@
     ],
     "description": "Inserts our standard react hook template",
   },
-  "Create Comment Section": {
-    "scope": "typescript,typescriptreact,javascript,react",
-    "prefix": "comment-section",
-    "body": [
-      "// ---------------------- START ${1:NAME_OF_SECTION} ---------------------- //",
-      "",
-      "// ---------------------- END ${1:NAME_OF_SECTION} ---------------------- //",
-    ],
-    "description": "Inserts a comment section to easily distinguish code",
-  },
   "Create Mini Comment Section": {
     "scope": "typescript,typescriptreact,javascript,react",
     "prefix": "mini-comment-section",
