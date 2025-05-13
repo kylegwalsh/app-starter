@@ -1,12 +1,10 @@
-- Posthog error tracking + analytics
 - Config + env
-- Core logic / shared logic
 - OpenAPI routes for tRPC
+- Posthog error tracking + analytics
+- Core logic / shared logic
 - add some eslint custom rules based on other repos
 - react query
-- cursor rules
 - consider barrel files
 - Readme's
-- Test lint-staged + husky
-- Add global Component type
 - Add CI (and maybe a script to initialize required variables in git CI)
+- cursor rules

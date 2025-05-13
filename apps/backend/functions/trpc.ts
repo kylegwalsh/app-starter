@@ -7,8 +7,8 @@ export const handler = awsLambdaRequestHandler({
   router,
   createContext,
 
-  // Whenever an error occurs, report it to Sentry and send a notification
-  onError: async ({ error, ctx, ...other }) => {
+  // Whenever an unhandled error occurs, report it
+  onError: ({ error, ctx, ...other }) => {
     // Ignore UNAUTHORIZED errors (not very important and can occur in a few scenarios)
     if (error.code !== "UNAUTHORIZED") {
       /** Extract the underlying error */
