@@ -15,15 +15,7 @@ import globals from "globals";
  */
 export default defineConfig([
   // Core rules
-  {
-    files: ["**/*.{js,mjs,cjs,jsx,mjsx,ts,tsx,mtsx}"],
-    plugins: {
-      unicorn,
-    },
-    rules: {
-      ...unicorn.configs.recommended.rules,
-    },
-  },
+  unicorn.configs.recommended,
   // TypeScript specific rules
   tseslint.configs.recommendedTypeChecked,
   {
