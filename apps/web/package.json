@@ -19,11 +19,11 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@lib/eslint": "workspace:*",
+    "@lib/tsconfig": "workspace:*",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@lib/eslint-config": "workspace:^",
-    "@lib/typescript-config": "workspace:*",
     "typescript": "^5.7.3"
   }
 }

@@ -10,16 +10,14 @@
       "\t// Custom props",
       "};",
       "",
-      "// ---------------------- START MAIN ---------------------- //",
       "/** ${2:DESCRIPTION} */",
       "export const ${1:NAME} = (props: Props) => {",
       "\treturn (",
       "\t\t",
       "\t);",
       "};",
-      "// ---------------------- END MAIN ---------------------- //"
     ],
-    "description": "Inserts our standardized react component template"
+    "description": "Inserts our standardized react component template",
   },
   "Create NextJS Screen": {
     "scope": "typescript,typescriptreact,javascript,react",
@@ -28,28 +26,26 @@
       "'use client';",
       "import React from 'react';",
       "",
-      "// ---------------------- START MAIN ---------------------- //",
       "/** ${2:DESCRIPTION} */",
       "export default function ${1:NAME}() {",
       "\treturn (",
       "\t\t",
       "\t);",
       "};",
-      "// ---------------------- END MAIN ---------------------- //"
     ],
-    "description": "Inserts our standardized react component template"
+    "description": "Inserts our standardized react component template",
   },
   "Create React Component Type": {
     "scope": "typescript,typescriptreact,javascript,react",
     "prefix": "component-type",
     "body": ["type Props = Component & {", "\t// Custom props", "};"],
-    "description": "Inserts the standard react component type declaration"
+    "description": "Inserts the standard react component type declaration",
   },
   "Create Generic Function Type": {
     "scope": "typescript,typescriptreact,javascript,react",
     "prefix": "function-type",
     "body": ["(...args: any[]) => any"],
-    "description": "Inserts a generic function type"
+    "description": "Inserts a generic function type",
   },
   "Create React Hook": {
     "scope": "typescript,typescriptreact,javascript,react",
@@ -59,14 +55,12 @@
       "\t// Custom props",
       "};",
       "",
-      "// ---------------------- START MAIN ---------------------- //",
       "/** ${2:DESCRIPTION} */",
       "export const ${1:NAME} = ({} : Props) => {",
       "\t",
       "};",
-      "// ---------------------- END MAIN ---------------------- //"
     ],
-    "description": "Inserts our standard react hook template"
+    "description": "Inserts our standard react hook template",
   },
   "Create Comment Section": {
     "scope": "typescript,typescriptreact,javascript,react",
@@ -74,14 +68,14 @@
     "body": [
       "// ---------------------- START ${1:NAME_OF_SECTION} ---------------------- //",
       "",
-      "// ---------------------- END ${1:NAME_OF_SECTION} ---------------------- //"
+      "// ---------------------- END ${1:NAME_OF_SECTION} ---------------------- //",
     ],
-    "description": "Inserts a comment section to easily distinguish code"
+    "description": "Inserts a comment section to easily distinguish code",
   },
   "Create Mini Comment Section": {
     "scope": "typescript,typescriptreact,javascript,react",
     "prefix": "mini-comment-section",
     "body": ["// ---------- ${1:NAME_OF_SECTION} ----------"],
-    "description": "Inserts a miniature comment section to easily distinguish code"
-  }
+    "description": "Inserts a miniature comment section to easily distinguish code",
+  },
 }

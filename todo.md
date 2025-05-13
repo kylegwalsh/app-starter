@@ -7,4 +7,6 @@
 - cursor rules
 - consider barrel files
 - Readme's
-- Clean up vs code files and remove .gitkeeps
+- Test lint-staged + husky
+- Add global Component type
+- Add CI (and maybe a script to initialize required variables in git CI)

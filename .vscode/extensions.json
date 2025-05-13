@@ -2,6 +2,7 @@
   "recommendations": [
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
+    "mgmcdermott.vscode-language-babel",
     "visualstudioexptteam.vscodeintellicode",
     "formulahendry.auto-close-tag",
     "mikestead.dotenv",
@@ -13,8 +14,9 @@
     "eamodio.gitlens",
     "christian-kohler.path-intellisense",
     "natqe.reload",
-    "msjsdiag.vscode-react-native",
     "ms-vsliveshare.vsliveshare",
-    "prisma.prisma"
+    "prisma.prisma",
+    "davidanson.vscode-markdownlint",
+    "bradlc.vscode-tailwindcss"
   ]
 }

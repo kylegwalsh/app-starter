@@ -1,0 +1,9 @@
+{
+  "name": "@lib/tsconfig",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.5"
+  }
+}
