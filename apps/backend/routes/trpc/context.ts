@@ -10,10 +10,10 @@ export type Context = {
  * Creates context for an incoming request
  * @link https://trpc.io/docs/context
  */
-export const createContext = async ({
+export const createContext = ({
   event,
-}: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>): Promise<Context> => {
-  console.log("Event: ", event);
+}: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>): Context => {
+  console.log("Event:", event);
 
   // Return context
   return {};

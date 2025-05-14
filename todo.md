@@ -8,3 +8,10 @@
 - Readme's
 - Add CI (and maybe a script to initialize required variables in git CI)
 - cursor rules
+
+- Write script to initialize everything we need / walk user through things
+  - Initialize sst
+  - Initialize AWS (maybe save creds)
+  - Initialize supabase (save secrets to sst)
+  - Initialize auth
+  - Initialize posthog

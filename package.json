@@ -9,6 +9,7 @@
     "build": "sst build",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "turbo lint",
+    "init-repo": "tsx scripts/init",
     "postinstall": "manypkg fix",
     "prepare": "husky",
     "precommit": "pnpm lint-staged"
@@ -17,13 +18,13 @@
     "@lib/eslint": "workspace:*",
     "@lib/tsconfig": "workspace:*",
     "@manypkg/cli": "^0.24.0",
-    "@pulumi/aws": "^6.80.0",
     "@types/aws-lambda": "8.10.149",
     "eslint": "^9.26.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.2",
     "prettier": "^3.5.1",
     "sst": "3.14.12",
+    "tsx": "^4.19.4",
     "turbo": "^2.5.3",
     "typescript": "^5.8.3"
   },

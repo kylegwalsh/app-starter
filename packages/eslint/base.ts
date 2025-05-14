@@ -76,6 +76,8 @@ export default defineConfig([
       "@typescript-eslint/no-unsafe-member-access": "warn",
       "@typescript-eslint/no-explicit-any": "warn",
       "unicorn/prevent-abbreviations": "off",
+      "@typescript-eslint/triple-slash-reference": "off",
+      "unicorn/no-array-reduce": "off",
     },
   },
 ]);
