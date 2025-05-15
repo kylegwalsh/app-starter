@@ -35,15 +35,15 @@ export default $config({
         ? []
         : [
             {
-              from: "node_modules/.prisma",
+              from: "apps/backend/node_modules/.prisma",
               to: "node_modules/.prisma",
             },
             {
-              from: "./node_modules/@prisma/client",
+              from: "apps/backend/node_modules/@prisma/client",
               to: "node_modules/@prisma/client",
             },
             {
-              from: "node_modules/prisma",
+              from: "apps/backend/node_modules/prisma",
               to: "node_modules/prisma",
             },
           ];

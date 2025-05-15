@@ -7,6 +7,7 @@
     "backend": "pnpm --filter backend",
     "web": "pnpm --filter web",
     "build": "sst build",
+    "deploy": "sst deploy",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "turbo lint",
     "init-repo": "tsx scripts/init",

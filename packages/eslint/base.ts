@@ -22,7 +22,6 @@ export default defineConfig([
     languageOptions: {
       parserOptions: {
         projectService: true,
-        // @ts-expect-error - This is available in node 20+
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -78,6 +77,7 @@ export default defineConfig([
       "unicorn/prevent-abbreviations": "off",
       "@typescript-eslint/triple-slash-reference": "off",
       "unicorn/no-array-reduce": "off",
+      "unicorn/prefer-export-from": "off",
     },
   },
 ]);

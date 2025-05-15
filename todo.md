@@ -1,5 +1,4 @@
-- Config + env
-- OpenAPI routes for tRPC
+- Config + env (replace Resource.\* with config / env variables)
 - Posthog error tracking + analytics
 - Core logic / shared logic
 - add some eslint custom rules based on other repos
@@ -7,6 +6,7 @@
 - consider barrel files
 - Readme's
 - Add CI (and maybe a script to initialize required variables in git CI)
+- Consider adding a logging solution or improving how we use cloudwatch
 - cursor rules
 
 - Write script to initialize everything we need / walk user through things

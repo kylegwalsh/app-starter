@@ -14,6 +14,7 @@
     "db:studio": "pnpm db:get-url \"npx prisma db push && npx prisma studio\"",
     "db:generate": "npx prisma generate",
     "db:get-url": "tsx ./scripts/get-deb-url.ts",
+    "add-secret": "tsx ./scripts/add-secret.ts",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit"
   },
@@ -25,6 +26,7 @@
   "dependencies": {
     "@prisma/client": "^6.7.0",
     "@trpc/server": "^11.1.2",
+    "better-trpc-openapi": "github:deldrid1/trpc-openapi#d089373012300ea432f4177543d3e85fe59d8a9a",
     "prisma": "^6.7.0",
     "sst": "3.14.12",
     "superjson": "^2.2.2",

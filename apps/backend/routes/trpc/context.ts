@@ -13,8 +13,6 @@ export type Context = {
 export const createContext = ({
   event,
 }: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>): Context => {
-  console.log("Event:", event);
-
   // Return context
   return {};
 };
