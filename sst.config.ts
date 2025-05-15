@@ -21,10 +21,10 @@ export default $config({
     // Import secrets first since other stacks might need them
     const { secrets } = await import("./infra/secrets");
 
-    // Apply default copy all the files to the layer...
+    // Apply default settings to all functions
     $transform(sst.aws.Function, (args) => {
       // Link the secrets
-      args.link ??= secrets;
+      args.link = [...((args.link as unknown[]) ?? []), ...secrets];
       // Add any environment variables
       args.environment = {
         // Add this so that AWS will re-use TCP connections instead of re-connecting every time
@@ -35,15 +35,15 @@ export default $config({
         ? []
         : [
             {
-              from: "apps/backend/node_modules/.prisma",
+              from: "node_modules/.prisma",
               to: "node_modules/.prisma",
             },
             {
-              from: "apps/backend/node_modules/@prisma/client",
+              from: "node_modules/@prisma/client",
               to: "node_modules/@prisma/client",
             },
             {
-              from: "apps/backend/node_modules/prisma",
+              from: "node_modules/prisma",
               to: "node_modules/prisma",
             },
           ];

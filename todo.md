@@ -3,6 +3,7 @@
 - Core logic / shared logic
 - add some eslint custom rules based on other repos
 - react query
+- remove prisma settings model in favor of auth user model
 - consider barrel files
 - Readme's
 - Add CI (and maybe a script to initialize required variables in git CI)
