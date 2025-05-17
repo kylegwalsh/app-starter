@@ -23,8 +23,10 @@ export default $config({
 
     // Apply default settings to all functions
     $transform(sst.aws.Function, (args) => {
-      // Link the secrets
-      args.link = [...((args.link as unknown[]) ?? []), ...secrets];
+      // Link the secrets (only if secrets is an array)
+      if (Array.isArray(args.link)) {
+        args.link = [...(args.link as unknown[]), ...secrets];
+      }
       // Add any environment variables
       args.environment = {
         // Add this so that AWS will re-use TCP connections instead of re-connecting every time
