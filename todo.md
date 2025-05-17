@@ -1,38 +1,16 @@
 - Config + env (replace Resource.\* with config / env variables)
 - Posthog error tracking + analytics
 - Core logic / shared logic
-- add some eslint custom rules based on other repos
+- Shared schemas package
+- Add some eslint custom rules based on other repos
 - react query
-- remove prisma settings model in favor of auth user model
-- consider barrel files
+- Remove prisma settings model in favor of auth user model
+- Consider barrel files
 - Website stack
-- Readme's
-  - Package level
-  - Top-level
-    - Include features
-      - Error tracking
-      - Analytics
-      - Auth
-      - Database
-      - Backend
-      - Web
-      - CI
-      - Slack
-      - ...
-      - Cursor rules
-    - Include tech stack
-    - Include project structure
-      - Maybe use ellipsis for other things that can be added
-    - Include setup script and what it does
-    - Include how to run locally
-    - Include how to deploy
-    - Helper tasks
-      - CTRL+SHIFT+P -> Tasks: Run Task -> Create New Package
-        - Or just use the `pn create:package PACKAGE_NAME` script
 - Add fumadocs app (comment out website deployment in sst stack)
 - Add cron to keep DB awake
 - Consider adding a logging solution or improving how we use cloudwatch
-- cursor rules
+- Cursor rules
 - Add auth provider setup to initialization script
 - Add auth provider mention to README
 - Add CI
