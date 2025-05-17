@@ -12,10 +12,11 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "turbo lint",
     "init": "tsx scripts/init",
+    "update-readme": "doctoc README.md",
+    "create:package": "tsx scripts/create-package",
     "postinstall": "manypkg fix",
     "prepare": "husky",
-    "precommit": "pnpm lint-staged",
-    "create:package": "tsx scripts/create-package"
+    "precommit": "pnpm lint-staged"
   },
   "devDependencies": {
     "@lib/eslint": "workspace:*",
@@ -23,6 +24,7 @@
     "@manypkg/cli": "^0.24.0",
     "@types/aws-lambda": "8.10.149",
     "axios": "^1.9.0",
+    "doctoc": "2.2.0",
     "eslint": "^9.26.0",
     "husky": "^9.1.7",
     "inquirer": "^9.2.16",
