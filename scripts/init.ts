@@ -1,11 +1,11 @@
-import { exec, execSync } from "node:child_process";
-import { promisify } from "node:util";
-import readline from "node:readline";
-import fs from "node:fs";
-import path from "node:path";
-import inquirer from "inquirer";
-import os from "node:os";
-import axios, { AxiosInstance } from "axios";
+import { exec, execSync } from 'node:child_process';
+import { promisify } from 'node:util';
+import readline from 'node:readline';
+import fs from 'node:fs';
+import path from 'node:path';
+import inquirer from 'inquirer';
+import os from 'node:os';
+import axios, { AxiosInstance } from 'axios';
 
 // Promisify exec for async/await usage
 const execAsync = promisify(exec);
@@ -30,8 +30,8 @@ const promptYesNo = async (question: string): Promise<boolean> => {
   while (true) {
     const rawAnswer = await promptUser(question);
     const answer = rawAnswer.trim().toLowerCase();
-    if (["y", "yes"].includes(answer)) return true;
-    if (["n", "no"].includes(answer)) return false;
+    if (['y', 'yes'].includes(answer)) return true;
+    if (['n', 'no'].includes(answer)) return false;
     console.log("Please enter 'y' or 'n'.");
   }
 };
@@ -42,16 +42,13 @@ const promptYesNo = async (question: string): Promise<boolean> => {
  * @param choices The list of choices (array of strings)
  * @returns The selected choice (string)
  */
-export const promptSelect = async (
-  message: string,
-  choices: string[],
-): Promise<string> => {
+export const promptSelect = async (message: string, choices: string[]): Promise<string> => {
   const response = await inquirer.prompt<{
     selected: string;
   }>([
     {
-      type: "list",
-      name: "selected",
+      type: 'list',
+      name: 'selected',
       message,
       choices,
     },
@@ -63,37 +60,35 @@ export const promptSelect = async (
 /** The CLIs we require to run the initialization script */
 const CLI_REQUIREMENTS = [
   {
-    name: "pnpm",
-    versionCmd: "pnpm --version",
-    url: "https://pnpm.io/installation",
+    name: 'pnpm',
+    versionCmd: 'pnpm --version',
+    url: 'https://pnpm.io/installation',
   },
   {
-    name: "gh",
-    versionCmd: "gh --version",
-    url: "https://github.com/cli/cli#installation",
+    name: 'gh',
+    versionCmd: 'gh --version',
+    url: 'https://github.com/cli/cli#installation',
   },
   {
-    name: "aws",
-    versionCmd: "aws --version",
-    url: "https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html",
+    name: 'aws',
+    versionCmd: 'aws --version',
+    url: 'https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html',
   },
 ];
 
 /** Check if the user is authenticated with GitHub CLI */
 const checkGhAuth = async () => {
   try {
-    await execAsync("gh auth status");
+    await execAsync('gh auth status');
   } catch {
-    console.log(
-      "❌ GitHub CLI is not authenticated. Please run 'gh auth login' and try again.\n",
-    );
+    console.log("❌ GitHub CLI is not authenticated. Please run 'gh auth login' and try again.\n");
     process.exit(1);
   }
 };
 
 /** Check if required CLIs are installed */
 const checkCLIs = async () => {
-  console.log("Checking CLI tools...");
+  console.log('Checking CLI tools...');
 
   // Check to ensure the user has all the CLI tools installed
   const missing: { name: string; url: string }[] = [];
@@ -105,25 +100,25 @@ const checkCLIs = async () => {
     }
   }
   if (missing.length > 0) {
-    console.log("Missing required CLI tools:");
+    console.log('Missing required CLI tools:');
     for (const m of missing) {
       console.log(`- ${m.name}: ${m.url}`);
     }
-    console.log("\nPlease install the missing tools and try again.");
+    console.log('\nPlease install the missing tools and try again.');
     process.exit(1);
   }
 
   // Check that the user is authenticated with gh
   await checkGhAuth();
 
-  console.log("\u2714 All CLI tools are installed\n");
+  console.log('\u2714 All CLI tools are installed\n');
 };
 
 // ---------- GIT HELPERS ----------
 /** Get the user's current GitHub repo (if it exists) */
 const getCurrentGitUrl = () => {
   try {
-    return execSync("git remote get-url origin").toString().trim();
+    return execSync('git remote get-url origin').toString().trim();
   } catch {
     return;
   }
@@ -144,17 +139,17 @@ const configureGithubUrl = async () => {
 
       // Ask if they want to use a different repo
       const useDifferentRepo = await promptYesNo(
-        "Would you like to use a different GitHub repo? (y/n) ",
+        'Would you like to use a different GitHub repo? (y/n) '
       );
       if (useDifferentRepo) {
-        let newUrl = "";
+        let newUrl = '';
 
         // Loop until they provide a valid URL
         while (!newUrl) {
-          const input = await promptUser("Enter new GitHub repo URL: ");
+          const input = await promptUser('Enter new GitHub repo URL: ');
           newUrl = input.trim();
           if (!newUrl) {
-            console.log("Please enter a valid GitHub repo URL.");
+            console.log('Please enter a valid GitHub repo URL.');
           }
         }
 
@@ -170,15 +165,15 @@ const configureGithubUrl = async () => {
         // Check whether it's a valid repo
         await execAsync(`git ls-remote ${newUrl}`);
 
-        console.log("\u2714 Updated repo\n");
+        console.log('\u2714 Updated repo\n');
         return newUrl;
       } else {
-        console.log("\u2714 Using current repo\n");
+        console.log('\u2714 Using current repo\n');
         return currentUrl;
       }
     } catch {
       console.log(
-        "❌ Unable to connect to the provided GitHub URL. Please verify the URL and try again.\n",
+        '❌ Unable to connect to the provided GitHub URL. Please verify the URL and try again.\n'
       );
     }
   }
@@ -203,46 +198,36 @@ const setupGithub = async ({
   posthogProdEnvId?: string;
   posthogDevEnvId?: string;
 }) => {
-  console.log("Setting up GitHub...");
+  console.log('Setting up GitHub...');
 
   // Configure the GitHub URL and extract the repo path
   const githubUrl = (await configureGithubUrl())!;
   const match = githubUrl.match(/[:/]([^/]+\/[^/.]+)(?:\.git)?$/);
-  const repo = match ? match[1] : "";
+  const repo = match ? match[1] : '';
 
   console.log(`Setting up GitHub environments and secrets...`);
 
   // Create environments (idempotent)
   await execAsync(
-    `gh api --method PUT -H "Accept: application/vnd.github+json" repos/${repo}/environments/dev`,
+    `gh api --method PUT -H "Accept: application/vnd.github+json" repos/${repo}/environments/dev`
   );
   await execAsync(
-    `gh api --method PUT -H "Accept: application/vnd.github+json" repos/${repo}/environments/prod`,
+    `gh api --method PUT -H "Accept: application/vnd.github+json" repos/${repo}/environments/prod`
   );
 
   // Set global repository secrets
-  await execAsync(
-    `gh secret set AWS_ACCESS_KEY_ID -a actions -b "${awsAccessKey}"`,
-  );
-  await execAsync(
-    `gh secret set AWS_SECRET_ACCESS_KEY -a actions -b "${awsSecretKey}"`,
-  );
+  await execAsync(`gh secret set AWS_ACCESS_KEY_ID -a actions -b "${awsAccessKey}"`);
+  await execAsync(`gh secret set AWS_SECRET_ACCESS_KEY -a actions -b "${awsSecretKey}"`);
 
   // If we aren't given a posthog details, we'll skip this step
   if (posthogCliToken && posthogProdEnvId && posthogDevEnvId) {
-    await execAsync(
-      `gh secret set POSTHOG_CLI_TOKEN -a actions -b "${posthogCliToken}"`,
-    );
+    await execAsync(`gh secret set POSTHOG_CLI_TOKEN -a actions -b "${posthogCliToken}"`);
     // Set environment variables (POSTHOG_CLI_ENV_ID) for dev and prod
-    await execAsync(
-      `gh secret set POSTHOG_CLI_ENV_ID -a actions -b "${posthogDevEnvId}" -e dev`,
-    );
-    await execAsync(
-      `gh secret set POSTHOG_CLI_ENV_ID -a actions -b "${posthogProdEnvId}" -e prod`,
-    );
+    await execAsync(`gh secret set POSTHOG_CLI_ENV_ID -a actions -b "${posthogDevEnvId}" -e dev`);
+    await execAsync(`gh secret set POSTHOG_CLI_ENV_ID -a actions -b "${posthogProdEnvId}" -e prod`);
   }
 
-  console.log("\u2714 GitHub environments and secrets have been set up.\n");
+  console.log('\u2714 GitHub environments and secrets have been set up.\n');
 
   return githubUrl;
 };
@@ -250,51 +235,51 @@ const setupGithub = async ({
 // ---------- PROJECT DETAIL HELPERS ----------
 /** Prompt for and update the project name if still default */
 const getProjectName = async (): Promise<string> => {
-  console.log("Checking for the project name...");
+  console.log('Checking for the project name...');
   // Check for the app name in the config file
-  const configPath = path.resolve("packages/config/config.ts");
-  let configContent = fs.readFileSync(configPath, "utf8");
+  const configPath = path.resolve('packages/config/config.ts');
+  let configContent = fs.readFileSync(configPath, 'utf8');
   const appNameMatch = configContent.match(/app:\s*{[^}]*name:\s*"([^"]*)"/s);
   let appName = appNameMatch ? appNameMatch[1] : undefined;
 
   // If the app name doesn't exist, we'll prompt the user for a new one
-  if (!appName || appName === "My App") {
+  if (!appName || appName === 'My App') {
     // Get a new name
-    let newName = "";
+    let newName = '';
     while (!newName) {
       const input = await promptUser(
-        "Enter a name for your project (Title Case, e.g. 'My Project'): ",
+        "Enter a name for your project (Title Case, e.g. 'My Project'): "
       );
       newName = input.trim();
       if (!/^([A-Z][a-z]+)( [A-Z][a-z]+)*$/.test(newName)) {
         console.log(
-          "Please use Title Case (e.g. 'My Project'). Each word should start with a capital letter.",
+          "Please use Title Case (e.g. 'My Project'). Each word should start with a capital letter."
         );
-        newName = "";
+        newName = '';
       }
     }
 
     // Write Title Case to config.ts
     configContent = configContent.replace(
       /app:\s*{([^}]*)name:\s*"[^"]*"/s,
-      (m, g1) => `app: {${g1}name: "${newName}"`,
+      (m, g1) => `app: {${g1}name: "${newName}"`
     );
     fs.writeFileSync(configPath, configContent);
 
     // Convert to kebab-case for other config files
-    const kebabName = newName.replaceAll(" ", "-").toLowerCase();
+    const kebabName = newName.replaceAll(' ', '-').toLowerCase();
 
     // Update sst.config.ts
-    const sstConfigPath = path.resolve("sst.config.ts");
-    let sstConfig = fs.readFileSync(sstConfigPath, "utf8");
+    const sstConfigPath = path.resolve('sst.config.ts');
+    let sstConfig = fs.readFileSync(sstConfigPath, 'utf8');
     sstConfig = sstConfig.replace(/name:\s*"[^"]+"/, `name: "${kebabName}"`);
     fs.writeFileSync(sstConfigPath, sstConfig);
 
     // Update package.json
-    const pkgPath = path.resolve("package.json");
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+    const pkgPath = path.resolve('package.json');
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
     pkg.name = kebabName;
-    fs.writeFileSync(pkgPath, JSON.stringify(pkg, undefined, 2) + "\n");
+    fs.writeFileSync(pkgPath, JSON.stringify(pkg, undefined, 2) + '\n');
     appName = newName;
 
     console.log(`\u2714 Project name updated to: ${newName}\n`);
@@ -309,7 +294,7 @@ const getOrCreateStage = async (): Promise<string> => {
   console.log("Checking for the user's personal environment stage...");
 
   // Check if the user has a .sst/stage file
-  const stagePath = path.resolve(".sst/stage");
+  const stagePath = path.resolve('.sst/stage');
 
   // Create .sst directory if it doesn't exist
   const sstDir = path.dirname(stagePath);
@@ -318,7 +303,7 @@ const getOrCreateStage = async (): Promise<string> => {
   }
 
   if (fs.existsSync(stagePath)) {
-    const stage = fs.readFileSync(stagePath, "utf8").trim();
+    const stage = fs.readFileSync(stagePath, 'utf8').trim();
 
     // If we locate the stage value, we'll use that and skip this step
     if (stage) {
@@ -328,22 +313,20 @@ const getOrCreateStage = async (): Promise<string> => {
   }
 
   // If we don't find a stage, we'll prompt the user to enter one
-  let stage = "";
+  let stage = '';
   while (!stage) {
-    const input = await promptUser(
-      "Enter a name for your personal environment (e.g. 'kwalsh'): ",
-    );
+    const input = await promptUser("Enter a name for your personal environment (e.g. 'kwalsh'): ");
     stage = input.trim();
     if (!/^[a-zA-Z0-9_-]+$/.test(stage)) {
       console.log(
-        "Please use only letters, numbers, dashes, or underscores for the environment name.",
+        'Please use only letters, numbers, dashes, or underscores for the environment name.'
       );
-      stage = "";
+      stage = '';
     }
   }
 
   // Write the final result to the .sst/stage file
-  fs.writeFileSync(stagePath, stage + "\n");
+  fs.writeFileSync(stagePath, stage + '\n');
   console.log(`\u2714 Created .sst/stage with value '${stage}'!\n`);
   return stage;
 };
@@ -355,42 +338,37 @@ const getOrCreateStage = async (): Promise<string> => {
  * Returns the selected profile name.
  */
 export const selectOrCreateAwsProfile = async () => {
-  console.log("Setting up AWS profile...");
+  console.log('Setting up AWS profile...');
 
   const homedir = os.homedir();
-  const credPath = path.join(homedir, ".aws/credentials");
-  const configPath = path.join(homedir, ".aws/config");
-  const vscodeSettingsPath = path.resolve(".vscode/settings.json");
+  const credPath = path.join(homedir, '.aws/credentials');
+  const configPath = path.join(homedir, '.aws/config');
+  const vscodeSettingsPath = path.resolve('.vscode/settings.json');
 
   // Read existing profiles
   let profiles: string[] = [];
   if (fs.existsSync(credPath)) {
-    const credContent = fs.readFileSync(credPath, "utf8");
+    const credContent = fs.readFileSync(credPath, 'utf8');
     profiles = [...credContent.matchAll(/^\[([^\]]+)\]/gm)].map((m) => m[1]);
   }
 
-  const choices = [...profiles, "Create new profile..."];
-  const selected = await promptSelect(
-    "Which AWS profile would you like to use?",
-    choices,
-  );
+  const choices = [...profiles, 'Create new profile...'];
+  const selected = await promptSelect('Which AWS profile would you like to use?', choices);
 
   let profile = selected;
-  let accessKey = "";
-  let secretKey = "";
-  if (selected === "Create new profile...") {
+  let accessKey = '';
+  let secretKey = '';
+  if (selected === 'Create new profile...') {
     // Prompt for new profile details
     while (true) {
-      const profileInput = await promptUser(
-        "Enter a name for the new AWS profile: ",
-      );
+      const profileInput = await promptUser('Enter a name for the new AWS profile: ');
       profile = profileInput.trim();
       if (!profile) {
-        console.log("Profile name cannot be empty.");
+        console.log('Profile name cannot be empty.');
         continue;
       }
       if (profiles.includes(profile)) {
-        console.log("Profile already exists. Please choose a different name.");
+        console.log('Profile already exists. Please choose a different name.');
         continue;
       }
       break;
@@ -398,25 +376,25 @@ export const selectOrCreateAwsProfile = async () => {
 
     // Get the user's AWS details
     while (!accessKey) {
-      const accessKeyInput = await promptUser("Enter AWS Access Key ID: ");
+      const accessKeyInput = await promptUser('Enter AWS Access Key ID: ');
       accessKey = accessKeyInput.trim();
       if (!accessKey) {
-        console.log("AWS Access Key ID cannot be empty.");
+        console.log('AWS Access Key ID cannot be empty.');
       }
     }
 
     while (!secretKey) {
-      const secretKeyInput = await promptUser("Enter AWS Secret Access Key: ");
+      const secretKeyInput = await promptUser('Enter AWS Secret Access Key: ');
       secretKey = secretKeyInput.trim();
       if (!secretKey) {
-        console.log("AWS Secret Access Key cannot be empty.");
+        console.log('AWS Secret Access Key cannot be empty.');
       }
     }
 
     const regionInput = await promptUser(
-      "Enter AWS Region (press enter for default of us-east-1): ",
+      'Enter AWS Region (press enter for default of us-east-1): '
     );
-    const region = regionInput.trim() || "us-east-1";
+    const region = regionInput.trim() || 'us-east-1';
 
     // Append to credentials file
     const credEntry = `\n[${profile}]\naws_access_key_id=${accessKey}\naws_secret_access_key=${secretKey}\nregion=${region}\n`;
@@ -430,14 +408,14 @@ export const selectOrCreateAwsProfile = async () => {
   } else {
     // If selecting an existing profile, try to read the keys from the credentials file
     if (fs.existsSync(credPath)) {
-      const credContent = fs.readFileSync(credPath, "utf8");
-      const profileRegex = new RegExp(`\[${profile}\][^\[]*`, "g");
+      const credContent = fs.readFileSync(credPath, 'utf8');
+      const profileRegex = new RegExp(`\[${profile}\][^\[]*`, 'g');
       const match = credContent.match(profileRegex);
       if (match && match[0]) {
         const keyMatch = match[0].match(/aws_access_key_id=([^\n]+)/);
         const secretMatch = match[0].match(/aws_secret_access_key=([^\n]+)/);
-        accessKey = keyMatch ? keyMatch[1].trim() : "";
-        secretKey = secretMatch ? secretMatch[1].trim() : "";
+        accessKey = keyMatch ? keyMatch[1].trim() : '';
+        secretKey = secretMatch ? secretMatch[1].trim() : '';
       }
     }
   }
@@ -447,15 +425,10 @@ export const selectOrCreateAwsProfile = async () => {
 
   // Update .vscode/settings.json
   if (fs.existsSync(vscodeSettingsPath)) {
-    let settings = fs.readFileSync(vscodeSettingsPath, "utf8");
-    settings = settings.replaceAll(
-      /("AWS_PROFILE"\s*:\s*")[^"]*(")/g,
-      `$1${profile}$2`,
-    );
+    let settings = fs.readFileSync(vscodeSettingsPath, 'utf8');
+    settings = settings.replaceAll(/("AWS_PROFILE"\s*:\s*")[^"]*(")/g, `$1${profile}$2`);
     fs.writeFileSync(vscodeSettingsPath, settings);
-    console.log(
-      `\u2714 Updated .vscode/settings.json to use AWS profile: ${profile}\n`,
-    );
+    console.log(`\u2714 Updated .vscode/settings.json to use AWS profile: ${profile}\n`);
   }
 
   // Run aws configure to set the current active profile (helpful for the rest of this run)
@@ -477,13 +450,10 @@ const generateSupabaseUrls = (baseUrl: string, password: string) => {
   const urlWithPassword = baseUrl.replace(/:(?:[^:@]+)@/, `:${password}@`);
   // For DATABASE_URL: port 6543, add ?pgbouncer=true
   const dbUrl =
-    urlWithPassword
-      .replace(/:(\d+)(\/postgres)/, ":6543$2")
-      .replace(/\?.*$/, "") + "?pgbouncer=true";
+    urlWithPassword.replace(/:(\d+)(\/postgres)/, ':6543$2').replace(/\?.*$/, '') +
+    '?pgbouncer=true';
   // For DIRECT_DATABASE_URL: port 5432, no query string
-  const directUrl = urlWithPassword
-    .replace(/:(\d+)(\/postgres)/, ":5432$2")
-    .replace(/\?.*$/, "");
+  const directUrl = urlWithPassword.replace(/:(\d+)(\/postgres)/, ':5432$2').replace(/\?.*$/, '');
   return { directUrl, dbUrl };
 };
 
@@ -499,7 +469,7 @@ const promptValidSupabaseUrl = async (promptMsg: string): Promise<string> => {
       return url;
     }
     console.log(
-      "Please enter a valid Supabase Transaction pooler URL (must start with 'postgresql://', contain '@', mention 'aws', and end with '/postgres').",
+      "Please enter a valid Supabase Transaction pooler URL (must start with 'postgresql://', contain '@', mention 'aws', and end with '/postgres')."
     );
   }
 };
@@ -509,51 +479,43 @@ const promptValidSupabaseUrl = async (promptMsg: string): Promise<string> => {
  * and calls the add-secret script to store them.
  */
 const setupSupabase = async (projectName: string) => {
-  console.log("Setting up Supabase...");
+  console.log('Setting up Supabase...');
+  console.log('Sign up or log in to Supabase: https://supabase.com/dashboard/organizations');
   console.log(
-    "Sign up or log in to Supabase: https://supabase.com/dashboard/organizations",
+    'You can have 2 free databases (dev/prod) per account. You may want to create a fresh account per project.'
   );
-  console.log(
-    "You can have 2 free databases (dev/prod) per account. You may want to create a fresh account per project.",
-  );
-  await promptUser("Press enter to continue...");
+  await promptUser('Press enter to continue...');
 
   // --- Production ---
-  console.log(
-    `\nCreate a production project in Supabase (e.g. '${projectName}')`,
-  );
+  console.log(`\nCreate a production project in Supabase (e.g. '${projectName}')`);
   const prodPassword = await promptUser(
-    "Enter the password you set for your production database: ",
+    'Enter the password you set for your production database: '
   );
   const prodBaseUrl = await promptValidSupabaseUrl(
-    "After your project is created, click 'Connect' and copy the 'Transaction pooler' URL (starts with postgresql://...): ",
+    "After your project is created, click 'Connect' and copy the 'Transaction pooler' URL (starts with postgresql://...): "
   );
 
   // --- Development ---
-  console.log(
-    `\nCreate a dev project in Supabase (e.g. '${projectName} (dev)')`,
-  );
-  const devPassword = await promptUser(
-    "Enter the password you set for your dev database: ",
-  );
+  console.log(`\nCreate a dev project in Supabase (e.g. '${projectName} (dev)')`);
+  const devPassword = await promptUser('Enter the password you set for your dev database: ');
   const devBaseUrl = await promptValidSupabaseUrl(
-    "After your project is created, click 'Connect' and copy the 'Transaction pooler' URL (starts with postgresql://...): ",
+    "After your project is created, click 'Connect' and copy the 'Transaction pooler' URL (starts with postgresql://...): "
   );
 
   const prodUrls = generateSupabaseUrls(prodBaseUrl, prodPassword);
   const devUrls = generateSupabaseUrls(devBaseUrl, devPassword);
 
   // --- Call add-secret script for each secret ---
-  console.log("\nAdding Supabase secrets to SST...");
-  const addSecretScript = path.resolve("apps/backend/scripts/add-secret.ts");
+  console.log('\nAdding Supabase secrets to SST...');
+  const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
   // For prod
   await execAsync(
-    `pnpm tsx ${addSecretScript} DIRECT_DATABASE_URL "${devUrls.directUrl}" "${prodUrls.directUrl}"`,
+    `pnpm tsx ${addSecretScript} DIRECT_DATABASE_URL "${devUrls.directUrl}" "${prodUrls.directUrl}"`
   );
   await execAsync(
-    `pnpm tsx ${addSecretScript} DATABASE_URL "${devUrls.dbUrl}" "${prodUrls.dbUrl}"`,
+    `pnpm tsx ${addSecretScript} DATABASE_URL "${devUrls.dbUrl}" "${prodUrls.dbUrl}"`
   );
-  console.log("\u2714 Supabase secrets have been set in SST.\n");
+  console.log('\u2714 Supabase secrets have been set in SST.\n');
 };
 
 // ---------- POSTHOG HELPERS ----------
@@ -565,19 +527,19 @@ type PosthogProject = { api_token: string };
  * Guides the user through setting up PostHog, including API key, org/project selection/creation, and saves config.
  */
 const setupPosthog = async (projectName: string) => {
-  console.log("Setting up PostHog...");
+  console.log('Setting up PostHog...');
 
-  const configPath = path.resolve("packages/config/config.ts");
-  let configContent = fs.readFileSync(configPath, "utf8");
+  const configPath = path.resolve('packages/config/config.ts');
+  let configContent = fs.readFileSync(configPath, 'utf8');
 
   // Check if PostHog is already set up
   const apiKeyMatch = configContent.match(
-    /posthog:\s*{[^}]*apiKey:\s*isProd\s*\?\s*"([^"]*)"\s*:\s*"([^"]*)"/,
+    /posthog:\s*{[^}]*apiKey:\s*isProd\s*\?\s*"([^"]*)"\s*:\s*"([^"]*)"/
   );
   const prodApiKey = apiKeyMatch ? apiKeyMatch[1] : undefined;
   const devApiKey = apiKeyMatch ? apiKeyMatch[2] : undefined;
   if (prodApiKey || devApiKey) {
-    console.log("\u2714 PostHog already configured.\n");
+    console.log('\u2714 PostHog already configured.\n');
     return;
   }
 
@@ -586,84 +548,78 @@ const setupPosthog = async (projectName: string) => {
     try {
       // Ask if they want to set up PostHog
       const doSetup = await promptYesNo(
-        "Do you want to set up PostHog for analytics and error tracking? (y/n) ",
+        'Do you want to set up PostHog for analytics and error tracking? (y/n) '
       );
       if (!doSetup) {
-        console.log("PostHog setup skipped.\n");
+        console.log('PostHog setup skipped.\n');
         return;
       }
 
       // Guide to signup/login and API key creation
       console.log(
-        '\nSign up or login, then create a personal API key (with "Organization", "Project", and "Error tracking" permissions): https://app.posthog.com/settings/user-api-keys#variables',
+        '\nSign up or login, then create a personal API key (with "Organization", "Project", and "Error tracking" permissions): https://app.posthog.com/settings/user-api-keys#variables'
       );
 
       // Prompt for personal API key and create the API connection
       cliToken = await promptUser(
-        "Enter your PostHog personal API key (with 'Organization' and 'Project' permissions): ",
+        "Enter your PostHog personal API key (with 'Organization' and 'Project' permissions): "
       );
       const posthogApi = axios.create({
-        baseURL: "https://app.posthog.com/api/",
+        baseURL: 'https://app.posthog.com/api/',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${cliToken}`,
         },
       });
 
       // Try to retrieve organizations
-      const orgsRes = await posthogApi.get<{ results: PosthogOrg[] }>(
-        "organizations/",
-      );
+      const orgsRes = await posthogApi.get<{ results: PosthogOrg[] }>('organizations/');
       const orgsData = orgsRes.data;
 
       // Create a list of organizations to choose from
-      const orgChoices: { name: string; value: string }[] =
-        orgsData.results.map((org) => ({ name: org.name, value: org.id }));
-      orgChoices.push({ name: "Create new organization...", value: "new" });
+      const orgChoices: { name: string; value: string }[] = orgsData.results.map((org) => ({
+        name: org.name,
+        value: org.id,
+      }));
+      orgChoices.push({ name: 'Create new organization...', value: 'new' });
       const selectedOrgId = await promptSelect(
-        "Select a PostHog organization:",
-        orgChoices.map((o) => o.name),
+        'Select a PostHog organization:',
+        orgChoices.map((o) => o.name)
       );
       let orgId = orgChoices.find((o) => o.name === selectedOrgId)?.value;
 
       // If the user wants to create a new organization, prompt for a name and create it
-      if (orgId === "new") {
-        const newOrgName = await promptUser(
-          "Enter a name for the new organization: ",
-        );
-        const createOrgRes = await posthogApi.post<PosthogOrg>(
-          "organizations/",
-          { name: newOrgName },
-        );
+      if (orgId === 'new') {
+        const newOrgName = await promptUser('Enter a name for the new organization: ');
+        const createOrgRes = await posthogApi.post<PosthogOrg>('organizations/', {
+          name: newOrgName,
+        });
         const newOrg = createOrgRes.data;
         orgId = newOrg.id;
         console.log(`\u2714 Created new organization: ${newOrgName}`);
       }
 
       // Create projects for prod and dev
-      async function createProject(
-        orgId: string,
-        name: string,
-      ): Promise<PosthogProject> {
-        const res = await posthogApi.post<PosthogProject>("projects/", {
+      async function createProject(orgId: string, name: string): Promise<PosthogProject> {
+        const res = await posthogApi.post<PosthogProject>('projects/', {
           name,
           organization: orgId,
         });
         return res.data;
       }
 
-      console.log("\nCreating projects...");
+      console.log('\nCreating projects...');
       const prodProject = await createProject(orgId!, projectName);
       const devProject = await createProject(orgId!, `${projectName} (dev)`);
-      console.log("\u2714 PostHog projects have been created.");
+      console.log('\u2714 PostHog projects have been created.');
 
       // Save API key in config file
       configContent = configContent.replace(
         /apiKey:\s*isProd \? "[^"]*" : "[^"]*"/,
-        `apiKey: isProd ? "${prodProject.api_token}" : "${devProject.api_token}"`,
+        `apiKey: isProd ? "${prodProject.api_token}" : "${devProject.api_token}"`
       );
       fs.writeFileSync(configPath, configContent);
-      console.log("\u2714 PostHog has been added to the config.\n");
+      console.log('\u2714 PostHog has been added to the config.\n');
       return {
         prodKey: prodProject.api_token,
         devKey: devProject.api_token,
@@ -671,7 +627,7 @@ const setupPosthog = async (projectName: string) => {
       };
     } catch (error: any) {
       console.log(
-        `\n❌ An error occurred during PostHog setup: ${error?.response?.data?.detail || error?.message}\n\nRestarting PostHog setup...`,
+        `\n❌ An error occurred during PostHog setup: ${error?.response?.data?.detail || error?.message}\n\nRestarting PostHog setup...`
       );
       // The loop will restart from the setup prompt
     }
@@ -685,50 +641,44 @@ const setupPosthog = async (projectName: string) => {
  */
 const setupSlack = async (repo: string) => {
   const wantsSlack = await promptYesNo(
-    "Would you like to receive notifications for CI in Slack? (y/n) ",
+    'Would you like to receive notifications for CI in Slack? (y/n) '
   );
   // If they don't want slack, we'll skip the rest of the setup
   if (!wantsSlack) {
-    console.log("Slack setup skipped.\n");
+    console.log('Slack setup skipped.\n');
     return;
   }
 
   // If they do want slack, we'll guide them through the setup
-  const parsedGithubUrl = repo.replace(".git", "");
-  console.log("\nTo receive notifications, please:");
+  const parsedGithubUrl = repo.replace('.git', '');
+  console.log('\nTo receive notifications, please:');
+  console.log('1. Install the GitHub app in your Slack workspace: https://slack.github.com/');
+  console.log('2. In the Slack channel where you want notifications, run the following command:');
   console.log(
-    "1. Install the GitHub app in your Slack workspace: https://slack.github.com/",
+    `\n/github subscribe ${parsedGithubUrl} workflows:{event:"pull_request","push" branch:"main","staging","dev"}`
   );
-  console.log(
-    "2. In the Slack channel where you want notifications, run the following command:",
-  );
-  console.log(
-    `\n/github subscribe ${parsedGithubUrl} workflows:{event:"pull_request","push" branch:"main","staging","dev"}`,
-  );
-  await promptUser(
-    "\nPress enter to continue after you've set up Slack notifications...",
-  );
-  console.log("\u2714 Slack setup step complete.\n");
+  await promptUser("\nPress enter to continue after you've set up Slack notifications...");
+  console.log('\u2714 Slack setup step complete.\n');
 };
 
 // ---------- FINAL NOTES HELPER ----------
 /** Prints final setup instructions and tips for the user. */
 const printFinalNotes = () => {
-  console.log("--- Final Steps ---");
-  console.log("You can start the app with: pnpm start\n");
+  console.log('--- Final Steps ---');
+  console.log('You can start the app with: pnpm start\n');
   console.log(
-    "1. Consider setting up error notifications for Slack: https://us.posthog.com/error_tracking/configuration",
+    '1. Consider setting up error notifications for Slack: https://us.posthog.com/error_tracking/configuration'
   );
   console.log(
-    "2. Make sure you restart your terminal for your AWS profile changes to take effect.\n",
+    '2. Make sure you restart your terminal for your AWS profile changes to take effect.\n'
   );
-  console.log("\u2714 Setup complete! Happy coding!\n");
+  console.log('\u2714 Setup complete! Happy coding!\n');
 };
 
 // ---------- MAIN ----------
 /** Initializes everything we need to get started with this repo */
 const init = async () => {
-  console.log("Setting up starter...\n");
+  console.log('Setting up starter...\n');
 
   // Check that all CLI tools are setup
   await checkCLIs();
