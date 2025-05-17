@@ -543,14 +543,6 @@ const setupSupabase = async (projectName: string) => {
   const prodUrls = generateSupabaseUrls(prodBaseUrl, prodPassword);
   const devUrls = generateSupabaseUrls(devBaseUrl, devPassword);
 
-  console.log("\nGenerated URLs:");
-  console.log("PROD:");
-  console.log("  DIRECT_DATABASE_URL:", prodUrls.directUrl);
-  console.log("  DATABASE_URL:", prodUrls.dbUrl);
-  console.log("DEV:");
-  console.log("  DIRECT_DATABASE_URL:", devUrls.directUrl);
-  console.log("  DATABASE_URL:", devUrls.dbUrl);
-
   // --- Call add-secret script for each secret ---
   console.log("\nAdding Supabase secrets to SST...");
   const addSecretScript = path.resolve("apps/backend/scripts/add-secret.ts");
@@ -722,7 +714,7 @@ const setupSlack = async (repo: string) => {
 // ---------- FINAL NOTES HELPER ----------
 /** Prints final setup instructions and tips for the user. */
 const printFinalNotes = () => {
-  console.log("\n--- Final Steps ---");
+  console.log("--- Final Steps ---");
   console.log("You can start the app with: pnpm start\n");
   console.log(
     "1. Consider setting up error notifications for Slack: https://us.posthog.com/error_tracking/configuration",
