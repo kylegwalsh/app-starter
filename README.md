@@ -38,6 +38,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Database:** Supabase for scalable, hosted Postgres and real-time data.
 - **Backend:** Serverless backend managed with SST, deployed to AWS.
 - **Web Frontend:** Next.js for fast, modern web applications.
+- **Documentation:** [Fumadocs](https://fumadocs.org/) for building a documentation site (optional, see below).
 - **Continuous Integration:** Automated testing and deployment via GitHub Actions.
 - **Alerts:** Slack integration for real-time notifications and alerts.
 - **AI Integration:** Pre-configured with Cursor rules for AI-powered workflows.
@@ -67,7 +68,8 @@ _All packages and apps are written in TypeScript for consistency and type safety
 /
 ├── apps/
 │   ├── web/           # Next.js frontend app
-│   └── backend/       # Serverless backend (SST)
+│   ├── backend/       # Serverless backend (SST)
+│   └── docs/          # (Optional) Fumadocs-powered documentation app (deployment disabled by default)
 ├── packages/
 │   ├── config/        # Shared configuration
 │   ├── eslint/        # Shared ESLint config
@@ -91,7 +93,7 @@ _All packages and apps are written in TypeScript for consistency and type safety
 └── ...
 ```
 
-- **apps/**: Deployable applications (frontend, backend).
+- **apps/**: Deployable applications (frontend, backend, documentation).
 - **packages/**: Shared libraries, configs, and utilities (expandable).
 - **infra/**: Infrastructure configuration and deployment scripts (SST, AWS).
 - **scripts/**: Helper scripts for setup and development.
@@ -100,6 +102,8 @@ _All packages and apps are written in TypeScript for consistency and type safety
 - **prompts/**: Prompt files for AI or automation.
 
 > Each app or package includes its own README with more details.
+
+> **Note:** The `apps/docs` documentation app is present but deployment is disabled by default. To enable deployment, uncomment or add the relevant deployment in `sst.config.ts`.
 
 ---
 

@@ -21,17 +21,17 @@
   "devDependencies": {
     "@lib/eslint": "workspace:*",
     "@lib/tsconfig": "workspace:*",
-    "@tailwindcss/postcss": "^4.0.8",
+    "@tailwindcss/postcss": "^4.1.5",
     "@turbo/gen": "^2.4.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "tailwindcss": "^4.0.8",
+    "tailwindcss": "^4.1.5",
     "typescript": "^5.8.3"
   },
   "exports": {
     "./globals.css": "./src/styles/globals.css",
-    "./postcss.config": "./postcss.config.mjs",
+    "./postcss.config": "./postcss.config.ts",
     "./lib/*": "./src/lib/*.ts",
     "./components/*": "./src/components/*.tsx",
     "./hooks/*": "./src/hooks/*.ts"
