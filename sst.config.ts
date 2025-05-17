@@ -64,5 +64,8 @@ export default $config({
 
     // Import other stacks
     await import('./infra/api');
+
+    // Optional docs site
+    await import('./infra/docs');
   },
 });

@@ -1,16 +1,18 @@
+- Configure crisp chat for site
 - Configure fuma for static generation
-- Add fumadocs app (comment out website deployment in sst stack)
+- Comment out fuma docs in sst stack after testing deployment with static
 - Website stack
 - Posthog error tracking + analytics
 - react query
 - Core logic / shared logic
 - Add cron to keep DB awake
-- Consider adding a logging solution or improving how we use cloudwatch
 - Add some eslint custom rules based on other repos
-- Remove prisma settings model in favor of auth user model
-- Add auth provider setup to initialization script
-- Add auth provider mention to README
+- Add better auth
+  - Remove prisma settings model in favor of auth user model
+  - Add auth provider setup to initialization script
+  - Add auth provider mention to README
+- Add stripe support and add to setup script (plugin for better auth)
 - Add CI
   - Ensure posthog stuff is optional and that we don't run source map stuff if it's not set up
-- Remove posthog settings from config when pushing final starter
+- Remove posthog settings AND crisp chat settings from config when pushing final starter
 - Cursor rules

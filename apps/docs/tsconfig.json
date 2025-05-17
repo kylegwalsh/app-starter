@@ -6,12 +6,15 @@
       "@/.source": ["./.source/index.ts"],
       "@/*": ["./*"]
     },
-    "lib": ["dom", "dom.iterable", "esnext"]
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "incremental": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
   },
   "include": [
     "next-env.d.ts",
     "next.config.ts",
-    "postcss.config.ts",
+    "postcss.config.mjs",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"

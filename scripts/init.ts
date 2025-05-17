@@ -239,7 +239,7 @@ const getProjectName = async (): Promise<string> => {
   // Check for the app name in the config file
   const configPath = path.resolve('packages/config/config.ts');
   let configContent = fs.readFileSync(configPath, 'utf8');
-  const appNameMatch = configContent.match(/app:\s*{[^}]*name:\s*"([^"]*)"/s);
+  const appNameMatch = configContent.match(/app:\s*{[^}]*name:\s*['"][^'"]*['"]/s);
   let appName = appNameMatch ? appNameMatch[1] : undefined;
 
   // If the app name doesn't exist, we'll prompt the user for a new one
@@ -261,7 +261,7 @@ const getProjectName = async (): Promise<string> => {
 
     // Write Title Case to config.ts
     configContent = configContent.replace(
-      /app:\s*{([^}]*)name:\s*"[^"]*"/s,
+      /app:\s*{([^}]*)name:\s*['"][^'"]*['"]/s,
       (m, g1) => `app: {${g1}name: "${newName}"`
     );
     fs.writeFileSync(configPath, configContent);
@@ -272,7 +272,7 @@ const getProjectName = async (): Promise<string> => {
     // Update sst.config.ts
     const sstConfigPath = path.resolve('sst.config.ts');
     let sstConfig = fs.readFileSync(sstConfigPath, 'utf8');
-    sstConfig = sstConfig.replace(/name:\s*"[^"]+"/, `name: "${kebabName}"`);
+    sstConfig = sstConfig.replace(/name:\s*['"][^'"]*['"]/, `name: "${kebabName}"`);
     fs.writeFileSync(sstConfigPath, sstConfig);
 
     // Update package.json
@@ -426,7 +426,10 @@ export const selectOrCreateAwsProfile = async () => {
   // Update .vscode/settings.json
   if (fs.existsSync(vscodeSettingsPath)) {
     let settings = fs.readFileSync(vscodeSettingsPath, 'utf8');
-    settings = settings.replaceAll(/("AWS_PROFILE"\s*:\s*")[^"]*(")/g, `$1${profile}$2`);
+    settings = settings.replaceAll(
+      /(['"]AWS_PROFILE['"]\s*:\s*['"])[^'"]*(['"])/g,
+      `$1${profile}$2`
+    );
     fs.writeFileSync(vscodeSettingsPath, settings);
     console.log(`\u2714 Updated .vscode/settings.json to use AWS profile: ${profile}\n`);
   }
@@ -480,6 +483,27 @@ const promptValidSupabaseUrl = async (promptMsg: string): Promise<string> => {
  */
 const setupSupabase = async (projectName: string) => {
   console.log('Setting up Supabase...');
+
+  // Check if Supabase is already configured
+  let alreadyConfigured = false;
+  try {
+    const { stdout } = await execAsync('pnpm sst secret list');
+    if (stdout && stdout.includes('DATABASE_URL')) {
+      alreadyConfigured = true;
+    }
+  } catch {}
+
+  // See what the user would like to do if it's already setup
+  if (alreadyConfigured) {
+    const shouldUpdate = await promptYesNo(
+      'It looks like Supabase is already configured. Would you like to update the Supabase connection? (y/n) '
+    );
+    if (!shouldUpdate) {
+      console.log('Skipping Supabase setup.\n');
+      return;
+    }
+  }
+
   console.log('Sign up or log in to Supabase: https://supabase.com/dashboard/organizations');
   console.log(
     'You can have 2 free databases (dev/prod) per account. You may want to create a fresh account per project.'
@@ -523,9 +547,7 @@ const setupSupabase = async (projectName: string) => {
 type PosthogOrg = { id: string; name: string };
 type PosthogProject = { api_token: string };
 
-/**
- * Guides the user through setting up PostHog, including API key, org/project selection/creation, and saves config.
- */
+/** Guides the user through setting up PostHog, including API key, org/project selection/creation, and saves config */
 const setupPosthog = async (projectName: string) => {
   console.log('Setting up PostHog...');
 
@@ -534,7 +556,7 @@ const setupPosthog = async (projectName: string) => {
 
   // Check if PostHog is already set up
   const apiKeyMatch = configContent.match(
-    /posthog:\s*{[^}]*apiKey:\s*isProd\s*\?\s*"([^"]*)"\s*:\s*"([^"]*)"/
+    /posthog:\s*{[^}]*apiKey:\s*isProd\s*\?\s*['"]([^'"]*)['"]\s*:\s*['"]([^'"]*)['"]/
   );
   const prodApiKey = apiKeyMatch ? apiKeyMatch[1] : undefined;
   const devApiKey = apiKeyMatch ? apiKeyMatch[2] : undefined;
@@ -615,7 +637,7 @@ const setupPosthog = async (projectName: string) => {
 
       // Save API key in config file
       configContent = configContent.replace(
-        /apiKey:\s*isProd \? "[^"]*" : "[^"]*"/,
+        /apiKey:\s*isProd \? ['"][^'"]*['"] : ['"][^'"]*['"]/,
         `apiKey: isProd ? "${prodProject.api_token}" : "${devProject.api_token}"`
       );
       fs.writeFileSync(configPath, configContent);
@@ -661,16 +683,127 @@ const setupSlack = async (repo: string) => {
   console.log('\u2714 Slack setup step complete.\n');
 };
 
+// ---------- CRISP CHAT HELPERS ----------
+/** Guides the user through setting up Crisp chat for their site */
+const setupCrispChat = async () => {
+  console.log('Setting up Crisp Chat...');
+
+  const configPath = path.resolve('packages/config/config.ts');
+  let configContent = fs.readFileSync(configPath, 'utf8');
+
+  // Check if Crisp is already set up
+  const websiteIdMatch = configContent.match(/crisp:\s*{[^}]*websiteId:\s*['"]([^'"]*)['"]/);
+  const websiteId = websiteIdMatch ? websiteIdMatch[1] : undefined;
+  if (websiteId && websiteId !== '') {
+    console.log('\u2714 Crisp Chat already configured.\n');
+    return;
+  }
+
+  // Ask if they want to set up Crisp Chat
+  const doSetup = await promptYesNo('Would you like to set up Crisp live chat support? (y/n) ');
+  if (!doSetup) {
+    console.log('Crisp Chat setup skipped.\n');
+    return;
+  }
+
+  // Guide the user through the setup steps
+  console.log('\nSign up or log in at: https://app.crisp.chat/initiate/login/');
+  console.log('1. Create a new workspace and enter your site details.');
+  console.log('2. Click "Install on website" > "HTML".');
+  console.log('3. Copy the CRISP_WEBSITE_ID value from the code snippet.');
+  console.log('');
+
+  // Prompt for the websiteId
+  let newWebsiteId = '';
+  while (!newWebsiteId) {
+    const input = await promptUser('Enter your CRISP_WEBSITE_ID: ');
+    newWebsiteId = input.trim();
+    if (!/^[a-zA-Z0-9-]+$/.test(newWebsiteId)) {
+      console.log('Please enter a valid CRISP_WEBSITE_ID (alphanumeric and hyphens only).');
+      newWebsiteId = '';
+    }
+  }
+
+  // Save the websiteId to config.ts
+  configContent = configContent.replace(
+    /websiteId:\s*['"][^'"]*['"]/, // match both single and double quotes
+    `websiteId: '${newWebsiteId}'`
+  );
+  fs.writeFileSync(configPath, configContent);
+  console.log(`\u2714 Crisp Chat websiteId saved to config.\n`);
+};
+
+// ---------- DOCS SITE HELPER ----------
+/** Sets up the docs site if the user wants it */
+const setupDocsSite = async () => {
+  console.log('Setting up docs site...');
+
+  const docsPath = path.resolve('infra/docs.ts');
+  let docsContent = fs.readFileSync(docsPath, 'utf8');
+
+  // Check if the docs site is already set up (DOMAIN_HERE replaced)
+  if (!docsContent.includes('DOMAIN_HERE')) {
+    console.log('\u2714 Docs site already configured.\n');
+    return;
+  }
+
+  // Ask if they want to set up the docs site
+  console.log(
+    'To set up a custom docs site domain, you must have your domain managed by AWS Route 53.'
+  );
+  const doSetup = await promptYesNo('Would you like to set up a website for documentation? (y/n) ');
+  if (!doSetup) {
+    console.log('Docs site setup skipped.\n');
+    return;
+  }
+
+  // Prompt for the base domain
+  let baseDomain = '';
+  while (!baseDomain) {
+    const input = await promptUser('Enter your base domain (e.g., example.com): ');
+    const trimmed = input.trim().toLowerCase();
+    // Validate: must be a valid domain, no protocol, no subdomain, no trailing dot
+    if (!/^[a-z0-9-]+\.[a-z]{2,}$/.test(trimmed)) {
+      console.log(
+        '\n❌ Please enter a valid domain (e.g., example.com). Do not include subdomains or protocols (e.g., https://).'
+      );
+      continue;
+    }
+    baseDomain = trimmed;
+  }
+
+  // Update infra/docs.ts with the new domain
+  docsContent = docsContent.replaceAll('DOMAIN_HERE', baseDomain);
+  fs.writeFileSync(docsPath, docsContent);
+  console.log(
+    `\u2714 Docs site domain set to docs.${baseDomain} (prod) and <stage>.docs.${baseDomain} (other stages).`
+  );
+
+  // Also update sst.config.ts to uncomment the docs import
+  const sstConfigPath = path.resolve('sst.config.ts');
+  let sstConfig = fs.readFileSync(sstConfigPath, 'utf8');
+  sstConfig = sstConfig.replace(
+    /\s*\/\/\s*await import\(['"]\.\/infra\/docs['"]\);/,
+    '\n    await import("./infra/docs");'
+  );
+  fs.writeFileSync(sstConfigPath, sstConfig);
+  console.log('\u2714 Enabled docs site stack in sst.config.ts.\n');
+};
+
 // ---------- FINAL NOTES HELPER ----------
 /** Prints final setup instructions and tips for the user. */
-const printFinalNotes = () => {
+const printFinalNotes = ({ setupPosthog }: { setupPosthog: boolean }) => {
   console.log('--- Final Steps ---');
   console.log('You can start the app with: pnpm start\n');
+
+  // Only mention the error tracking setup if they opted in
+  if (setupPosthog) {
+    console.log(
+      '- Consider setting up error notifications for Slack: https://us.posthog.com/error_tracking/configuration'
+    );
+  }
   console.log(
-    '1. Consider setting up error notifications for Slack: https://us.posthog.com/error_tracking/configuration'
-  );
-  console.log(
-    '2. Make sure you restart your terminal for your AWS profile changes to take effect.\n'
+    '- Make sure you restart your terminal for your AWS profile changes to take effect.\n'
   );
   console.log('\u2714 Setup complete! Happy coding!\n');
 };
@@ -710,8 +843,14 @@ const init = async () => {
   // Setup slack
   await setupSlack(githubUrl);
 
+  // Setup crisp chat
+  await setupCrispChat();
+
+  // Setup docs site
+  await setupDocsSite();
+
   // Print final notes
-  printFinalNotes();
+  printFinalNotes({ setupPosthog: !!posthogKeys });
 };
 
 void init();
