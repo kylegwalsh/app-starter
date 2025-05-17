@@ -1,6 +1,7 @@
 {
   "name": "my-app",
   "version": "0.0.1",
+  "type": "module",
   "private": true,
   "scripts": {
     "start": "sst dev",
@@ -10,19 +11,23 @@
     "deploy": "sst deploy",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "turbo lint",
-    "init-repo": "tsx scripts/init",
+    "init": "tsx scripts/init",
     "postinstall": "manypkg fix",
     "prepare": "husky",
-    "precommit": "pnpm lint-staged"
+    "precommit": "pnpm lint-staged",
+    "create:package": "tsx scripts/create-package"
   },
   "devDependencies": {
     "@lib/eslint": "workspace:*",
     "@lib/tsconfig": "workspace:*",
     "@manypkg/cli": "^0.24.0",
     "@types/aws-lambda": "8.10.149",
+    "axios": "^1.9.0",
     "eslint": "^9.26.0",
     "husky": "^9.1.7",
+    "inquirer": "^9.2.16",
     "lint-staged": "^15.2.2",
+    "posthog-cli": "^0.0.17",
     "prettier": "^3.5.1",
     "sst": "3.14.12",
     "tsx": "^4.19.4",

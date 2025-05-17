@@ -78,6 +78,7 @@ export default defineConfig([
       "@typescript-eslint/triple-slash-reference": "off",
       "unicorn/no-array-reduce": "off",
       "unicorn/prefer-export-from": "off",
+      "unicorn/no-process-exit": "off",
     },
   },
 ]);

@@ -63,6 +63,6 @@ export default $config({
     });
 
     // Import other stacks
-    const { api } = await import("./infra/api");
+    await import("./infra/api");
   },
 });

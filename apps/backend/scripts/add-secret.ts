@@ -17,7 +17,33 @@ const baseExecConfig: ExecSyncOptionsWithBufferEncoding = {
   stdio: "inherit",
 };
 
-// Collect all the necessary information to create the variable
+// Check for command line arguments
+const nameArg = process.argv[2];
+const devValueArg = process.argv[3];
+const prodValueArg = process.argv[4];
+
+// If we are provided all of the necessary arguments, we can skip the prompts
+if (nameArg && devValueArg && prodValueArg) {
+  // Non-interactive mode: use arguments
+  if (!nameArg) throw new Error("You must provide a name!");
+  if (!devValueArg) throw new Error("You must provide a dev value!");
+  if (!prodValueArg) throw new Error("You must provide a prod value!");
+
+  execSync(
+    `sst secret set ${nameArg} "${devValueArg}" --fallback`,
+    baseExecConfig,
+  );
+  execSync(
+    `sst secret set ${nameArg} "${prodValueArg}" --stage prod`,
+    baseExecConfig,
+  );
+  console.log(
+    "The environment variable has been created in AWS! Don't forget to add the new variable to the infra/SecretStack file as well!",
+  );
+  process.exit(0);
+}
+
+// Otherwise, we'll collect all the necessary information to create the variable
 rl.question(
   "What is the name of the environment variable that you need to add? For example, VERCEL_TOKEN...\n",
   (name) => {

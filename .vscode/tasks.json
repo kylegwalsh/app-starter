@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Create New Package",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["create:package", "${input:packageName}"],
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "packageName",
+      "type": "promptString",
+      "description": "Enter the name for your new package"
+    }
+  ]
+}

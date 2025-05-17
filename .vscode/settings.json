@@ -53,7 +53,6 @@
   "typescript.enablePromptUseWorkspaceTsdk": true,
   // Spell checker settings
   "cSpell.words": [
-    "unauthed",
     "authed",
     "deepmerge",
     "hookform",
@@ -68,8 +67,10 @@
     "posthog",
     "serviceworker",
     "sonner",
+    "Supabase",
     "superjson",
     "TRPC",
-    "typecheck"
+    "typecheck",
+    "unauthed"
   ]
 }

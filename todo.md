@@ -5,14 +5,95 @@
 - react query
 - remove prisma settings model in favor of auth user model
 - consider barrel files
+- Website stack
 - Readme's
-- Add CI (and maybe a script to initialize required variables in git CI)
+  - Package level
+  - Top-level
+    - Include features
+      - Error tracking
+      - Analytics
+      - Auth
+      - Database
+      - Backend
+      - Web
+      - CI
+      - Slack
+      - ...
+      - Cursor rules
+    - Include tech stack
+    - Include project structure
+      - Maybe use ellipsis for other things that can be added
+    - Include setup script and what it does
+    - Include how to run locally
+    - Include how to deploy
+    - Helper tasks
+      - CTRL+SHIFT+P -> Create New Package
+- Add fumadocs app (comment out website deployment in sst stack)
+- Add cron to keep DB awake
 - Consider adding a logging solution or improving how we use cloudwatch
 - cursor rules
+- Add auth provider setup to initialization script
+- Add CI
+  - Ensure posthog stuff is optional and that we don't run source map stuff if it's not set up
+- Remove posthog settings from config when pushing final starter
+
+## Setup script
 
 - Write script to initialize everything we need / walk user through things
-  - Initialize sst
+  - Ensure they have the appropriate cli's installed (run the version commands to check)
+    - pnpm - https://pnpm.io/installation
+    - gh - https://github.com/cli/cli#installation (check whether they are logged in)
+    - aws-cli - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html (ensure they're authenticated as well)
+  - Ask them to enter a name for the project if it's still the default value (read it from the config file) - give them guidance that it should be title cased like "My Project"
+    - After they enter it, update the config file, sst.config.ts (kebab case), and the package.json (kebab case)
+  - Ask them what they will use for their personal environment name (usually something like "kwalsh") - only if they haven't already created the .sst/stage file (if they have, we'll store that)
+    - We'll create the .sst/stage file with the value they enter
+  - Ensure they have the repo connected to github
+    - List current repo and ask them if they'd like to change it
   - Initialize AWS (maybe save creds)
-  - Initialize supabase (save secrets to sst)
-  - Initialize auth
+    - Which AWS profile would you like to use? (list profiles with option to create new)
+      - This should update the credentials file if they create a new one and enter details
+      - Otherwise it should just grab the existing credentials and save them in memory
+      - Either way, it should update the settings.json with the profile name using regex
+      - We may need to run `aws configure` to update the current active profile afterwards
+  - Setup Supabase
+    - Signup/login to supabase: https://supabase.com/dashboard/organizations
+      - Mention that they can have 2 free databases (dev/prod) per account and that they can create a fresh account per project
+      - Ready to continue? (y/n)
+    - Create a prod project like "My Project" (we can use the name from the first step)
+      - Ask them to enter the password they entered for their project's database
+      - Once it's done setting up, click the "Connect" button and copy the "Transaction pooler" URL and enter it in the config file
+    - Create a dev project like "My Project (dev)" (we can use the name from the first step)
+      - Ask them to enter the password they entered for their project's database
+      - Once it's done setting up, click the "Connect" button and copy the "Transaction pooler" URL and enter it in the config file
+    - After we have all that information, we can generate the DATABASE_URL and DIRECT_DATABASE_URL
+      - We'll save those to SST using our add-secret script (add options that allow us to skip the user prompts to that script)
   - Initialize posthog
+    - Skip this step if we can detect they already have posthog set up (variables exist in config file), maybe show a message with a checkmark saying we detected posthog was already set up
+    - Do you want to set up posthog for analytics and error tracking?
+      - If yes, show URL to signup or login
+      - Then ask them to create a personal api key with permissions to their projects, then ask them to enter it and give them the url https://app.posthog.com/settings/user-api-keys#variables
+      - Pull the list of available organizations and ask them to select one or create a new one (terminal interactable with arrow keys)
+        - If creating a new one, ask them for a name and then use the posthog api to create it - https://posthog.com/docs/api/organizations
+      - Then, create a Project Name / Project Name (dev) project in posthog using the api - https://posthog.com/docs/api/projects and save the project id for both in the config file and memory
+  - After that setup, we will add the following variables to our Github secrets
+    - Create the environments (this is idempotent so it's fine to run multiple times)
+      - gh api --method PUT -H "Accept: application/vnd.github+json" repos/kylegwalsh/app-starter/environments/dev
+      - gh api --method PUT -H "Accept: application/vnd.github+json" repos/kylegwalsh/app-starter/environments/prod
+    - Make the following global repository secrets
+      - AWS_ACCESS_KEY_ID - gh secret set AWS_ACCESS_KEY_ID -a actions -b VALUE_HERE
+      - AWS_SECRET_ACCESS_KEY - gh secret set AWS_SECRET_ACCESS_KEY -a actions -b VALUE_HERE
+      - POSTHOG_CLI_TOKEN - gh secret set POSTHOG_CLI_TOKEN -a actions -b VALUE_HERE
+    - Then add the following as non-secret variables to each environment with their respective values
+      - POSTHOG_CLI_ENV_ID - gh secret set POSTHOG_CLI_ENV_ID -a actions -b DEV_VALUE_HERE -e dev
+      - POSTHOG_CLI_ENV_ID - gh secret set POSTHOG_CLI_ENV_ID -a actions -b PROD_VALUE_HERE -e prod
+  - Initialize auth provider behind the scenes
+  - Initialize slack
+    - Ask if they'd like to receive notifications for CI in slack
+      - If yes, tell them to install the github app in slack and then run the following command in whatever channel they want the notifications to go to
+        - `/github subscribe REPO_NAME_FROM_EARLIER workflows:{event:"pull_request","push" branch:"main","staging","dev"}`
+        - Press enter to continue...
+  - After everything, give them some cleanup steps to finish their setup
+    - You can start the app with `pnpm start` (will also generate remaining types)
+    - Consider setting up error notifications for slack: https://us.posthog.com/error_tracking/configuration
+    - Make sure you restart your terminal for your change to your AWS profile to take effect
