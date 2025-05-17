@@ -33,7 +33,7 @@
     "lint-staged": "^15.2.2",
     "posthog-cli": "^0.0.17",
     "prettier": "^3.5.1",
-    "sst": "3.14.12",
+    "sst": "3.14.27",
     "tsx": "^4.19.4",
     "turbo": "^2.5.3",
     "typescript": "^5.8.3",

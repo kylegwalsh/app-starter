@@ -1,3 +1,5 @@
+# TODO
+
 - Configure crisp chat for site
 - Configure fuma for static generation
 - Comment out fuma docs in sst stack after testing deployment with static
