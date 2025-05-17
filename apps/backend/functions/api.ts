@@ -5,6 +5,7 @@ import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
 import { createOpenApiAwsLambdaHandler, generateOpenApiDocument } from 'better-trpc-openapi';
 import { Resource } from 'sst';
 import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
+import { config } from '@lib/config';
 
 // ---------- INITIALIZE OUR ROUTE HANDLERS ----------
 /** Our handler for tRPC routes */
@@ -42,9 +43,9 @@ export const handler = async (event: APIGatewayProxyEventV2, context: Context) =
   if (path === '/docs') {
     // Generate our open API documentation and swagger UI
     const openApiDocument = generateOpenApiDocument(router, {
-      title: Resource.App.name || 'OpenAPI Docs',
+      title: config.app.name,
       version: '1.0.0',
-      baseUrl: Resource.api.url || 'http://localhost:3000',
+      baseUrl: Resource.api.url,
     });
     const swaggerHtml = `
       <!DOCTYPE html>

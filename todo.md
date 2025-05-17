@@ -1,7 +1,5 @@
-- Config + env (replace Resource.\* with config / env variables)
 - Posthog error tracking + analytics
 - Core logic / shared logic
-- Shared schemas package
 - Add some eslint custom rules based on other repos
 - react query
 - Remove prisma settings model in favor of auth user model

@@ -24,6 +24,7 @@
     "@types/node": "^20"
   },
   "dependencies": {
+    "@lib/config": "workspace:*",
     "@prisma/client": "^6.7.0",
     "@trpc/server": "^11.1.2",
     "better-trpc-openapi": "github:deldrid1/trpc-openapi#d089373012300ea432f4177543d3e85fe59d8a9a",

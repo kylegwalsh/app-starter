@@ -73,6 +73,7 @@ _All packages and apps are written in TypeScript for consistency and type safety
 │   ├── eslint/        # Shared ESLint config
 │   ├── tsconfig/      # Shared TypeScript config
 │   ├── ui/            # Shared UI components (React)
+│   ├── schemas/       # Shared schemas (forms + validation)
 │   └── ...            # (More packages can be added)
 ├── infra/             # Infrastructure code (SST, AWS)
 │   ├── api.ts
@@ -82,6 +83,7 @@ _All packages and apps are written in TypeScript for consistency and type safety
 ├── scripts/           # Helper scripts for setup and development
 ├── .github/           # GitHub Actions workflows
 ├── templates/         # Project/package templates
+├── prompts/           # Prompt files for AI or automation
 ├── sst.config.ts      # SST configuration
 ├── package.json
 ├── pnpm-workspace.yaml
@@ -95,6 +97,7 @@ _All packages and apps are written in TypeScript for consistency and type safety
 - **scripts/**: Helper scripts for setup and development.
 - **.github/**: CI/CD workflows and automation.
 - **templates/**: Templates for scaffolding new projects or packages.
+- **prompts/**: Prompt files for AI or automation.
 
 > Each app or package includes its own README with more details.
 

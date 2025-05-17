@@ -49,8 +49,6 @@ const getDatabaseURL = async () => {
   }
 
   console.log('DATABASE_URL set, continuing...');
-  console.log('DATABASE_URL', databaseURL);
-  console.log('DIRECT_DATABASE_URL', directDatabaseURL);
 
   // Set environment variable for current process
   execSync(command, {
