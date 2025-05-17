@@ -1,13 +1,10 @@
-import { router } from "@/routes";
-import { createContext } from "@/routes/trpc/context";
-import { onError } from "@/routes/trpc/error";
-import { awsLambdaRequestHandler } from "@trpc/server/adapters/aws-lambda";
-import {
-  createOpenApiAwsLambdaHandler,
-  generateOpenApiDocument,
-} from "better-trpc-openapi";
-import { Resource } from "sst";
-import { APIGatewayProxyEventV2, Context } from "aws-lambda";
+import { router } from '@/routes';
+import { createContext } from '@/routes/trpc/context';
+import { onError } from '@/routes/trpc/error';
+import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
+import { createOpenApiAwsLambdaHandler, generateOpenApiDocument } from 'better-trpc-openapi';
+import { Resource } from 'sst';
+import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 
 // ---------- INITIALIZE OUR ROUTE HANDLERS ----------
 /** Our handler for tRPC routes */
@@ -26,31 +23,28 @@ const restHandler = createOpenApiAwsLambdaHandler({
 
 // ---------- MAIN API ENTRY POINT ----------
 /** The main entry point for the backend APIs */
-export const handler = async (
-  event: APIGatewayProxyEventV2,
-  context: Context,
-) => {
+export const handler = async (event: APIGatewayProxyEventV2, context: Context) => {
   const path = event.rawPath;
 
   // If the path is /trpc, return the tRPC handler
-  if (path.startsWith("/trpc")) {
-    console.log("TRPC Event:", event);
+  if (path.startsWith('/trpc')) {
+    console.log('TRPC Event:', event);
     return trpcHandler(event, context);
   }
 
   // If the path is /api, return the REST handler
-  if (path.startsWith("/api")) {
-    console.log("REST Event:", event);
+  if (path.startsWith('/api')) {
+    console.log('REST Event:', event);
     return restHandler(event, context);
   }
 
   // If the path is /docs, return the swagger documentation
-  if (path === "/docs") {
+  if (path === '/docs') {
     // Generate our open API documentation and swagger UI
     const openApiDocument = generateOpenApiDocument(router, {
-      title: Resource.App.name || "OpenAPI Docs",
-      version: "1.0.0",
-      baseUrl: Resource.api.url || "http://localhost:3000",
+      title: Resource.App.name || 'OpenAPI Docs',
+      version: '1.0.0',
+      baseUrl: Resource.api.url || 'http://localhost:3000',
     });
     const swaggerHtml = `
       <!DOCTYPE html>
@@ -76,7 +70,7 @@ export const handler = async (
 
     return {
       statusCode: 200,
-      headers: { "Content-Type": "text/html" },
+      headers: { 'Content-Type': 'text/html' },
       body: swaggerHtml,
     };
   }
@@ -84,6 +78,6 @@ export const handler = async (
   // If the path is not found, return a 404
   return {
     statusCode: 404,
-    body: JSON.stringify({ message: "Not found" }),
+    body: JSON.stringify({ message: 'Not found' }),
   };
 };

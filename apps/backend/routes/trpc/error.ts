@@ -1,6 +1,6 @@
-import type { TRPCError, TRPCProcedureType } from "@trpc/server";
-import type { createContext } from "./context";
-import type { APIGatewayProxyEventV2 } from "aws-lambda";
+import type { TRPCError, TRPCProcedureType } from '@trpc/server';
+import type { createContext } from './context';
+import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 
 /** Handles errors that occur in our API */
 export const onError = ({
@@ -11,12 +11,12 @@ export const onError = ({
   error: TRPCError;
   ctx?: Awaited<ReturnType<typeof createContext>>;
   req: APIGatewayProxyEventV2;
-  type: TRPCProcedureType | "unknown";
+  type: TRPCProcedureType | 'unknown';
   path: string | undefined;
   input: unknown;
 }) => {
   // Ignore UNAUTHORIZED errors (not very important and can occur in a few scenarios)
-  if (error.code !== "UNAUTHORIZED") {
+  if (error.code !== 'UNAUTHORIZED') {
     /** Extract the underlying error */
     const rootError = error?.cause ?? error;
 

@@ -1,5 +1,5 @@
-import { CreateAWSLambdaContextOptions } from "@trpc/server/adapters/aws-lambda";
-import { APIGatewayProxyEventV2 } from "aws-lambda";
+import { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
+import { APIGatewayProxyEventV2 } from 'aws-lambda';
 
 // Define the context type with all properties optional
 export type Context = {

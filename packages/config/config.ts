@@ -1,4 +1,4 @@
-import { env } from "./env";
+import { env } from './env';
 
 // ---------- HELPERS ----------
 /** Determine which stage (environment the app is running in) */
@@ -9,20 +9,17 @@ const stage =
   process.env.NEXT_PUBLIC_STAGE;
 
 // If we still don't have stage, something went wrong
-if (!stage)
-  throw new Error(
-    "[config] Stage not found - check your environment variables.",
-  );
+if (!stage) throw new Error('[config] Stage not found - check your environment variables.');
 
 /** Determine if we're running against production resources */
 let isProd = false;
 // Prod should both use prod resources
-if (stage === "prod" || stage === "staging") {
+if (stage === 'prod' || stage === 'staging') {
   isProd = true;
 }
 
 /** Whether this application is running as one of our main deployments (not locally) */
-const isDeployment = ["prod", "dev"].includes(stage ?? "");
+const isDeployment = ['prod', 'dev'].includes(stage ?? '');
 
 // ---------- MAIN CONFIG ----------
 /** The configuration object that defines global settings for the app */
@@ -36,14 +33,14 @@ export const config = {
   /** Some details regarding the project */
   app: {
     /** The name of the project */
-    name: "My App",
+    name: 'My App',
     /** The url of the project */
     url: process.env.NEXT_PUBLIC_APP_URL,
   },
   /** The configuration for PostHog */
   posthog: {
     /** The PostHog API key */
-    apiKey: isProd ? "" : "",
+    apiKey: isProd ? '' : '',
   },
   /** Details for our backend API */
   api: {

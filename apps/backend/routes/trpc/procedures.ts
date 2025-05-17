@@ -1,5 +1,5 @@
-import { t } from "./init";
-import { timeProcedure } from "./middleware";
+import { t } from './init';
+import { timeProcedure } from './middleware';
 
 /** Our base procedure (just tracks invocation times for now) */
 export const baseProcedure = t.procedure.use(timeProcedure);

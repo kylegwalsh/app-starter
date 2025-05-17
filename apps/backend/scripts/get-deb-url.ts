@@ -1,5 +1,5 @@
-import { exec, execSync } from "node:child_process";
-import { promisify } from "node:util";
+import { exec, execSync } from 'node:child_process';
+import { promisify } from 'node:util';
 
 // Promisify exec for async/await usage
 const execAsync = promisify(exec);
@@ -17,12 +17,12 @@ interface Secrets {
 const parseSecrets = async (): Promise<Secrets> => {
   try {
     // Run sst secret list and parse output
-    const { stdout } = await execAsync("sst secret list");
+    const { stdout } = await execAsync('sst secret list');
     const secrets = stdout
       .trim()
-      .split("\n")
+      .split('\n')
       .reduce<Secrets>((acc, line) => {
-        const [key, value] = line.split("=");
+        const [key, value] = line.split('=');
         if (key && value) {
           acc[key.trim()] = value.trim();
         }
@@ -30,14 +30,14 @@ const parseSecrets = async (): Promise<Secrets> => {
       }, {});
     return secrets;
   } catch (error) {
-    console.error("Failed to list secrets", error);
+    console.error('Failed to list secrets', error);
     return {};
   }
 };
 
 /** Main function to set the environment variable */
 const getDatabaseURL = async () => {
-  console.log("Querying DATABASE_URL...");
+  console.log('Querying DATABASE_URL...');
 
   const secrets = await parseSecrets();
   const databaseURL = secrets.DATABASE_URL;
@@ -45,12 +45,12 @@ const getDatabaseURL = async () => {
 
   // If secrets don't exist, we have to error
   if (!databaseURL || !directDatabaseURL) {
-    throw new Error("DATABASE_URL is not set. Exiting...");
+    throw new Error('DATABASE_URL is not set. Exiting...');
   }
 
-  console.log("DATABASE_URL set, continuing...");
-  console.log("DATABASE_URL", databaseURL);
-  console.log("DIRECT_DATABASE_URL", directDatabaseURL);
+  console.log('DATABASE_URL set, continuing...');
+  console.log('DATABASE_URL', databaseURL);
+  console.log('DIRECT_DATABASE_URL', directDatabaseURL);
 
   // Set environment variable for current process
   execSync(command, {
@@ -59,7 +59,7 @@ const getDatabaseURL = async () => {
       DATABASE_URL: databaseURL,
       DIRECT_DATABASE_URL: directDatabaseURL,
     },
-    stdio: "inherit",
+    stdio: 'inherit',
   });
 };
 
