@@ -5,12 +5,14 @@
   "private": true,
   "scripts": {
     "build": "next build",
+    "dev": "next dev",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@lib/config": "workspace:*",
     "@lib/ui": "workspace:*",
     "lucide-react": "^0.475.0",
     "next": "15.3.1",

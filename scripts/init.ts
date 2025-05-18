@@ -234,7 +234,7 @@ const setupGithub = async ({
 
 // ---------- PROJECT DETAIL HELPERS ----------
 /** Prompt for and update the project name if still default */
-const getProjectName = async (): Promise<string> => {
+const getProjectName = async () => {
   console.log('Checking for the project name...');
   // Check for the app name in the config file
   const configPath = path.resolve('packages/config/config.ts');
@@ -289,8 +289,69 @@ const getProjectName = async (): Promise<string> => {
   return appName;
 };
 
+/** Prompt for and update the website domain if still default */
+const getBaseDomain = (domain: string) => {
+  const parts = domain.split('.');
+  if (parts.length >= 2) {
+    return parts.slice(-2).join('.');
+  }
+  return domain;
+};
+
+/** Prompt for and update the website domain if still default */
+const getDomain = async () => {
+  console.log('Checking for the website domain...');
+  const webPath = path.resolve('infra/web.ts');
+  let webContent = fs.readFileSync(webPath, 'utf8');
+
+  // Check if DOMAIN_HERE is still present (implies it's not setup yet)
+  if (webContent.includes('DOMAIN_HERE')) {
+    let baseDomain = '';
+    while (!baseDomain) {
+      const input = await promptUser('Enter your base domain (e.g., example.com): ');
+      const trimmed = input.trim().toLowerCase();
+      // Validate: must be a valid domain, no protocol, no subdomain, no trailing dot
+      if (!/^[a-z0-9-]+\.[a-z]{2,}$/.test(trimmed)) {
+        console.log(
+          '\n❌ Please enter a valid domain (e.g., example.com). Do not include subdomains or protocols (e.g., https://).'
+        );
+        continue;
+      }
+      baseDomain = trimmed;
+    }
+    // Replace DOMAIN_HERE in infra/web.ts
+    webContent = webContent.replaceAll('DOMAIN_HERE', baseDomain);
+    fs.writeFileSync(webPath, webContent);
+    console.log(
+      `\u2714 Web domain set to app.${baseDomain} (prod) and <stage>.${baseDomain} (other stages).\n`
+    );
+    return baseDomain;
+  } else {
+    // Extract the domain from the file, even if the domain property spans multiple lines
+    const domainPropMatch = webContent.match(/domain:\s*([\s\S]*?)[,\n]/i);
+    if (domainPropMatch) {
+      const domainValue = domainPropMatch[1];
+      // Match all quoted values (single, double, or backtick)
+      const quotedMatches = [...domainValue.matchAll(/['"`]{1}([^'"`]+)['"`]{1}/g)];
+      // Find the first quoted value that contains a dot (.)
+      const realDomain = quotedMatches
+        .map((m) => m[1])
+        .find((val) => val.includes('.') && /[a-z]{2,}$/.test(val));
+      if (realDomain) {
+        const baseDomain = getBaseDomain(realDomain);
+        console.log(`\u2714 Web domain already configured: ${baseDomain}\n`);
+        return baseDomain;
+      }
+    }
+
+    // Sanity check (should never happen)
+    console.log('❌ Could not determine the current domain.\n');
+    process.exit(1);
+  }
+};
+
 /** Get or create the user's personal environment stage */
-const getOrCreateStage = async (): Promise<string> => {
+const getOrCreateStage = async () => {
   console.log("Checking for the user's personal environment stage...");
 
   // Check if the user has a .sst/stage file
@@ -735,7 +796,7 @@ const setupCrispChat = async () => {
 
 // ---------- DOCS SITE HELPER ----------
 /** Sets up the docs site if the user wants it */
-const setupDocsSite = async () => {
+const setupDocsSite = async ({ domain }: { domain: string }) => {
   console.log('Setting up docs site...');
 
   const docsPath = path.resolve('infra/docs.ts');
@@ -757,26 +818,11 @@ const setupDocsSite = async () => {
     return;
   }
 
-  // Prompt for the base domain
-  let baseDomain = '';
-  while (!baseDomain) {
-    const input = await promptUser('Enter your base domain (e.g., example.com): ');
-    const trimmed = input.trim().toLowerCase();
-    // Validate: must be a valid domain, no protocol, no subdomain, no trailing dot
-    if (!/^[a-z0-9-]+\.[a-z]{2,}$/.test(trimmed)) {
-      console.log(
-        '\n❌ Please enter a valid domain (e.g., example.com). Do not include subdomains or protocols (e.g., https://).'
-      );
-      continue;
-    }
-    baseDomain = trimmed;
-  }
-
   // Update infra/docs.ts with the new domain
-  docsContent = docsContent.replaceAll('DOMAIN_HERE', baseDomain);
+  docsContent = docsContent.replaceAll('DOMAIN_HERE', domain);
   fs.writeFileSync(docsPath, docsContent);
   console.log(
-    `\u2714 Docs site domain set to docs.${baseDomain} (prod) and <stage>.docs.${baseDomain} (other stages).`
+    `\u2714 Docs site domain set to docs.${domain} (prod) and <stage>.docs.${domain} (other stages).`
   );
 
   // Also update sst.config.ts to uncomment the docs import
@@ -811,46 +857,49 @@ const printFinalNotes = ({ setupPosthog }: { setupPosthog: boolean }) => {
 // ---------- MAIN ----------
 /** Initializes everything we need to get started with this repo */
 const init = async () => {
-  console.log('Setting up starter...\n');
+  // console.log('Setting up starter...\n');
 
-  // Check that all CLI tools are setup
-  await checkCLIs();
+  // // Check that all CLI tools are setup
+  // await checkCLIs();
 
-  // Get and possibly update the project name
-  const projectName = await getProjectName();
+  // // Get and possibly update the project name
+  // const projectName = await getProjectName();
 
-  // Get or create the user's personal environment stage
-  await getOrCreateStage();
+  // Get and possibly update the web url
+  const domain = await getDomain();
 
-  // Select or create an AWS profile
-  const { awsAccessKey, awsSecretKey } = await selectOrCreateAwsProfile();
+  // // Get or create the user's personal environment stage
+  // await getOrCreateStage();
 
-  // Setup Supabase
-  await setupSupabase(projectName);
+  // // Select or create an AWS profile
+  // const { awsAccessKey, awsSecretKey } = await selectOrCreateAwsProfile();
 
-  // Setup PostHog
-  const posthogKeys = await setupPosthog(projectName);
+  // // Setup Supabase
+  // await setupSupabase(projectName);
 
-  // Configure github url and secrets
-  const githubUrl = await setupGithub({
-    awsAccessKey,
-    awsSecretKey,
-    posthogCliToken: posthogKeys?.cliToken,
-    posthogProdEnvId: posthogKeys?.prodKey,
-    posthogDevEnvId: posthogKeys?.devKey,
-  });
+  // // Setup PostHog
+  // const posthogKeys = await setupPosthog(projectName);
 
-  // Setup slack
-  await setupSlack(githubUrl);
+  // // Configure github url and secrets
+  // const githubUrl = await setupGithub({
+  //   awsAccessKey,
+  //   awsSecretKey,
+  //   posthogCliToken: posthogKeys?.cliToken,
+  //   posthogProdEnvId: posthogKeys?.prodKey,
+  //   posthogDevEnvId: posthogKeys?.devKey,
+  // });
 
-  // Setup crisp chat
-  await setupCrispChat();
+  // // Setup slack
+  // await setupSlack(githubUrl);
+
+  // // Setup crisp chat
+  // await setupCrispChat();
 
   // Setup docs site
-  await setupDocsSite();
+  await setupDocsSite({ domain });
 
   // Print final notes
-  printFinalNotes({ setupPosthog: !!posthogKeys });
+  // printFinalNotes({ setupPosthog: !!posthogKeys });
 };
 
 void init();

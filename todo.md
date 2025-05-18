@@ -1,12 +1,9 @@
 # TODO
 
-- Maybe open PR to patch https://github.com/opennextjs/opennextjs-aws/pull/853 slashes
-- Patch package locally to get fuma working
-- Uncomment docs deployment url after testing
+- Maybe open PR to patch https://github.com/opennextjs/opennextjs-aws/pull/853 slashes (windows)
+- Patch package locally to get fuma working (windows)
 - Configure crisp chat for site
 - Configure fuma for static generation
-- Comment out fuma docs in sst stack after testing deployment with static
-- Website stack
 - Posthog error tracking + analytics
 - react query
 - Core logic / shared logic

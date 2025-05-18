@@ -1,3 +1,4 @@
+// All of our secret environment variables
 export const DATABASE_URL = new sst.Secret('DATABASE_URL');
 export const DIRECT_DATABASE_URL = new sst.Secret('DIRECT_DATABASE_URL');
 

@@ -10,7 +10,7 @@
     "web": "pnpm --filter web",
     "docs": "pnpm --filter docs",
     "build": "sst build",
-    "deploy": "sst deploy",
+    "deploy": "pnpm backend db:generate && sst deploy",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "turbo lint",
     "init": "tsx scripts/init",

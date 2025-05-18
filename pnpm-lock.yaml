@@ -144,6 +144,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@lib/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@lib/ui':
         specifier: workspace:*
         version: link:../../packages/ui

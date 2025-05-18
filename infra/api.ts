@@ -1,3 +1,4 @@
+// Our main backend API
 export const api = new sst.aws.ApiGatewayV2('api');
 
 /** We use one function for all of our routes (handled by tRPC + openapi) */
