@@ -1,19 +1,16 @@
 # TODO
 
-- Maybe open PR to patch https://github.com/opennextjs/opennextjs-aws/pull/853 slashes (windows)
-- Patch package locally to get fuma working (windows)
-- Posthog error tracking + analytics
-- Test crisp + analytics for crisp
 - react query
 - Core logic / shared logic
-- Add cron to keep DB awake
-- Add some eslint custom rules based on other repos
+- Posthog error tracking + analytics
+- Test crisp + analytics for crisp
+- Add CI
+  - Ensure posthog stuff is optional and that we don't run source map stuff if it's not set up
 - Add better auth
   - Remove prisma settings model in favor of auth user model
   - Add auth provider setup to initialization script
   - Add auth provider mention to README
 - Add stripe support and add to setup script (plugin for better auth)
-- Add CI
-  - Ensure posthog stuff is optional and that we don't run source map stuff if it's not set up
 - Remove posthog settings AND crisp chat settings from config when pushing final starter
+- Add some eslint custom rules based on other repos
 - Cursor rules

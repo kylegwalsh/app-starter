@@ -24,9 +24,7 @@ export default $config({
     // Apply default settings to all functions
     $transform(sst.aws.Function, (args) => {
       // Link the secrets (only if secrets is an array)
-      if (Array.isArray(args.link)) {
-        args.link = [...(args.link as unknown[]), ...secrets];
-      }
+      args.link = [...((args.link as unknown[]) ?? []), ...secrets];
       // Add any environment variables
       args.environment = {
         // Add this so that AWS will re-use TCP connections instead of re-connecting every time
@@ -67,7 +65,7 @@ export default $config({
     // Import other stacks
     await import('./infra/api');
     await import('./infra/web');
-
+    await import('./infra/ping-db');
     // Optional docs site
     // await import('./infra/docs');
   },
