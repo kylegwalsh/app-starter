@@ -2,9 +2,8 @@
 
 - Maybe open PR to patch https://github.com/opennextjs/opennextjs-aws/pull/853 slashes (windows)
 - Patch package locally to get fuma working (windows)
-- Configure crisp chat for site
-- Configure fuma for static generation
 - Posthog error tracking + analytics
+- Test crisp + analytics for crisp
 - react query
 - Core logic / shared logic
 - Add cron to keep DB awake

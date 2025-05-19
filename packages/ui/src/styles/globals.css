@@ -125,3 +125,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Disable the "invalid website" warning for the live chat */
+body .crisp-client #crisp-chatbox span[data-id='failure_notice'] {
+  display: none !important;
+}

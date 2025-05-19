@@ -45,7 +45,7 @@ export const config = {
   /** The configuration for our crisp chat */
   crisp: {
     /** The crisp chat website ID */
-    websiteId: '882781b2-84dc-4ac3-9c7b-0727cbbb1975',
+    websiteId: '',
   },
   /** Details for our backend API */
   api: {
