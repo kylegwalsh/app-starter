@@ -1,7 +1,10 @@
+'use client';
+
 import { Providers } from '@/components/providers';
 import '@lib/ui/globals.css';
 import Script from 'next/script';
 import { config } from '@lib/config';
+import { Toaster } from '@lib/ui';
 
 export default function RootLayout({
   children,
@@ -12,6 +15,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <Providers>{children}</Providers>
+        <Toaster />
         {/* Add third part scripts */}
         {/* Live chat widget */}
         {config.crisp.websiteId && (

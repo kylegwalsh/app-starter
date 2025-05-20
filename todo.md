@@ -1,6 +1,7 @@
 # TODO
 
-- react query
+- Fix shadcn import aliases
+- Confirm shadcn is correctly tree-shaken (since it's a local package and not a true package)
 - Core logic / shared logic
 - Posthog error tracking + analytics
 - Test crisp + analytics for crisp

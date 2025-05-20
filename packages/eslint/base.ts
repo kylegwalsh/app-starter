@@ -80,6 +80,8 @@ export default defineConfig([
       'unicorn/prefer-export-from': 'off',
       'unicorn/no-process-exit': 'off',
       'unicorn/prefer-global-this': 'off',
+      'unicorn/explicit-length-check': 'off',
+      'unicorn/no-null': 'off',
       'unicorn/filename-case': [
         'error',
         {

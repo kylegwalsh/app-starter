@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@lib/ui';
 import { trpc } from '@/core';
 
