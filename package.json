@@ -9,6 +9,8 @@
     "backend": "pnpm --filter backend",
     "web": "pnpm --filter web",
     "docs": "pnpm --filter docs",
+    "ui": "pnpm --filter ui",
+    "shadcn": "pnpm --filter ui shadcn",
     "build": "sst build",
     "deploy": "pnpm backend db:generate && sst deploy",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",

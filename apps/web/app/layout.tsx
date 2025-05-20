@@ -2,6 +2,7 @@ import { Providers } from '@/components/providers';
 import '@lib/ui/globals.css';
 import Script from 'next/script';
 import { config } from '@lib/config';
+
 export default function RootLayout({
   children,
 }: Readonly<{

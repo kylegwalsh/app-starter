@@ -79,6 +79,16 @@ export default defineConfig([
       'unicorn/no-array-reduce': 'off',
       'unicorn/prefer-export-from': 'off',
       'unicorn/no-process-exit': 'off',
+      'unicorn/prefer-global-this': 'off',
+      'unicorn/filename-case': [
+        'error',
+        {
+          cases: {
+            kebabCase: true,
+            pascalCase: true,
+          },
+        },
+      ],
     },
   },
 ]);

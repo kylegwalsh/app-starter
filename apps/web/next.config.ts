@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
 
     return config;
   },
+  // Any experimental flags
+  experimental: {
+    // Ensure we tree-shake certain packages
+    optimizePackageImports: ['@lib/ui'],
+  },
 };
 
 export default nextConfig;
