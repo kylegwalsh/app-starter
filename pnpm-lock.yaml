@@ -61,9 +61,18 @@ importers:
 
   apps/backend:
     dependencies:
+      '@lib/analytics':
+        specifier: workspace:*
+        version: link:../../packages/analytics
       '@lib/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@lib/constants':
+        specifier: workspace:*
+        version: link:../../packages/constants
+      '@lib/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       '@prisma/client':
         specifier: ^6.7.0
         version: 6.7.0(prisma@6.7.0(typescript@5.8.3))(typescript@5.8.3)
@@ -144,12 +153,21 @@ importers:
 
   apps/web:
     dependencies:
+      '@lib/analytics':
+        specifier: workspace:*
+        version: link:../../packages/analytics
       '@lib/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@lib/constants':
+        specifier: workspace:*
+        version: link:../../packages/constants
       '@lib/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@lib/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       '@tanstack/react-query':
         specifier: ^5.76.1
         version: 5.76.1(react@19.1.0)
@@ -159,6 +177,9 @@ importers:
       '@trpc/react-query':
         specifier: ^11.1.2
         version: 11.1.2(@tanstack/react-query@5.76.1(react@19.1.0))(@trpc/client@11.1.2(@trpc/server@11.1.2(typescript@5.8.3))(typescript@5.8.3))(@trpc/server@11.1.2(typescript@5.8.3))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.3)
+      jotai:
+        specifier: ^2.12.4
+        version: 2.12.4(@types/react@19.1.4)(react@19.1.0)
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.1.0)
@@ -174,6 +195,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.1.0(react@19.1.0)
+      sonner:
+        specifier: ^2.0.3
+        version: 2.0.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       superjson:
         specifier: ^2.2.2
         version: 2.2.2
@@ -197,7 +221,25 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
+  packages/analytics:
+    devDependencies:
+      '@lib/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+
   packages/config:
+    devDependencies:
+      '@lib/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+
+  packages/constants:
     devDependencies:
       '@lib/tsconfig':
         specifier: workspace:*
@@ -441,6 +483,28 @@ importers:
       tailwindcss:
         specifier: ^4.1.5
         version: 4.1.7
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+
+  packages/utils:
+    dependencies:
+      change-case:
+        specifier: ^5.4.4
+        version: 5.4.4
+      dayjs:
+        specifier: ^1.11.13
+        version: 1.11.13
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+    devDependencies:
+      '@lib/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@types/lodash':
+        specifier: ^4.17.16
+        version: 4.17.16
       typescript:
         specifier: ^5.8.3
         version: 5.8.3
@@ -2540,6 +2604,12 @@ packages:
         integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==,
       }
 
+  '@types/lodash@4.17.16':
+    resolution:
+      {
+        integrity: sha512-HX7Em5NYQAXKW+1T+FiuG27NGwzJfCX3s1GjOa7ujxZa52kjJLOr4FUxT+giF6Tgxv1e+/czV/iTtBw27WTU9g==,
+      }
+
   '@types/mdast@3.0.15':
     resolution:
       {
@@ -3171,6 +3241,12 @@ packages:
         integrity: sha512-2AZp7uJZbYEzRPsFoa+ijKdvp9zsrnnt6+yFokfwEpeJm0xuJDVoxiRCAaTzyJND8GJkofo2IcKWaUZ/OECVzw==,
       }
 
+  change-case@5.4.4:
+    resolution:
+      {
+        integrity: sha512-HRQyTk2/YPEkt9TnUPbOpr64Uw3KOicFWPVBb+xiHvd6eBx/qPr9xqfBFDT8P2vWsvvz4jbEkfDe71W3VyNu2w==,
+      }
+
   character-entities-html4@2.1.0:
     resolution:
       {
@@ -3660,6 +3736,12 @@ packages:
     resolution:
       {
         integrity: sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg==,
+      }
+
+  dayjs@1.11.13:
+    resolution:
+      {
+        integrity: sha512-oaMBel6gjolK862uaPQOVTA7q3TZhuSvuMQAAglQDOWYO9A91IrAOUJEyKVlqJlHE0vq5p5UXxzdPfMH/x6xNg==,
       }
 
   debug@4.4.0:
@@ -5542,6 +5624,21 @@ packages:
       {
         integrity: sha512-KUXdbctm1uHVL8BYhnyHkgp3zDX5KW8ZhAKVFEfUbU2P8Alpzjb+48hHvjOdQIyPshoblhzsuqOwEEAbtHVirA==,
       }
+
+  jotai@2.12.4:
+    resolution:
+      {
+        integrity: sha512-eFXLJol4oOLM8BS1+QV+XwaYQITG8n1tatBCFl4F5HE3zR5j2WIK8QpMt7VJIYmlogNUZfvB7wjwLoVk+umB9Q==,
+      }
+    engines: { node: '>=12.20.0' }
+    peerDependencies:
+      '@types/react': '>=17.0.0'
+      react: '>=17.0.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      react:
+        optional: true
 
   js-tokens@4.0.0:
     resolution:
@@ -10504,6 +10601,8 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
+  '@types/lodash@4.17.16': {}
+
   '@types/mdast@3.0.15':
     dependencies:
       '@types/unist': 2.0.11
@@ -10947,6 +11046,8 @@ snapshots:
       upper-case: 1.1.3
       upper-case-first: 1.1.2
 
+  change-case@5.4.4: {}
+
   character-entities-html4@2.1.0: {}
 
   character-entities-legacy@1.1.4: {}
@@ -11192,6 +11293,8 @@ snapshots:
       is-data-view: 1.0.2
 
   date-fns@4.1.0: {}
+
+  dayjs@1.11.13: {}
 
   debug@4.4.0:
     dependencies:
@@ -12562,6 +12665,11 @@ snapshots:
   jose@4.15.9: {}
 
   jose@5.2.3: {}
+
+  jotai@2.12.4(@types/react@19.1.4)(react@19.1.0):
+    optionalDependencies:
+      '@types/react': 19.1.4
+      react: 19.1.0
 
   js-tokens@4.0.0: {}
 

@@ -2,7 +2,6 @@
 
 - Fix shadcn import aliases
 - Confirm shadcn is correctly tree-shaken (since it's a local package and not a true package)
-- Core logic / shared logic
 - Posthog error tracking + analytics
 - Test crisp + analytics for crisp
 - Add CI
@@ -13,5 +12,5 @@
   - Add auth provider mention to README
 - Add stripe support and add to setup script (plugin for better auth)
 - Remove posthog settings AND crisp chat settings from config when pushing final starter
-- Add some eslint custom rules based on other repos
+- Maybe add an optional dashboard setup
 - Cursor rules

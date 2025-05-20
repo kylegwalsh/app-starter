@@ -1,7 +1,6 @@
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { z } from 'zod';
 
-// ---------------------- START MAIN ---------------------- //
 /** Provides generic schema that doesn't fit into other buckets */
 export const generalSchema = {
   /** Schema for a string boolean */
@@ -49,4 +48,3 @@ export const generalSchema = {
     street2: z.string().optional(),
   }),
 };
-// ---------------------- END MAIN ---------------------- //

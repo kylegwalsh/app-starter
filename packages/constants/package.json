@@ -1,0 +1,13 @@
+{
+  "name": "@lib/constants",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./index.ts"
+  },
+  "devDependencies": {
+    "@lib/tsconfig": "workspace:*",
+    "typescript": "^5.8.3"
+  }
+}

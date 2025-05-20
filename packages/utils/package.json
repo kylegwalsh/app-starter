@@ -1,0 +1,19 @@
+{
+  "name": "@lib/utils",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./index.ts"
+  },
+  "devDependencies": {
+    "@lib/tsconfig": "workspace:*",
+    "@types/lodash": "^4.17.16",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "change-case": "^5.4.4",
+    "dayjs": "^1.11.13",
+    "lodash": "^4.17.21"
+  }
+}
