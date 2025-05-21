@@ -847,6 +847,9 @@ const printFinalNotes = ({ setupPosthog }: { setupPosthog: boolean }) => {
     console.log(
       '- Consider setting up error notifications for Slack: https://us.posthog.com/error_tracking/configuration'
     );
+    console.log(
+      '- You can set up an email system by connecting Posthog to Loops or another email service.'
+    );
   }
   console.log(
     '- Make sure you restart your terminal for your AWS profile changes to take effect.\n'
@@ -857,49 +860,49 @@ const printFinalNotes = ({ setupPosthog }: { setupPosthog: boolean }) => {
 // ---------- MAIN ----------
 /** Initializes everything we need to get started with this repo */
 const init = async () => {
-  // console.log('Setting up starter...\n');
+  console.log('Setting up starter...\n');
 
-  // // Check that all CLI tools are setup
-  // await checkCLIs();
+  // Check that all CLI tools are setup
+  await checkCLIs();
 
-  // // Get and possibly update the project name
-  // const projectName = await getProjectName();
+  // Get and possibly update the project name
+  const projectName = await getProjectName();
 
   // Get and possibly update the web url
   const domain = await getDomain();
 
-  // // Get or create the user's personal environment stage
-  // await getOrCreateStage();
+  // Get or create the user's personal environment stage
+  await getOrCreateStage();
 
-  // // Select or create an AWS profile
-  // const { awsAccessKey, awsSecretKey } = await selectOrCreateAwsProfile();
+  // Select or create an AWS profile
+  const { awsAccessKey, awsSecretKey } = await selectOrCreateAwsProfile();
 
-  // // Setup Supabase
-  // await setupSupabase(projectName);
+  // Setup Supabase
+  await setupSupabase(projectName);
 
-  // // Setup PostHog
-  // const posthogKeys = await setupPosthog(projectName);
+  // Setup PostHog
+  const posthogKeys = await setupPosthog(projectName);
 
-  // // Configure github url and secrets
-  // const githubUrl = await setupGithub({
-  //   awsAccessKey,
-  //   awsSecretKey,
-  //   posthogCliToken: posthogKeys?.cliToken,
-  //   posthogProdEnvId: posthogKeys?.prodKey,
-  //   posthogDevEnvId: posthogKeys?.devKey,
-  // });
+  // Configure github url and secrets
+  const githubUrl = await setupGithub({
+    awsAccessKey,
+    awsSecretKey,
+    posthogCliToken: posthogKeys?.cliToken,
+    posthogProdEnvId: posthogKeys?.prodKey,
+    posthogDevEnvId: posthogKeys?.devKey,
+  });
 
-  // // Setup slack
-  // await setupSlack(githubUrl);
+  // Setup slack
+  await setupSlack(githubUrl);
 
-  // // Setup crisp chat
-  // await setupCrispChat();
+  // Setup crisp chat
+  await setupCrispChat();
 
   // Setup docs site
   await setupDocsSite({ domain });
 
   // Print final notes
-  // printFinalNotes({ setupPosthog: !!posthogKeys });
+  printFinalNotes({ setupPosthog: !!posthogKeys });
 };
 
 void init();
