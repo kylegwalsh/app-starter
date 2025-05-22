@@ -23,6 +23,9 @@ The template is designed for rapid internal development and seamless deployment 
   - [Deploy to AWS](#deploy-to-aws)
   - [Continuous Integration & Delivery](#continuous-integration--delivery)
 - [Helper Tasks](#helper-tasks)
+- [Testing](#testing)
+  - [Backend](#backend)
+  - [Web](#web)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -209,5 +212,75 @@ This will:
   ```
 
   This will start a helper script that guides you through securely adding secrets to your backend environment.
+
+---
+
+## Testing
+
+This monorepo is set up for robust testing of both backend and frontend applications, with minimal mocking to ensure high-quality, realistic test results.
+
+### Backend
+
+- **Test Runner:** [Vitest](https://vitest.dev/)
+- **Database:** In-memory SQLite
+- **Purpose:** We use Vitest to run integration tests against the actual backend routes and tRPC endpoints. The backend is tested with a real in-memory SQLite database (serves as a mock database), so you can verify the full behavior of your API with minimal mocking. This approach ensures that your tests are as close to production as possible, catching issues that might be missed with heavy mocking.
+
+**How to run backend tests:**
+
+```sh
+pnpm backend test
+```
+
+> This runs all tests for the backend app.
+
+You can also run the Vitest UI for interactive test running:
+
+```sh
+pnpm backend test:ui
+```
+
+---
+
+### Web
+
+- **E2E Tests:** [Playwright](https://playwright.dev/)
+
+#### Unit Tests
+
+- **Test Runner:** [Vitest](https://vitest.dev/)
+- **Purpose:** We use Vitest to run unit tests against complicated utilities and functions in the web codebase. This is helpful for ensuring that complicated units of code behave as expected.
+
+**How to run frontend unit tests:**
+
+```sh
+pnpm web test:unit
+```
+
+> This runs all Vitest unit tests for the web app.
+
+For the interactive UI:
+
+```sh
+pnpm web test:unit:ui
+```
+
+#### E2E Tests
+
+- **Test Runner:** [Playwright](https://playwright.dev/)
+- **Purpose:** We use Playwright, which launches a real browser to test your app end-to-end. This helps ensure that the app works as expected from end to end for important user flows.
+
+**How to run frontend E2E tests:**
+
+```sh
+pnpm web test:e2e
+```
+
+> This runs all Playwright E2E tests for the web app.
+
+For the Playwright UI (to run/debug tests interactively):
+
+```sh
+pnpm web test:e2e:ui
+```
 
 ---

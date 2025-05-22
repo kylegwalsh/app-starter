@@ -5,8 +5,8 @@ import { db } from '@/db';
 /** The actual router used to handle all tRPC traffic */
 export const router = t.router({
   test: publicProcedure.query(async () => {
-    const result = await db.settings.count();
-    return `Hello, world! ${result}`;
+    const count = await db.settings.count();
+    return count;
   }),
 });
 

@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitest/config';
-import path from 'node:path';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 // Sets up our vitest test environment
@@ -7,16 +6,11 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'node',
-    setupFiles: ['./tests/setup/setup.ts'],
-    globalSetup: ['./tests/setup/global-setup.ts', './tests/setup/global-teardown.ts'],
+    environment: 'jsdom',
     include: ['**/*.test.ts'],
+    exclude: ['**/e2e/**'],
     coverage: {
       reporter: ['text', 'html'],
-    },
-    alias: {
-      // Override our db import to use our mock db
-      '@/db': path.resolve(import.meta.dirname, './tests/mocks/db'),
     },
   },
   // Add support for tsconfig path aliases
