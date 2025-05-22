@@ -26,6 +26,7 @@
     "@lib/tsconfig": "workspace:*",
     "@manypkg/cli": "^0.24.0",
     "@types/aws-lambda": "8.10.149",
+    "@vitest/ui": "^3.1.4",
     "axios": "^1.9.0",
     "doctoc": "2.2.0",
     "eslint": "^9.26.0",
@@ -38,6 +39,8 @@
     "tsx": "^4.19.4",
     "turbo": "^2.5.3",
     "typescript": "^5.8.3",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.1.4",
     "zod": "^3.24.2"
   },
   "packageManager": "pnpm@10.4.1",

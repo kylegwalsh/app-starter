@@ -1,10 +1,11 @@
 # TODO
 
+- Finish testing vitest with trpc router
+- Add testing framework to frontend
 - Fix shadcn import aliases
 - Confirm shadcn is correctly tree-shaken (since it's a local package and not a true package)
 - Posthog error tracking + analytics
 - Test crisp + analytics for crisp
-- Add testing framework to backend and frontend
 - Add CI
   - Ensure posthog stuff is optional and that we don't run source map stuff if it's not set up
 - Add better auth

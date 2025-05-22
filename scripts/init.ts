@@ -111,7 +111,7 @@ const checkCLIs = async () => {
   // Check that the user is authenticated with gh
   await checkGhAuth();
 
-  console.log('\u2714 All CLI tools are installed\n');
+  console.log('✔ All CLI tools are installed\n');
 };
 
 // ---------- GIT HELPERS ----------
@@ -165,10 +165,10 @@ const configureGithubUrl = async () => {
         // Check whether it's a valid repo
         await execAsync(`git ls-remote ${newUrl}`);
 
-        console.log('\u2714 Updated repo\n');
+        console.log('✔ Updated repo\n');
         return newUrl;
       } else {
-        console.log('\u2714 Using current repo\n');
+        console.log('✔ Using current repo\n');
         return currentUrl;
       }
     } catch {
@@ -227,7 +227,7 @@ const setupGithub = async ({
     await execAsync(`gh secret set POSTHOG_CLI_ENV_ID -a actions -b "${posthogProdEnvId}" -e prod`);
   }
 
-  console.log('\u2714 GitHub environments and secrets have been set up.\n');
+  console.log('✔ GitHub environments and secrets have been set up.\n');
 
   return githubUrl;
 };
@@ -282,9 +282,9 @@ const getProjectName = async () => {
     fs.writeFileSync(pkgPath, JSON.stringify(pkg, undefined, 2) + '\n');
     appName = newName;
 
-    console.log(`\u2714 Project name updated to: ${newName}\n`);
+    console.log(`✔ Project name updated to: ${newName}\n`);
   } else {
-    console.log(`\u2714 Project name already configured: ${appName}\n`);
+    console.log(`✔ Project name already configured: ${appName}\n`);
   }
   return appName;
 };
@@ -323,7 +323,7 @@ const getDomain = async () => {
     webContent = webContent.replaceAll('DOMAIN_HERE', baseDomain);
     fs.writeFileSync(webPath, webContent);
     console.log(
-      `\u2714 Web domain set to app.${baseDomain} (prod) and <stage>.${baseDomain} (other stages).\n`
+      `✔ Web domain set to app.${baseDomain} (prod) and <stage>.${baseDomain} (other stages).\n`
     );
     return baseDomain;
   } else {
@@ -339,7 +339,7 @@ const getDomain = async () => {
         .find((val) => val.includes('.') && /[a-z]{2,}$/.test(val));
       if (realDomain) {
         const baseDomain = getBaseDomain(realDomain);
-        console.log(`\u2714 Web domain already configured: ${baseDomain}\n`);
+        console.log(`✔ Web domain already configured: ${baseDomain}\n`);
         return baseDomain;
       }
     }
@@ -368,7 +368,7 @@ const getOrCreateStage = async () => {
 
     // If we locate the stage value, we'll use that and skip this step
     if (stage) {
-      console.log(`\u2714 Using existing stage '${stage}'!\n`);
+      console.log(`✔ Using existing stage '${stage}'!\n`);
       return stage;
     }
   }
@@ -388,7 +388,7 @@ const getOrCreateStage = async () => {
 
   // Write the final result to the .sst/stage file
   fs.writeFileSync(stagePath, stage + '\n');
-  console.log(`\u2714 Created .sst/stage with value '${stage}'!\n`);
+  console.log(`✔ Created .sst/stage with value '${stage}'!\n`);
   return stage;
 };
 
@@ -465,7 +465,7 @@ export const selectOrCreateAwsProfile = async () => {
     const configEntry = `\n[profile ${profile}]\nregion = ${region}\n`;
     fs.appendFileSync(configPath, configEntry);
 
-    console.log(`\u2714 Created new AWS profile: ${profile}`);
+    console.log(`✔ Created new AWS profile: ${profile}`);
   } else {
     // If selecting an existing profile, try to read the keys from the credentials file
     if (fs.existsSync(credPath)) {
@@ -492,7 +492,7 @@ export const selectOrCreateAwsProfile = async () => {
       `$1${profile}$2`
     );
     fs.writeFileSync(vscodeSettingsPath, settings);
-    console.log(`\u2714 Updated .vscode/settings.json to use AWS profile: ${profile}\n`);
+    console.log(`✔ Updated .vscode/settings.json to use AWS profile: ${profile}\n`);
   }
 
   // Run aws configure to set the current active profile (helpful for the rest of this run)
@@ -600,7 +600,7 @@ const setupSupabase = async (projectName: string) => {
   await execAsync(
     `pnpm tsx ${addSecretScript} DATABASE_URL "${devUrls.dbUrl}" "${prodUrls.dbUrl}"`
   );
-  console.log('\u2714 Supabase secrets have been set in SST.\n');
+  console.log('✔ Supabase secrets have been set in SST.\n');
 };
 
 // ---------- POSTHOG HELPERS ----------
@@ -622,7 +622,7 @@ const setupPosthog = async (projectName: string) => {
   const prodApiKey = apiKeyMatch ? apiKeyMatch[1] : undefined;
   const devApiKey = apiKeyMatch ? apiKeyMatch[2] : undefined;
   if (prodApiKey || devApiKey) {
-    console.log('\u2714 PostHog already configured.\n');
+    console.log('✔ PostHog already configured.\n');
     return;
   }
 
@@ -679,7 +679,7 @@ const setupPosthog = async (projectName: string) => {
         });
         const newOrg = createOrgRes.data;
         orgId = newOrg.id;
-        console.log(`\u2714 Created new organization: ${newOrgName}`);
+        console.log(`✔ Created new organization: ${newOrgName}`);
       }
 
       // Create projects for prod and dev
@@ -694,7 +694,7 @@ const setupPosthog = async (projectName: string) => {
       console.log('\nCreating projects...');
       const prodProject = await createProject(orgId!, projectName);
       const devProject = await createProject(orgId!, `${projectName} (dev)`);
-      console.log('\u2714 PostHog projects have been created.');
+      console.log('✔ PostHog projects have been created.');
 
       // Save API key in config file
       configContent = configContent.replace(
@@ -702,7 +702,7 @@ const setupPosthog = async (projectName: string) => {
         `apiKey: isProd ? "${prodProject.api_token}" : "${devProject.api_token}"`
       );
       fs.writeFileSync(configPath, configContent);
-      console.log('\u2714 PostHog has been added to the config.\n');
+      console.log('✔ PostHog has been added to the config.\n');
       return {
         prodKey: prodProject.api_token,
         devKey: devProject.api_token,
@@ -741,7 +741,7 @@ const setupSlack = async (repo: string) => {
     `\n/github subscribe ${parsedGithubUrl} workflows:{event:"pull_request","push" branch:"main","staging","dev"}`
   );
   await promptUser("\nPress enter to continue after you've set up Slack notifications...");
-  console.log('\u2714 Slack setup step complete.\n');
+  console.log('✔ Slack setup step complete.\n');
 };
 
 // ---------- CRISP CHAT HELPERS ----------
@@ -756,7 +756,7 @@ const setupCrispChat = async () => {
   const websiteIdMatch = configContent.match(/crisp:\s*{[^}]*websiteId:\s*['"]([^'"]*)['"]/);
   const websiteId = websiteIdMatch ? websiteIdMatch[1] : undefined;
   if (websiteId && websiteId !== '') {
-    console.log('\u2714 Crisp Chat already configured.\n');
+    console.log('✔ Crisp Chat already configured.\n');
     return;
   }
 
@@ -791,7 +791,7 @@ const setupCrispChat = async () => {
     `websiteId: '${newWebsiteId}'`
   );
   fs.writeFileSync(configPath, configContent);
-  console.log(`\u2714 Crisp Chat websiteId saved to config.\n`);
+  console.log(`✔ Crisp Chat websiteId saved to config.\n`);
 };
 
 // ---------- DOCS SITE HELPER ----------
@@ -804,7 +804,7 @@ const setupDocsSite = async ({ domain }: { domain: string }) => {
 
   // Check if the docs site is already set up (DOMAIN_HERE replaced)
   if (!docsContent.includes('DOMAIN_HERE')) {
-    console.log('\u2714 Docs site already configured.\n');
+    console.log('✔ Docs site already configured.\n');
     return;
   }
 
@@ -822,7 +822,7 @@ const setupDocsSite = async ({ domain }: { domain: string }) => {
   docsContent = docsContent.replaceAll('DOMAIN_HERE', domain);
   fs.writeFileSync(docsPath, docsContent);
   console.log(
-    `\u2714 Docs site domain set to docs.${domain} (prod) and <stage>.docs.${domain} (other stages).`
+    `✔ Docs site domain set to docs.${domain} (prod) and <stage>.docs.${domain} (other stages).`
   );
 
   // Also update sst.config.ts to uncomment the docs import
@@ -833,7 +833,7 @@ const setupDocsSite = async ({ domain }: { domain: string }) => {
     '\n    await import("./infra/docs");'
   );
   fs.writeFileSync(sstConfigPath, sstConfig);
-  console.log('\u2714 Enabled docs site stack in sst.config.ts.\n');
+  console.log('✔ Enabled docs site stack in sst.config.ts.\n');
 };
 
 // ---------- FINAL NOTES HELPER ----------
@@ -854,7 +854,7 @@ const printFinalNotes = ({ setupPosthog }: { setupPosthog: boolean }) => {
   console.log(
     '- Make sure you restart your terminal for your AWS profile changes to take effect.\n'
   );
-  console.log('\u2714 Setup complete! Happy coding!\n');
+  console.log('✔ Setup complete! Happy coding!\n');
 };
 
 // ---------- MAIN ----------

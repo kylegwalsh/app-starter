@@ -7,6 +7,8 @@
     "dev": "sst dev",
     "build": "sst build",
     "deploy": "sst deploy",
+    "test": "sst shell vitest",
+    "test:ui": "sst shell vitest --ui",
     "remove": "sst remove",
     "console": "sst console",
     "db:start": "pnpm db:get-url \"npx prisma db push && npx prisma studio --browser none\"",
@@ -21,7 +23,8 @@
   "devDependencies": {
     "@lib/eslint": "workspace:*",
     "@lib/tsconfig": "workspace:*",
-    "@types/node": "^20"
+    "@types/node": "^20",
+    "sqlite3": "^5.1.7"
   },
   "dependencies": {
     "@lib/analytics": "workspace:*",

@@ -1,0 +1,8 @@
+/** Tears down our test environment (runs only once after all tests) */
+export const teardown = async () => {
+  // We do a lazy import because this module isn't ready until the global setup runs
+  // and this file will prevent it from running if it crashes
+  const { db } = await import('../mocks/db');
+
+  if (db) await db.$disconnect();
+};
