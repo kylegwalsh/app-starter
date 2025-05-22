@@ -1,4 +1,5 @@
 import { db } from '@/db';
+import { trpc } from '../mocks/trpc';
 
 describe('Example Test Suite', () => {
   it('should pass a basic test', () => {
@@ -13,5 +14,11 @@ describe('Example Test Suite', () => {
 
     expect(settings).toBeDefined();
     expect(settings.id).toBeDefined();
+  });
+
+  it('should have access to the tRPC router', async () => {
+    const result = await trpc.test();
+
+    expect(result).toContain('Hello, world!');
   });
 });
