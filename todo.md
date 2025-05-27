@@ -4,6 +4,9 @@
 - Confirm shadcn is correctly tree-shaken (since it's a local package and not a true package)
 - Modify frontend testing to use build version of app? However we plan on testing with the CI server
 - Figure out how to support SST calls in e2e tests for frontend
+- Maybe add storybook + design system?
+- Add seo meta data handler for next - https://github.com/search?q=repo%3Ahaydenbleasel%2Fnext-forge+createMetadata&type=code
+- Add betterstack logging (create observability package and add error handling) - https://github.com/haydenbleasel/next-forge/tree/main/packages/observability
 - Add CI
 - Try testing in CI to see if in memory DB and playwright work (solve for SST calls in e2e tests)
 - Posthog error tracking + analytics
