@@ -16,6 +16,7 @@ node_modules
 coverage
 **/tests/generated
 **/playwright-report
+**/test-results
 
 # Turbo
 .turbo
