@@ -1,8 +1,9 @@
+import withBundleAnalyzer from '@next/bundle-analyzer';
 import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {
+let nextConfig: NextConfig = {
   // Transpile the packages so we can use them in the web app
-  transpilePackages: ['@lib/ui', '@lib/config'],
+  transpilePackages: ['@repo/design', '@repo/config'],
   // Override the webpack config for custom functionality
   webpack: (config: unknown) => {
     // Ensure the web always grabs the .web.ts files over the normal files (so it can share directories with the backend)
@@ -12,11 +13,19 @@ const nextConfig: NextConfig = {
 
     return config;
   },
-  // Any experimental flags
-  experimental: {
-    // Ensure we tree-shake certain packages
-    optimizePackageImports: ['@lib/ui'],
-  },
 };
+
+// If we're running the bundle analyzer, add it to the config
+if (process.env.ANALYZE === 'true') {
+  nextConfig = withBundleAnalyzer()({
+    ...nextConfig,
+    typescript: {
+      ignoreBuildErrors: true,
+    },
+    eslint: {
+      ignoreDuringBuilds: true,
+    },
+  } satisfies NextConfig);
+}
 
 export default nextConfig;

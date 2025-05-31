@@ -1,11 +1,8 @@
 {
   "$schema": "https://turborepo.org/schema.json",
   "tasks": {
-    "lint": {
-      "outputs": []
-    },
-    "typecheck": {
-      "outputs": []
-    }
+    "lint": {},
+    "typecheck": {},
+    "format": {}
   }
 }

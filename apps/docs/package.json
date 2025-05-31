@@ -1,11 +1,16 @@
 {
-  "name": "@app/docs",
-  "version": "0.0.0",
+  "name": "@repo/docs",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
     "build": "next build",
     "dev": "next dev --turbo --port 3001",
     "start": "next start",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "pretty": "prettier --write . --ignore-path ../../.prettierignore",
+    "format": "pnpm lint:fix & pnpm pretty",
+    "typecheck": "tsc --noEmit",
     "postinstall": "fumadocs-mdx"
   },
   "dependencies": {

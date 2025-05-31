@@ -1,10 +1,12 @@
 'use client';
 
-import { Providers } from '@/components/providers';
-import '@lib/ui/globals.css';
+import '@repo/design/globals.css';
+
+import { config } from '@repo/config';
+import { Toaster } from '@repo/design';
 import Script from 'next/script';
-import { config } from '@lib/config';
-import { Toaster } from '@lib/ui';
+
+import { Providers } from '@/components/providers';
 
 export default function RootLayout({
   children,

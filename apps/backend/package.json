@@ -1,5 +1,5 @@
 {
-  "name": "@app/backend",
+  "name": "@repo/backend",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -17,21 +17,24 @@
     "db:generate": "npx prisma generate",
     "db:get-url": "tsx ./scripts/get-deb-url.ts",
     "add-secret": "tsx ./scripts/add-secret.ts",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "pretty": "prettier --write . --ignore-path ../../.prettierignore",
+    "format": "pnpm lint:fix & pnpm pretty",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@lib/eslint": "workspace:*",
-    "@lib/tsconfig": "workspace:*",
+    "@repo/eslint": "workspace:*",
+    "@repo/tsconfig": "workspace:*",
     "@types/node": "^20",
     "sqlite3": "^5.1.7"
   },
   "dependencies": {
-    "@lib/analytics": "workspace:*",
-    "@lib/config": "workspace:*",
-    "@lib/constants": "workspace:*",
-    "@lib/utils": "workspace:*",
     "@prisma/client": "^6.7.0",
+    "@repo/analytics": "workspace:*",
+    "@repo/config": "workspace:*",
+    "@repo/constants": "workspace:*",
+    "@repo/utils": "workspace:*",
     "@trpc/server": "^11.1.2",
     "better-trpc-openapi": "github:deldrid1/trpc-openapi#d089373012300ea432f4177543d3e85fe59d8a9a",
     "prisma": "^6.7.0",

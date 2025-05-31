@@ -72,12 +72,13 @@ _All packages and apps are written in TypeScript for consistency and type safety
 ├── apps/
 │   ├── web/           # Next.js frontend app
 │   ├── backend/       # Serverless backend (SST)
+│   ├── storybook/     # Storybook documentation and testing for components
 │   └── docs/          # (Optional) Fumadocs-powered documentation app (deployment disabled by default)
 ├── packages/
 │   ├── config/        # Shared configuration
 │   ├── eslint/        # Shared ESLint config
 │   ├── tsconfig/      # Shared TypeScript config
-│   ├── ui/            # Shared UI components (React)
+│   ├── design/ # Shared design system (React)
 │   ├── schemas/       # Shared schemas (forms + validation)
 │   └── ...            # (More packages can be added)
 ├── infra/             # Infrastructure code (SST, AWS)

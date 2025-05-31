@@ -1,14 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import path from 'node:path';
+
+import next from '@next/eslint-plugin-next';
 import { defineConfig } from 'eslint/config';
 import prettier from 'eslint-config-prettier';
-import tseslint from 'typescript-eslint';
-import unicorn from 'eslint-plugin-unicorn';
-import next from '@next/eslint-plugin-next';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
-import jsxA11y from 'eslint-plugin-jsx-a11y';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import * as storybook from 'eslint-plugin-storybook';
+import unicorn from 'eslint-plugin-unicorn';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 /**
  * A shared ESLint configuration for the repository.
@@ -55,16 +59,54 @@ export default defineConfig([
     plugins: {
       '@next/next': next,
     },
+    // Restrict this to next.js apps only
+    files: ['apps/web/**/*.{ts,tsx}'],
+    settings: {
+      next: {
+        rootDir: [path.resolve(import.meta.dirname, '../../apps/web')],
+      },
+    },
     rules: {
       ...next.configs.recommended.rules,
       ...next.configs['core-web-vitals'].rules,
+    },
+  },
+  // Storybook specific rules
+  // @ts-expect-error - storybook doesn't type the export correctly
+  ...storybook.configs['flat/recommended'],
+  // Import sorting
+  {
+    plugins: {
+      'simple-import-sort': simpleImportSort,
+    },
+    rules: {
+      'simple-import-sort/imports': 'warn',
+      'simple-import-sort/exports': 'warn',
     },
   },
   // Prettier compatibility
   prettier,
   // Ignores
   {
-    ignores: ['dist/**'],
+    ignores: [
+      '**/dist/**',
+      '**/build/**',
+      '**/.next/**',
+      '**/.open-next/**',
+      '**/out/**',
+      '**/.turbo/**',
+      '**/node_modules/**',
+      '**/.storybook-static/**',
+      '**/storybook-static/**',
+      '**/coverage/**',
+      '**/.cache/**',
+      '**/.vercel/**',
+      '**/sst-env.d.ts',
+      '**/.sst/**',
+      '**/tests/generated/**',
+      '**/playwright-report/**',
+      '**/test-results/**',
+    ],
   },
   // ---------- RULE OVERRIDES ----------
   // Add custom rules here
@@ -83,15 +125,7 @@ export default defineConfig([
       'unicorn/prefer-global-this': 'off',
       'unicorn/explicit-length-check': 'off',
       'unicorn/no-null': 'off',
-      'unicorn/filename-case': [
-        'error',
-        {
-          cases: {
-            kebabCase: true,
-            pascalCase: true,
-          },
-        },
-      ],
+      'react/no-unescaped-entities': 'off',
     },
   },
 ]);

@@ -1,13 +1,20 @@
 {
-  "name": "@lib/analytics",
+  "name": "@repo/analytics",
   "version": "0.0.0",
   "type": "module",
   "private": true,
   "exports": {
     ".": "./index.ts"
   },
+  "scripts": {
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "pretty": "prettier --write . --ignore-path ../../.prettierignore",
+    "format": "pnpm lint:fix & pnpm pretty",
+    "typecheck": "tsc --noEmit"
+  },
   "devDependencies": {
-    "@lib/tsconfig": "workspace:*",
+    "@repo/tsconfig": "workspace:*",
     "typescript": "^5.8.3"
   }
 }

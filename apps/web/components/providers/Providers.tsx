@@ -1,11 +1,12 @@
 'use client';
 
-import * as React from 'react';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
-import { QueryProvider } from './QueryProvider';
+import * as React from 'react';
+
+import { QueryProvider } from './query-provider';
 
 /** All the necessary providers required for the app to function */
-export function Providers({ children }: { children: React.ReactNode }) {
+export const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
     <QueryProvider>
       <NextThemesProvider
@@ -18,4 +19,4 @@ export function Providers({ children }: { children: React.ReactNode }) {
       </NextThemesProvider>
     </QueryProvider>
   );
-}
+};

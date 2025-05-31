@@ -23,13 +23,7 @@
   },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "html",
-    "typescriptreact",
-    "typescript"
-  ],
+  "eslint.validate": ["javascript", "javascriptreact", "html", "typescriptreact", "typescript"],
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -48,12 +42,15 @@
   "[jsonc]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+  // Tailwind settings
+  "tailwindCSS.experimental.configFile": "packages/design/styles/globals.css",
   // TypeScript settings
   "typescript.tsdk": "./node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
   // Spell checker settings
   "cSpell.words": [
     "authed",
+    "autodocs",
     "deepmerge",
     "hookform",
     "ingestor",
@@ -66,6 +63,7 @@
     "openai",
     "posthog",
     "serviceworker",
+    "shadcn",
     "sonner",
     "Supabase",
     "superjson",

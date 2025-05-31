@@ -1,0 +1,64 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage
+**/tests/generated
+**/playwright-report
+**/test-results
+
+# Storybook
+storybook.log
+*storybook.log
+**/.storybook-static
+**/storybook-static
+
+# Turbo
+.turbo
+**/.turbo
+
+# Vercel
+.vercel
+
+# Build Outputs
+.next/
+**/.next
+**/.next/**
+.open-next/
+**/.open-next
+**/.open-next/**
+out/
+**/out
+**/out/**
+build
+**/build
+**/build/**
+dist
+**/dist
+**/dist/**
+
+# Debug
+npm-debug.log*
+
+# Misc
+.DS_Store
+*.pem
+
+# sst
+.sst
+**/.sst
+**/.sst/**
+sst-env.d.ts
+
+# Cache
+**/.cache
+**/.cache/**

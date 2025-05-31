@@ -1,11 +1,12 @@
+import { config } from '@repo/config';
+import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
+import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
+import { createOpenApiAwsLambdaHandler, generateOpenApiDocument } from 'better-trpc-openapi';
+import { Resource } from 'sst';
+
 import { router } from '@/routes';
 import { createContext } from '@/routes/trpc/context';
 import { onError } from '@/routes/trpc/error';
-import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
-import { createOpenApiAwsLambdaHandler, generateOpenApiDocument } from 'better-trpc-openapi';
-import { Resource } from 'sst';
-import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
-import { config } from '@lib/config';
 
 // ---------- INITIALIZE OUR ROUTE HANDLERS ----------
 /** Our handler for tRPC routes */

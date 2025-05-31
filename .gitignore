@@ -18,18 +18,35 @@ coverage
 **/playwright-report
 **/test-results
 
+# Storybook
+storybook.log
+*storybook.log
+**/.storybook-static
+**/storybook-static
+
 # Turbo
 .turbo
+**/.turbo
 
 # Vercel
 .vercel
 
 # Build Outputs
 .next/
+**/.next
+**/.next/**
 .open-next/
+**/.open-next
+**/.open-next/**
 out/
+**/out
+**/out/**
 build
+**/build
+**/build/**
 dist
+**/dist
+**/dist/**
 
 # Debug
 npm-debug.log*
@@ -40,4 +57,10 @@ npm-debug.log*
 
 # sst
 .sst
+**/.sst
+**/.sst/**
 sst-env.d.ts
+
+# Cache
+**/.cache
+**/.cache/**
