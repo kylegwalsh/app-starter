@@ -1,5 +1,7 @@
 # TODO
 
+- Fix docgen for props in storybook
+- Fix auto test creation storybook
 - Finish testing storybook + storybook test:ui (hook up to overall test run)
 - Modify frontend testing to use build version of app? However we plan on testing with the CI server
 - Figure out how to support SST calls in e2e tests for frontend

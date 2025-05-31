@@ -16,6 +16,7 @@
     "ms-vsliveshare.vsliveshare",
     "prisma.prisma",
     "davidanson.vscode-markdownlint",
-    "bradlc.vscode-tailwindcss"
+    "bradlc.vscode-tailwindcss",
+    "unifiedjs.vscode-mdx"
   ]
 }
