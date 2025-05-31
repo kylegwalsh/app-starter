@@ -23,12 +23,93 @@ const config: StorybookConfig = {
     getAbsolutePath('@storybook/addon-themes'),
     getAbsolutePath('@storybook/addon-onboarding'),
   ],
-  framework: {
-    name: getAbsolutePath('@storybook/nextjs-vite'),
-    options: {},
-  },
+  framework: getAbsolutePath('@storybook/nextjs-vite'),
   typescript: {
     reactDocgen: 'react-docgen-typescript',
+    reactDocgenTypescriptOptions: {
+      shouldExtractLiteralValuesFromEnum: true,
+      shouldRemoveUndefinedFromOptional: true,
+      // Filter out props that are not relevant to the component
+      propFilter: (prop) => {
+        // For props that come from node_modules, we commonly see a lot of repeat props
+        // so we'll filter them out here
+        if (prop.parent && /node_modules/.test(prop.parent.fileName)) {
+          // Filter out aria-* props
+          if (prop?.name?.startsWith('aria-')) return false;
+          // Filter out data-* attributes
+          if (prop?.name?.startsWith('data-')) return false;
+          // Filter out props with EventHandler in their type (sometimes used, but exist on most elements)
+          if (prop?.type?.name?.includes('EventHandler')) return false;
+          // Filter out common React props that aren't useful in Storybook (if they come from a node module)
+          const ignoredProps = [
+            'key',
+            'ref',
+            'suppressContentEditableWarning',
+            'suppressHydrationWarning',
+            'asChild',
+            'className',
+            'dangerouslySetInnerHTML',
+            'defaultChecked',
+            'color',
+            'defaultValue',
+            'accessKey',
+            'autoCapitalize',
+            'autoFocus',
+            'contentEditable',
+            'contextMenu',
+            'dir',
+            'draggable',
+            'enterKeyHint',
+            'hidden',
+            'lang',
+            'nonce',
+            'slot',
+            'spellCheck',
+            'style',
+            'tabIndex',
+            'translate',
+            'radioGroup',
+            'role',
+            'about',
+            'content',
+            'datatype',
+            'inlist',
+            'prefix',
+            'property',
+            'rel',
+            'resource',
+            'rev',
+            'typeof',
+            'vocab',
+            'autoCorrect',
+            'autoSave',
+            'itemProp',
+            'itemScope',
+            'itemType',
+            'itemID',
+            'itemRef',
+            'results',
+            'security',
+            'unselectable',
+            'popover',
+            'popoverTargetAction',
+            'popoverTarget',
+            'inert',
+            'inputMode',
+            'is',
+            'exportparts',
+            'part',
+            'id',
+            'title',
+          ];
+          if (ignoredProps.includes(prop?.name ?? '')) return false;
+        }
+        // Filter out "asChild" (it appears even with the above filter)
+        if (prop?.name === 'asChild') return false;
+        // Otherwise, just return true
+        return true;
+      },
+    },
   },
 };
 export default config;

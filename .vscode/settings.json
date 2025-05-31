@@ -17,6 +17,23 @@
     "**/.git/**": true,
     "**/node_modules/**": true
   },
+  // Ensure we get suggestions in our vs code completion modal (don't show random stuff)
+  "editor.suggest.localityBonus": true,
+  "editor.suggest.showFields": true,
+  "editor.suggest.showFunctions": false,
+  "editor.suggest.showConstructors": false,
+  "editor.suggest.showEnums": false,
+  "editor.suggest.showKeywords": false,
+  "editor.suggest.showSnippets": false,
+  "editor.suggest.showColors": false,
+  "editor.suggest.showFiles": false,
+  "editor.suggest.showReferences": false,
+  "editor.suggest.showCustomcolors": false,
+  "editor.suggest.shareSuggestSelections": false,
+  // Prevent auto-accepting suggestions on commit characters like comma
+  "editor.acceptSuggestionOnCommitCharacter": false,
+  "editor.acceptSuggestionOnEnter": "on",
+  "editor.suggest.insertMode": "insert",
   // Saving and formatting settings
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"

@@ -14,7 +14,6 @@ const meta: Meta<typeof Carousel> = {
   title: 'ui/Carousel',
   component: Carousel,
   tags: ['autodocs'],
-  argTypes: {},
   args: {
     className: 'w-full max-w-xs',
   },

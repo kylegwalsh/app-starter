@@ -10,7 +10,6 @@ const meta: Meta<typeof Toaster> = {
   title: 'ui/Toaster',
   component: Toaster,
   tags: ['autodocs'],
-  argTypes: {},
   args: {
     position: 'bottom-right',
   },

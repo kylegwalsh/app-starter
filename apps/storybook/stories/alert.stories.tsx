@@ -9,12 +9,6 @@ const meta = {
   title: 'ui/Alert',
   component: Alert,
   tags: ['autodocs'],
-  argTypes: {
-    variant: {
-      options: ['default', 'destructive'],
-      control: { type: 'radio' },
-    },
-  },
   args: {
     variant: 'default',
   },

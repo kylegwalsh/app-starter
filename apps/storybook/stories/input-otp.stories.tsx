@@ -9,7 +9,6 @@ const meta = {
   title: 'ui/InputOTP',
   component: InputOTP,
   tags: ['autodocs'],
-  argTypes: {},
   args: {
     maxLength: 6,
     pattern: REGEXP_ONLY_DIGITS_AND_CHARS,

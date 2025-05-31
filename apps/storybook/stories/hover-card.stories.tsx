@@ -8,7 +8,6 @@ const meta = {
   title: 'ui/HoverCard',
   component: HoverCard,
   tags: ['autodocs'],
-  argTypes: {},
   args: {},
   render: (args) => (
     <HoverCard {...args}>

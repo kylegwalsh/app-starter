@@ -8,7 +8,6 @@ const meta = {
   title: 'ui/Slider',
   component: Slider,
   tags: ['autodocs'],
-  argTypes: {},
   args: {
     defaultValue: [33],
     max: 100,

@@ -9,7 +9,6 @@ const meta = {
   title: 'ui/Tabs',
   component: Tabs,
   tags: ['autodocs'],
-  argTypes: {},
   args: {
     defaultValue: 'account',
     className: 'w-96',

@@ -25,7 +25,6 @@ const meta = {
   title: 'ui/Menubar',
   component: Menubar,
   tags: ['autodocs'],
-  argTypes: {},
 
   render: (args) => (
     <Menubar {...args}>

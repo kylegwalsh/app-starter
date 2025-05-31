@@ -17,7 +17,6 @@ const meta: Meta<typeof Select> = {
   title: 'ui/Select',
   component: Select,
   tags: ['autodocs'],
-  argTypes: {},
   render: (args) => (
     <Select {...args}>
       <SelectTrigger title="Select" className="w-96">

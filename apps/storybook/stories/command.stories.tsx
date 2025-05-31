@@ -16,7 +16,6 @@ const meta = {
   title: 'ui/Command',
   component: Command,
   tags: ['autodocs'],
-  argTypes: {},
   args: {
     className: 'rounded-lg w-96 border shadow-md',
   },

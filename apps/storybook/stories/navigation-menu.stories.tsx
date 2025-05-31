@@ -16,7 +16,6 @@ const meta = {
   title: 'ui/NavigationMenu',
   component: NavigationMenu,
   tags: ['autodocs'],
-  argTypes: {},
   render: (args) => (
     <NavigationMenu {...args}>
       <NavigationMenuList>

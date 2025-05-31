@@ -43,7 +43,6 @@ const meta = {
   title: 'ui/Table',
   component: Table,
   tags: ['autodocs'],
-  argTypes: {},
   render: (args) => (
     <Table {...args}>
       <TableCaption>A list of your recent invoices.</TableCaption>

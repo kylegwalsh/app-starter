@@ -8,7 +8,6 @@ const meta = {
   title: 'ui/Skeleton',
   component: Skeleton,
   tags: ['autodocs'],
-  argTypes: {},
   parameters: {
     layout: 'centered',
   },

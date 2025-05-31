@@ -8,7 +8,6 @@ const meta = {
   title: 'ui/Avatar',
   component: Avatar,
   tags: ['autodocs'],
-  argTypes: {},
   render: (args) => (
     <Avatar {...args}>
       <AvatarImage src="https://github.com/shadcn.png" />

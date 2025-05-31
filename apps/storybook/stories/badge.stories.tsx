@@ -8,11 +8,6 @@ const meta = {
   title: 'ui/Badge',
   component: Badge,
   tags: ['autodocs'],
-  argTypes: {
-    children: {
-      control: 'text',
-    },
-  },
   args: {
     children: 'Badge',
   },

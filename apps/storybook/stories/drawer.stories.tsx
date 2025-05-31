@@ -17,7 +17,6 @@ const meta = {
   title: 'ui/Drawer',
   component: Drawer,
   tags: ['autodocs'],
-  argTypes: {},
   render: (args) => (
     <Drawer {...args}>
       <DrawerTrigger>Open</DrawerTrigger>

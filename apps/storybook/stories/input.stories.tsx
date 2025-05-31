@@ -8,7 +8,6 @@ const meta = {
   title: 'ui/Input',
   component: Input,
   tags: ['autodocs'],
-  argTypes: {},
   args: {
     className: 'w-96',
     type: 'email',

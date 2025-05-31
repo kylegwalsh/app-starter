@@ -8,7 +8,6 @@ const meta = {
   title: 'ui/Switch',
   component: Switch,
   tags: ['autodocs'],
-  argTypes: {},
   parameters: {
     layout: 'centered',
   },

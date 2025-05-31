@@ -18,7 +18,6 @@ const meta = {
   title: 'ui/Dialog',
   component: Dialog,
   tags: ['autodocs'],
-  argTypes: {},
   render: (args) => (
     <Dialog {...args}>
       <DialogTrigger>Open</DialogTrigger>

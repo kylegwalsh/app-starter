@@ -16,7 +16,6 @@ const meta = {
   title: 'ui/Breadcrumb',
   component: Breadcrumb,
   tags: ['autodocs'],
-  argTypes: {},
   args: {},
   render: (args) => (
     <Breadcrumb {...args}>

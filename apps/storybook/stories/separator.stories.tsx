@@ -8,7 +8,6 @@ const meta = {
   title: 'ui/Separator',
   component: Separator,
   tags: ['autodocs'],
-  argTypes: {},
 } satisfies Meta<typeof Separator>;
 
 export default meta;

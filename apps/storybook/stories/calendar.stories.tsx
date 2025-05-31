@@ -12,7 +12,6 @@ const meta = {
   title: 'ui/Calendar',
   component: Calendar,
   tags: ['autodocs'],
-  argTypes: {},
   args: {
     mode: 'single',
     selected: new Date(),

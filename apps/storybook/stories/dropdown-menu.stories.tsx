@@ -26,7 +26,6 @@ const meta = {
   title: 'ui/DropdownMenu',
   component: DropdownMenu,
   tags: ['autodocs'],
-  argTypes: {},
   render: (args) => (
     <DropdownMenu {...args}>
       <DropdownMenuTrigger>Open</DropdownMenuTrigger>

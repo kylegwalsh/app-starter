@@ -8,7 +8,6 @@ const meta = {
   title: 'ui/Popover',
   component: Popover,
   tags: ['autodocs'],
-  argTypes: {},
 
   render: (args) => (
     <Popover {...args}>

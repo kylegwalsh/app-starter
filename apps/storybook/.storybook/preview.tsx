@@ -36,7 +36,7 @@ const preview: Preview = {
     (Story) => {
       return (
         <div className="bg-background">
-          <ThemeProvider>
+          <ThemeProvider enableSystem={false}>
             <TooltipProvider>
               <Story />
             </TooltipProvider>

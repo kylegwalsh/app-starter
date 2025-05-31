@@ -9,12 +9,6 @@ const meta = {
   title: 'ui/Accordion',
   component: Accordion,
   tags: ['autodocs'],
-  argTypes: {
-    type: {
-      options: ['single', 'multiple'],
-      control: { type: 'radio' },
-    },
-  },
   args: {
     type: 'single',
     collapsible: true,

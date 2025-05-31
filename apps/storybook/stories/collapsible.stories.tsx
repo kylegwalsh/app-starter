@@ -9,7 +9,6 @@ const meta = {
   title: 'ui/Collapsible',
   component: Collapsible,
   tags: ['autodocs'],
-  argTypes: {},
   args: {
     className: 'w-96',
     disabled: false,

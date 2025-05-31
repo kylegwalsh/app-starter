@@ -19,7 +19,6 @@ const meta = {
   title: 'ui/AlertDialog',
   component: AlertDialog,
   tags: ['autodocs'],
-  argTypes: {},
   render: (args) => (
     <AlertDialog {...args}>
       <AlertDialogTrigger>Open</AlertDialogTrigger>

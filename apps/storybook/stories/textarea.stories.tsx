@@ -8,7 +8,6 @@ const meta = {
   title: 'ui/Textarea',
   component: Textarea,
   tags: ['autodocs'],
-  argTypes: {},
   args: {
     placeholder: 'Type your message here.',
     disabled: false,

@@ -16,7 +16,6 @@ const meta = {
   title: 'ui/Pagination',
   component: Pagination,
   tags: ['autodocs'],
-  argTypes: {},
   render: (args) => (
     <Pagination {...args}>
       <PaginationContent>

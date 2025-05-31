@@ -9,7 +9,6 @@ const meta = {
   title: 'ui/Progress',
   component: Progress,
   tags: ['autodocs'],
-  argTypes: {},
   args: {
     'aria-label': 'Progress',
     value: 30,

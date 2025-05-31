@@ -23,7 +23,6 @@ const meta = {
   title: 'ui/ContextMenu',
   component: ContextMenu,
   tags: ['autodocs'],
-  argTypes: {},
   args: {},
   render: (args) => (
     <ContextMenu {...args}>
