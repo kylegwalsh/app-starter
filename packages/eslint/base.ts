@@ -126,6 +126,7 @@ export default defineConfig([
       'unicorn/explicit-length-check': 'off',
       'unicorn/no-null': 'off',
       'react/no-unescaped-entities': 'off',
+      'storybook/use-storybook-expect': 'off',
     },
   },
 ]);

@@ -21,7 +21,6 @@ const config: StorybookConfig = {
     getAbsolutePath('@storybook/addon-docs'),
     getAbsolutePath('storybook-addon-test-codegen'),
     getAbsolutePath('@storybook/addon-themes'),
-    getAbsolutePath('@storybook/addon-onboarding'),
   ],
   framework: getAbsolutePath('@storybook/nextjs-vite'),
   typescript: {

@@ -24,6 +24,7 @@ const preview: Preview = {
         },
       },
     },
+    actions: { argTypesRegex: '^on.*' },
   },
   decorators: [
     withThemeByClassName({
