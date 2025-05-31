@@ -1,6 +1,7 @@
 // We create a barrel file to simplify the import of components,
 // however we use the sideEffects flag in our package.json to allow
 // for tree-shaking to prevent the bundle from getting too large
+export * from './components/providers/theme-provider';
 export * from './components/ui/accordion';
 export * from './components/ui/alert';
 export * from './components/ui/alert-dialog';

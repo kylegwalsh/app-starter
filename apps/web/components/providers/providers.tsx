@@ -1,6 +1,6 @@
 'use client';
 
-import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { ThemeProvider } from '@repo/design';
 import * as React from 'react';
 
 import { QueryProvider } from './query-provider';
@@ -9,14 +9,7 @@ import { QueryProvider } from './query-provider';
 export const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
     <QueryProvider>
-      <NextThemesProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-        enableColorScheme>
-        {children}
-      </NextThemesProvider>
+      <ThemeProvider>{children}</ThemeProvider>
     </QueryProvider>
   );
 };
