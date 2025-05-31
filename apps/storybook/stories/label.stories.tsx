@@ -7,7 +7,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/Label',
   component: Label,
-  tags: ['autodocs'],
   argTypes: {
     children: {
       control: { type: 'text' },

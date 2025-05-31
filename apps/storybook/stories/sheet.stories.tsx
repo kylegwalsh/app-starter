@@ -17,7 +17,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta: Meta<typeof SheetContent> = {
   title: 'ui/Sheet',
   component: Sheet,
-  tags: ['autodocs'],
   argTypes: {
     side: {
       options: ['top', 'bottom', 'left', 'right'],

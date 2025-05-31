@@ -24,7 +24,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/Menubar',
   component: Menubar,
-  tags: ['autodocs'],
 
   render: (args) => (
     <Menubar {...args}>

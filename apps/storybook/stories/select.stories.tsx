@@ -16,7 +16,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta: Meta<typeof Select> = {
   title: 'ui/Select',
   component: Select,
-  tags: ['autodocs'],
   render: (args) => (
     <Select {...args}>
       <SelectTrigger title="Select" className="w-96">

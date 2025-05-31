@@ -7,7 +7,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/Textarea',
   component: Textarea,
-  tags: ['autodocs'],
   args: {
     placeholder: 'Type your message here.',
     disabled: false,

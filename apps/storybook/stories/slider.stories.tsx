@@ -7,7 +7,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/Slider',
   component: Slider,
-  tags: ['autodocs'],
   args: {
     defaultValue: [33],
     max: 100,

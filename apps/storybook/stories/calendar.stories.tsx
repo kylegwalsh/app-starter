@@ -11,7 +11,6 @@ import { action } from 'storybook/actions';
 const meta = {
   title: 'ui/Calendar',
   component: Calendar,
-  tags: ['autodocs'],
   args: {
     mode: 'single',
     selected: new Date(),

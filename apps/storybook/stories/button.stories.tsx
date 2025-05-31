@@ -8,7 +8,6 @@ import { Loader2, Mail } from 'lucide-react';
 const meta = {
   title: 'ui/Button',
   component: Button,
-  tags: ['autodocs'],
   parameters: {
     layout: 'centered',
   },

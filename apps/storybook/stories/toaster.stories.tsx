@@ -9,7 +9,6 @@ import { action } from 'storybook/actions';
 const meta: Meta<typeof Toaster> = {
   title: 'ui/Toaster',
   component: Toaster,
-  tags: ['autodocs'],
   args: {
     position: 'bottom-right',
   },

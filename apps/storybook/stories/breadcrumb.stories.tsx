@@ -15,7 +15,6 @@ import { ArrowRightSquare } from 'lucide-react';
 const meta = {
   title: 'ui/Breadcrumb',
   component: Breadcrumb,
-  tags: ['autodocs'],
   args: {},
   render: (args) => (
     <Breadcrumb {...args}>

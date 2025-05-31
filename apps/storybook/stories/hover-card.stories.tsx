@@ -7,7 +7,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/HoverCard',
   component: HoverCard,
-  tags: ['autodocs'],
   args: {},
   render: (args) => (
     <HoverCard {...args}>

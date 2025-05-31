@@ -8,7 +8,6 @@ import { REGEXP_ONLY_DIGITS_AND_CHARS } from 'input-otp';
 const meta = {
   title: 'ui/InputOTP',
   component: InputOTP,
-  tags: ['autodocs'],
   args: {
     maxLength: 6,
     pattern: REGEXP_ONLY_DIGITS_AND_CHARS,

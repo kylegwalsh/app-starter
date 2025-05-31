@@ -8,7 +8,6 @@ import { AlertCircle } from 'lucide-react';
 const meta = {
   title: 'ui/Alert',
   component: Alert,
-  tags: ['autodocs'],
   args: {
     variant: 'default',
   },

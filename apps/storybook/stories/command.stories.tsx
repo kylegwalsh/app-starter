@@ -15,7 +15,6 @@ import { CommandSeparator } from 'cmdk';
 const meta = {
   title: 'ui/Command',
   component: Command,
-  tags: ['autodocs'],
   args: {
     className: 'rounded-lg w-96 border shadow-md',
   },

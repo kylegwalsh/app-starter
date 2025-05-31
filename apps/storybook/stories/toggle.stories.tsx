@@ -8,7 +8,6 @@ import { Bold, Italic } from 'lucide-react';
 const meta: Meta<typeof Toggle> = {
   title: 'ui/Toggle',
   component: Toggle,
-  tags: ['autodocs'],
   argTypes: {
     children: {
       control: { disable: true },

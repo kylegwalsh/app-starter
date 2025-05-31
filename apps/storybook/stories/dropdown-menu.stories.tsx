@@ -25,7 +25,6 @@ import { Mail, Plus, PlusCircle, Search, UserPlus } from 'lucide-react';
 const meta = {
   title: 'ui/DropdownMenu',
   component: DropdownMenu,
-  tags: ['autodocs'],
   render: (args) => (
     <DropdownMenu {...args}>
       <DropdownMenuTrigger>Open</DropdownMenuTrigger>

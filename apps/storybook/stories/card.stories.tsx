@@ -30,7 +30,6 @@ const notifications = [
 const meta = {
   title: 'ui/Card',
   component: Card,
-  tags: ['autodocs'],
   args: {
     className: 'w-96',
   },

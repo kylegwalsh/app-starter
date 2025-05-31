@@ -7,7 +7,6 @@ import { fn } from 'storybook/test';
 const meta: Meta<typeof ResizablePanelGroup> = {
   title: 'ui/ResizablePanelGroup',
   component: ResizablePanelGroup,
-  tags: ['autodocs'],
   argTypes: {
     onLayout: {
       control: false,

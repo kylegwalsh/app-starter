@@ -8,7 +8,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/Tabs',
   component: Tabs,
-  tags: ['autodocs'],
   args: {
     defaultValue: 'account',
     className: 'w-96',

@@ -15,7 +15,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/Pagination',
   component: Pagination,
-  tags: ['autodocs'],
   render: (args) => (
     <Pagination {...args}>
       <PaginationContent>

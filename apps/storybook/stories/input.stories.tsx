@@ -7,7 +7,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/Input',
   component: Input,
-  tags: ['autodocs'],
   args: {
     className: 'w-96',
     type: 'email',

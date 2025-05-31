@@ -1,6 +1,6 @@
 import '@repo/design/globals.css';
 
-import { ThemeProvider, Toaster, TooltipProvider } from '@repo/design';
+import { ThemeProvider } from '@repo/design';
 import { withThemeByClassName } from '@storybook/addon-themes';
 import type { Preview } from '@storybook/nextjs-vite';
 
@@ -24,8 +24,12 @@ const preview: Preview = {
         },
       },
     },
+    // Automatically mark any prop that starts with "on" as an action
     actions: { argTypesRegex: '^on.*' },
   },
+  // Automatically generate doc page for each story
+  tags: ['autodocs'],
+  // Add theme provider to each story
   decorators: [
     withThemeByClassName({
       themes: {
@@ -38,10 +42,7 @@ const preview: Preview = {
       return (
         <div className="bg-background">
           <ThemeProvider enableSystem={false}>
-            <TooltipProvider>
-              <Story />
-            </TooltipProvider>
-            <Toaster />
+            <Story />
           </ThemeProvider>
         </div>
       );

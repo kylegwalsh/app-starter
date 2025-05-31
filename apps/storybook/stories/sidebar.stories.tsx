@@ -27,7 +27,6 @@ import { Calendar, ChevronUp, Home, Inbox, Search, Settings, User2 } from 'lucid
 const meta = {
   title: 'ui/Sidebar',
   component: Sidebar,
-  tags: ['autodocs'],
   argTypes: {
     side: {
       options: ['left', 'right'],

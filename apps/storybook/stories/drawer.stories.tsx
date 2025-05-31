@@ -16,7 +16,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/Drawer',
   component: Drawer,
-  tags: ['autodocs'],
   render: (args) => (
     <Drawer {...args}>
       <DrawerTrigger>Open</DrawerTrigger>

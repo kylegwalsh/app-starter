@@ -7,7 +7,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/Switch',
   component: Switch,
-  tags: ['autodocs'],
   parameters: {
     layout: 'centered',
   },

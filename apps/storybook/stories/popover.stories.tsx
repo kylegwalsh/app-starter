@@ -7,7 +7,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/Popover',
   component: Popover,
-  tags: ['autodocs'],
 
   render: (args) => (
     <Popover {...args}>

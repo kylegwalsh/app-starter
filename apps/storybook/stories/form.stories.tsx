@@ -19,7 +19,6 @@ import * as z from 'zod';
 const meta: Meta<typeof Form> = {
   title: 'ui/Form',
   component: Form,
-  tags: ['autodocs'],
   render: (args) => <ProfileForm {...args} />,
 } satisfies Meta<typeof Form>;
 

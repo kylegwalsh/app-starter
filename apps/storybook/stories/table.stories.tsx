@@ -42,7 +42,6 @@ const invoices = [
 const meta = {
   title: 'ui/Table',
   component: Table,
-  tags: ['autodocs'],
   render: (args) => (
     <Table {...args}>
       <TableCaption>A list of your recent invoices.</TableCaption>

@@ -18,7 +18,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/AlertDialog',
   component: AlertDialog,
-  tags: ['autodocs'],
   render: (args) => (
     <AlertDialog {...args}>
       <AlertDialogTrigger>Open</AlertDialogTrigger>

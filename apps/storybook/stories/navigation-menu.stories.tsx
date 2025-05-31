@@ -15,7 +15,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/NavigationMenu',
   component: NavigationMenu,
-  tags: ['autodocs'],
   render: (args) => (
     <NavigationMenu {...args}>
       <NavigationMenuList>

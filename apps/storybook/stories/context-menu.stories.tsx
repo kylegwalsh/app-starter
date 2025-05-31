@@ -22,7 +22,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/ContextMenu',
   component: ContextMenu,
-  tags: ['autodocs'],
   args: {},
   render: (args) => (
     <ContextMenu {...args}>

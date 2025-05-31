@@ -13,7 +13,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta: Meta<typeof Carousel> = {
   title: 'ui/Carousel',
   component: Carousel,
-  tags: ['autodocs'],
   args: {
     className: 'w-full max-w-xs',
   },

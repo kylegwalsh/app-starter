@@ -8,7 +8,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/RadioGroup',
   component: RadioGroup,
-  tags: ['autodocs'],
   args: {
     defaultValue: 'comfortable',
     className: 'grid gap-2 grid-cols-[1rem_1fr] items-center',

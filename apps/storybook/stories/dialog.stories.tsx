@@ -17,7 +17,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/Dialog',
   component: Dialog,
-  tags: ['autodocs'],
   render: (args) => (
     <Dialog {...args}>
       <DialogTrigger>Open</DialogTrigger>

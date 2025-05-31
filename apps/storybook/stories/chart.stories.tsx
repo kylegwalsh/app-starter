@@ -65,7 +65,6 @@ const singleSeriesConfig = {
 const meta = {
   title: 'ui/Chart',
   component: ChartContainer,
-  tags: ['autodocs'],
   args: {
     children: <div />,
   },

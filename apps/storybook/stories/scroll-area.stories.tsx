@@ -7,7 +7,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/ScrollArea',
   component: ScrollArea,
-  tags: ['autodocs'],
   argTypes: {
     children: {
       control: 'text',

@@ -8,7 +8,6 @@ import { Info } from 'lucide-react';
 const meta = {
   title: 'ui/Collapsible',
   component: Collapsible,
-  tags: ['autodocs'],
   args: {
     className: 'w-96',
     disabled: false,

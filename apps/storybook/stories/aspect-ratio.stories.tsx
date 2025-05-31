@@ -8,7 +8,6 @@ import Image from 'next/image';
 const meta: Meta<typeof AspectRatio> = {
   title: 'ui/AspectRatio',
   component: AspectRatio,
-  tags: ['autodocs'],
   render: (args) => (
     <AspectRatio {...args} className="bg-slate-50 dark:bg-slate-800">
       <Image

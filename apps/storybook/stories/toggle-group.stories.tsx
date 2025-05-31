@@ -8,7 +8,6 @@ import { Bold, Italic, Underline } from 'lucide-react';
 const meta = {
   title: 'ui/ToggleGroup',
   component: ToggleGroup,
-  tags: ['autodocs'],
   argTypes: {
     type: {
       options: ['multiple', 'single'],

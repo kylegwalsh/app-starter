@@ -9,7 +9,6 @@ import { Plus } from 'lucide-react';
 const meta: Meta<typeof TooltipContent> = {
   title: 'ui/Tooltip',
   component: TooltipContent,
-  tags: ['autodocs'],
   argTypes: {
     side: {
       options: ['top', 'bottom', 'left', 'right'],

@@ -8,7 +8,6 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 const meta = {
   title: 'ui/Accordion',
   component: Accordion,
-  tags: ['autodocs'],
   args: {
     type: 'single',
     collapsible: true,
