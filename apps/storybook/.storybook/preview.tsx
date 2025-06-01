@@ -26,6 +26,10 @@ const preview: Preview = {
     },
     // Automatically mark any prop that starts with "on" as an action
     actions: { argTypesRegex: '^on.*' },
+    // Show a11y violations in the test UI only
+    a11y: {
+      test: 'todo',
+    },
   },
   // Automatically generate doc page for each story
   tags: ['autodocs'],

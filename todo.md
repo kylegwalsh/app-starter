@@ -1,8 +1,6 @@
 # TODO
 
-- Fix docgen for props in storybook
-- Fix auto test creation storybook
-- Finish testing storybook + storybook test:ui (hook up to overall test run)
+- Hook up storybook test to overall turbo test run
 - Modify frontend testing to use build version of app? However we plan on testing with the CI server
 - Figure out how to support SST calls in e2e tests for frontend
 - Add seo meta data handler for next - https://github.com/search?q=repo%3Ahaydenbleasel%2Fnext-forge+createMetadata&type=code
@@ -23,3 +21,7 @@
 - Remove posthog settings AND crisp chat settings from config when pushing final starter
 - Maybe add an optional dashboard setup
 - Cursor rules
+
+Minor Bugs:
+
+- Fix storybook test button (vite isn't launching right) - seems like a bug with the node_module
