@@ -1,5 +1,6 @@
-import { copyAndReplace } from './utils/copy';
 import path from 'node:path';
+
+import { copyAndReplace } from './utils/copy';
 // eslint-disable-next-line unicorn/no-unreadable-array-destructuring
 const [, , packageName] = process.argv;
 
