@@ -14,8 +14,7 @@ export const router = t.router({
 /**
  * The type of our backend router
  *
- * (only export *type signature* of router
- * to avoid accidentally importing your API
- * into client-side code)
+ * Note: This is shared with the frontend by generating the types
+ * and configuring our tsconfig intelligently
  */
 export type AppRouter = typeof router;

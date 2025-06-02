@@ -1,11 +1,16 @@
 {
   "extends": "@repo/tsconfig/base.json",
   "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationDir": "dist",
+    "outDir": "dist",
+    "emitDeclarationOnly": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
     }
   },
   "include": ["**/*.ts", "../../global.d.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist"]
 }

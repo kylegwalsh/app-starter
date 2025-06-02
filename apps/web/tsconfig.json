@@ -6,6 +6,11 @@
       "@/*": ["./*"]
     }
   },
+  "references": [
+    {
+      "path": "../backend"
+    }
+  ],
   "include": [
     "next-env.d.ts",
     "next.config.ts",

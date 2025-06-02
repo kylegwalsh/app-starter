@@ -17,7 +17,7 @@
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
     "pretty": "prettier --write . --ignore-path ../../.prettierignore",
     "format": "pnpm lint:fix & pnpm pretty",
-    "typecheck": "tsc --noEmit",
+    "types:check": "tsc --noEmit",
     "postinstall": "npx playwright install chromium --with-deps"
   },
   "dependencies": {
@@ -41,8 +41,10 @@
   "devDependencies": {
     "@next/bundle-analyzer": "^15.3.2",
     "@playwright/test": "^1.52.0",
+    "@repo/backend": "workspace:*",
     "@repo/eslint": "workspace:*",
     "@repo/tsconfig": "workspace:*",
+    "@trpc/server": "^11.1.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

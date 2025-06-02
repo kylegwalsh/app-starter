@@ -32,19 +32,14 @@ storybook.log
 .vercel
 
 # Build Outputs
-.next/
 **/.next
 **/.next/**
-.open-next/
 **/.open-next
 **/.open-next/**
-out/
 **/out
 **/out/**
-build
 **/build
 **/build/**
-dist
 **/dist
 **/dist/**
 
@@ -64,3 +59,6 @@ sst-env.d.ts
 # Cache
 **/.cache
 **/.cache/**
+
+# Tsconfig
+tsconfig.tsbuildinfo

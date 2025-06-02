@@ -3,6 +3,7 @@
 - Hook up storybook test to overall turbo test run
 - Modify frontend testing to use build version of app? However we plan on testing with the CI server
 - Figure out how to support SST calls in e2e tests for frontend
+- Ensure CI caches everything important (pnpm, turbo, etc)
 - Add seo meta data handler for next - https://github.com/search?q=repo%3Ahaydenbleasel%2Fnext-forge+createMetadata&type=code
 - Add betterstack logging (create observability package and add error handling) - https://github.com/haydenbleasel/next-forge/tree/main/packages/observability
 - Add AI util in backend
@@ -19,6 +20,7 @@
 - Update the backend mocked router to have user context (mirror output of better auth)
 - Add stripe support and add to setup script (plugin for better auth)
 - Remove posthog settings AND crisp chat settings from config when pushing final starter
+- Add marketing site setup (get prompts / framework from Chad)
 - Maybe add an optional dashboard setup
 - Cursor rules
 
