@@ -7,6 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "resolveJsonModule": true,
+    "allowJs": true,
     "types": ["vitest/globals"]
   },
   "exclude": ["node_modules"]

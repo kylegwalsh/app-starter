@@ -86,7 +86,7 @@ export default defineConfig([
   },
   // Prettier compatibility
   prettier,
-  // Ignores
+  // ---------- IGNORES ----------
   {
     ignores: [
       '**/dist/**',
@@ -108,8 +108,7 @@ export default defineConfig([
       '**/test-results/**',
     ],
   },
-  // ---------- RULE OVERRIDES ----------
-  // Add custom rules here
+  // ---------- CUSTOM RULE OVERRIDES ----------
   {
     rules: {
       '@typescript-eslint/no-unused-vars': 'warn',

@@ -24,7 +24,6 @@
   "editor.suggest.showConstructors": false,
   "editor.suggest.showEnums": false,
   "editor.suggest.showKeywords": false,
-  "editor.suggest.showSnippets": false,
   "editor.suggest.showColors": false,
   "editor.suggest.showFiles": false,
   "editor.suggest.showReferences": false,
