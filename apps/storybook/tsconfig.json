@@ -4,17 +4,19 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+    "declaration": false,
+    "declarationMap": false
   },
   "include": [
     ".storybook/**/*.ts",
     ".storybook/**/*.tsx",
-    "next-env.d.ts",
-    "next.config.ts",
-    "postcss.config.mjs",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
+    "next-env.d.ts",
+    "next.config.ts",
+    "postcss.config.mjs",
     "../../global.d.ts"
   ],
   "exclude": ["node_modules"]
