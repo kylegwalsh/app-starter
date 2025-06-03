@@ -12,6 +12,7 @@
     "backend": "pnpm --filter backend",
     "web": "pnpm --filter web",
     "docs": "pnpm --filter docs",
+    "storybook": "pnpm --filter storybook",
     "design": "pnpm --filter design",
     "build": "sst build",
     "deploy": "pnpm backend db:generate && sst deploy",

@@ -1,6 +1,5 @@
 # TODO
 
-- Hook up storybook test to overall turbo test run
 - Modify frontend testing to use build version of app? However we plan on testing with the CI server
 - Figure out how to support SST calls in e2e tests for frontend
 - Ensure CI caches everything important (pnpm, turbo, etc)

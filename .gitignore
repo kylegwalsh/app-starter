@@ -18,30 +18,26 @@ coverage
 **/playwright-report
 **/test-results
 
+# NextJS
+next-env.d.ts
+
 # Storybook
-storybook.log
 *storybook.log
 **/.storybook-static
 **/storybook-static
 
 # Turbo
-.turbo
 **/.turbo
 
 # Vercel
-.vercel
+**/.vercel
 
 # Build Outputs
 **/.next
-**/.next/**
 **/.open-next
-**/.open-next/**
 **/out
-**/out/**
 **/build
-**/build/**
 **/dist
-**/dist/**
 
 # Debug
 npm-debug.log*
@@ -51,14 +47,15 @@ npm-debug.log*
 *.pem
 
 # sst
-.sst
 **/.sst
-**/.sst/**
-sst-env.d.ts
 
 # Cache
 **/.cache
-**/.cache/**
 
 # Tsconfig
-tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Fumadocs
+**/.contentlayer
+**/.content-collections
+**/.source

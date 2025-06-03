@@ -1,5 +1,3 @@
-import { PrismaClient } from '.prisma/client';
-
 /** Tears down our test environment (runs only once after all tests) */
 export const teardown = async () => {
   // We do a lazy import because this module isn't ready until the global setup runs
@@ -7,5 +5,5 @@ export const teardown = async () => {
   const { db } = await import('../mocks/db');
 
   // Note: This type is only defined after running the tests once
-  if (db) await (db as PrismaClient).$disconnect();
+  if (db) await db.$disconnect();
 };
