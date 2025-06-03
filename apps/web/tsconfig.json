@@ -11,14 +11,6 @@
       "path": "../backend"
     }
   ],
-  "include": [
-    "next-env.d.ts",
-    "next.config.ts",
-    "postcss.config.mjs",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "../../global.d.ts"
-  ],
+  "include": ["**/*", "../../global.d.ts"],
   "exclude": ["node_modules"]
 }

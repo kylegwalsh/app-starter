@@ -8,16 +8,6 @@
     "declaration": false,
     "declarationMap": false
   },
-  "include": [
-    ".storybook/**/*.ts",
-    ".storybook/**/*.tsx",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "next-env.d.ts",
-    "next.config.ts",
-    "postcss.config.mjs",
-    "../../global.d.ts"
-  ],
+  "include": ["**/*", ".storybook/**/*", "../../global.d.ts"],
   "exclude": ["node_modules"]
 }

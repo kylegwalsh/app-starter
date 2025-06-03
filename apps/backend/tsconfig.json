@@ -11,6 +11,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["**/*.ts", "../../global.d.ts", "**/*.tsx"],
+  "include": ["**/*", "../../global.d.ts"],
   "exclude": ["node_modules", "dist"]
 }
