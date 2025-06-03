@@ -106,6 +106,7 @@ export default defineConfig([
       '**/tests/generated/**',
       '**/playwright-report/**',
       '**/test-results/**',
+      '**/.source/**',
     ],
   },
   // ---------- CUSTOM RULE OVERRIDES ----------
@@ -115,7 +116,7 @@ export default defineConfig([
       '@typescript-eslint/no-unsafe-assignment': 'warn',
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
-      'unicorn/no-abusive-eslint-disable': 'warn',
+      'unicorn/no-abusive-eslint-disable': 'off',
       'unicorn/prevent-abbreviations': 'off',
       '@typescript-eslint/triple-slash-reference': 'off',
       'unicorn/no-array-reduce': 'off',
