@@ -1,8 +1,5 @@
 {
   "extends": "@repo/tsconfig/base.json",
-  "compilerOptions": {
-    "outDir": "dist"
-  },
   "include": ["**/*", ".lintstagedrc.js", "global.d.ts"],
   "exclude": ["node_modules", "apps", "packages", "dist"]
 }
