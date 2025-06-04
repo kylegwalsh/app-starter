@@ -1,11 +1,12 @@
 import { exec, execSync } from 'node:child_process';
-import { promisify } from 'node:util';
-import readline from 'node:readline';
 import fs from 'node:fs';
-import path from 'node:path';
-import inquirer from 'inquirer';
 import os from 'node:os';
-import axios, { AxiosInstance } from 'axios';
+import path from 'node:path';
+import readline from 'node:readline';
+import { promisify } from 'node:util';
+
+import axios from 'axios';
+import inquirer from 'inquirer';
 
 // Promisify exec for async/await usage
 const execAsync = promisify(exec);
