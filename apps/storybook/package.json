@@ -6,8 +6,8 @@
   "scripts": {
     "build": "storybook build",
     "dev": "storybook dev -p 6006",
-    "test": "sst shell vitest",
-    "test:ui": "sst shell vitest --ui",
+    "test": "sst shell -- vitest",
+    "test:ui": "sst shell -- vitest --ui",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
     "pretty": "prettier --write . --ignore-path ../../.prettierignore",

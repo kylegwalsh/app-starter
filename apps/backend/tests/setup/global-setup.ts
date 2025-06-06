@@ -42,7 +42,7 @@ const setupMockDatabase = () => {
   fs.writeFileSync(destSchemaPath, schema);
 
   // Generate a fresh prisma client for our tests
-  execSync(`npx prisma db push --schema=tests/generated/test-schema.prisma`, {
+  execSync(`pnpm exec prisma db push --schema=tests/generated/test-schema.prisma`, {
     stdio: 'inherit',
   });
 };

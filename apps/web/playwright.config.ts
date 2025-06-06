@@ -4,7 +4,8 @@ import { defineConfig, devices } from '@playwright/test';
 // https://playwright.dev/docs/test-configuration
 export default defineConfig({
   // Look for test files in the "tests" directory, relative to this configuration file.
-  testDir: 'tests',
+  testDir: 'tests/e2e',
+  testMatch: '*.test.ts',
   // Run all tests in parallel.
   fullyParallel: true,
   // Fail the build on CI if you accidentally left test.only in the source code.
@@ -30,8 +31,12 @@ export default defineConfig({
   ],
   // Run your local dev server before starting the tests.
   webServer: {
-    command: 'pnpm run dev',
-    url: 'http://localhost:3000',
+    cwd: '../..',
+    command: process.env.CI ? 'pnpm sst dev --stage ci' : 'pnpm sst dev',
+    port: 3000,
     reuseExistingServer: true,
+    stdout: 'pipe',
+    stderr: 'pipe',
+    timeout: 180_000, // 3 minutes
   },
 });

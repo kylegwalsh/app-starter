@@ -1,12 +1,15 @@
-'use client';
-
 import '@repo/design/globals.css';
 
 import { config } from '@repo/config';
 import { Toaster } from '@repo/design';
+import { Metadata } from 'next';
 import Script from 'next/script';
 
 import { Providers } from '@/components/providers';
+
+export const metadata: Metadata = {
+  title: config.app.name,
+};
 
 export default function RootLayout({
   children,

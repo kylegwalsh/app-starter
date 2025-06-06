@@ -1,103 +1,225 @@
-# name: App CI
-# # Prevent multiple jobs from running at the same time and cancel in-progress runs
-# concurrency:
-#   group: ci-${{ github.ref }}
-#   # Disable cancelling in-progress runs because sst will lock a deploy, preventing the subsequent deploy from succeeding
-#   cancel-in-progress: false
-# on:
-#   push:
-#     branches:
-#       - "main"
-#       - "dev"
-# # Global environment variables
-# env:
-#   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#   AWS_REGION: us-east-1
-#   BEFORE_SHA: ${{ github.event.before }}
-#   POSTHOG_CLI_ENV_ID: ${{ secrets.POSTHOG_CLI_ENV_ID }}
-#   POSTHOG_CLI_TOKEN: ${{ secrets.POSTHOG_CLI_TOKEN }}
-#   GITHUB_SHA: ${{ github.sha }}
-#   GITHUB_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-# # The different jobs to run
-# jobs:
-#   # Perform the actual build / deployment
-#   deploy:
-#     name: Deploy apps
-#     # Machine to run job on
-#     runs-on: ubuntu-latest
-#     # Actual job steps
-#     steps:
-#       # ------------- START STANDARD SETUP -------------
-#       # Checks out latest code
-#       - name: Checkout code
-#         uses: actions/checkout@v3
-#         with:
-#           fetch-depth: 2
-#           submodules: recursive
+name: App CI
+# Prevent multiple jobs from running at the same time and cancel in-progress runs
+concurrency:
+  group: ci-${{ github.ref }}
+  # Disable cancelling in-progress runs because sst will lock a deploy, preventing the subsequent deploy from succeeding
+  cancel-in-progress: false
+on:
+  # Run on push to main (dev deployment)
+  push:
+    branches: [main]
+  # Run on release (prod deployment)
+  release:
+    types: [published]
 
-#       # Setup the node environment
-#       - name: Setup node
-#         uses: actions/setup-node@v3
-#         with:
-#           node-version: "18"
-#           cache: "yarn"
+# Global environment variables
+env:
+  AWS_REGION: us-east-1
+  STAGE: ${{ secrets.STAGE }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  POSTHOG_CLI_ENV_ID: ${{ secrets.POSTHOG_CLI_ENV_ID }}
+  POSTHOG_CLI_TOKEN: ${{ secrets.POSTHOG_CLI_TOKEN }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+  BEFORE_SHA: ${{ github.event.before }}
+  GITHUB_SHA: ${{ github.sha }}
+  GITHUB_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 
-#       # Install all dependencies
-#       - name: Install dependencies
-#         run: yarn install --immutable
-#       # ------------- END STANDARD SETUP -------------
+# The different jobs to run
+jobs:
+  # ------------- START SETUP -------------
+  # Base setup job that installs and caches dependencies (to be re-loaded by our composite setup action)
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    # We will output a cache key for the node_modules that will be re-used by other jobs
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-#       # ------------- START EXTENDED SETUP -------------
-#       # Set the environment based on branch name
-#       - name: Set stage (dev)
-#         if: endsWith(github.ref, '/dev')
-#         run: |
-#           echo "STAGE=dev" >> $GITHUB_ENV
-#           echo "DATABASE_URL=${{ secrets.DATABASE_URL_DEV }}" >> $GITHUB_ENV
-#           echo "DIRECT_DATABASE_URL=${{ secrets.DATABASE_URL_DEV }}" >> $GITHUB_ENV
-#       - name: Set stage (prod)
-#         if: endsWith(github.ref, '/main')
-#         run: |
-#           echo "STAGE=prod" >> $GITHUB_ENV
-#           echo "DATABASE_URL=${{ secrets.DATABASE_URL_PROD }}" >> $GITHUB_ENV
-#           echo "DIRECT_DATABASE_URL=${{ secrets.DATABASE_URL_PROD }}" >> $GITHUB_ENV
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
 
-#       # Write any env variables that the backend needs to a .env file
-#       - name: Write to .env
-#         run: |
-#           touch .env
-#           echo "STAGE=$STAGE" >> .env
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
 
-#       # Add AWS CLI for deployments
-#       - name: Configure AWS CLI
-#         run: |
-#           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID --profile default
-#           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY --profile default
-#           aws configure set default.region us-east-1
+      - name: Generate cache key
+        id: cache-key
+        run: echo "key=${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}" >> $GITHUB_OUTPUT
 
-#       # Generate the database schema types (they will be checked during the linting process)
-#       - name: Generate database types
-#         run: yarn db:generate
+      - name: Set up cache for dependencies
+        uses: actions/cache@v4
+        id: cache-deps
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: ${{ steps.cache-key.outputs.key }}
 
-#       # Restore cache to speed up site build speed
-#       - name: Load NextJS build cache
-#         uses: actions/cache@v4
-#         with:
-#           path: ${{ github.workspace }}/apps/frontend/.next/cache
-#           # Generate a new cache whenever packages or source files change.
-#           key: ${{ runner.os }}-nextjs-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('apps/frontend/**/*.[jt]s?(x)') }}
-#           # If source files changed but packages didn't, rebuild from a prior cache.
-#           restore-keys: ${{ runner.os }}-nextjs-${{ hashFiles('**/yarn.lock') }}-
-#       # ------------- END EXTENDED SETUP -------------
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
-#       # ------------- START LINT -------------
-#       - name: Lint
-#         run: yarn lint:ci
-#       # ------------- END LINT -------------
+  # ------------- START TESTING -------------
+  # Lint packages for errors and formatting
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Setup project
+        uses: ./.github/actions/setup
+        with:
+          cache-key: ${{ needs.setup.outputs.cache-key }}
 
-#       # ------------- START DEPLOYMENT -------------
-#       # Deploy our actual application (handled by backend package)
-#       - name: Deploy app
-#         run: yarn deploy:ci
-#       # ------------- END DEPLOYMENT -------------
+      - name: Run lint
+        run: pnpm lint
+
+  # Check for type errors
+  typecheck:
+    name: Check types
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Setup project
+        uses: ./.github/actions/setup
+        with:
+          cache-key: ${{ needs.setup.outputs.cache-key }}
+
+      - name: Run type check
+        run: pnpm types:check
+
+  # Run our standard tests
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Setup project
+        uses: ./.github/actions/setup
+        with:
+          cache-key: ${{ needs.setup.outputs.cache-key }}
+
+      - name: Run tests
+        run: pnpm test
+
+  # Run our E2E tests (only run on releases)
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: setup
+    if: github.event_name == 'release'
+    steps:
+      - name: Setup project
+        uses: ./.github/actions/setup
+        with:
+          cache-key: ${{ needs.setup.outputs.cache-key }}
+
+      # Cache Playwright browsers
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      # Install Playwright browsers
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      # Cache SST artifacts for CI environment (used for e2e tests)
+      - name: Cache SST CI artifacts
+        uses: actions/cache@v4
+        with:
+          path: .sst
+          key: ${{ runner.os }}-sst-ci-${{ hashFiles('sst.config.ts', 'infra/**/*.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-sst-ci-
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+
+      # Upload artifacts to see results
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 30
+
+      - name: Upload Playwright screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-screenshots
+          path: apps/web/test-results/
+          retention-days: 30
+
+  # Deploy job that waits for all checks to pass
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, test, e2e]
+    # Only run e2e if it's a release, otherwise skip the dependency
+    if: always() && (needs.lint.result == 'success' && needs.typecheck.result == 'success' && needs.test.result == 'success') && (github.event_name != 'release' || needs.e2e.result == 'success')
+    steps:
+      - name: Setup project
+        uses: ./.github/actions/setup
+        with:
+          cache-key: ${{ needs.setup.outputs.cache-key }}
+
+      # Cache NextJS build
+      - name: Cache NextJS build
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/apps/web/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('apps/web/**/*.[jt]s?(x)') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
+
+      # Cache SST artifacts for dev environment
+      - name: Cache SST dev artifacts
+        uses: actions/cache@v4
+        if: github.event_name != 'release'
+        with:
+          path: .sst
+          key: ${{ runner.os }}-sst-dev-${{ hashFiles('sst.config.ts', 'infra/**/*.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-sst-dev-
+
+      # Cache SST artifacts for prod environment
+      - name: Cache SST prod artifacts
+        uses: actions/cache@v4
+        if: github.event_name == 'release'
+        with:
+          path: |
+            .sst-prod
+            apps/backend/.sst
+          key: ${{ runner.os }}-sst-prod-${{ hashFiles('sst.config.ts', 'infra/**/*.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-sst-prod-
+
+      # ------------- START DEPLOYMENT -------------
+      # Deploy main apps using sst
+      - name: Deploy app
+        run: pnpm exec sst deploy
+
+      # Update database using prisma
+      - name: Update database
+        run: pnpm exec prisma db push --skip-generate --accept-data-loss
+
+      # Upload sourcemaps to PostHog
+      - name: Upload sourcemaps to PostHog
+        run: |
+          pnpm exec posthog-cli sourcemap inject --directory .sst/artifacts
+          pnpm exec posthog-cli sourcemap upload --directory .sst/artifacts

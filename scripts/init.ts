@@ -180,24 +180,15 @@ const configureGithubUrl = async () => {
   }
 };
 
-/**
- * Store secrets and environment variables in GitHub using the gh CLI.
- * - Creates 'dev' and 'prod' environments (idempotent)
- * - Sets global repo secrets: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, POSTHOG_CLI_TOKEN
- * - Sets POSTHOG_CLI_ENV_ID as a variable in each environment
- */
+/** Store secrets and environment variables in GitHub using the gh CLI */
 const setupGithub = async ({
-  awsAccessKey,
-  awsSecretKey,
-  posthogCliToken,
-  posthogProdEnvId,
-  posthogDevEnvId,
+  awsConfig,
+  dbConfig,
+  posthogConfig,
 }: {
-  awsAccessKey: string;
-  awsSecretKey: string;
-  posthogCliToken?: string;
-  posthogProdEnvId?: string;
-  posthogDevEnvId?: string;
+  awsConfig: Awaited<ReturnType<typeof selectOrCreateAwsProfile>>;
+  dbConfig: Awaited<ReturnType<typeof setupSupabase>>;
+  posthogConfig: Awaited<ReturnType<typeof setupPosthog>>;
 }) => {
   console.log('Setting up GitHub...');
 
@@ -216,16 +207,37 @@ const setupGithub = async ({
     `gh api --method PUT -H "Accept: application/vnd.github+json" repos/${repo}/environments/prod`
   );
 
-  // Set global repository secrets
-  await execAsync(`gh secret set AWS_ACCESS_KEY_ID -a actions -b "${awsAccessKey}"`);
-  await execAsync(`gh secret set AWS_SECRET_ACCESS_KEY -a actions -b "${awsSecretKey}"`);
+  // Set AWS secrets
+  await execAsync(`gh secret set AWS_ACCESS_KEY_ID -a actions -b "${awsConfig.ci.awsAccessKey}"`);
+  await execAsync(
+    `gh secret set AWS_SECRET_ACCESS_KEY -a actions -b "${awsConfig.ci.awsSecretKey}"`
+  );
+
+  // Set sst stage (for each environment)
+  await execAsync(`gh secret set STAGE -a actions -b "dev" -e dev`);
+  await execAsync(`gh secret set STAGE -a actions -b "prod" -e prod`);
+
+  // Set database secrets (for each environment)
+  await execAsync(`gh secret set DATABASE_URL -a actions -b "${dbConfig.prod.dbUrl}" -e prod`);
+  await execAsync(
+    `gh secret set DIRECT_DATABASE_URL -a actions -b "${dbConfig.prod.directUrl}" -e prod`
+  );
+  await execAsync(`gh secret set DATABASE_URL -a actions -b "${dbConfig.dev.dbUrl}" -e dev`);
+  await execAsync(
+    `gh secret set DIRECT_DATABASE_URL -a actions -b "${dbConfig.dev.directUrl}" -e dev`
+  );
 
   // If we aren't given a posthog details, we'll skip this step
-  if (posthogCliToken && posthogProdEnvId && posthogDevEnvId) {
-    await execAsync(`gh secret set POSTHOG_CLI_TOKEN -a actions -b "${posthogCliToken}"`);
-    // Set environment variables (POSTHOG_CLI_ENV_ID) for dev and prod
-    await execAsync(`gh secret set POSTHOG_CLI_ENV_ID -a actions -b "${posthogDevEnvId}" -e dev`);
-    await execAsync(`gh secret set POSTHOG_CLI_ENV_ID -a actions -b "${posthogProdEnvId}" -e prod`);
+  if (posthogConfig) {
+    // Set up the CLI token
+    await execAsync(`gh secret set POSTHOG_CLI_TOKEN -a actions -b "${posthogConfig.cliToken}"`);
+    // Set environment ids (for each environment)
+    await execAsync(
+      `gh secret set POSTHOG_CLI_ENV_ID -a actions -b "${posthogConfig.devKey}" -e dev`
+    );
+    await execAsync(
+      `gh secret set POSTHOG_CLI_ENV_ID -a actions -b "${posthogConfig.prodKey}" -e prod`
+    );
   }
 
   console.log('✔ GitHub environments and secrets have been set up.\n');
@@ -262,18 +274,18 @@ const getProjectName = async () => {
 
     // Write Title Case to config.ts
     configContent = configContent.replace(
-      /app:\s*{([^}]*)name:\s*['"][^'"]*['"]/s,
-      (m, g1) => `app: {${g1}name: "${newName}"`
+      /app:\s*{([^}]*)name:\s*(['"])[^'"]*\2/s,
+      (m, g1, quote) => `app: {${g1}name: ${quote}${newName}${quote}`
     );
     fs.writeFileSync(configPath, configContent);
 
     // Convert to kebab-case for other config files
     const kebabName = newName.replaceAll(' ', '-').toLowerCase();
 
-    // Update sst.config.ts
+    // Update sst.config.ts, always use single quotes
     const sstConfigPath = path.resolve('sst.config.ts');
     let sstConfig = fs.readFileSync(sstConfigPath, 'utf8');
-    sstConfig = sstConfig.replace(/name:\s*['"][^'"]*['"]/, `name: "${kebabName}"`);
+    sstConfig = sstConfig.replace(/name:\s*['"][^'"]*['"]/, `name: '${kebabName}'`);
     fs.writeFileSync(sstConfigPath, sstConfig);
 
     // Update package.json
@@ -393,11 +405,37 @@ const getOrCreateStage = async () => {
   return stage;
 };
 
+/**
+ * Parse the output from 'pnpm sst secret list' and extract all secrets
+ * @param output The stdout from the secret list command
+ * @returns Object containing all secrets as key-value pairs
+ */
+const getAllSecrets = async (stage: string) => {
+  const result: Record<string, string> = {};
+  const { stdout: output } = await execAsync(`pnpm sst secret list --stage ${stage}`);
+
+  const lines = output.split('\n');
+  for (const line of lines) {
+    // Skip lines containing # (like #fallback) or empty lines
+    if (line.startsWith('#') || !line.trim()) continue;
+
+    // Look for lines that contain secret key-value pairs
+    // Based on the format: "SECRET_NAME=secret_value"
+    const match = line.match(/^([A-Z_]+)=(.+)$/);
+    if (match) {
+      const [, key, value] = match;
+      result[key] = value.trim();
+    }
+  }
+
+  return result;
+};
+
 // ---------- AWS HELPERS ----------
 /**
  * Prompt the user to select an AWS profile or create a new one.
  * Updates ~/.aws/credentials, ~/.aws/config, and .vscode/settings.json as needed.
- * Returns the selected profile name.
+ * Returns the selected profile name and credentials for personal and CI.
  */
 export const selectOrCreateAwsProfile = async () => {
   console.log('Setting up AWS profile...');
@@ -407,6 +445,7 @@ export const selectOrCreateAwsProfile = async () => {
   const configPath = path.join(homedir, '.aws/config');
   const vscodeSettingsPath = path.resolve('.vscode/settings.json');
 
+  // ---------- PERSONAL CREDENTIALS ----------
   // Read existing profiles
   let profiles: string[] = [];
   if (fs.existsSync(credPath)) {
@@ -501,10 +540,48 @@ export const selectOrCreateAwsProfile = async () => {
     await execAsync(`aws configure set profile ${profile}`);
   } catch {}
 
+  // ---------- CI CREDENTIALS ----------
+  // Ask if they want to use the same credentials for Github Actions CI
+  const useSameForCI = await promptYesNo(
+    'Would you like to use the same AWS credentials for your Github Actions CI deployments? (y/n) '
+  );
+
+  let ciAccessKey = '';
+  let ciSecretKey = '';
+  if (useSameForCI) {
+    ciAccessKey = accessKey;
+    ciSecretKey = secretKey;
+  } else {
+    // Prompt for CI credentials
+    while (!ciAccessKey) {
+      const ciAccessKeyInput = await promptUser('Enter AWS Access Key ID for CI: ');
+      ciAccessKey = ciAccessKeyInput.trim();
+      if (!ciAccessKey) {
+        console.log('AWS Access Key ID for CI cannot be empty.');
+      }
+    }
+    while (!ciSecretKey) {
+      const ciSecretKeyInput = await promptUser('Enter AWS Secret Access Key for CI: ');
+      ciSecretKey = ciSecretKeyInput.trim();
+      if (!ciSecretKey) {
+        console.log('AWS Secret Access Key for CI cannot be empty.');
+      }
+    }
+  }
+
+  console.log('✔ Configured AWS credentials for CI.\n');
+
   return {
-    awsProfile: profile,
-    awsAccessKey: accessKey,
-    awsSecretKey: secretKey,
+    personal: {
+      awsProfile: profile,
+      awsAccessKey: accessKey,
+      awsSecretKey: secretKey,
+    },
+    ci: {
+      awsProfile: 'ci',
+      awsAccessKey: ciAccessKey,
+      awsSecretKey: ciSecretKey,
+    },
   };
 };
 
@@ -546,11 +623,41 @@ const promptValidSupabaseUrl = async (promptMsg: string): Promise<string> => {
 const setupSupabase = async (projectName: string) => {
   console.log('Setting up Supabase...');
 
+  const databaseConfig = {
+    prod: {
+      dbUrl: '',
+      directUrl: '',
+    },
+    dev: {
+      dbUrl: '',
+      directUrl: '',
+    },
+  };
+
   // Check if Supabase is already configured
   let alreadyConfigured = false;
   try {
-    const { stdout } = await execAsync('pnpm sst secret list');
-    if (stdout && stdout.includes('DATABASE_URL')) {
+    // Retrieve the secrets for dev and prod
+    const devSecrets = await getAllSecrets('dev');
+    const prodSecrets = await getAllSecrets('prod');
+
+    // Extract database URLs from the parsed secrets
+    databaseConfig.dev = {
+      dbUrl: devSecrets.DATABASE_URL || '',
+      directUrl: devSecrets.DIRECT_DATABASE_URL || '',
+    };
+    databaseConfig.prod = {
+      dbUrl: prodSecrets.DATABASE_URL || '',
+      directUrl: prodSecrets.DIRECT_DATABASE_URL || '',
+    };
+
+    // Check if both dev and prod have all their secrets configured
+    if (
+      databaseConfig.dev.dbUrl &&
+      databaseConfig.prod.dbUrl &&
+      databaseConfig.dev.directUrl &&
+      databaseConfig.prod.directUrl
+    ) {
       alreadyConfigured = true;
     }
   } catch {}
@@ -562,7 +669,7 @@ const setupSupabase = async (projectName: string) => {
     );
     if (!shouldUpdate) {
       console.log('Skipping Supabase setup.\n');
-      return;
+      return databaseConfig;
     }
   }
 
@@ -602,6 +709,12 @@ const setupSupabase = async (projectName: string) => {
     `pnpm tsx ${addSecretScript} DATABASE_URL "${devUrls.dbUrl}" "${prodUrls.dbUrl}"`
   );
   console.log('✔ Supabase secrets have been set in SST.\n');
+
+  // Update the config object with the new values
+  databaseConfig.prod = prodUrls;
+  databaseConfig.dev = devUrls;
+
+  return databaseConfig;
 };
 
 // ---------- POSTHOG HELPERS ----------
@@ -876,21 +989,19 @@ const init = async () => {
   await getOrCreateStage();
 
   // Select or create an AWS profile
-  const { awsAccessKey, awsSecretKey } = await selectOrCreateAwsProfile();
+  const awsConfig = await selectOrCreateAwsProfile();
 
   // Setup Supabase
-  await setupSupabase(projectName);
+  const dbConfig = await setupSupabase(projectName);
 
   // Setup PostHog
-  const posthogKeys = await setupPosthog(projectName);
+  const posthogConfig = await setupPosthog(projectName);
 
   // Configure github url and secrets
   const githubUrl = await setupGithub({
-    awsAccessKey,
-    awsSecretKey,
-    posthogCliToken: posthogKeys?.cliToken,
-    posthogProdEnvId: posthogKeys?.prodKey,
-    posthogDevEnvId: posthogKeys?.devKey,
+    awsConfig,
+    dbConfig,
+    posthogConfig,
   });
 
   // Setup slack
@@ -903,7 +1014,7 @@ const init = async () => {
   await setupDocsSite({ domain });
 
   // Print final notes
-  printFinalNotes({ setupPosthog: !!posthogKeys });
+  printFinalNotes({ setupPosthog: !!posthogConfig });
 };
 
 void init();

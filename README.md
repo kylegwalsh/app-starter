@@ -185,10 +185,45 @@ This will:
 
 ### Continuous Integration & Delivery
 
-- All pushes and pull requests to main branches trigger automated builds, tests, and deployments via GitHub Actions.
-- Environments (e.g., `dev`, `prod`) are managed through GitHub and AWS.
+GitHub Actions handle all CI/CD workflows, supporting testing and deployments across multiple environments.
 
-> For more details on deployment environments or troubleshooting, refer to the individual app or package READMEs.
+#### Current Workflow (Rapid Development)
+
+Optimized for small projects and quick iteration:
+
+**Main Branch:**
+
+- Every push triggers linting and unit tests
+- Auto-deploys to `dev` environment on test success
+
+**Production Releases:**
+
+- Create a GitHub release to deploy to production
+- Runs full test suite plus E2E tests in temporary `ci` environment
+- Deploys to `production` environment after all tests pass
+
+_Environments: `dev`, `prod`_
+
+#### Proposed Workflow (Larger Projects)
+
+For projects requiring stricter quality gates:
+
+**Branch Protection:**
+
+- Trunk requires PR approval and passing tests
+- Merge queue ensures code compatibility before landing
+
+**Pull Requests:**
+
+- Trigger linting, unit tests, and builds
+- Must pass review before merging
+
+**Release Process:**
+
+- `releases/*` branches auto-deploy to `staging` with full E2E testing
+- GitHub releases from release branches deploy to `prod`
+
+_Environments: `dev`, `staging`, `prod`_
 
 ---
 

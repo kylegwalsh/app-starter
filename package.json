@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@manypkg/cli": "^0.24.0",
+    "@posthog/cli": "^0.1.0",
     "@repo/eslint": "workspace:*",
     "@repo/tsconfig": "workspace:*",
     "@types/aws-lambda": "8.10.149",

@@ -52,6 +52,8 @@ export default $config({
             install: ['@prisma/client'],
           }
         : {
+            // Generate source maps for our deployments so we can upload them for error tracking
+            sourcemap: true,
             esbuild: {
               platform: 'node',
               external: ['@prisma/client'],

@@ -1,0 +1,51 @@
+# A composite action that sets up the CI environment for all jobs
+name: 'Setup environment'
+description: 'Common setup steps for all jobs'
+inputs:
+  cache-key:
+    description: 'Cache key for node_modules'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+
+    - name: Setup node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Configure AWS CLI
+      shell: bash
+      run: |
+        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID --profile default
+        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY --profile default
+        aws configure set default.region us-east-1
+
+    - name: Restore dependencies
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          node_modules
+          apps/*/node_modules
+          packages/*/node_modules
+        key: ${{ inputs.cache-key }}
+        fail-on-cache-miss: true
+
+    - name: Cache Turbo
+      uses: actions/cache@v4
+      with:
+        path: .turbo
+        key: ${{ runner.os }}-turbo-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-turbo-
+
+    - name: Generate Prisma client
+      shell: bash
+      run: pnpm backend db:generate
