@@ -212,7 +212,7 @@ jobs:
       # ------------- START DEPLOYMENT -------------
       # Deploy main apps using sst
       - name: Deploy app
-        run: pnpm exec sst deploy
+        run: pnpm exec sst deploy --stage ${{ env.STAGE }}
 
       # Update database using prisma
       - name: Update database
