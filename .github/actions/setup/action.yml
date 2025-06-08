@@ -43,4 +43,8 @@ runs:
 
     - name: Generate Prisma client
       shell: bash
-      run: pnpm backend db:generate
+      run: pnpm run backend db:generate
+
+    - name: Generate docs types
+      shell: bash
+      run: pnpm run docs postinstall

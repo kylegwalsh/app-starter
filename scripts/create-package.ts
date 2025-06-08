@@ -1,6 +1,8 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { copyAndReplace } from './utils/copy';
+
 // eslint-disable-next-line unicorn/no-unreadable-array-destructuring
 const [, , packageName] = process.argv;
 
@@ -9,10 +11,11 @@ if (!packageName) {
   process.exit(1);
 }
 
-console.log('PACKAGE', packageName);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const templateDir = path.resolve(import.meta.dirname, '../templates/package');
-const targetDir = path.resolve(import.meta.dirname, `../packages/${packageName}`);
+const templateDir = path.resolve(__dirname, '../templates/package');
+const targetDir = path.resolve(__dirname, `../packages/${packageName}`);
 
 copyAndReplace(templateDir, targetDir, {
   packageName: packageName,

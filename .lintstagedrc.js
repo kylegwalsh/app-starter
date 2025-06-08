@@ -2,6 +2,10 @@
 // correct path for each tsconfig.json file to run type checks
 import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Our standard methods (applied to various files)
 const pretty = 'pnpm exec prettier --write';
@@ -15,7 +19,7 @@ const getWorkspacePackages = () => {
   const packages = [];
 
   for (const baseDir of WORKSPACE_DIRS) {
-    const fullPath = path.join(import.meta.dirname, baseDir);
+    const fullPath = path.join(__dirname, baseDir);
 
     if (existsSync(fullPath)) {
       const dirs = readdirSync(fullPath, { withFileTypes: true })
@@ -32,7 +36,7 @@ const getWorkspacePackages = () => {
 const getPackagesWithTsconfig = () => {
   const packages = getWorkspacePackages();
   return packages.filter((pkg) => {
-    const tsconfigPath = path.join(import.meta.dirname, pkg, 'tsconfig.json');
+    const tsconfigPath = path.join(__dirname, pkg, 'tsconfig.json');
     return existsSync(tsconfigPath);
   });
 };
