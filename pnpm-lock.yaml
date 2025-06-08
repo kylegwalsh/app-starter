@@ -101,8 +101,8 @@ importers:
         specifier: ^11.1.2
         version: 11.1.2(typescript@5.8.3)
       better-trpc-openapi:
-        specifier: github:kylegwalsh/trpc-openapi#eedce150f2a236bc5d39a50862ef22ead0c7d6ae
-        version: https://codeload.github.com/kylegwalsh/trpc-openapi/tar.gz/eedce150f2a236bc5d39a50862ef22ead0c7d6ae(@trpc/server@11.1.2(typescript@5.8.3))(@types/express@4.17.23)(@types/node@20.17.19)(zod@3.24.4)
+        specifier: github:kylegwalsh/trpc-openapi#69359b66b170d3a251aa4aca5f832ab25b93fa7f
+        version: https://codeload.github.com/kylegwalsh/trpc-openapi/tar.gz/69359b66b170d3a251aa4aca5f832ab25b93fa7f(@trpc/server@11.1.2(typescript@5.8.3))(@types/express@4.17.23)(@types/node@20.17.19)(zod@3.24.4)
       prisma:
         specifier: ^6.7.0
         version: 6.7.0(typescript@5.8.3)
@@ -4682,10 +4682,10 @@ packages:
       }
     engines: { node: '>=12.0.0' }
 
-  better-trpc-openapi@https://codeload.github.com/kylegwalsh/trpc-openapi/tar.gz/eedce150f2a236bc5d39a50862ef22ead0c7d6ae:
+  better-trpc-openapi@https://codeload.github.com/kylegwalsh/trpc-openapi/tar.gz/69359b66b170d3a251aa4aca5f832ab25b93fa7f:
     resolution:
       {
-        tarball: https://codeload.github.com/kylegwalsh/trpc-openapi/tar.gz/eedce150f2a236bc5d39a50862ef22ead0c7d6ae,
+        tarball: https://codeload.github.com/kylegwalsh/trpc-openapi/tar.gz/69359b66b170d3a251aa4aca5f832ab25b93fa7f,
       }
     version: 0.1.0
     peerDependencies:
@@ -15551,7 +15551,7 @@ snapshots:
     dependencies:
       open: 8.4.2
 
-  better-trpc-openapi@https://codeload.github.com/kylegwalsh/trpc-openapi/tar.gz/eedce150f2a236bc5d39a50862ef22ead0c7d6ae(@trpc/server@11.1.2(typescript@5.8.3))(@types/express@4.17.23)(@types/node@20.17.19)(zod@3.24.4):
+  better-trpc-openapi@https://codeload.github.com/kylegwalsh/trpc-openapi/tar.gz/69359b66b170d3a251aa4aca5f832ab25b93fa7f(@trpc/server@11.1.2(typescript@5.8.3))(@types/express@4.17.23)(@types/node@20.17.19)(zod@3.24.4):
     dependencies:
       '@trpc/server': 11.1.2(typescript@5.8.3)
       co-body: 6.2.0
