@@ -3,6 +3,7 @@
 - Ensure CI caches everything important (pnpm, node_modules, turbo, sst, next, playwright, etc)
 - Do PostHog NextJS error setup (talks about error boundary, etc)
 - Figure out if we need source map uploads for NextJS (maybe create a turbo command so that it runs for all necessary subrepos?)
+- Figure out how to make SST not change path slashes in types files (or just don't commit them)
 - Add seo meta data handler for next - https://github.com/search?q=repo%3Ahaydenbleasel%2Fnext-forge+createMetadata&type=code
 - Add betterstack logging (create observability package and add error handling) - https://github.com/haydenbleasel/next-forge/tree/main/packages/observability
 - Add AI util in backend

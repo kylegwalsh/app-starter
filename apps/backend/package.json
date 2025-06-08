@@ -37,7 +37,7 @@
     "@repo/constants": "workspace:*",
     "@repo/utils": "workspace:*",
     "@trpc/server": "^11.1.2",
-    "better-trpc-openapi": "github:deldrid1/trpc-openapi#d089373012300ea432f4177543d3e85fe59d8a9a",
+    "better-trpc-openapi": "github:kylegwalsh/trpc-openapi#eedce150f2a236bc5d39a50862ef22ead0c7d6ae",
     "prisma": "^6.7.0",
     "sst": "3.14.27",
     "superjson": "^2.2.2",
