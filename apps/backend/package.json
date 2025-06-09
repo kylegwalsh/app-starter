@@ -39,7 +39,7 @@
     "@trpc/server": "^11.1.2",
     "better-trpc-openapi": "github:kylegwalsh/trpc-openapi#69359b66b170d3a251aa4aca5f832ab25b93fa7f",
     "prisma": "^6.7.0",
-    "sst": "3.14.27",
+    "sst": "3.17.4",
     "superjson": "^2.2.2",
     "zod": "^3.24.2"
   },
