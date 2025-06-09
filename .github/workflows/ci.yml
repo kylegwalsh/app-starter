@@ -15,7 +15,7 @@ on:
 # Global environment variables
 env:
   AWS_REGION: us-east-1
-  STAGE: ${{ secrets.STAGE }}
+  SST_STAGE: ${{ secrets.SST_STAGE }}
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   POSTHOG_CLI_ENV_ID: ${{ secrets.POSTHOG_CLI_ENV_ID }}
@@ -25,8 +25,6 @@ env:
   BEFORE_SHA: ${{ github.event.before }}
   GITHUB_SHA: ${{ github.sha }}
   GITHUB_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-  # Trying to disable bun for SST installs because it's failing
-  NO_BUN: true
 
 # The different jobs to run
 jobs:
@@ -216,9 +214,7 @@ jobs:
         uses: actions/cache@v4
         if: github.event_name == 'release'
         with:
-          path: |
-            .sst-prod
-            apps/backend/.sst
+          path: .sst
           key: ${{ runner.os }}-sst-prod-${{ hashFiles('sst.config.ts', 'infra/**/*.ts') }}
           restore-keys: |
             ${{ runner.os }}-sst-prod-
@@ -226,7 +222,7 @@ jobs:
       # ------------- START DEPLOYMENT -------------
       # Deploy main apps using sst
       - name: Deploy app
-        run: pnpm exec sst deploy --stage ${{ env.STAGE }}
+        run: pnpm exec sst deploy
 
       # Update database using prisma
       - name: Update database
