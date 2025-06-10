@@ -4,9 +4,12 @@ import { api } from './api';
 // const password = 'password';
 // const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');
 
+/** The domain where we will host the web app */
+const domain = undefined;
+
 // Our main web app
 export const site = new sst.aws.Nextjs('web', {
-  domain: $app.stage === 'prod' ? 'app.DOMAIN_HERE' : `${$app.stage}.DOMAIN_HERE`,
+  domain,
   link: [api],
   path: 'apps/web',
   environment: {

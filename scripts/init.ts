@@ -317,8 +317,18 @@ const getDomain = async () => {
   const webPath = path.resolve('infra/web.ts');
   let webContent = fs.readFileSync(webPath, 'utf8');
 
-  // Check if DOMAIN_HERE is still present (implies it's not setup yet)
-  if (webContent.includes('DOMAIN_HERE')) {
+  // Check if domain is undefined, we haven't set this up yet
+  if (webContent.includes('domain = undefined')) {
+    // Ask if they want to use a custom domain
+    const wantsCustomDomain = await promptYesNo(
+      'Would you like to use a custom domain for your app? (y/n) '
+    );
+
+    if (!wantsCustomDomain) {
+      console.log('Custom domain setup skipped.\n');
+      return;
+    }
+
     let baseDomain = '';
     while (!baseDomain) {
       const input = await promptUser('Enter your base domain (e.g., example.com): ');
@@ -332,29 +342,22 @@ const getDomain = async () => {
       }
       baseDomain = trimmed;
     }
-    // Replace DOMAIN_HERE in infra/web.ts
-    webContent = webContent.replaceAll('DOMAIN_HERE', baseDomain);
+
+    // Replace the undefined domain line with the new template
+    const domainTemplate = `$app.stage === 'prod' ? 'app.${baseDomain}' : \`\${$app.stage}.${baseDomain}\``;
+    webContent = webContent.replace(/domain\s*=\s*undefined/, `domain = ${domainTemplate}`);
     fs.writeFileSync(webPath, webContent);
     console.log(
       `✔ Web domain set to app.${baseDomain} (prod) and <stage>.${baseDomain} (other stages).\n`
     );
     return baseDomain;
   } else {
-    // Extract the domain from the file, even if the domain property spans multiple lines
-    const domainPropMatch = webContent.match(/domain:\s*([\s\S]*?)[,\n]/i);
+    // Extract the domain from the file
+    const domainPropMatch = webContent.match(/domain\s*=\s*[\s\S]*?['"`]app\.([^'"`]+)['"`]/);
     if (domainPropMatch) {
-      const domainValue = domainPropMatch[1];
-      // Match all quoted values (single, double, or backtick)
-      const quotedMatches = [...domainValue.matchAll(/['"`]{1}([^'"`]+)['"`]{1}/g)];
-      // Find the first quoted value that contains a dot (.)
-      const realDomain = quotedMatches
-        .map((m) => m[1])
-        .find((val) => val.includes('.') && /[a-z]{2,}$/.test(val));
-      if (realDomain) {
-        const baseDomain = getBaseDomain(realDomain);
-        console.log(`✔ Web domain already configured: ${baseDomain}\n`);
-        return baseDomain;
-      }
+      const baseDomain = domainPropMatch[1];
+      console.log(`✔ Web domain already configured: ${baseDomain}\n`);
+      return baseDomain;
     }
 
     // Sanity check (should never happen)
@@ -910,14 +913,14 @@ const setupCrispChat = async () => {
 
 // ---------- DOCS SITE HELPER ----------
 /** Sets up the docs site if the user wants it */
-const setupDocsSite = async ({ domain }: { domain: string }) => {
+const setupDocsSite = async ({ domain }: { domain?: string }) => {
   console.log('Setting up docs site...');
 
-  const docsPath = path.resolve('infra/docs.ts');
-  let docsContent = fs.readFileSync(docsPath, 'utf8');
+  const sstConfigPath = path.resolve('sst.config.ts');
+  let sstConfig = fs.readFileSync(sstConfigPath, 'utf8');
 
-  // Check if the docs site is already set up (DOMAIN_HERE replaced)
-  if (!docsContent.includes('DOMAIN_HERE')) {
+  // Check if the docs site is already enabled (uncommented in sst.config.ts)
+  if (!/\/\/\s*await import\(['"]\.\/infra\/docs['"]\);/.test(sstConfig)) {
     console.log('✔ Docs site already configured.\n');
     return;
   }
@@ -932,16 +935,23 @@ const setupDocsSite = async ({ domain }: { domain: string }) => {
     return;
   }
 
-  // Update infra/docs.ts with the new domain
-  docsContent = docsContent.replaceAll('DOMAIN_HERE', domain);
-  fs.writeFileSync(docsPath, docsContent);
-  console.log(
-    `✔ Docs site domain set to docs.${domain} (prod) and <stage>.docs.${domain} (other stages).`
-  );
+  // If they have a domain, update infra/docs.ts with the new domain template
+  if (domain) {
+    const docsPath = path.resolve('infra/docs.ts');
+    let docsContent = fs.readFileSync(docsPath, 'utf8');
 
-  // Also update sst.config.ts to uncomment the docs import
-  const sstConfigPath = path.resolve('sst.config.ts');
-  let sstConfig = fs.readFileSync(sstConfigPath, 'utf8');
+    // Replace the undefined domain line with the new template
+    const domainTemplate = `$app.stage === 'prod' ? 'docs.${domain}' : \`\${$app.stage}.docs.${domain}\``;
+    docsContent = docsContent.replace(/domain\s*=\s*undefined/, `domain = ${domainTemplate}`);
+    fs.writeFileSync(docsPath, docsContent);
+    console.log(
+      `✔ Docs site domain set to docs.${domain} (prod) and <stage>.docs.${domain} (other stages).`
+    );
+  } else {
+    console.log('✔ Docs site will be set up without a custom domain.');
+  }
+
+  // Update sst.config.ts to uncomment the docs import
   sstConfig = sstConfig.replace(
     /\s*\/\/\s*await import\(['"]\.\/infra\/docs['"]\);/,
     '\n    await import("./infra/docs");'

@@ -1,5 +1,7 @@
 # TODO
 
+- Remove E2E release check todo from CI file
+- Remove --print-logs from vitest calls
 - Ensure CI caches everything important (pnpm, node_modules, turbo, sst, next, playwright, etc)
 - Do PostHog NextJS error setup (talks about error boundary, etc)
 - Figure out if we need source map uploads for NextJS (maybe create a turbo command so that it runs for all necessary subrepos?)

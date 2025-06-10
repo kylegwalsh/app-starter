@@ -1,5 +1,8 @@
+/** The domain where we will host the docs site */
+const domain = undefined;
+
 // Our documentation site
 export const site = new sst.aws.Nextjs('docs', {
-  domain: $app.stage === 'prod' ? 'docs.DOMAIN_HERE' : `${$app.stage}.docs.DOMAIN_HERE`,
+  domain,
   path: 'apps/docs',
 });
