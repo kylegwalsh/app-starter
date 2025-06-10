@@ -144,7 +144,7 @@ jobs:
         run: pnpm exec sst install
 
       - name: Run tests
-        run: pnpm test
+        run: export SST_STAGE=dev && pnpm test
 
   # Run our E2E tests (only run on releases)
   e2e:
