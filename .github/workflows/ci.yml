@@ -98,6 +98,14 @@ jobs:
         with:
           cache-key: ${{ needs.setup.outputs.cache-key }}
 
+      - name: Echo SST_STAGE
+        run: |
+          if [ "$SST_STAGE" = "dev" ]; then
+            echo "SST_STAGE is dev"
+          else
+            echo "SST_STAGE is not dev"
+          fi
+
       - name: Run type check
         run: pnpm types:check
 
@@ -114,6 +122,19 @@ jobs:
         uses: ./.github/actions/setup
         with:
           cache-key: ${{ needs.setup.outputs.cache-key }}
+
+      # Cache SST providers for sst shell (used in standard tests)
+      - name: Cache SST providers
+        uses: actions/cache@v4
+        with:
+          path: .sst
+          key: ${{ runner.os }}-sst-providers
+          restore-keys: |
+            ${{ runner.os }}-sst-providers
+
+      # Ensure we install our providers (only installs the first time)
+      - name: Install providers
+        run: pnpm exec sst install
 
       - name: Run tests
         run: pnpm test
