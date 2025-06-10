@@ -12,20 +12,6 @@ on:
   release:
     types: [published]
 
-# Global environment variables
-env:
-  AWS_REGION: us-east-1
-  SST_STAGE: ${{ secrets.SST_STAGE }}
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  POSTHOG_CLI_ENV_ID: ${{ secrets.POSTHOG_CLI_ENV_ID }}
-  POSTHOG_CLI_TOKEN: ${{ secrets.POSTHOG_CLI_TOKEN }}
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
-  DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
-  BEFORE_SHA: ${{ github.event.before }}
-  GITHUB_SHA: ${{ github.sha }}
-  GITHUB_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-
 # The different jobs to run
 jobs:
   # ------------- START SETUP -------------
@@ -105,11 +91,11 @@ jobs:
           if [ -z "$SST_STAGE" ]; then
             echo "SST_STAGE is empty"
           elif [ "$SST_STAGE" = "dev" ]; then
-            echo "SST_STAGE is dev"
+            echo "SST_STAGE is the d word"
           elif [ "$SST_STAGE" = "prod" ]; then
-            echo "SST_STAGE is prod"
+            echo "SST_STAGE is the p word"
           else
-            echo "SST_STAGE is $SST_STAGE"
+            echo "SST_STAGE is the something else"
           fi
 
       - name: Run type check
@@ -121,6 +107,19 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     environment: ${{ github.event_name == 'release' && 'prod' || 'dev' }}
+    env:
+      AWS_REGION: us-east-1
+      SST_STAGE: ${{ secrets.SST_STAGE }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      POSTHOG_CLI_ENV_ID: ${{ secrets.POSTHOG_CLI_ENV_ID }}
+      POSTHOG_CLI_TOKEN: ${{ secrets.POSTHOG_CLI_TOKEN }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+      BEFORE_SHA: ${{ github.event.before }}
+      GITHUB_SHA: ${{ github.sha }}
+      GITHUB_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -152,6 +151,19 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     environment: ${{ github.event_name == 'release' && 'prod' || 'dev' }}
+    env:
+      AWS_REGION: us-east-1
+      SST_STAGE: ${{ secrets.SST_STAGE }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      POSTHOG_CLI_ENV_ID: ${{ secrets.POSTHOG_CLI_ENV_ID }}
+      POSTHOG_CLI_TOKEN: ${{ secrets.POSTHOG_CLI_TOKEN }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+      BEFORE_SHA: ${{ github.event.before }}
+      GITHUB_SHA: ${{ github.sha }}
+      GITHUB_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+
     # TODO: Re-enabled this once we finish testing
     # if: github.event_name == 'release'
     steps:
