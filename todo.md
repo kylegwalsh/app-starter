@@ -1,8 +1,5 @@
 # TODO
 
-- Ensure open next in CI doesn't say "No build cache found" after a successful deploy
-- Find a way to prime the CI the first time with the dev AND ci stage (maybe manually deploy???)
-- Remove E2E release check todo from CI file
 - Ensure CI caches everything important (pnpm, node_modules, turbo, sst, next, playwright, etc)
 - Do PostHog NextJS error setup (talks about error boundary, etc)
 - Posthog error tracking + analytics

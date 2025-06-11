@@ -65,6 +65,7 @@ jobs:
       # Cache Playwright browsers
       - name: Cache Playwright browsers
         uses: actions/cache@v4
+        id: cache-playwright-browsers
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-browsers
@@ -73,22 +74,23 @@ jobs:
 
       # Install Playwright browsers
       - name: Install Playwright browsers
-        if: steps.cache-deps.outputs.cache-hit != 'true'
+        if: steps.cache-playwright-browsers.outputs.cache-hit != 'true'
         run: npx playwright install chromium --with-deps
 
       # Cache SST providers
       - name: Cache SST providers
         uses: actions/cache@v4
+        id: cache-sst-providers
         with:
           path: .sst
           key: ${{ runner.os }}-sst-providers
           restore-keys: |
             ${{ runner.os }}-sst-providers
 
-      # Install SST providers
-      - name: Install SST providers
-        if: steps.cache-deps.outputs.cache-hit != 'true'
-        run: pnpm exec sst install
+      # If we didn't get a cache hit, it means we haven't set up SST in our CI yet
+      - name: Setup CI stage
+        if: steps.cache-sst-providers.outputs.cache-hit != 'true'
+        run: pnpm exec sst deploy --stage ci
 
   # ------------- START TESTING -------------
   # Lint packages for errors and formatting
@@ -145,8 +147,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     environment: ${{ github.event_name == 'release' && 'prod' || 'dev' }}
-    # TODO: Re-enabled this once we finish testing
-    # if: github.event_name == 'release'
+    if: github.event_name == 'release'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
