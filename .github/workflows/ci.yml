@@ -174,7 +174,9 @@ jobs:
 
       # Deploy the "ci" environment for running E2E tests
       - name: Deploy app
-        run: pnpm exec sst deploy --stage ci
+        run: |
+          pnpm exec sst unlock --stage ci
+          pnpm exec sst deploy --stage ci
 
       - name: Run E2E tests
         run: pnpm web test:e2e
@@ -242,7 +244,9 @@ jobs:
       # ------------- START DEPLOYMENT -------------
       # Deploy main apps using sst
       - name: Deploy app
-        run: pnpm exec sst deploy
+        run: |
+          pnpm exec sst unlock
+          pnpm exec sst deploy
 
       # Update database using prisma
       - name: Update database

@@ -22,10 +22,14 @@ The template is designed for rapid internal development and seamless deployment 
 - [Deployment](#deployment)
   - [Deploy to AWS](#deploy-to-aws)
   - [Continuous Integration & Delivery](#continuous-integration--delivery)
+    - [Current Workflow (Rapid Development)](#current-workflow-rapid-development)
+    - [Proposed Workflow (Larger Projects)](#proposed-workflow-larger-projects)
 - [Helper Tasks](#helper-tasks)
 - [Testing](#testing)
   - [Backend](#backend)
   - [Web](#web)
+    - [Basic Tests](#basic-tests)
+    - [E2E Tests](#e2e-tests)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -193,7 +197,7 @@ Optimized for small projects and quick iteration:
 
 **Main Branch:**
 
-- Every push triggers linting and unit tests
+- Every push triggers linting and basic tests
 - Auto-deploys to `dev` environment on test success
 
 **Production Releases:**
@@ -215,7 +219,7 @@ For projects requiring stricter quality gates:
 
 **Pull Requests:**
 
-- Trigger linting, unit tests, and builds
+- Trigger linting, basic tests, and builds
 - Must pass review before merging
 
 **Release Process:**
@@ -281,23 +285,23 @@ pnpm backend test:ui
 
 - **E2E Tests:** [Playwright](https://playwright.dev/)
 
-#### Unit Tests
+#### Basic Tests
 
 - **Test Runner:** [Vitest](https://vitest.dev/)
-- **Purpose:** We use Vitest to run unit tests against complicated utilities and functions in the web codebase. This is helpful for ensuring that complicated units of code behave as expected.
+- **Purpose:** We use Vitest to run basic tests against complicated utilities and functions in the web codebase. This is helpful for ensuring that complicated units of code behave as expected.
 
-**How to run frontend unit tests:**
+**How to run frontend basic tests:**
 
 ```sh
-pnpm web test:unit
+pnpm web test
 ```
 
-> This runs all Vitest unit tests for the web app.
+> This runs all Vitest basic tests for the web app.
 
 For the interactive UI:
 
 ```sh
-pnpm web test:unit:ui
+pnpm web test:ui
 ```
 
 #### E2E Tests

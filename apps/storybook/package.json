@@ -6,8 +6,8 @@
   "scripts": {
     "build": "storybook build",
     "dev": "storybook dev -p 6006",
-    "test": "sst shell --print-logs -- vitest",
-    "test:ci": "sst shell --stage dev --print-logs -- vitest run",
+    "test": "sst shell -- vitest",
+    "test:ci": "sst shell --stage ci -- vitest run",
     "test:ui": "sst shell  -- vitest --ui",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
