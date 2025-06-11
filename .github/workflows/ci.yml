@@ -154,6 +154,15 @@ jobs:
       - name: Setup project
         uses: ./.github/actions/setup
 
+      # Cache NextJS build
+      - name: Cache NextJS build
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/apps/web/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('apps/web/**/*.[jt]s?(x)') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
+
       # Cache SST artifacts for CI environment (used for e2e tests)
       - name: Cache SST CI artifacts
         uses: actions/cache@v4
@@ -240,7 +249,7 @@ jobs:
         run: pnpm backend exec prisma db push --skip-generate --accept-data-loss
 
       # Upload sourcemaps to PostHog
-      - name: Upload sourcemaps to PostHog
-        run: |
-          pnpm exec posthog-cli sourcemap inject --directory .sst/artifacts
-          pnpm exec posthog-cli sourcemap upload --directory .sst/artifacts
+      # - name: Upload sourcemaps to PostHog
+      #   run: |
+      #     pnpm exec posthog-cli sourcemap inject --directory .sst/artifacts
+      #     pnpm exec posthog-cli sourcemap upload --directory .sst/artifacts
