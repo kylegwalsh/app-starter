@@ -23,7 +23,6 @@ export default $config({
 
     // Apply default settings to all functions
     $transform(sst.aws.Function, (args) => {
-      console.log('TYPEOF ARGS.LINK', typeof args.link);
       // Link the secrets to every method
       // eslint-disable-next-line unicorn/prefer-spread
       args.link = ([] as unknown[]).concat((args.link as unknown[]) || [], secrets);

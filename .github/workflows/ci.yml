@@ -163,6 +163,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-sst-ci-
 
+      # Deploy the "ci" environment for running E2E tests
+      - name: Deploy app
+        run: pnpm exec sst deploy --stage ci
+
       - name: Run E2E tests
         run: pnpm web test:e2e
 
@@ -233,7 +237,7 @@ jobs:
 
       # Update database using prisma
       - name: Update database
-        run: pnpm exec prisma db push --skip-generate --accept-data-loss
+        run: pnpm backend exec prisma db push --skip-generate --accept-data-loss
 
       # Upload sourcemaps to PostHog
       - name: Upload sourcemaps to PostHog

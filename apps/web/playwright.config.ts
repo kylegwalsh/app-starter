@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { Resource } from 'sst';
 
 // Sets up our playwright test environment
 // https://playwright.dev/docs/test-configuration
@@ -32,9 +33,11 @@ export default defineConfig({
   // Run your local dev server before starting the tests.
   webServer: {
     cwd: '../..',
-    command: process.env.CI ? 'pnpm sst dev --print-logs --stage ci' : 'pnpm sst dev',
-    port: 3000,
-    reuseExistingServer: true,
+    command: 'pnpm sst dev',
+    // In our CI, we will test using the deployed URL
+    url: process.env.CI ? Resource.web.url : 'http://localhost:3000',
+    // Don't allow the CI to spin up a new instance if it can't find the deployment
+    reuseExistingServer: process.env.CI ? false : true,
     stdout: 'pipe',
     stderr: 'pipe',
     timeout: 180_000, // 3 minutes
