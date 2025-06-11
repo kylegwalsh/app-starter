@@ -35,7 +35,7 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-playwright-browsers
         fail-on-cache-miss: true
 
     - name: Restore SST providers
