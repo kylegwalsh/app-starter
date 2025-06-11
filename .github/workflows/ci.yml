@@ -249,7 +249,7 @@ jobs:
         run: pnpm backend exec prisma db push --skip-generate --accept-data-loss
 
       # Upload sourcemaps to PostHog
-      # - name: Upload sourcemaps to PostHog
-      #   run: |
-      #     pnpm exec posthog-cli sourcemap inject --directory .sst/artifacts
-      #     pnpm exec posthog-cli sourcemap upload --directory .sst/artifacts
+      - name: Upload sourcemaps to PostHog
+        run: |
+          pnpm exec posthog-cli sourcemap inject --directory .sst/artifacts
+          pnpm exec posthog-cli sourcemap upload --directory .sst/artifacts

@@ -231,12 +231,10 @@ const setupGithub = async ({
   if (posthogConfig) {
     // Set up the CLI token
     await execAsync(`gh secret set POSTHOG_CLI_TOKEN -a actions -b "${posthogConfig.cliToken}"`);
-    // Set environment ids (for each environment)
+    // Set project ids (for each environment)
+    await execAsync(`gh variable set POSTHOG_CLI_ENV_ID -b "${posthogConfig.devProjectId}" -e dev`);
     await execAsync(
-      `gh secret set POSTHOG_CLI_ENV_ID -a actions -b "${posthogConfig.devKey}" -e dev`
-    );
-    await execAsync(
-      `gh secret set POSTHOG_CLI_ENV_ID -a actions -b "${posthogConfig.prodKey}" -e prod`
+      `gh variable set POSTHOG_CLI_ENV_ID -b "${posthogConfig.prodProjectId}" -e prod`
     );
   }
 
@@ -723,7 +721,7 @@ const setupSupabase = async (projectName: string) => {
 // ---------- POSTHOG HELPERS ----------
 // Types for PostHog API responses
 type PosthogOrg = { id: string; name: string };
-type PosthogProject = { api_token: string };
+type PosthogProject = { id: string; api_token: string };
 
 /** Guides the user through setting up PostHog, including API key, org/project selection/creation, and saves config */
 const setupPosthog = async (projectName: string) => {
@@ -821,8 +819,8 @@ const setupPosthog = async (projectName: string) => {
       fs.writeFileSync(configPath, configContent);
       console.log('✔ PostHog has been added to the config.\n');
       return {
-        prodKey: prodProject.api_token,
-        devKey: devProject.api_token,
+        prodProjectId: prodProject.id,
+        devProjectId: devProject.id,
         cliToken,
       };
     } catch (error: any) {

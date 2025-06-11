@@ -40,7 +40,9 @@ export const config = {
   /** The configuration for PostHog */
   posthog: {
     /** The PostHog API key */
-    apiKey: isProd ? '' : '',
+    apiKey: isProd
+      ? 'phc_LE5qHtqyJtBrzG4vRkfTY5OKmc3bBhEf7u8OEPyneCD'
+      : 'phc_xKfOXqc9QAqX5E1KIepSG9EcG2FddQWvupGTvogQ0AH',
   },
   /** The configuration for our crisp chat */
   crisp: {
