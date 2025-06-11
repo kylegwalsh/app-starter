@@ -1,7 +1,7 @@
 name: App CI
 # Prevent multiple jobs from running at the same time and cancel in-progress runs
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name == 'release' && 'release' || github.ref }}
   # Disable cancelling in-progress runs because sst will lock a deploy, preventing the subsequent deploy from succeeding
   cancel-in-progress: false
 on:

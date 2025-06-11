@@ -5,9 +5,6 @@
     "format": {},
     "test": {},
     "test:ci": {},
-    "types:check": {},
-    "@repo/web#types:check": {
-      "dependsOn": ["@repo/backend#types:check"]
-    }
+    "types:check": {}
   }
 }

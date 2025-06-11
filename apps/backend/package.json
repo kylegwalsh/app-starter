@@ -22,7 +22,8 @@
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
     "pretty": "prettier --write . --ignore-path ../../.prettierignore",
     "format": "pnpm lint:fix & pnpm pretty",
-    "types:check": "tsc --emitDeclarationOnly",
+    "types:check": "tsc --noEmit",
+    "types:generate": "tsc --emitDeclarationOnly",
     "postinstall": "pnpm db:generate"
   },
   "devDependencies": {

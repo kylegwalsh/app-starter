@@ -17,7 +17,7 @@
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
     "pretty": "prettier --write . --ignore-path ../../.prettierignore",
     "format": "pnpm lint:fix & pnpm pretty",
-    "types:check": "tsc --noEmit",
+    "types:check": "pnpm --filter @repo/backend types:generate && tsc --noEmit",
     "postinstall": "npx playwright install chromium --with-deps"
   },
   "dependencies": {
