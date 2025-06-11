@@ -1,5 +1,6 @@
 # TODO
 
+- Ensure open next in CI doesn't say "No build cache found" after a successful deploy
 - Find a way to prime the CI the first time with the dev stage (maybe manually deploy???)
 - Remove E2E release check todo from CI file
 - Remove --print-logs from vitest calls

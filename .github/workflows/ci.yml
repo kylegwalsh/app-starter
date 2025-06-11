@@ -15,7 +15,7 @@ on:
 # Global environment variables
 env:
   AWS_REGION: us-east-1
-  SST_STAGE: ${{ secrets.SST_STAGE }}
+  SST_STAGE: ${{ vars.SST_STAGE }}
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   POSTHOG_CLI_ENV_ID: ${{ secrets.POSTHOG_CLI_ENV_ID }}
@@ -73,6 +73,7 @@ jobs:
 
       # Install Playwright browsers
       - name: Install Playwright browsers
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: npx playwright install chromium --with-deps
 
       # Cache SST providers
@@ -86,6 +87,7 @@ jobs:
 
       # Install SST providers
       - name: Install SST providers
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: pnpm exec sst install
 
   # ------------- START TESTING -------------

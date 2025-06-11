@@ -23,8 +23,10 @@ export default $config({
 
     // Apply default settings to all functions
     $transform(sst.aws.Function, (args) => {
-      // Link the secrets (only if secrets is an array)
-      args.link = [...((args.link as unknown[]) ?? []), ...secrets];
+      console.log('TYPEOF ARGS.LINK', typeof args.link);
+      // Link the secrets to every method
+      // eslint-disable-next-line unicorn/prefer-spread
+      args.link = ([] as unknown[]).concat((args.link as unknown[]) || [], secrets);
       // Add any environment variables
       args.environment = {
         // Add this so that AWS will re-use TCP connections instead of re-connecting every time

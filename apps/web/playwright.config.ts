@@ -32,7 +32,7 @@ export default defineConfig({
   // Run your local dev server before starting the tests.
   webServer: {
     cwd: '../..',
-    command: process.env.CI ? 'pnpm sst dev --stage ci' : 'pnpm sst dev',
+    command: process.env.CI ? 'pnpm sst dev --print-logs --stage ci' : 'pnpm sst dev',
     port: 3000,
     reuseExistingServer: true,
     stdout: 'pipe',

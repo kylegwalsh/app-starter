@@ -214,8 +214,8 @@ const setupGithub = async ({
   );
 
   // Set sst stage (for each environment)
-  await execAsync(`gh secret set SST_STAGE -a actions -b "dev" -e dev`);
-  await execAsync(`gh secret set SST_STAGE -a actions -b "prod" -e prod`);
+  await execAsync(`gh variable set SST_STAGE -b "dev" -e dev`);
+  await execAsync(`gh variable set SST_STAGE -b "prod" -e prod`);
 
   // Set database secrets (for each environment)
   await execAsync(`gh secret set DATABASE_URL -a actions -b "${dbConfig.prod.dbUrl}" -e prod`);
