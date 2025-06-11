@@ -9,6 +9,7 @@
     "start": "sst shell -- next start",
     "build:analyze": "cross-env ANALYZE=true NEXT_PUBLIC_STAGE=dev sst shell -- next build",
     "test": "sst shell --print-logs -- vitest run",
+    "test:ci": "sst shell --stage dev --print-logs -- vitest run",
     "test:ui": "sst shell -- vitest --ui",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

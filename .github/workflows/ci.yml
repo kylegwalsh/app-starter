@@ -33,10 +33,8 @@ jobs:
   setup:
     name: Setup
     runs-on: ubuntu-latest
-    # We will output a cache key for the node_modules that will be re-used by other jobs
-    outputs:
-      cache-key: ${{ steps.cache-key.outputs.key }}
     steps:
+      # Basic setup steps
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -49,10 +47,7 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: Generate cache key
-        id: cache-key
-        run: echo "key=${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}" >> $GITHUB_OUTPUT
-
+      # Cache dependencies
       - name: Set up cache for dependencies
         uses: actions/cache@v4
         id: cache-deps
@@ -61,10 +56,37 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
-          key: ${{ steps.cache-key.outputs.key }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
+      # Install dependencies
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
+
+      # Cache Playwright browsers
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      # Install Playwright browsers
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      # Cache SST providers
+      - name: Cache SST providers
+        uses: actions/cache@v4
+        with:
+          path: .sst
+          key: ${{ runner.os }}-sst-providers
+          restore-keys: |
+            ${{ runner.os }}-sst-providers
+
+      # Install SST providers
+      - name: Install SST providers
+        run: pnpm exec sst install
 
   # ------------- START TESTING -------------
   # Lint packages for errors and formatting
@@ -79,8 +101,6 @@ jobs:
 
       - name: Setup project
         uses: ./.github/actions/setup
-        with:
-          cache-key: ${{ needs.setup.outputs.cache-key }}
 
       - name: Run lint
         run: pnpm lint
@@ -97,20 +117,6 @@ jobs:
 
       - name: Setup project
         uses: ./.github/actions/setup
-        with:
-          cache-key: ${{ needs.setup.outputs.cache-key }}
-
-      - name: Echo SST_STAGE
-        run: |
-          if [ -z "$SST_STAGE" ]; then
-            echo "SST_STAGE is empty"
-          elif [ "$SST_STAGE" = "dev" ]; then
-            echo "SST_STAGE is the d word"
-          elif [ "$SST_STAGE" = "prod" ]; then
-            echo "SST_STAGE is the p word"
-          else
-            echo "SST_STAGE is the something else"
-          fi
 
       - name: Run type check
         run: pnpm types:check
@@ -127,24 +133,9 @@ jobs:
 
       - name: Setup project
         uses: ./.github/actions/setup
-        with:
-          cache-key: ${{ needs.setup.outputs.cache-key }}
-
-      # Cache SST providers for sst shell (used in standard tests)
-      - name: Cache SST providers
-        uses: actions/cache@v4
-        with:
-          path: .sst
-          key: ${{ runner.os }}-sst-providers
-          restore-keys: |
-            ${{ runner.os }}-sst-providers
-
-      # Ensure we install our providers (only installs the first time)
-      - name: Install providers
-        run: pnpm exec sst install
 
       - name: Run tests
-        run: export SST_STAGE=dev && pnpm test
+        run: pnpm test:ci
 
   # Run our E2E tests (only run on releases)
   e2e:
@@ -160,21 +151,6 @@ jobs:
 
       - name: Setup project
         uses: ./.github/actions/setup
-        with:
-          cache-key: ${{ needs.setup.outputs.cache-key }}
-
-      # Cache Playwright browsers
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-
-
-      # Install Playwright browsers
-      - name: Install Playwright browsers
-        run: npx playwright install chromium --with-deps
 
       # Cache SST artifacts for CI environment (used for e2e tests)
       - name: Cache SST CI artifacts
@@ -218,8 +194,6 @@ jobs:
 
       - name: Setup project
         uses: ./.github/actions/setup
-        with:
-          cache-key: ${{ needs.setup.outputs.cache-key }}
 
       # Cache NextJS build
       - name: Cache NextJS build

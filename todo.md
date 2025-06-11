@@ -1,5 +1,6 @@
 # TODO
 
+- Find a way to prime the CI the first time with the dev stage (maybe manually deploy???)
 - Remove E2E release check todo from CI file
 - Remove --print-logs from vitest calls
 - Ensure CI caches everything important (pnpm, node_modules, turbo, sst, next, playwright, etc)

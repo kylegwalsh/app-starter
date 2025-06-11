@@ -17,6 +17,7 @@
     "build": "sst build",
     "deploy": "pnpm backend db:generate && sst deploy",
     "test": "turbo test --continue",
+    "test:ci": "turbo test:ci --continue",
     "lint": "turbo lint --continue",
     "types:check": "turbo types:check --continue",
     "format": "turbo format --continue",

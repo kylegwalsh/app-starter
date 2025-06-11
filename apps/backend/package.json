@@ -8,6 +8,7 @@
     "build": "sst build",
     "deploy": "sst deploy",
     "test": "sst shell --print-logs -- vitest run",
+    "test:ci": "sst shell --stage dev --print-logs -- vitest run",
     "test:ui": "sst shell -- vitest --ui",
     "remove": "sst remove",
     "console": "sst console",
