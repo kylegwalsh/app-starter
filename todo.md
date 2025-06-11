@@ -1,9 +1,10 @@
 # TODO
 
+- Remove log from SST.config.ts
 - Ensure open next in CI doesn't say "No build cache found" after a successful deploy
 - Find a way to prime the CI the first time with the dev stage (maybe manually deploy???)
 - Remove E2E release check todo from CI file
-- Remove --print-logs from vitest calls
+- Remove --print-logs from all calls
 - Ensure CI caches everything important (pnpm, node_modules, turbo, sst, next, playwright, etc)
 - Do PostHog NextJS error setup (talks about error boundary, etc)
 - Figure out if we need source map uploads for NextJS (maybe create a turbo command so that it runs for all necessary subrepos?)
