@@ -97,7 +97,7 @@ const safeInvoke = async (func: () => Promise<void> | void) => {
     }
   } catch (error) {
     // Catch any errors
-    console.error('[analytics]', error);
+    console.error('[analytics] Error invoking analytics', error);
   }
 };
 
@@ -159,7 +159,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         }
       >
     ) {
-      console.log('Event: User Signed Out', {
+      console.log('[analytics] Event: User Signed Out', {
         category: 'User',
         ...properties,
       });
@@ -183,7 +183,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
     },
     /** Track when the user signs in */
     async userSignedIn(properties: EventProps<T>) {
-      console.log('Event: User Signed In', { category: 'User', ...properties });
+      console.log('[analytics] Event: User Signed In', { category: 'User', ...properties });
       await safeInvoke(() =>
         track('User Signed In', {
           ...properties,
@@ -201,7 +201,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         }
       >
     ) {
-      console.log('Event: User Signed Up', { category: 'User', ...properties });
+      console.log('[analytics] Event: User Signed Up', { category: 'User', ...properties });
       await safeInvoke(() => {
         track('User Signed Up', {
           ...properties,
@@ -211,7 +211,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
     },
     /** Identifies the user after sign in */
     async identify({ userId, traits }: IdentifyEvent) {
-      console.log('Event: Identify', userId, traits);
+      console.log('[analytics] Event: Identify', userId, traits);
 
       // Standardize their traits a little bit
       try {
@@ -228,7 +228,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
           }${traits?.lastName ?? ''}`;
         }
       } catch {
-        console.log('Error building names');
+        console.warn('[analytics] Error building names');
       }
 
       await safeInvoke(() => {
@@ -256,7 +256,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         try {
           onIdentify?.({ userId, traits });
         } catch (error) {
-          console.log('Error on identify', error);
+          console.error('[analytics] Error on identify', error);
         }
       });
     },
