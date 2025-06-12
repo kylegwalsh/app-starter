@@ -4,9 +4,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "sst shell --print-logs -- next build",
     "dev": "sst shell -- next dev",
     "start": "sst shell -- next start",
+    "build": "next build",
     "build:analyze": "cross-env ANALYZE=true NEXT_PUBLIC_STAGE=dev sst shell -- next build",
     "test": "sst shell -- vitest run",
     "test:ci": "sst shell --stage ci -- vitest run",
