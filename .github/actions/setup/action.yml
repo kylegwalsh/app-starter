@@ -1,6 +1,11 @@
 # A composite action that sets up the CI environment for all jobs
 name: 'Set up environment'
 description: 'Common setup steps for all jobs'
+inputs:
+  job-name:
+    description: 'Name of the job using this action (for cache differentiation)'
+    required: false
+    default: 'default'
 runs:
   using: 'composite'
   steps:
@@ -41,8 +46,9 @@ runs:
       uses: actions/cache@v4
       with:
         path: .turbo
-        key: ${{ runner.os }}-turbo-${{ github.sha }}
+        key: ${{ runner.os }}-turbo-${{ inputs.job-name }}-${{ github.sha }}
         restore-keys: |
+          ${{ runner.os }}-turbo-${{ inputs.job-name }}-
           ${{ runner.os }}-turbo-
 
     # Generate some of the types we'll need

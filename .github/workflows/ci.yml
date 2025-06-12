@@ -97,6 +97,8 @@ jobs:
 
       - name: Set up environment
         uses: ./.github/actions/setup
+        with:
+          job-name: lint
 
       - name: Run lint
         run: pnpm lint
@@ -113,6 +115,8 @@ jobs:
 
       - name: Set up environment
         uses: ./.github/actions/setup
+        with:
+          job-name: typecheck
 
       - name: Run type check
         run: pnpm types:check
@@ -129,6 +133,8 @@ jobs:
 
       - name: Set up environment
         uses: ./.github/actions/setup
+        with:
+          job-name: test
 
       - name: Run tests
         run: pnpm test:ci
@@ -146,6 +152,8 @@ jobs:
 
       - name: Set up environment
         uses: ./.github/actions/setup
+        with:
+          job-name: e2e
 
       # Cache NextJS build
       - name: Cache NextJS build
@@ -204,6 +212,8 @@ jobs:
 
       - name: Set up environment
         uses: ./.github/actions/setup
+        with:
+          job-name: deploy
 
       # Cache NextJS build
       - name: Cache NextJS build

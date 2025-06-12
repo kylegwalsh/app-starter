@@ -1,6 +1,5 @@
 # TODO
 
-- Ensure CI caches everything important (pnpm, node_modules, turbo, sst, next, playwright, etc)
 - Do PostHog NextJS error setup (talks about error boundary, etc)
 - Posthog error tracking + analytics
 - Double check posthog source maps from CI
