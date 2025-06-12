@@ -1,5 +1,5 @@
 # A composite action that sets up the CI environment for all jobs
-name: 'Setup environment'
+name: 'Set up environment'
 description: 'Common setup steps for all jobs'
 runs:
   using: 'composite'
