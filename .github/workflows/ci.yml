@@ -47,17 +47,6 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      # Cache dependencies
-      - name: Set up cache for dependencies
-        uses: actions/cache@v4
-        id: cache-deps
-        with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            packages/*/node_modules
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-
       # Install dependencies
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts

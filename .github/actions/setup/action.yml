@@ -12,6 +12,7 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
+        cache: 'pnpm'
 
     - name: Configure AWS CLI
       shell: bash
@@ -21,16 +22,6 @@ runs:
         aws configure set default.region us-east-1
 
     # Restore some of the cached dependencies we generated during the setup job
-    - name: Restore dependencies
-      uses: actions/cache/restore@v4
-      with:
-        path: |
-          node_modules
-          apps/*/node_modules
-          packages/*/node_modules
-        key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-        fail-on-cache-miss: true
-
     - name: Restore Playwright browsers
       uses: actions/cache/restore@v4
       with:
