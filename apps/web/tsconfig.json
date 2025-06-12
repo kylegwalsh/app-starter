@@ -3,7 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@repo/analytics": ["../../packages/analytics/analytics.web.ts"]
     }
   },
   "references": [

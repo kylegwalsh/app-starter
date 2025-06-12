@@ -66,6 +66,7 @@
   // Spell checker settings
   "cSpell.words": [
     "authed",
+    "autocapture",
     "autodocs",
     "codegen",
     "deepmerge",
