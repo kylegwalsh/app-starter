@@ -16,5 +16,10 @@
   "devDependencies": {
     "@repo/tsconfig": "workspace:*",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@repo/config": "workspace:*",
+    "posthog-js": "^1.250.2",
+    "posthog-node": "^5.0.0"
   }
 }

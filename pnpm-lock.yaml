@@ -355,6 +355,16 @@ importers:
         version: 5.8.3
 
   packages/analytics:
+    dependencies:
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../config
+      posthog-js:
+        specifier: ^1.250.2
+        version: 1.250.2
+      posthog-node:
+        specifier: ^5.0.0
+        version: 5.0.0
     devDependencies:
       '@repo/tsconfig':
         specifier: workspace:*
@@ -5328,6 +5338,12 @@ packages:
         integrity: sha512-AtDzVIgRrmRKQai62yuSIN5vNiQjcJakJb4fbhVw3ehxx7Lohphvw9SGNWKhLFqSxC4ilD0g/L1huAYFQU3Q6A==,
       }
 
+  core-js@3.43.0:
+    resolution:
+      {
+        integrity: sha512-N6wEbTTZSYOY2rYAn85CuvWWkCK6QweMn7/4Nr3w+gDBeBhk/x4EJeY6FPo4QzDoJZxVTv8U7CMvgWk6pOHHqA==,
+      }
+
   cors@2.8.5:
     resolution:
       {
@@ -6454,6 +6470,12 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fflate@0.4.8:
+    resolution:
+      {
+        integrity: sha512-FJqqoDBR00Mdj9ppamLa/Y7vxm+PRmNWA67N846RvsoYVMKB4q3y/de5PA7gUmRMYK/8CMz2GDZQmCRN1wBcWA==,
+      }
 
   fflate@0.8.2:
     resolution:
@@ -9806,6 +9828,33 @@ packages:
       }
     engines: { node: ^10 || ^12 || >=14 }
 
+  posthog-js@1.250.2:
+    resolution:
+      {
+        integrity: sha512-g/H9lJhjhsYPnpxntqp36osK7oJ6CFqul2+mVUkaacAJUG4DqCG8iawsSnZvvUmapjapbf2HUA7PCRrpRsl06A==,
+      }
+    peerDependencies:
+      '@rrweb/types': 2.0.0-alpha.17
+      rrweb-snapshot: 2.0.0-alpha.17
+    peerDependenciesMeta:
+      '@rrweb/types':
+        optional: true
+      rrweb-snapshot:
+        optional: true
+
+  posthog-node@5.0.0:
+    resolution:
+      {
+        integrity: sha512-gontigBt1pGHGXZme3+ojDdCYL66h/vvo+6KaQ6A51xqUOYgRvyzCLkS9Xv816jNBesRO8ouRjG428SDb2fFkg==,
+      }
+    engines: { node: '>=20' }
+
+  preact@10.26.9:
+    resolution:
+      {
+        integrity: sha512-SSjF9vcnF27mJK1XyFMNJzFd5u3pQiATFqoaDy03XuN00u4ziveVVEGt5RKJrDR8MHE/wJo9Nnad56RLzS2RMA==,
+      }
+
   prebuild-install@7.1.3:
     resolution:
       {
@@ -12351,6 +12400,12 @@ packages:
     resolution:
       {
         integrity: sha512-XHPEwS0q6TaxcvG85+8EYkbiCux2XtWG2mkc47Ng2A77BQu9+DqIOJldST4HgPkuea7dvKSj5VgX3P1d4rW8Tg==,
+      }
+
+  web-vitals@4.2.4:
+    resolution:
+      {
+        integrity: sha512-r4DIlprAGwJ7YM11VZp4R884m0Vmgr6EAKe3P+kO0PPj3Unqyvv59rczf6UiGcb9Z8QxZVcqKNwv/g0WNdWwsw==,
       }
 
   webidl-conversions@7.0.0:
@@ -15295,7 +15350,7 @@ snapshots:
       sirv: 3.0.1
       tinyglobby: 0.2.13
       tinyrainbow: 2.0.0
-      vitest: 3.1.4(@types/debug@4.1.12)(@types/node@22.15.29)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jiti@2.4.2)(jsdom@26.1.0)(lightningcss@1.30.1)(msw@2.8.7(@types/node@22.15.29)(typescript@5.8.3))(sass@1.49.11)(terser@5.40.0)(tsx@4.19.4)(yaml@2.8.0)
+      vitest: 3.1.4(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jiti@2.4.2)(jsdom@26.1.0)(lightningcss@1.30.1)(msw@2.8.7(@types/node@20.17.19)(typescript@5.8.3))(sass@1.49.11)(terser@5.40.0)(tsx@4.19.4)(yaml@2.8.0)
 
   '@vitest/utils@3.0.9':
     dependencies:
@@ -15955,6 +16010,8 @@ snapshots:
       browserslist: 4.24.5
 
   core-js-pure@3.40.0: {}
+
+  core-js@3.43.0: {}
 
   cors@2.8.5:
     dependencies:
@@ -16797,6 +16854,8 @@ snapshots:
   fdir@6.4.4(picomatch@4.0.2):
     optionalDependencies:
       picomatch: 4.0.2
+
+  fflate@0.4.8: {}
 
   fflate@0.8.2: {}
 
@@ -19184,6 +19243,17 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
+  posthog-js@1.250.2:
+    dependencies:
+      core-js: 3.43.0
+      fflate: 0.4.8
+      preact: 10.26.9
+      web-vitals: 4.2.4
+
+  posthog-node@5.0.0: {}
+
+  preact@10.26.9: {}
+
   prebuild-install@7.1.3:
     dependencies:
       detect-libc: 2.0.4
@@ -21065,6 +21135,8 @@ snapshots:
   wcwidth@1.0.1:
     dependencies:
       defaults: 1.0.4
+
+  web-vitals@4.2.4: {}
 
   webidl-conversions@7.0.0: {}
 
