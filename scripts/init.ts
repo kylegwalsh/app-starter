@@ -967,7 +967,7 @@ const printFinalNotes = ({ setupPosthog }: { setupPosthog: boolean }) => {
   // Only mention the error tracking setup if they opted in
   if (setupPosthog) {
     console.log(
-      '- Consider setting up error notifications for Slack: https://us.posthog.com/error_tracking/configuration'
+      '- Consider setting up error notifications for Slack: https://us.posthog.com/error_tracking/configuration?tab=error-tracking-alerting#selectedSetting=error-tracking-alerting'
     );
     console.log(
       '- You can set up an email system by connecting Posthog to Loops or another email service.'

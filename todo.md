@@ -1,11 +1,10 @@
 # TODO
 
+- TSC for linting frontend files in lint-staged will need to run type gen on the backend first (otherwise routes won't exist)
+
 PostHog
 
-- Do PostHog NextJS error setup (talks about error boundary, etc)
-- Posthog error tracking + analytics
-- Test crisp + analytics for crisp
-  - Ensure posthog stuff is optional and that we don't run source map stuff if it's not set up
+- Ensure we don't run source map stuff if posthog is not set up
 - Double check posthog source maps from CI
   - The CI also mentioned we were missing a project name (see if we need to set that up)
 - Figure out if we need source map uploads for NextJS (maybe create a turbo command so that it runs for all necessary subrepos?)
@@ -21,9 +20,9 @@ PostHog
   - Add auth provider mention to README
   - Test PostHog user signed up / out events (does it track and reset session / crisp?)
   - Test crisp + analytics for crisp
+- Add stripe support and add to setup script (plugin for better auth)
 - Consider implementing posthog feature flags
 - Update the backend mocked router to have user context (mirror output of better auth)
-- Add stripe support and add to setup script (plugin for better auth)
 - Add marketing site setup (get prompts / framework from Chad)
 - Maybe add an optional dashboard setup
 - Cursor rules

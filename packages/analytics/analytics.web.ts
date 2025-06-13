@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 import { config } from '@repo/config';
 import posthog from 'posthog-js';
 
@@ -10,13 +12,16 @@ declare global {
   };
 }
 
-// Initialize our PostHog instance
-posthog.init(config.posthog.apiKey, {
-  capture_pageview: config.posthog.isEnabled ? 'history_change' : false,
-  capture_exceptions: config.posthog.isEnabled,
-  autocapture: config.posthog.isEnabled,
-  capture_performance: true,
-});
+// Only initialize PostHog if we're on the client and PostHog is enabled
+if (typeof window !== 'undefined' && config.posthog.isEnabled && config.posthog.apiKey) {
+  // Initialize our PostHog instance
+  posthog.init(config.posthog.apiKey, {
+    capture_pageview: 'history_change',
+    capture_exceptions: true,
+    autocapture: true,
+    capture_performance: true,
+  });
+}
 
 /** Our analytics client (for sending events to PostHog) */
 export const analytics = createAnalyticsEvents<'web'>({

@@ -9,6 +9,9 @@ export const router = t.router({
     const count = await db.settings.count();
     return count;
   }),
+  error: publicProcedure.mutation(() => {
+    throw new Error('test');
+  }),
 });
 
 /**

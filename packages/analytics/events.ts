@@ -90,7 +90,7 @@ type IdentifyEvent = {
 const safeInvoke = async (func: () => Promise<void> | void) => {
   try {
     // Only send analytics events if posthog is enabled
-    if (config.posthog.isEnabled) {
+    if (config.posthog.isEnabled && config.posthog.apiKey) {
       await func();
       // Wait 250 ms to ensure the event finishes processing
       await time.wait(250);
@@ -273,10 +273,10 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
       error: unknown,
       // The properties are optional on web
       ...args: T extends 'backend'
-        ? [{ userId: string } & Record<string, unknown>]
+        ? [{ userId?: string } & Record<string, unknown>]
         : [Record<string, unknown>?]
     ) {
-      console.log('[analytics] Capturing error', error);
+      console.error(error);
 
       await safeInvoke(() => {
         const properties = args?.[0] ?? {};
