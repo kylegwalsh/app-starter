@@ -184,6 +184,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
     /** Track when the user signs in */
     async userSignedIn(properties: EventProps<T>) {
       console.log('[analytics] Event: User Signed In', { category: 'User', ...properties });
+
       await safeInvoke(() =>
         track('User Signed In', {
           ...properties,
@@ -265,6 +266,28 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
       console.log('[analytics] Resetting user');
       await safeInvoke(() => {
         if ('reset' in platformAnalytics) platformAnalytics.reset();
+      });
+    },
+    /** Capture an error */
+    async captureException(
+      error: unknown,
+      // The properties are optional on web
+      ...args: T extends 'backend'
+        ? [{ userId: string } & Record<string, unknown>]
+        : [Record<string, unknown>?]
+    ) {
+      console.log('[analytics] Capturing error', error);
+
+      await safeInvoke(() => {
+        const properties = args?.[0] ?? {};
+
+        // Track the error differently based on platform
+        if (platform === 'backend') {
+          const { userId, ...restProperties } = properties;
+          platformAnalytics.captureException(error, userId as string, restProperties);
+        } else if (platform === 'web') {
+          platformAnalytics.captureException(error, properties);
+        }
       });
     },
   } as const;
