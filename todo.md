@@ -1,7 +1,5 @@
 # TODO
 
-- TSC for linting frontend files in lint-staged will need to run type gen on the backend first (otherwise routes won't exist)
-
 PostHog
 
 - Ensure we don't run source map stuff if posthog is not set up

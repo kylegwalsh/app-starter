@@ -25,8 +25,8 @@
     "update-readme": "doctoc README.md",
     "create:package": "tsx scripts/create-package",
     "postinstall": "manypkg fix",
-    "prepare": "husky",
-    "precommit": "pnpm --filter backend types:generate && pnpm lint-staged"
+    "pre-commit": "tsx scripts/pre-commit",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@manypkg/cli": "^0.24.0",
