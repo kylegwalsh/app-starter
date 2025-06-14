@@ -8,6 +8,8 @@ let nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Generate source maps for error tracking
+  productionBrowserSourceMaps: true,
   // Override the webpack config for custom functionality
   webpack: (config: unknown) => {
     // Ensure the web always grabs the .web.ts files over the normal files (so it can share directories with the backend)

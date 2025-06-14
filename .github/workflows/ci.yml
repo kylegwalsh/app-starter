@@ -271,3 +271,5 @@ jobs:
         run: |
           pnpm exec posthog-cli sourcemap inject --directory .sst/artifacts
           pnpm exec posthog-cli sourcemap upload --directory .sst/artifacts
+          pnpm exec posthog-cli sourcemap inject --directory apps/web/.next
+          pnpm exec posthog-cli sourcemap upload --directory apps/web/.next

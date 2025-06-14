@@ -3,6 +3,10 @@ import { db } from '@/db';
 import { t } from './trpc/init';
 import { publicProcedure } from './trpc/procedures';
 
+const myErrorMethod = () => {
+  throw new Error('test');
+};
+
 /** The actual router used to handle all tRPC traffic */
 export const router = t.router({
   test: publicProcedure.query(async () => {
@@ -10,7 +14,7 @@ export const router = t.router({
     return count;
   }),
   error: publicProcedure.mutation(() => {
-    throw new Error('test');
+    myErrorMethod();
   }),
 });
 
