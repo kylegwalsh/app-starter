@@ -49,6 +49,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Continuous Integration:** Automated testing and deployment via GitHub Actions.
 - **Alerts:** Slack integration for real-time notifications and alerts.
 - **AI Integration:** Pre-configured with Cursor rules for AI-powered workflows.
+- **Logging:** Shared logging package (Pino) with pretty local output, and production integration with Better Stack and CloudWatch.
 
 ---
 
@@ -64,6 +65,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **GitHub Actions:** CI/CD pipelines for automated testing and deployment.
 - **Slack:** Integration for deployment and error alerts.
 - **Posthog:** Analytics and error tracking.
+- **Better Stack:** Log management and uptime monitoring platform integrated for production observability.
 
 _All packages and apps are written in TypeScript for consistency and type safety._
 
@@ -84,6 +86,7 @@ _All packages and apps are written in TypeScript for consistency and type safety
 │   ├── tsconfig/      # Shared TypeScript config
 │   ├── design/ # Shared design system (React)
 │   ├── schemas/       # Shared schemas (forms + validation)
+│   ├── logs/          # Shared logging package (uses pino)
 │   └── ...            # (More packages can be added)
 ├── infra/             # Infrastructure code (SST, AWS)
 │   ├── api.ts

@@ -129,4 +129,11 @@ export default defineConfig([
       'storybook/use-storybook-expect': 'off',
     },
   },
+  // Warn on console usage in backend code (should use log package)
+  {
+    files: ['apps/backend/**'],
+    rules: {
+      'no-console': 'warn',
+    },
+  },
 ]);

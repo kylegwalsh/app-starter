@@ -886,8 +886,7 @@ const setupCrispChat = async () => {
   console.log('\nSign up or log in at: https://app.crisp.chat/initiate/login/');
   console.log('1. Create a new workspace and enter your site details.');
   console.log('2. Click "Install on website" > "HTML".');
-  console.log('3. Copy the CRISP_WEBSITE_ID value from the code snippet.');
-  console.log('');
+  console.log('3. Copy the CRISP_WEBSITE_ID value from the code snippet.\n');
 
   // Prompt for the websiteId
   let newWebsiteId = '';
@@ -958,9 +957,114 @@ const setupDocsSite = async ({ domain }: { domain?: string }) => {
   console.log('✔ Enabled docs site stack in sst.config.ts.\n');
 };
 
+// ---------- BETTER STACK HELPERS ----------
+/** Guides the user through setting up Better Stack observability */
+const setupBetterStack = async (): Promise<boolean> => {
+  console.log('Setting up Better Stack observability...');
+
+  // Check if Better Stack is already configured in SST secrets
+  try {
+    // Retrieve the secrets for dev and prod
+    const devSecrets = await getAllSecrets('dev');
+    const prodSecrets = await getAllSecrets('prod');
+
+    // Check if both dev and prod have their secrets configured
+    if (
+      devSecrets.BETTER_STACK_SOURCE_TOKEN &&
+      prodSecrets.BETTER_STACK_SOURCE_TOKEN &&
+      devSecrets.BETTER_STACK_INGESTING_URL &&
+      prodSecrets.BETTER_STACK_INGESTING_URL
+    ) {
+      console.log('✔ Better Stack already configured.\n');
+      return true;
+    }
+  } catch {}
+
+  console.log('Better Stack provides enhanced log searching and monitoring beyond AWS CloudWatch.');
+  // Ask if they want to set up Better Stack
+  const doSetup = await promptYesNo(
+    'Would you like to set up Better Stack for enhanced observability? (y/n) '
+  );
+  if (!doSetup) {
+    console.log('Better Stack setup skipped.\n');
+    return false;
+  }
+
+  // Guide the user through the setup steps
+  console.log('\nSign up or log in at: https://betterstack.com/');
+  console.log('1. Create a new NodeJS project.');
+  console.log('2. Copy the source token and ingestion URL from the project settings.\n');
+
+  // Prompt for the source token
+  let sourceToken = '';
+  while (!sourceToken) {
+    const input = await promptUser('Enter your Better Stack source token: ');
+    sourceToken = input.trim();
+    if (!sourceToken) {
+      console.log('Please enter a valid Better Stack source token.');
+      sourceToken = '';
+    }
+  }
+
+  // Prompt for the ingestion URL
+  let ingestionUrl = '';
+  while (!ingestionUrl) {
+    const input = await promptUser('Enter your Better Stack ingestion URL: ');
+    ingestionUrl = input.trim();
+    if (!ingestionUrl.includes('.com')) {
+      console.log('Please enter a valid Better Stack ingestion URL.');
+      ingestionUrl = '';
+    }
+  }
+  // Add https:// to the URL
+  ingestionUrl = `https://${ingestionUrl}`;
+
+  // Add secrets to SST
+  console.log('\nAdding Better Stack secrets to SST...');
+  const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
+  await execAsync(
+    `pnpm tsx ${addSecretScript} BETTER_STACK_SOURCE_TOKEN "${sourceToken}" "${sourceToken}"`
+  );
+  await execAsync(
+    `pnpm tsx ${addSecretScript} BETTER_STACK_INGESTING_URL "${ingestionUrl}" "${ingestionUrl}"`
+  );
+
+  // Uncomment secrets in infra/secrets.ts
+  const secretsPath = path.resolve('infra/secrets.ts');
+  let secretsContent = fs.readFileSync(secretsPath, 'utf8');
+  // Uncomment the secret declarations
+  secretsContent = secretsContent.replaceAll(
+    '// export const BETTER_STACK_SOURCE_TOKEN',
+    'export const BETTER_STACK_SOURCE_TOKEN'
+  );
+  secretsContent = secretsContent.replaceAll(
+    '// export const BETTER_STACK_INGESTING_URL',
+    'export const BETTER_STACK_INGESTING_URL'
+  );
+  // Uncomment the secrets in the array
+  secretsContent = secretsContent.replaceAll(
+    '// BETTER_STACK_SOURCE_TOKEN',
+    'BETTER_STACK_SOURCE_TOKEN'
+  );
+  secretsContent = secretsContent.replaceAll(
+    '// BETTER_STACK_INGESTING_URL',
+    'BETTER_STACK_INGESTING_URL'
+  );
+  fs.writeFileSync(secretsPath, secretsContent);
+  console.log('✔ Better Stack secrets have been set in SST.\n');
+
+  return true;
+};
+
 // ---------- FINAL NOTES HELPER ----------
 /** Prints final setup instructions and tips for the user. */
-const printFinalNotes = ({ setupPosthog }: { setupPosthog: boolean }) => {
+const printFinalNotes = ({
+  setupPosthog,
+  setupBetterStack,
+}: {
+  setupPosthog: boolean;
+  setupBetterStack: boolean;
+}) => {
   console.log('--- Final Steps ---');
   console.log('You can start the app with: pnpm start\n');
 
@@ -973,6 +1077,14 @@ const printFinalNotes = ({ setupPosthog }: { setupPosthog: boolean }) => {
       '- You can set up an email system by connecting Posthog to Loops or another email service.'
     );
   }
+
+  // Only mention Better Stack if they opted in
+  if (setupBetterStack) {
+    console.log(
+      '- Set up uptime monitoring in your Better Stack dashboard: https://betterstack.com/'
+    );
+  }
+
   console.log(
     '- Make sure you restart your terminal for your AWS profile changes to take effect.\n'
   );
@@ -1012,17 +1124,20 @@ const init = async () => {
     posthogConfig,
   });
 
-  // Setup slack
+  // Setup Slack
   await setupSlack(githubUrl);
 
-  // Setup crisp chat
+  // Setup Crisp Chat
   await setupCrispChat();
 
   // Setup docs site
   await setupDocsSite({ domain });
 
+  // Setup Better Stack observability
+  const betterStackConfig = await setupBetterStack();
+
   // Print final notes
-  printFinalNotes({ setupPosthog: !!posthogConfig });
+  printFinalNotes({ setupPosthog: !!posthogConfig, setupBetterStack: betterStackConfig });
 };
 
 void init();

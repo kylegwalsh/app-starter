@@ -1,0 +1,28 @@
+{
+  "name": "@repo/logs",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "pretty": "prettier --write . --ignore-path ../../.prettierignore",
+    "format": "pnpm lint:fix & pnpm pretty",
+    "types:check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "workspace:*",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@logtail/node": "^0.5.5",
+    "@logtail/pino": "^0.5.5",
+    "@repo/config": "workspace:*",
+    "pino": "^8.19.0",
+    "pino-lambda": "^4.4.1",
+    "pino-pretty": "^10.3.1"
+  }
+}
