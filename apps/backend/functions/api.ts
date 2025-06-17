@@ -1,9 +1,9 @@
 import { config } from '@repo/config';
 import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
-import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import { createOpenApiAwsLambdaHandler, generateOpenApiDocument } from 'better-trpc-openapi';
 import { Resource } from 'sst';
 
+import { withLambdaContext } from '@/core';
 import { router } from '@/routes';
 import { createContext } from '@/routes/trpc/context';
 import { onError } from '@/routes/trpc/error';
@@ -25,18 +25,16 @@ const restHandler = createOpenApiAwsLambdaHandler({
 
 // ---------- MAIN API ENTRY POINT ----------
 /** The main entry point for the backend APIs */
-export const handler = async (event: APIGatewayProxyEventV2, context: Context) => {
+export const handler = withLambdaContext<'api'>(async (event, context) => {
   const path = event.rawPath;
 
   // If the path is /trpc, return the tRPC handler
   if (path.startsWith('/trpc')) {
-    console.log('TRPC Event:', event);
     return trpcHandler(event, context);
   }
 
   // If the path is /api, return the REST handler
   if (path.startsWith('/api')) {
-    console.log('REST Event:', event);
     return restHandler(event, context);
   }
 
@@ -82,4 +80,4 @@ export const handler = async (event: APIGatewayProxyEventV2, context: Context) =
     statusCode: 404,
     body: JSON.stringify({ message: 'Not found' }),
   };
-};
+});

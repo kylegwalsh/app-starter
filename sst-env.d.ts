@@ -5,6 +5,14 @@
 
 declare module "sst" {
   export interface Resource {
+    "BETTER_STACK_INGESTING_URL": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "BETTER_STACK_SOURCE_TOKEN": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "DATABASE_URL": {
       "type": "sst.sst.Secret"
       "value": string

@@ -1,3 +1,5 @@
+import { log } from '@repo/logs';
+
 import { db } from '@/db';
 
 import { t } from './trpc/init';
@@ -11,6 +13,7 @@ const myErrorMethod = () => {
 export const router = t.router({
   test: publicProcedure.query(async () => {
     const count = await db.settings.count();
+    log.info('test', { count: 5 });
     return count;
   }),
   error: publicProcedure.mutation(() => {

@@ -11,7 +11,7 @@ let nextConfig: NextConfig = {
   // Generate source maps for error tracking
   productionBrowserSourceMaps: true,
   // Override the webpack config for custom functionality
-  webpack: (config: unknown) => {
+  webpack: (config: object) => {
     // Ensure the web always grabs the .web.ts files over the normal files (so it can share directories with the backend)
     // @ts-expect-error - Next doesn't type the config correctly
     // eslint-disable-next-line
