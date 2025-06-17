@@ -1,4 +1,5 @@
 import { config } from '@repo/config';
+import { log } from '@repo/logs';
 import { PostHog } from 'posthog-node';
 
 import { createAnalyticsEvents } from './events';
@@ -24,4 +25,5 @@ try {
 export const analytics = createAnalyticsEvents<'backend'>({
   platformAnalytics: posthog as PostHog,
   platform: 'backend',
+  log,
 });

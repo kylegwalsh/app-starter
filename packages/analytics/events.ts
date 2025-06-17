@@ -1,4 +1,5 @@
 import { config } from '@repo/config';
+import type { log } from '@repo/logs';
 import { time } from '@repo/utils';
 import type { PostHog as PostHogWeb } from 'posthog-js';
 import type { PostHog as PostHogBackend } from 'posthog-node';
@@ -13,12 +14,14 @@ type SharedAnalyticsProps = {
 type WebAnalyticsProps = SharedAnalyticsProps & {
   platformAnalytics: PostHogWeb;
   platform: 'web';
+  log?: typeof console;
 };
 
 /** Platform-specific properties for backend analytics */
 type BackendAnalyticsProps = SharedAnalyticsProps & {
   platformAnalytics: PostHogBackend;
   platform: 'backend';
+  log?: typeof log;
 };
 
 /** Backend events require additional parameters */
@@ -84,24 +87,6 @@ type IdentifyEvent = {
 };
 
 /**
- * Safely invoke analytics functions (without crashing anything)
- * @param func - Function to invoke
- */
-const safeInvoke = async (func: () => Promise<void> | void) => {
-  try {
-    // Only send analytics events if posthog is enabled
-    if (config.posthog.isEnabled && config.posthog.apiKey) {
-      await func();
-      // Wait 250 ms to ensure the event finishes processing
-      await time.wait(250);
-    }
-  } catch (error) {
-    // Catch any errors
-    console.error('[analytics] Error invoking analytics', error);
-  }
-};
-
-/**
  * Extends an analytics library and returns a list of available events
  * @param analytics - The analytics library being extended (must be a Segment library)
  */
@@ -110,8 +95,27 @@ export const createAnalyticsEvents = <T extends 'web' | 'backend'>({
   platform,
   onIdentify,
   onSignOut,
+  log = console,
 }: // Ensure our posthog library is typed correctly based on platform
 T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
+  /**
+   * Safely invoke analytics functions (without crashing anything)
+   * @param func - Function to invoke
+   */
+  const safeInvoke = async (func: () => Promise<void> | void) => {
+    try {
+      // Only send analytics events if posthog is enabled
+      if (config.posthog.isEnabled && config.posthog.apiKey) {
+        await func();
+        // Wait 250 ms to ensure the event finishes processing
+        await time.wait(250);
+      }
+    } catch (error) {
+      // Catch any errors
+      log.error('[analytics] Error invoking analytics', error);
+    }
+  };
+
   /**
    * A generic track method that determines the correct way to format the track call based on platform
    * @param event - The name of the event we're sending
@@ -159,7 +163,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         }
       >
     ) {
-      console.log('[analytics] Event: User Signed Out', {
+      log.info('[analytics] Event: User Signed Out', {
         category: 'User',
         ...properties,
       });
@@ -183,7 +187,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
     },
     /** Track when the user signs in */
     async userSignedIn(properties: EventProps<T>) {
-      console.log('[analytics] Event: User Signed In', { category: 'User', ...properties });
+      log.info('[analytics] Event: User Signed In', { category: 'User', ...properties });
 
       await safeInvoke(() =>
         track('User Signed In', {
@@ -202,7 +206,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         }
       >
     ) {
-      console.log('[analytics] Event: User Signed Up', { category: 'User', ...properties });
+      log.info('[analytics] Event: User Signed Up', { category: 'User', ...properties });
       await safeInvoke(() => {
         track('User Signed Up', {
           ...properties,
@@ -212,7 +216,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
     },
     /** Identifies the user after sign in */
     async identify({ userId, traits }: IdentifyEvent) {
-      console.log('[analytics] Event: Identify', userId, traits);
+      log.info('[analytics] Event: Identify', userId, traits);
 
       // Standardize their traits a little bit
       try {
@@ -257,13 +261,13 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         try {
           onIdentify?.({ userId, traits });
         } catch (error) {
-          console.error('[analytics] Error on identify', error);
+          log.error('[analytics] Error on identify', error);
         }
       });
     },
     /** Reset the analytics when the user signs out */
     async reset() {
-      console.log('[analytics] Resetting user');
+      log.info('[analytics] Resetting user');
       await safeInvoke(() => {
         if ('reset' in platformAnalytics) platformAnalytics.reset();
       });
@@ -276,7 +280,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         ? [{ userId?: string } & Record<string, unknown>]
         : [Record<string, unknown>?]
     ) {
-      console.error(error);
+      log.error(error);
 
       await safeInvoke(() => {
         const properties = args?.[0] ?? {};
