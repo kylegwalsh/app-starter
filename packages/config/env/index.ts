@@ -12,6 +12,6 @@ type SecretResources = Pick<Resource, SecretKeys>;
 /** Defines environment variables from SST secrets */
 export const env = Object.fromEntries(
   Object.entries(Resource)
-    .filter(([, value]) => value.type === 'sst:sst:Secret')
+    .filter(([, value]) => value.type === 'sst:sst:Secret' || value.type === 'sst.sst.Secret')
     .map(([key, value]) => [key, value.value])
 ) as { [K in keyof SecretResources]: SecretResources[K]['value'] };
