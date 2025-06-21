@@ -1,5 +1,9 @@
 /// <reference path="./.sst/platform/config.d.ts" />
 
+/** A lambda layer with the better stack logtail extension built and ready for use */
+const LOG_LAYER_ARN = 'arn:aws:lambda:us-east-1:541250234814:layer:logtail-lambda-extension:22';
+
+// The config that manages our SST application / deployments
 export default $config({
   app(input) {
     return {
@@ -19,7 +23,9 @@ export default $config({
     });
 
     // Import secrets first since other stacks might need them
-    const { secrets } = await import('./infra/secrets');
+    const { secrets, BETTER_STACK_SOURCE_TOKEN, BETTER_STACK_INGESTING_URL } = await import(
+      './infra/secrets'
+    );
 
     // Apply default settings to all functions
     $transform(sst.aws.Function, (args) => {
@@ -28,10 +34,17 @@ export default $config({
       args.link = ([] as unknown[]).concat((args.link as unknown[]) || [], secrets);
       // Add any environment variables
       args.environment = {
+        // Configure the env for logging
+        LOGTAIL_TOKEN: BETTER_STACK_SOURCE_TOKEN.value,
+        LOGTAIL_HTTP_API_URL: BETTER_STACK_INGESTING_URL.value,
+        // Create an env variable to determine if we're running locally or in deployment
+        IS_LOCAL: $dev ? 'true' : 'false',
         // Add this so that AWS will re-use TCP connections instead of re-connecting every time
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       };
-      // Copy prisma files over to our functions
+      // Add our lambda layer to handle better stack logging (not needed for local development)
+      args.layers ??= $dev ? [] : [LOG_LAYER_ARN];
+      // Copy prisma files over to our functions (not needed for local development)
       args.copyFiles ??= $dev
         ? []
         : [

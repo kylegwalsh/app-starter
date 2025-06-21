@@ -4,7 +4,7 @@ import { t } from './init';
 
 /** Times the procedure */
 export const timeProcedure = t.middleware(async ({ path, type, next }) => {
-  log.info(`Starting request to "${path}"`, { path, type });
+  log.info({ trpc: { path, type } }, `Starting request to "${path}"`);
   const start = Date.now();
 
   // Wait for the procedure to complete
@@ -16,8 +16,7 @@ export const timeProcedure = t.middleware(async ({ path, type, next }) => {
   if (result.ok) {
     log.info(
       {
-        path,
-        type,
+        trpc: { path, type },
         durationMs,
       },
       `Request to "${path}" completed in ${durationMs}ms`
@@ -25,8 +24,7 @@ export const timeProcedure = t.middleware(async ({ path, type, next }) => {
   } else {
     log.error(
       {
-        path,
-        type,
+        trpc: { path, type },
         durationMs,
       },
       `Request to "${path}" failed in ${durationMs}ms`
