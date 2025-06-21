@@ -8,7 +8,8 @@ PostHog
 - Figure out if we need source map uploads for NextJS (maybe create a turbo command so that it runs for all necessary subrepos?)
 - Swap the isEnabled boolean in the config to be isDeployment after testing
 
-- Verify cloudwatch logs are working in the deployment (fix CI for it)
+- Fix logtail flushing (isn't flushing final execution of logs)
+- Fix logtail timestamps (not using dt field)
 - Add AI util in backend
 - Figure out how to handle page titles / seo stuff with next
   - Add seo meta data handler for next - https://github.com/search?q=repo%3Ahaydenbleasel%2Fnext-forge+createMetadata&type=code
@@ -24,7 +25,7 @@ PostHog
 - Add marketing site setup (get prompts / framework from Chad)
 - Maybe add an optional dashboard setup
 - Cursor rules
-- Remove posthog settings AND crisp chat settings from config AND comment out the better stack secrets when pushing final starter
+- Remove posthog settings AND crisp chat settings from config AND comment out the better stack secrets/layer when pushing final starter
 - Lock packages to a certain version in package.json's
 - Ensure we set up the local log bucket with Better Stack when they release it (currently the flush() call boosts the response time from 250ms to 700ms)
 

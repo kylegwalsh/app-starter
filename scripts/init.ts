@@ -8,6 +8,8 @@ import { promisify } from 'node:util';
 import axios from 'axios';
 import inquirer from 'inquirer';
 
+import sstConfig from '../sst.config';
+
 // Promisify exec for async/await usage
 const execAsync = promisify(exec);
 
@@ -1032,7 +1034,6 @@ const setupBetterStack = async (): Promise<boolean> => {
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
   let secretsContent = fs.readFileSync(secretsPath, 'utf8');
-  // Uncomment the secret declarations
   secretsContent = secretsContent.replaceAll(
     '// export const BETTER_STACK_SOURCE_TOKEN',
     'export const BETTER_STACK_SOURCE_TOKEN'
@@ -1041,16 +1042,14 @@ const setupBetterStack = async (): Promise<boolean> => {
     '// export const BETTER_STACK_INGESTING_URL',
     'export const BETTER_STACK_INGESTING_URL'
   );
-  // Uncomment the secrets in the array
-  secretsContent = secretsContent.replaceAll(
-    '// BETTER_STACK_SOURCE_TOKEN',
-    'BETTER_STACK_SOURCE_TOKEN'
-  );
-  secretsContent = secretsContent.replaceAll(
-    '// BETTER_STACK_INGESTING_URL',
-    'BETTER_STACK_INGESTING_URL'
-  );
   fs.writeFileSync(secretsPath, secretsContent);
+  // Uncomment the environment variables and layer in the sst.config.ts
+  const sstConfigPath = path.resolve('sst.config.ts');
+  let sstConfigContent = fs.readFileSync(sstConfigPath, 'utf8');
+  sstConfigContent = sstConfigContent.replaceAll('// LOGTAIL_TOKEN', 'LOGTAIL_TOKEN');
+  sstConfigContent = sstConfigContent.replaceAll('// LOGTAIL_HTTP_API_URL', 'LOGTAIL_HTTP_API_URL');
+  sstConfigContent = sstConfigContent.replaceAll('// args.layers', 'args.layers');
+  fs.writeFileSync(sstConfigPath, sstConfigContent);
   console.log('✔ Better Stack secrets have been set in SST.\n');
 
   return true;

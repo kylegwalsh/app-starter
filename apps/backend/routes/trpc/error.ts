@@ -21,11 +21,11 @@ export const onError = ({
   if (error.code !== 'UNAUTHORIZED') {
     /** Extract some other useful properties to report on */
     const properties = {
-      path: other.path,
-      type: other.type,
-      referer: other.req?.headers?.referer,
-      requestId: other.req.requestContext.requestId,
-      input: other.input,
+      path: other?.path,
+      type: other?.type,
+      referer: other?.req?.headers?.referer,
+      requestId: other?.req?.requestContext?.requestId,
+      input: other?.input,
     };
 
     /** Extract the underlying error */

@@ -23,20 +23,18 @@ export default $config({
     });
 
     // Import secrets first since other stacks might need them
-    const { secrets, BETTER_STACK_SOURCE_TOKEN, BETTER_STACK_INGESTING_URL } = await import(
-      './infra/secrets'
-    );
+    const secrets = await import('./infra/secrets');
 
     // Apply default settings to all functions
     $transform(sst.aws.Function, (args) => {
       // Link the secrets to every method
       // eslint-disable-next-line unicorn/prefer-spread
-      args.link = ([] as unknown[]).concat((args.link as unknown[]) || [], secrets);
+      args.link = ([] as unknown[]).concat((args.link as unknown[]) || [], Object.values(secrets));
       // Add any environment variables
       args.environment = {
         // Configure the env for logging
-        LOGTAIL_TOKEN: BETTER_STACK_SOURCE_TOKEN.value,
-        LOGTAIL_HTTP_API_URL: BETTER_STACK_INGESTING_URL.value,
+        LOGTAIL_TOKEN: secrets.BETTER_STACK_SOURCE_TOKEN.value,
+        LOGTAIL_HTTP_API_URL: secrets.BETTER_STACK_INGESTING_URL.value,
         // Add this so that AWS will re-use TCP connections instead of re-connecting every time
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       };

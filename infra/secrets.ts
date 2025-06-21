@@ -8,11 +8,3 @@ export const BETTER_STACK_INGESTING_URL = new sst.Secret('BETTER_STACK_INGESTING
 
 // Set the default secrets for the stage...
 export const STAGE = new sst.Secret('STAGE', $app.stage);
-
-export const secrets = [
-  DATABASE_URL,
-  DIRECT_DATABASE_URL,
-  STAGE,
-  BETTER_STACK_SOURCE_TOKEN,
-  BETTER_STACK_INGESTING_URL,
-];
