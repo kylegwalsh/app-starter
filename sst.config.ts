@@ -37,8 +37,6 @@ export default $config({
         // Configure the env for logging
         LOGTAIL_TOKEN: BETTER_STACK_SOURCE_TOKEN.value,
         LOGTAIL_HTTP_API_URL: BETTER_STACK_INGESTING_URL.value,
-        // Create an env variable to determine if we're running locally or in deployment
-        IS_LOCAL: $dev ? 'true' : 'false',
         // Add this so that AWS will re-use TCP connections instead of re-connecting every time
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       };
