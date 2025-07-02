@@ -10,6 +10,26 @@ let nextConfig: NextConfig = {
   },
   // Generate source maps for error tracking
   productionBrowserSourceMaps: true,
+  // Re-write posthog requests so that they don't get blocked
+  // eslint-disable-next-line @typescript-eslint/require-await
+  rewrites: async () => {
+    return [
+      {
+        source: '/event-relay/static/:path*',
+        destination: 'https://us-assets.i.posthog.com/static/:path*',
+      },
+      {
+        source: '/event-relay/:path*',
+        destination: 'https://us.i.posthog.com/:path*',
+      },
+      {
+        source: '/event-relay/flags',
+        destination: 'https://us.i.posthog.com/flags',
+      },
+    ];
+  },
+  // This is required to support PostHog trailing slash API requests
+  skipTrailingSlashRedirect: true,
   // Override the webpack config for custom functionality
   webpack: (config: object) => {
     // Ensure the web always grabs the .web.ts files over the normal files (so it can share directories with the backend)

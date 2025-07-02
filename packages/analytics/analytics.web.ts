@@ -16,6 +16,9 @@ declare global {
 if (typeof window !== 'undefined' && config.posthog.isEnabled && config.posthog.apiKey) {
   // Initialize our PostHog instance
   posthog.init(config.posthog.apiKey, {
+    // We send all events to our own /event-relay endpoint and then re-write them to PostHog in the next.config.ts file
+    // This helps to avoid issues with ad blockers
+    api_host: '/event-relay',
     capture_pageview: 'history_change',
     capture_exceptions: true,
     autocapture: true,

@@ -9,7 +9,8 @@ PostHog
 - Swap the isEnabled boolean in the config to be isDeployment after testing
 - Add --delete-after flag to posthog-cli sourcemap upload
 
-- Add AI util in backend
+- Confirm that posthog reverse proxy is working after deploying
+- Add AI package
 - Figure out how to handle page titles / seo stuff with next
   - Add seo meta data handler for next - https://github.com/search?q=repo%3Ahaydenbleasel%2Fnext-forge+createMetadata&type=code
 - Add better auth
@@ -33,3 +34,4 @@ Minor Improvements:
 - Fix storybook test button (vite isn't launching right) - seems like a bug with the node_module
 - Consider re-adding @storybook/addon-essentials if they upgrade to 9.0.1 (might be able to drop addon-docs after)
 - Maybe see if there's a reason turbo cache is missing in the CI (it seems like it should hit)
+- Upgrade SST to see if it improves windows support
