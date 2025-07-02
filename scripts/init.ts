@@ -1070,47 +1070,47 @@ const init = async () => {
   console.log('Setting up starter...\n');
 
   // Check that all CLI tools are setup
-  // await checkCLIs();
+  await checkCLIs();
 
-  // // Get and possibly update the project name
-  // const projectName = await getProjectName();
+  // Get and possibly update the project name
+  const projectName = await getProjectName();
 
-  // // Get and possibly update the web url
-  // const domain = await getDomain();
+  // Get and possibly update the web url
+  const domain = await getDomain();
 
-  // // Get or create the user's personal environment stage
-  // await getOrCreateStage();
+  // Get or create the user's personal environment stage
+  await getOrCreateStage();
 
-  // // Select or create an AWS profile
-  // const awsConfig = await selectOrCreateAwsProfile();
+  // Select or create an AWS profile
+  const awsConfig = await selectOrCreateAwsProfile();
 
-  // // Setup Supabase
-  // const dbConfig = await setupSupabase(projectName);
+  // Setup Supabase
+  const dbConfig = await setupSupabase(projectName);
 
-  // // Setup PostHog
-  // const posthogConfig = await setupPosthog(projectName);
+  // Setup PostHog
+  const posthogConfig = await setupPosthog(projectName);
 
-  // // Configure github url and secrets
-  // const githubUrl = await setupGithub({
-  //   awsConfig,
-  //   dbConfig,
-  //   posthogConfig,
-  // });
+  // Configure github url and secrets
+  const githubUrl = await setupGithub({
+    awsConfig,
+    dbConfig,
+    posthogConfig,
+  });
 
-  // // Setup Slack
-  // await setupSlack(githubUrl);
+  // Setup Slack
+  await setupSlack(githubUrl);
 
-  // // Setup Crisp Chat
-  // await setupCrispChat();
+  // Setup Crisp Chat
+  await setupCrispChat();
 
-  // // Setup docs site
-  // await setupDocsSite({ domain });
+  // Setup docs site
+  await setupDocsSite({ domain });
 
   // Setup Axiom observability
   await setupAxiom();
 
   // Print final notes
-  // printFinalNotes({ setupPosthog: !!posthogConfig });
+  printFinalNotes({ setupPosthog: !!posthogConfig });
 };
 
 void init();
