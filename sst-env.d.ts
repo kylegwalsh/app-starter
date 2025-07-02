@@ -5,11 +5,11 @@
 
 declare module "sst" {
   export interface Resource {
-    "BETTER_STACK_INGESTING_URL": {
+    "AXIOM_DATASET": {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "BETTER_STACK_SOURCE_TOKEN": {
+    "AXIOM_TOKEN": {
       "type": "sst.sst.Secret"
       "value": string
     }

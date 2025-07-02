@@ -7,9 +7,8 @@ PostHog
   - The CI also mentioned we were missing a project name (see if we need to set that up)
 - Figure out if we need source map uploads for NextJS (maybe create a turbo command so that it runs for all necessary subrepos?)
 - Swap the isEnabled boolean in the config to be isDeployment after testing
+- Add --delete-after flag to posthog-cli sourcemap upload
 
-- Fix logtail flushing (isn't flushing final execution of logs)
-- Fix logtail timestamps (not using dt field)
 - Add AI util in backend
 - Figure out how to handle page titles / seo stuff with next
   - Add seo meta data handler for next - https://github.com/search?q=repo%3Ahaydenbleasel%2Fnext-forge+createMetadata&type=code
@@ -27,10 +26,10 @@ PostHog
 - Cursor rules
 - Remove posthog settings AND crisp chat settings from config AND comment out the better stack secrets/layer when pushing final starter
 - Lock packages to a certain version in package.json's
-- Ensure we set up the local log bucket with Better Stack when they release it (currently the flush() call boosts the response time from 250ms to 700ms)
 
 Minor Improvements:
 
+- Ensure info logs that contain the word "error" are not being tracked as errors in Axiom
 - Fix storybook test button (vite isn't launching right) - seems like a bug with the node_module
 - Consider re-adding @storybook/addon-essentials if they upgrade to 9.0.1 (might be able to drop addon-docs after)
 - Maybe see if there's a reason turbo cache is missing in the CI (it seems like it should hit)

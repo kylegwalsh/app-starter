@@ -2,9 +2,9 @@
 export const DATABASE_URL = new sst.Secret('DATABASE_URL');
 export const DIRECT_DATABASE_URL = new sst.Secret('DIRECT_DATABASE_URL');
 
-// Better Stack
-export const BETTER_STACK_SOURCE_TOKEN = new sst.Secret('BETTER_STACK_SOURCE_TOKEN');
-export const BETTER_STACK_INGESTING_URL = new sst.Secret('BETTER_STACK_INGESTING_URL');
+// Axiom
+export const AXIOM_TOKEN = new sst.Secret('AXIOM_TOKEN');
+export const AXIOM_DATASET = new sst.Secret('AXIOM_DATASET');
 
 // Set the default secrets for the stage...
 export const STAGE = new sst.Secret('STAGE', $app.stage);

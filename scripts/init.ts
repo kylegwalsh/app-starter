@@ -959,12 +959,12 @@ const setupDocsSite = async ({ domain }: { domain?: string }) => {
   console.log('✔ Enabled docs site stack in sst.config.ts.\n');
 };
 
-// ---------- BETTER STACK HELPERS ----------
-/** Guides the user through setting up Better Stack observability */
-const setupBetterStack = async (): Promise<boolean> => {
-  console.log('Setting up Better Stack observability...');
+// ---------- AXIOM HELPERS ----------
+/** Guides the user through setting up Axiom observability */
+const setupAxiom = async (): Promise<boolean> => {
+  console.log('Setting up Axiom observability...');
 
-  // Check if Better Stack is already configured in SST secrets
+  // Check if Axiom is already configured in SST secrets
   try {
     // Retrieve the secrets for dev and prod
     const devSecrets = await getAllSecrets('dev');
@@ -972,98 +972,79 @@ const setupBetterStack = async (): Promise<boolean> => {
 
     // Check if both dev and prod have their secrets configured
     if (
-      devSecrets.BETTER_STACK_SOURCE_TOKEN &&
-      prodSecrets.BETTER_STACK_SOURCE_TOKEN &&
-      devSecrets.BETTER_STACK_INGESTING_URL &&
-      prodSecrets.BETTER_STACK_INGESTING_URL
+      devSecrets.AXIOM_TOKEN &&
+      prodSecrets.AXIOM_TOKEN &&
+      devSecrets.AXIOM_DATASET &&
+      prodSecrets.AXIOM_DATASET
     ) {
-      console.log('✔ Better Stack already configured.\n');
+      console.log('✔ Axiom already configured.\n');
       return true;
     }
   } catch {}
 
-  console.log('Better Stack provides enhanced log searching and monitoring beyond AWS CloudWatch.');
-  // Ask if they want to set up Better Stack
+  console.log('Axiom provides enhanced log searching and monitoring beyond AWS CloudWatch.');
+  // Ask if they want to set up Axiom
   const doSetup = await promptYesNo(
-    'Would you like to set up Better Stack for enhanced observability? (y/n) '
+    'Would you like to set up Axiom for enhanced observability? (y/n) '
   );
   if (!doSetup) {
-    console.log('Better Stack setup skipped.\n');
+    console.log('Axiom setup skipped.\n');
     return false;
   }
 
   // Guide the user through the setup steps
-  console.log('\nSign up or log in at: https://betterstack.com/');
-  console.log('1. Create a new NodeJS project.');
-  console.log('2. Copy the source token and ingestion URL from the project settings.\n');
+  console.log('\nSign up or log in at: https://axiom.co/');
+  console.log('1. Create a new dataset');
+  console.log('2. Create an API token at: https://app.axiom.co/settings/api-tokens');
 
-  // Prompt for the source token
-  let sourceToken = '';
-  while (!sourceToken) {
-    const input = await promptUser('Enter your Better Stack source token: ');
-    sourceToken = input.trim();
-    if (!sourceToken) {
-      console.log('Please enter a valid Better Stack source token.');
-      sourceToken = '';
+  // Prompt for the API token
+  let token = '';
+  while (!token) {
+    const input = await promptUser('Enter your Axiom API token: ');
+    token = input.trim();
+    if (!token) {
+      console.log('Please enter a valid Axiom API token.');
+      token = '';
     }
   }
 
   // Prompt for the ingestion URL
-  let ingestionUrl = '';
-  while (!ingestionUrl) {
-    const input = await promptUser('Enter your Better Stack ingestion URL: ');
-    ingestionUrl = input.trim();
-    if (!ingestionUrl.includes('.com')) {
-      console.log('Please enter a valid Better Stack ingestion URL.');
-      ingestionUrl = '';
+  let dataset = '';
+  while (!dataset) {
+    const input = await promptUser('Enter your Axiom dataset name: ');
+    dataset = input.trim().toLowerCase();
+    if (!dataset) {
+      console.log('Please enter a valid Axiom dataset.');
+      dataset = '';
     }
   }
-  // Add https:// to the URL
-  ingestionUrl = `https://${ingestionUrl}`;
 
   // Add secrets to SST
-  console.log('\nAdding Better Stack secrets to SST...');
+  console.log('\nAdding Axiom secrets to SST...');
   const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
-  await execAsync(
-    `pnpm tsx ${addSecretScript} BETTER_STACK_SOURCE_TOKEN "${sourceToken}" "${sourceToken}"`
-  );
-  await execAsync(
-    `pnpm tsx ${addSecretScript} BETTER_STACK_INGESTING_URL "${ingestionUrl}" "${ingestionUrl}"`
-  );
+  await execAsync(`pnpm tsx ${addSecretScript} AXIOM_TOKEN "${token}" "${token}"`);
+  await execAsync(`pnpm tsx ${addSecretScript} AXIOM_DATASET "${dataset}" "${dataset}"`);
 
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
   let secretsContent = fs.readFileSync(secretsPath, 'utf8');
   secretsContent = secretsContent.replaceAll(
-    '// export const BETTER_STACK_SOURCE_TOKEN',
-    'export const BETTER_STACK_SOURCE_TOKEN'
+    '// export const AXIOM_TOKEN',
+    'export const AXIOM_TOKEN'
   );
   secretsContent = secretsContent.replaceAll(
-    '// export const BETTER_STACK_INGESTING_URL',
-    'export const BETTER_STACK_INGESTING_URL'
+    '// export const AXIOM_DATASET',
+    'export const AXIOM_DATASET'
   );
   fs.writeFileSync(secretsPath, secretsContent);
-  // Uncomment the environment variables and layer in the sst.config.ts
-  const sstConfigPath = path.resolve('sst.config.ts');
-  let sstConfigContent = fs.readFileSync(sstConfigPath, 'utf8');
-  sstConfigContent = sstConfigContent.replaceAll('// LOGTAIL_TOKEN', 'LOGTAIL_TOKEN');
-  sstConfigContent = sstConfigContent.replaceAll('// LOGTAIL_HTTP_API_URL', 'LOGTAIL_HTTP_API_URL');
-  sstConfigContent = sstConfigContent.replaceAll('// args.layers', 'args.layers');
-  fs.writeFileSync(sstConfigPath, sstConfigContent);
-  console.log('✔ Better Stack secrets have been set in SST.\n');
+  console.log('✔ Axiom secrets have been set in SST.\n');
 
   return true;
 };
 
 // ---------- FINAL NOTES HELPER ----------
 /** Prints final setup instructions and tips for the user. */
-const printFinalNotes = ({
-  setupPosthog,
-  setupBetterStack,
-}: {
-  setupPosthog: boolean;
-  setupBetterStack: boolean;
-}) => {
+const printFinalNotes = ({ setupPosthog }: { setupPosthog: boolean }) => {
   console.log('--- Final Steps ---');
   console.log('You can start the app with: pnpm start\n');
 
@@ -1074,13 +1055,6 @@ const printFinalNotes = ({
     );
     console.log(
       '- You can set up an email system by connecting Posthog to Loops or another email service.'
-    );
-  }
-
-  // Only mention Better Stack if they opted in
-  if (setupBetterStack) {
-    console.log(
-      '- Set up uptime monitoring in your Better Stack dashboard: https://betterstack.com/'
     );
   }
 
@@ -1096,47 +1070,47 @@ const init = async () => {
   console.log('Setting up starter...\n');
 
   // Check that all CLI tools are setup
-  await checkCLIs();
+  // await checkCLIs();
 
-  // Get and possibly update the project name
-  const projectName = await getProjectName();
+  // // Get and possibly update the project name
+  // const projectName = await getProjectName();
 
-  // Get and possibly update the web url
-  const domain = await getDomain();
+  // // Get and possibly update the web url
+  // const domain = await getDomain();
 
-  // Get or create the user's personal environment stage
-  await getOrCreateStage();
+  // // Get or create the user's personal environment stage
+  // await getOrCreateStage();
 
-  // Select or create an AWS profile
-  const awsConfig = await selectOrCreateAwsProfile();
+  // // Select or create an AWS profile
+  // const awsConfig = await selectOrCreateAwsProfile();
 
-  // Setup Supabase
-  const dbConfig = await setupSupabase(projectName);
+  // // Setup Supabase
+  // const dbConfig = await setupSupabase(projectName);
 
-  // Setup PostHog
-  const posthogConfig = await setupPosthog(projectName);
+  // // Setup PostHog
+  // const posthogConfig = await setupPosthog(projectName);
 
-  // Configure github url and secrets
-  const githubUrl = await setupGithub({
-    awsConfig,
-    dbConfig,
-    posthogConfig,
-  });
+  // // Configure github url and secrets
+  // const githubUrl = await setupGithub({
+  //   awsConfig,
+  //   dbConfig,
+  //   posthogConfig,
+  // });
 
-  // Setup Slack
-  await setupSlack(githubUrl);
+  // // Setup Slack
+  // await setupSlack(githubUrl);
 
-  // Setup Crisp Chat
-  await setupCrispChat();
+  // // Setup Crisp Chat
+  // await setupCrispChat();
 
-  // Setup docs site
-  await setupDocsSite({ domain });
+  // // Setup docs site
+  // await setupDocsSite({ domain });
 
-  // Setup Better Stack observability
-  const betterStackConfig = await setupBetterStack();
+  // Setup Axiom observability
+  await setupAxiom();
 
   // Print final notes
-  printFinalNotes({ setupPosthog: !!posthogConfig, setupBetterStack: betterStackConfig });
+  // printFinalNotes({ setupPosthog: !!posthogConfig });
 };
 
 void init();
