@@ -1,3 +1,5 @@
+import { ai } from '@repo/ai';
+
 import { db } from '@/db';
 
 import { t } from './trpc/init';
@@ -15,6 +17,16 @@ export const router = t.router({
   }),
   error: publicProcedure.mutation(() => {
     myErrorMethod();
+  }),
+  ai: publicProcedure.mutation(async () => {
+    const { text } = await ai.generateText({
+      prompt: 'Generate a random number between 1 and 100',
+    });
+    const { text: text2 } = await ai.generateText({
+      system: 'Only keep the randomly generated number, remove all other text',
+      prompt: text,
+    });
+    return { text, text2 };
   }),
 });
 

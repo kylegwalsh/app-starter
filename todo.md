@@ -9,8 +9,7 @@ PostHog
 - Swap the isEnabled boolean in the config to be isDeployment after testing
 - Add --delete-after flag to posthog-cli sourcemap upload
 
-- Confirm that posthog reverse proxy is working after deploying
-- Add AI package
+- Fix deployed posthog reverse proxy (throwing 400's)
 - Figure out how to handle page titles / seo stuff with next
   - Add seo meta data handler for next - https://github.com/search?q=repo%3Ahaydenbleasel%2Fnext-forge+createMetadata&type=code
 - Add better auth
@@ -19,19 +18,21 @@ PostHog
   - Add auth provider mention to README
   - Test PostHog user signed up / out events (does it track and reset session / crisp?)
   - Test crisp + analytics for crisp
+  - Update the backend mocked router to have user context (mirror output of better auth)
 - Add stripe support and add to setup script (plugin for better auth)
 - Consider implementing posthog feature flags
-- Update the backend mocked router to have user context (mirror output of better auth)
 - Add marketing site setup (get prompts / framework from Chad)
 - Maybe add an optional dashboard setup
 - Cursor rules
-- Remove posthog settings AND crisp chat settings from config AND comment out the better stack secrets/layer when pushing final starter
+- Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)
+- When pushing final starter: Remove posthog settings from config / crisp chat settings from config / comment out the axiom secret / comment out the langfuse secrets
 - Lock packages to a certain version in package.json's
+- Add README's to all packages / apps
 
 Minor Improvements:
 
-- Ensure info logs that contain the word "error" are not being tracked as errors in Axiom
 - Fix storybook test button (vite isn't launching right) - seems like a bug with the node_module
 - Consider re-adding @storybook/addon-essentials if they upgrade to 9.0.1 (might be able to drop addon-docs after)
 - Maybe see if there's a reason turbo cache is missing in the CI (it seems like it should hit)
+- If axiom fixes their API, we can remove the extra "severity" field we're sending
 - Upgrade SST to see if it improves windows support

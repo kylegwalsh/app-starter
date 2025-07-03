@@ -6,5 +6,14 @@ export const DIRECT_DATABASE_URL = new sst.Secret('DIRECT_DATABASE_URL');
 export const AXIOM_TOKEN = new sst.Secret('AXIOM_TOKEN');
 export const AXIOM_DATASET = new sst.Secret('AXIOM_DATASET');
 
+// AI
+// export const ANTHROPIC_API_KEY = new sst.Secret('ANTHROPIC_API_KEY');
+// export const OPENAI_API_KEY = new sst.Secret('OPENAI_API_KEY');
+// export const GOOGLE_GENERATIVE_AI_API_KEY = new sst.Secret('GOOGLE_GENERATIVE_AI_API_KEY');
+
+// Langfuse
+export const LANGFUSE_SECRET_KEY = new sst.Secret('LANGFUSE_SECRET_KEY');
+export const LANGFUSE_PUBLIC_KEY = new sst.Secret('LANGFUSE_PUBLIC_KEY');
+
 // Set the default secrets for the stage...
 export const STAGE = new sst.Secret('STAGE', $app.stage);

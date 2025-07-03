@@ -1,0 +1,36 @@
+{
+  "name": "@repo/ai",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "pretty": "prettier --write . --ignore-path ../../.prettierignore",
+    "format": "pnpm lint:fix & pnpm pretty",
+    "types:check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@repo/config": "workspace:*",
+    "@repo/tsconfig": "workspace:*",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@ai-sdk/amazon-bedrock": "3.0.0-beta.3",
+    "@ai-sdk/anthropic": "2.0.0-beta.3",
+    "@ai-sdk/google": "2.0.0-beta.6",
+    "@ai-sdk/openai": "2.0.0-beta.3",
+    "@ai-sdk/provider": "2.0.0-beta.1",
+    "@aws-sdk/credential-providers": "^3.840.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.60.1",
+    "@opentelemetry/sdk-node": "^0.202.0",
+    "@repo/logs": "workspace:*",
+    "ai": "5.0.0-beta.6",
+    "langfuse": "^3.37.6",
+    "langfuse-vercel": "^3.37.6",
+    "zod": "^3.24.2"
+  }
+}

@@ -14,10 +14,15 @@ export type Context = {
 export const createContext = ({
   event,
 }: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>): Context => {
+  // Extract request details
+  const { path, method } = event.requestContext.http;
+  /** Extract our user ID */
   const userId = `test-${Date.now()}`;
-
-  // Add the user ID to the log metadata
-  addLogMetadata({ userId });
+  // Add some metadata to our logs
+  addLogMetadata({
+    userId,
+    request: { path, method },
+  });
 
   // Return context
   return { userId };

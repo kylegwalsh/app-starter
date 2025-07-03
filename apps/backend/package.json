@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.7.0",
+    "@repo/ai": "workspace:*",
     "@repo/analytics": "workspace:*",
     "@repo/config": "workspace:*",
     "@repo/constants": "workspace:*",
@@ -42,7 +43,7 @@
     "@trpc/server": "11.2.0",
     "better-trpc-openapi": "github:kylegwalsh/trpc-openapi#69359b66b170d3a251aa4aca5f832ab25b93fa7f",
     "prisma": "^6.7.0",
-    "sst": "3.17.4",
+    "sst": "3.17.8",
     "superjson": "^2.2.2",
     "zod": "^3.24.2"
   },

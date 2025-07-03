@@ -1,3 +1,4 @@
+import { ai } from '@repo/ai';
 import { analytics } from '@repo/analytics';
 import { addLambdaRequestContext, flushLogs } from '@repo/logs';
 import { APIGatewayProxyEventV2, Context, SQSEvent } from 'aws-lambda';
@@ -14,6 +15,11 @@ export type LambdaHandler<T extends EventType> = (
   context: Context
 ) => unknown;
 
+/** Flush all async observability tools */
+const flushObservability = async () => {
+  await Promise.all([analytics.flush(), ai.flush(), flushLogs()]);
+};
+
 /**
  * Wraps a Lambda handler to add all of our setup logic
  * @param handler The Lambda handler to wrap
@@ -29,13 +35,13 @@ export const withLambdaContext = <T extends EventType = undefined>(
     try {
       // Execute the handler
       const result = await handler(event, context);
-      // Wait for logs/analytics to be flushed
-      await Promise.all([analytics.flush(), flushLogs()]);
+      // Wait for all async observability tools to be flushed
+      await flushObservability();
       // Return the result
       return result;
     } catch (error) {
-      // Wait for logs to be flushed
-      await flushLogs();
+      // Wait for all async observability tools to be flushed
+      await flushObservability();
       // Re-throw the error
       throw error;
     }

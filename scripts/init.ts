@@ -1042,6 +1042,106 @@ const setupAxiom = async (): Promise<boolean> => {
   return true;
 };
 
+// ---------- LANGFUSE HELPERS ----------
+const setupLangfuse = async () => {
+  console.log('Setting up Langfuse...');
+
+  // Check if Langfuse is already configured in SST secrets
+  try {
+    const devSecrets = await getAllSecrets('dev');
+    const prodSecrets = await getAllSecrets('prod');
+    if (
+      devSecrets.LANGFUSE_SECRET_KEY &&
+      prodSecrets.LANGFUSE_SECRET_KEY &&
+      devSecrets.LANGFUSE_PUBLIC_KEY &&
+      prodSecrets.LANGFUSE_PUBLIC_KEY
+    ) {
+      console.log('✔ Langfuse already configured.\n');
+      return true;
+    }
+  } catch {}
+
+  const doSetup = await promptYesNo(
+    'Would you like to set up Langfuse for AI traces, evals, and prompt management? (y/n) '
+  );
+  if (!doSetup) {
+    console.log('Langfuse setup skipped.\n');
+    return false;
+  }
+
+  // Guide the user through the setup steps
+  console.log('\nSign up at: https://langfuse.com/');
+  console.log('1. Create an organization');
+  console.log('2. Create a project');
+  console.log('3. Create an API key');
+
+  // Prompt for the API keys
+  let secretKey = '';
+  while (!secretKey) {
+    const input = await promptUser('Enter your Langfuse Secret Key: ');
+    secretKey = input.trim();
+    if (!secretKey) {
+      console.log('Please enter a valid Langfuse Secret Key.');
+      secretKey = '';
+    }
+  }
+
+  let publicKey = '';
+  while (!publicKey) {
+    const input = await promptUser('Enter your Langfuse Public Key: ');
+    publicKey = input.trim();
+    if (!publicKey) {
+      console.log('Please enter a valid Langfuse Public Key.');
+      publicKey = '';
+    }
+  }
+
+  // Add secrets to SST
+  console.log('\nAdding Langfuse secrets to SST...');
+  const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
+  await execAsync(`pnpm tsx ${addSecretScript} LANGFUSE_SECRET_KEY "${secretKey}" "${secretKey}"`);
+  await execAsync(`pnpm tsx ${addSecretScript} LANGFUSE_PUBLIC_KEY "${publicKey}" "${publicKey}"`);
+
+  // Uncomment secrets in infra/secrets.ts
+  const secretsPath = path.resolve('infra/secrets.ts');
+  let secretsContent = fs.readFileSync(secretsPath, 'utf8');
+  secretsContent = secretsContent.replaceAll(
+    '// export const LANGFUSE_SECRET_KEY',
+    'export const LANGFUSE_SECRET_KEY'
+  );
+  secretsContent = secretsContent.replaceAll(
+    '// export const LANGFUSE_PUBLIC_KEY',
+    'export const LANGFUSE_PUBLIC_KEY'
+  );
+  fs.writeFileSync(secretsPath, secretsContent);
+  console.log('✔ Langfuse secrets have been set in SST.\n');
+
+  return true;
+};
+
+// ---------- AI SETUP HELPER ----------
+/** Guides the user through setting up AI */
+const setupAI = async () => {
+  console.log('Setting up AI...');
+
+  // Ask if they want to set up AI
+  const doSetup = await promptYesNo('Would you like to set up AI (AWS Bedrock)? (y/n) ');
+  if (!doSetup) {
+    console.log('AI setup skipped.\n');
+    return false;
+  }
+
+  // Guide the user through the setup steps
+  console.log('\nTo enable AI models in AWS Bedrock:');
+  console.log(
+    '1. Go to https://us-east-1.console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess'
+  );
+  console.log('2. Request access to at least the Anthropic models.');
+  await promptUser('Press enter to continue after you have requested model access...');
+  console.log('✔ AI setup step complete.\n');
+  return true;
+};
+
 // ---------- FINAL NOTES HELPER ----------
 /** Prints final setup instructions and tips for the user. */
 const printFinalNotes = ({ setupPosthog }: { setupPosthog: boolean }) => {
@@ -1108,6 +1208,12 @@ const init = async () => {
 
   // Setup Axiom observability
   await setupAxiom();
+
+  // Setup AI
+  const didSetupAI = await setupAI();
+
+  // Setup Langfuse
+  if (didSetupAI) await setupLangfuse();
 
   // Print final notes
   printFinalNotes({ setupPosthog: !!posthogConfig });

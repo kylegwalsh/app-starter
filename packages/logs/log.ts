@@ -8,14 +8,11 @@ import {
 } from 'pino-lambda';
 import pretty from 'pino-pretty';
 
-/** Whether we're running in an AWS deployment */
-const IS_AWS = !!(process.env.LAMBDA_TASK_ROOT || process.env.AWS_EXECUTION_ENV);
-
 // ---------- DESTINATIONS ----------
 /** Our axiom client */
-const axiom = env.AXIOM_TOKEN
+const axiom = (env as Record<string, string>).AXIOM_TOKEN
   ? new Axiom({
-      token: env.AXIOM_TOKEN,
+      token: (env as Record<string, string>).AXIOM_TOKEN,
     })
   : undefined;
 /** Our lambda destination (ensures things are formatted for cloudwatch) */
@@ -25,16 +22,24 @@ const prettyDest = pretty({
   colorize: true,
   translateTime: 'SYS:HH:mm:ss',
   // Ignore some params that we don't care about locally
-  ignore: 'env,userId,trpc,awsRequestId,apiRequestId,x-correlation-id',
+  ignore:
+    'env,userId,request,langfuseTraceId,awsRequestId,apiRequestId,x-correlation-id,x-correlation-trace-id',
 });
 
 // ---------- HELPERS ----------
 /** Adds lambda request context to the current request context */
 export const addLambdaRequestContext = lambdaRequestTracker();
 
+type LogMetadata = {
+  langfuseTraceId?: string;
+  userId?: string;
+  awsRequestId?: string;
+  request?: { method?: string; path?: string };
+};
+
 /** Gets the current request context */
 export const getLogMetadata = () => {
-  return { ...GlobalContextStorageProvider.getContext() };
+  return { ...GlobalContextStorageProvider.getContext() } as LogMetadata;
 };
 
 /** Adds metadata to the current request context */
@@ -64,15 +69,32 @@ const customDestination = {
   write: (payload: string) => {
     try {
       // When we're running in AWS, we need to do a few things
-      if (IS_AWS) {
+      if (config.isAWS) {
         // We should structure the logs for cloudwatch
         lambdaDest.write(payload);
 
         // Since we can't see the logs easily, we should also send logs to Axiom (if it's configured)
         if (axiom) {
           // Format the payload to be the way axiom expects it
-          const { time, ...context } = JSON.parse(payload) as PinoLog;
-          axiom.ingest(env.AXIOM_DATASET, [{ _time: time, ...context }]);
+          const {
+            time,
+            level,
+            msg,
+            'x-correlation-id': correlationId, // eslint-disable-line @typescript-eslint/no-unused-vars
+            'x-correlation-trace-id': traceId, // eslint-disable-line @typescript-eslint/no-unused-vars
+            ...context
+          } = JSON.parse(payload) as PinoLog;
+          axiom.ingest(env.AXIOM_DATASET, [
+            {
+              // Axiom-specific fields (we have to include level twice or it doesn't work right)
+              _time: time,
+              level,
+              severity: level,
+              message: msg,
+              // Remaining context
+              ...context,
+            },
+          ]);
         }
       }
       // If we're running locally, show the pretty output

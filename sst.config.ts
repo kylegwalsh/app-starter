@@ -27,6 +27,13 @@ export default $config({
       // Link the secrets to every method
       // eslint-disable-next-line unicorn/prefer-spread
       args.link = ([] as unknown[]).concat((args.link as unknown[]) || [], Object.values(secrets));
+      // Add permissions for the Bedrock AI API
+      args.permissions ??= [];
+      (args.permissions as unknown[]).push({
+        effect: 'allow',
+        actions: ['bedrock:*'],
+        resources: ['*'],
+      });
       // Add any environment variables
       args.environment = {
         // Add this so that AWS will re-use TCP connections instead of re-connecting every time

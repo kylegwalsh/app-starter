@@ -28,6 +28,8 @@ export const config = {
   stage,
   /** Whether this application is running as one of our main deployments (not locally) */
   isDeployment,
+  /** Whether we're running in an AWS deployment */
+  isAWS: !!(process?.env?.LAMBDA_TASK_ROOT || process?.env?.AWS_EXECUTION_ENV),
   /** Whether the application is using production resources */
   isProd,
   /** Some details regarding the project */
