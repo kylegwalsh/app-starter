@@ -23,6 +23,8 @@ if (typeof window !== 'undefined' && config.posthog.isEnabled && config.posthog.
     capture_exceptions: true,
     autocapture: true,
     capture_performance: true,
+    // Compression seems to cause issues with Cloudfront, so we'll disable it for now
+    disable_compression: true,
   });
 }
 

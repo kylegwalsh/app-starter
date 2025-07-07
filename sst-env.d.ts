@@ -41,6 +41,10 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Function"
     }
+    "web": {
+      "type": "sst.aws.Nextjs"
+      "url": string
+    }
   }
 }
 /// <reference path="sst-env.d.ts" />

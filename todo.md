@@ -9,7 +9,6 @@ PostHog
 - Swap the isEnabled boolean in the config to be isDeployment after testing
 - Add --delete-after flag to posthog-cli sourcemap upload
 
-- Fix deployed posthog reverse proxy (throwing 400's)
 - Figure out how to handle page titles / seo stuff with next
   - Add seo meta data handler for next - https://github.com/search?q=repo%3Ahaydenbleasel%2Fnext-forge+createMetadata&type=code
 - Add better auth

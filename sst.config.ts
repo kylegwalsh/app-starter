@@ -29,11 +29,13 @@ export default $config({
       args.link = ([] as unknown[]).concat((args.link as unknown[]) || [], Object.values(secrets));
       // Add permissions for the Bedrock AI API
       args.permissions ??= [];
-      (args.permissions as unknown[]).push({
-        effect: 'allow',
-        actions: ['bedrock:*'],
-        resources: ['*'],
-      });
+      if (Array.isArray(args.permissions)) {
+        args.permissions.push({
+          effect: 'allow',
+          actions: ['bedrock:*'],
+          resources: ['*'],
+        });
+      }
       // Add any environment variables
       args.environment = {
         // Add this so that AWS will re-use TCP connections instead of re-connecting every time
