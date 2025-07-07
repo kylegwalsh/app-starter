@@ -89,7 +89,6 @@ jobs:
 
       # If we didn't get a cache hit, it means we haven't set up SST in our CI yet
       - name: Setup CI stage
-        if: steps.cache-sst-providers.outputs.cache-hit != 'true'
         run: |
           pnpm run backend db:generate
           pnpm run docs postinstall
