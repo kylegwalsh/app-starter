@@ -8,6 +8,7 @@ PostHog
 - Figure out if we need source map uploads for NextJS (maybe create a turbo command so that it runs for all necessary subrepos?)
 - Swap the isEnabled boolean in the config to be isDeployment after testing
 - Add --delete-after flag to posthog-cli sourcemap upload
+- Consider caching .open-next folder
 
 - Figure out how to handle page titles / seo stuff with next
   - Add seo meta data handler for next - https://github.com/search?q=repo%3Ahaydenbleasel%2Fnext-forge+createMetadata&type=code
