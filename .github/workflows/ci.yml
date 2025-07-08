@@ -22,6 +22,7 @@ env:
   POSTHOG_CLI_TOKEN: ${{ secrets.POSTHOG_CLI_TOKEN }}
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
   DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+  GITHUB_REPO: ${{ github.repository }}
   BEFORE_SHA: ${{ github.event.before }}
   GITHUB_SHA: ${{ github.sha }}
   GITHUB_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
@@ -256,12 +257,6 @@ jobs:
             ${{ runner.os }}-sst-prod-
 
       # ------------- START DEPLOYMENT -------------
-      # TODO: REMOVE ME
-      - name: Log posthog cli options
-        run: |
-          pnpm exec posthog-cli -h
-          pnpm exec posthog-cli sourcemap upload -h
-
       # Deploy main apps using sst
       - name: Deploy app
         run: |
@@ -276,4 +271,4 @@ jobs:
       - name: Upload remaining sourcemaps to PostHog
         run: |
           pnpm exec posthog-cli sourcemap inject --directory .sst/artifacts
-          pnpm exec posthog-cli sourcemap upload --directory .sst/artifacts
+          pnpm exec posthog-cli sourcemap upload --directory .sst/artifacts --project "${{ github.repository }} (backend)" --version ${{ github.sha }}

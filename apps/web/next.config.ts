@@ -1,6 +1,5 @@
 import withBundleAnalyzer from '@next/bundle-analyzer';
 import { withPostHogConfig } from '@posthog/nextjs-config';
-import { config } from '@repo/config';
 import type { NextConfig } from 'next';
 
 let nextConfig: NextConfig = {
@@ -72,7 +71,7 @@ export default withPostHogConfig(nextConfig, {
     enabled:
       !process.env.SKIP_SOURCEMAPS &&
       !!(process.env.POSTHOG_CLI_TOKEN && process.env.POSTHOG_CLI_ENV_ID),
-    project: config.app.name,
+    project: `${process.env.GITHUB_REPO} (web)`,
     version: process.env.GITHUB_SHA,
   },
 });
