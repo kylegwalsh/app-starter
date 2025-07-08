@@ -1,16 +1,28 @@
 'use client';
 
+import { analytics } from '@repo/analytics';
 import { Button } from '@repo/design';
+import { useState } from 'react';
 
 import { trpc } from '@/core';
 
 function myErrorMethod() {
-  throw new Error('test');
+  try {
+    console.log('Testing click on error button');
+    throw new Error('test');
+  } catch (error) {
+    void analytics.captureException(error, { test: true });
+  }
 }
 
 export default function Page() {
   const { data, isLoading } = trpc.test.useQuery();
   const { mutate: error } = trpc.error.useMutation();
+  const [crash, setCrash] = useState(false);
+
+  if (crash) {
+    throw new Error('Manually crashed');
+  }
 
   return (
     <div className="flex min-h-svh items-center justify-center">
@@ -20,9 +32,10 @@ export default function Page() {
           onClick={() => {
             myErrorMethod();
           }}>
-          Frontend Error
+          Frontend Method Error
         </Button>
-        <Button onClick={() => error()}>Backend Error</Button>
+        <Button onClick={() => setCrash(true)}>Frontend Crash error</Button>
+        <Button onClick={() => error()}>Backend Method Error</Button>
       </div>
     </div>
   );
