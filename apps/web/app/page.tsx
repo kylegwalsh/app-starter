@@ -22,7 +22,7 @@ const mySeparateErrorMethod = () => {
 
 export default function Page() {
   const { data, isLoading } = trpc.test.useQuery();
-  const { mutate: error } = trpc.error.useMutation();
+  const { mutate: error } = trpc.triggerError.useMutation();
   const [crash, setCrash] = useState(false);
 
   if (crash) {
