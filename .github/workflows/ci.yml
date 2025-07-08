@@ -61,20 +61,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      # Cache Playwright browsers
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        id: cache-playwright-browsers
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-browsers
-          restore-keys: |
-            ${{ runner.os }}-playwright-browsers
-
-      # Install Playwright browsers
-      - name: Install Playwright browsers
-        if: steps.cache-playwright-browsers.outputs.cache-hit != 'true'
-        run: npx playwright install chromium --with-deps
+      # Get SST version
+      - name: Get SST version
+        id: sst-version
+        run: echo "version=$(pnpm get-package-version --package sst)" >> $GITHUB_OUTPUT
 
       # Cache SST providers
       - name: Cache SST providers
@@ -82,17 +72,33 @@ jobs:
         id: cache-sst-providers
         with:
           path: .sst
-          key: ${{ runner.os }}-sst-providers
+          key: ${{ runner.os }}-sst-providers-${{ steps.sst-version.outputs.version }}
           restore-keys: |
-            ${{ runner.os }}-sst-providers
+            ${{ runner.os }}-sst-providers-
 
-      # If we didn't get a cache hit, it means we haven't set up SST in our CI yet
-      - name: Setup CI stage
-        if: steps.cache-sst-providers.outputs.cache-hit != 'true'
-        run: |
-          pnpm run backend db:generate
-          pnpm run docs postinstall
-          SKIP_SOURCEMAPS=true pnpm exec sst deploy --stage ci
+      # Install our SST providers
+      - name: Install SST providers
+        run: pnpm exec sst install
+
+      # Get Playwright version
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(pnpm get-package-version --package @playwright/test --path ./apps/web)" >> $GITHUB_OUTPUT
+
+      # Cache Playwright browsers
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: cache-playwright-browsers
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-browsers-${{ steps.playwright-version.outputs.version }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-browsers
+
+      # Install Playwright browsers
+      - name: Install Playwright browsers
+        if: steps.cache-playwright-browsers.outputs.cache-hit != 'true'
+        run: npx playwright install chromium --with-deps
 
   # ------------- START TESTING -------------
   # Lint packages for errors and formatting

@@ -23,6 +23,7 @@
     "format": "turbo format --continue",
     "init": "tsx scripts/init",
     "update-readme": "doctoc README.md",
+    "get-package-version": "tsx scripts/get-package-version",
     "create:package": "tsx scripts/create-package",
     "postinstall": "manypkg fix",
     "pre-commit": "tsx scripts/pre-commit",
