@@ -64,7 +64,7 @@ jobs:
       # Get SST version
       - name: Get SST version
         id: sst-version
-        run: echo "version=$(tsx scripts/get-package-version.ts --package sst)" >> $GITHUB_OUTPUT
+        run: echo "version=$(pnpm --silent get-package-version --package sst)" >> $GITHUB_OUTPUT
 
       # Cache SST providers
       - name: Cache SST providers
@@ -83,7 +83,7 @@ jobs:
       # Get Playwright version
       - name: Get Playwright version
         id: playwright-version
-        run: echo "version=$(tsx scripts/get-package-version.ts --package @playwright/test --path ./apps/web)" >> $GITHUB_OUTPUT
+        run: echo "version=$(pnpm --silent get-package-version --package @playwright/test --path ./apps/web)" >> $GITHUB_OUTPUT
 
       # Cache Playwright browsers
       - name: Cache Playwright browsers
