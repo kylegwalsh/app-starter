@@ -89,7 +89,6 @@ jobs:
 
       # If we didn't get a cache hit, it means we haven't set up SST in our CI yet
       - name: Setup CI stage
-        if: steps.cache-sst-providers.outputs.cache-hit != 'true'
         run: |
           pnpm run backend db:generate
           pnpm run docs postinstall
@@ -266,7 +265,7 @@ jobs:
       - name: Update database
         run: pnpm backend exec prisma db push --skip-generate --accept-data-loss
 
-      # Upload sourcemaps to PostHog (the source maps for web are handled in the web.ts build step)
+      # Upload sourcemaps to PostHog (the source maps for web are handled in the infra/web.ts build step)
       - name: Upload remaining sourcemaps to PostHog
         run: |
           pnpm exec posthog-cli sourcemap inject --directory .sst/artifacts

@@ -12,8 +12,8 @@ export const site = new sst.aws.Nextjs('web', {
   domain,
   link: [api],
   path: 'apps/web',
-  // As part of the build, we need to upload our sourcemaps to PostHog
-  buildCommand: 'pnpm build:ci',
+  // As part of the build, we need to upload our sourcemaps to PostHog (we only upload our primary stages)
+  buildCommand: $app.stage === 'ci' ? 'pnpm build:ci' : 'pnpm build:ci:upload-sourcemaps',
   environment: {
     NEXT_PUBLIC_STAGE: $app.stage,
     NEXT_PUBLIC_API_URL: api.url,
