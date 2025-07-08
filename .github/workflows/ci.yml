@@ -23,9 +23,7 @@ env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
   DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
   GITHUB_REPO: ${{ github.repository }}
-  BEFORE_SHA: ${{ github.event.before }}
   GITHUB_SHA: ${{ github.sha }}
-  GITHUB_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 
 # The different jobs to run
 jobs:
