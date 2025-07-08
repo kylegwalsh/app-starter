@@ -41,14 +41,14 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-browsers
+        key: ${{ runner.os }}-playwright-browsers-
         fail-on-cache-miss: true
 
     - name: Restore SST providers
       uses: actions/cache/restore@v4
       with:
         path: .sst
-        key: ${{ runner.os }}-sst-providers
+        key: ${{ runner.os }}-sst-providers-
         fail-on-cache-miss: true
 
     # Set up a cache for the turbo results
