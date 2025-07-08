@@ -274,6 +274,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@posthog/nextjs-config':
+        specifier: ^1.0.0
+        version: 1.0.0(next@15.3.1(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.49.11))
       '@repo/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
@@ -2986,6 +2989,15 @@ packages:
       }
     engines: { node: '>=14', npm: '>=6' }
     hasBin: true
+
+  '@posthog/nextjs-config@1.0.0':
+    resolution:
+      {
+        integrity: sha512-pHkPZDu0riKDDSLbTJMoziNGecqhV+oMOrFOgkQ6ob9B/yxT2zjdh6GONC96+60UAx+3Wr6NGn0vF5t51p46gg==,
+      }
+    engines: { node: '>=18.0.0' }
+    peerDependencies:
+      next: '>12.1.0'
 
   '@prisma/client@6.7.0':
     resolution:
@@ -16602,6 +16614,13 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
+  '@posthog/nextjs-config@1.0.0(next@15.3.1(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.49.11))':
+    dependencies:
+      '@posthog/cli': 0.3.3
+      next: 15.3.1(@babel/core@7.27.3)(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.49.11)
+    transitivePeerDependencies:
+      - debug
+
   '@prisma/client@6.7.0(prisma@6.7.0(typescript@5.8.3))(typescript@5.8.3)':
     optionalDependencies:
       prisma: 6.7.0(typescript@5.8.3)
@@ -18751,7 +18770,7 @@ snapshots:
       sirv: 3.0.1
       tinyglobby: 0.2.13
       tinyrainbow: 2.0.0
-      vitest: 3.1.4(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jiti@2.4.2)(jsdom@26.1.0)(lightningcss@1.30.1)(msw@2.8.7(@types/node@20.17.19)(typescript@5.8.3))(sass@1.49.11)(terser@5.40.0)(tsx@4.19.4)(yaml@2.8.0)
+      vitest: 3.1.4(@types/debug@4.1.12)(@types/node@22.15.29)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jiti@2.4.2)(jsdom@26.1.0)(lightningcss@1.30.1)(msw@2.8.7(@types/node@22.15.29)(typescript@5.8.3))(sass@1.49.11)(terser@5.40.0)(tsx@4.19.4)(yaml@2.8.0)
 
   '@vitest/utils@3.0.9':
     dependencies:

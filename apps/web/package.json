@@ -8,8 +8,6 @@
     "start": "sst shell -- next start",
     "build": "next build",
     "build:analyze": "cross-env ANALYZE=true NEXT_PUBLIC_STAGE=dev sst shell -- next build",
-    "build:ci": "pnpm dlx open-next build",
-    "build:ci:upload-sourcemaps": "pnpm build:ci && pnpm exec posthog-cli sourcemap inject --directory .next/static/chunks && pnpm exec posthog-cli sourcemap upload --directory .next/static/chunks --delete-after",
     "test": "sst shell -- vitest run",
     "test:ci": "sst shell --print-logs --stage ci -- vitest run",
     "test:ui": "sst shell -- vitest --ui",
@@ -24,6 +22,7 @@
     "postinstall": "npx playwright install chromium --with-deps"
   },
   "dependencies": {
+    "@posthog/nextjs-config": "^1.0.0",
     "@repo/analytics": "workspace:*",
     "@repo/config": "workspace:*",
     "@repo/constants": "workspace:*",

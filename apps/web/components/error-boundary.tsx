@@ -27,6 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   // Capture the error
   public componentDidCatch(error: Error) {
+    console.log('Error boundary caught error', error);
     void analytics.captureException(error);
   }
 

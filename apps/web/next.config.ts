@@ -1,4 +1,6 @@
 import withBundleAnalyzer from '@next/bundle-analyzer';
+import { withPostHogConfig } from '@posthog/nextjs-config';
+import { config } from '@repo/config';
 import type { NextConfig } from 'next';
 
 let nextConfig: NextConfig = {
@@ -54,4 +56,22 @@ if (process.env.ANALYZE === 'true') {
   } satisfies NextConfig);
 }
 
-export default nextConfig;
+console.log(
+  'SKIP_SOURCEMAPS',
+  process.env.SKIP_SOURCEMAPS,
+  !process.env.SKIP_SOURCEMAPS &&
+    !!(process.env.POSTHOG_CLI_TOKEN && process.env.POSTHOG_CLI_ENV_ID)
+);
+
+// Configure PostHog for source maps / error tracking
+export default withPostHogConfig(nextConfig, {
+  personalApiKey: process.env.POSTHOG_CLI_TOKEN ?? '',
+  envId: process.env.POSTHOG_CLI_ENV_ID ?? '',
+  sourcemaps: {
+    // Enable our source maps if we're running in the CI with our environment variables (unless we're skipping them)
+    enabled:
+      !process.env.SKIP_SOURCEMAPS &&
+      !!(process.env.POSTHOG_CLI_TOKEN && process.env.POSTHOG_CLI_ENV_ID),
+    project: config.app.name,
+  },
+});

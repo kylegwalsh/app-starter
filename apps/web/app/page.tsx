@@ -9,7 +9,7 @@ import { trpc } from '@/core';
 function myErrorMethod() {
   try {
     console.log('Testing click on error button');
-    throw new Error('test');
+    throw new Error('Testing method error');
   } catch (error) {
     void analytics.captureException(error, { test: true });
   }
@@ -21,7 +21,7 @@ export default function Page() {
   const [crash, setCrash] = useState(false);
 
   if (crash) {
-    throw new Error('Manually crashed');
+    throw new Error('Testing crash error');
   }
 
   return (

@@ -304,6 +304,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
           const { userId, ...restProperties } = properties;
           platformAnalytics.captureException(error, userId as string, restProperties);
         } else if (platform === 'web') {
+          console.log('Capturing and reporting web error');
           platformAnalytics.captureException(error, properties);
         }
       });

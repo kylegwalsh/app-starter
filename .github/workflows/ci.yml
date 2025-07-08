@@ -93,7 +93,7 @@ jobs:
         run: |
           pnpm run backend db:generate
           pnpm run docs postinstall
-          pnpm exec sst deploy --stage ci
+          SKIP_SOURCEMAPS=true pnpm exec sst deploy --stage ci
 
   # ------------- START TESTING -------------
   # Lint packages for errors and formatting
@@ -188,7 +188,7 @@ jobs:
       - name: Deploy app
         run: |
           pnpm exec sst unlock --stage ci
-          pnpm exec sst deploy --stage ci
+          SKIP_SOURCEMAPS=true pnpm exec sst deploy --stage ci
 
       - name: Run E2E tests
         run: pnpm web test:e2e
@@ -266,7 +266,7 @@ jobs:
       - name: Update database
         run: pnpm backend exec prisma db push --skip-generate --accept-data-loss
 
-      # Upload sourcemaps to PostHog (the source maps for web are handled in the infra/web.ts build step)
+      # Upload sourcemaps to PostHog (the source maps for web are handled by the next.config.ts file)
       - name: Upload remaining sourcemaps to PostHog
         run: |
           pnpm exec posthog-cli sourcemap inject --directory .sst/artifacts
