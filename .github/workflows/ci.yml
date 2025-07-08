@@ -266,8 +266,8 @@ jobs:
       - name: Update database
         run: pnpm backend exec prisma db push --skip-generate --accept-data-loss
 
-      # Upload sourcemaps to PostHog
-      - name: Upload sourcemaps to PostHog
+      # Upload sourcemaps to PostHog (the source maps for web are handled in the web.ts build step)
+      - name: Upload remaining sourcemaps to PostHog
         run: |
           pnpm exec posthog-cli sourcemap inject --directory .sst/artifacts
           pnpm exec posthog-cli sourcemap upload --directory .sst/artifacts
