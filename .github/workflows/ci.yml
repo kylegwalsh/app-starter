@@ -256,6 +256,11 @@ jobs:
             ${{ runner.os }}-sst-prod-
 
       # ------------- START DEPLOYMENT -------------
+      # TODO: REMOVE ME
+      - name: Log posthog cli options
+        run: |
+          pnpm exec posthog-cli -h
+
       # Deploy main apps using sst
       - name: Deploy app
         run: |

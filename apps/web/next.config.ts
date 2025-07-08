@@ -67,11 +67,12 @@ console.log(
 export default withPostHogConfig(nextConfig, {
   personalApiKey: process.env.POSTHOG_CLI_TOKEN ?? '',
   envId: process.env.POSTHOG_CLI_ENV_ID ?? '',
+  // Enable our source maps if we're running in the CI with our environment variables (unless we're skipping them)
   sourcemaps: {
-    // Enable our source maps if we're running in the CI with our environment variables (unless we're skipping them)
     enabled:
       !process.env.SKIP_SOURCEMAPS &&
       !!(process.env.POSTHOG_CLI_TOKEN && process.env.POSTHOG_CLI_ENV_ID),
     project: config.app.name,
+    version: process.env.GITHUB_SHA,
   },
 });

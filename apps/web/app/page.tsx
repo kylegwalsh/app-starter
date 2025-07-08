@@ -6,14 +6,19 @@ import { useState } from 'react';
 
 import { trpc } from '@/core';
 
-function myErrorMethod() {
+const nestedErrorMethod = () => {
   try {
     console.log('Testing click on error button');
     throw new Error('Testing method error');
   } catch (error) {
-    void analytics.captureException(error, { test: true });
+    void analytics.captureException(error);
+    void analytics.captureException(new Error('Separate error method'), { different: true });
   }
-}
+};
+
+const mySeparateErrorMethod = () => {
+  nestedErrorMethod();
+};
 
 export default function Page() {
   const { data, isLoading } = trpc.test.useQuery();
@@ -30,7 +35,7 @@ export default function Page() {
         <h1 className="text-primary text-2xl font-bold">Counting: {isLoading ? '...' : data}</h1>
         <Button
           onClick={() => {
-            myErrorMethod();
+            mySeparateErrorMethod();
           }}>
           Frontend Method Error
         </Button>
