@@ -132,22 +132,22 @@ jobs:
         run: pnpm types:check
 
   # Run our standard tests
-  # test:
-  #   name: Test
-  #   runs-on: ubuntu-latest
-  #   needs: setup
-  #   environment: ${{ github.event_name == 'release' && 'prod' || 'dev' }}
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: setup
+    environment: ${{ github.event_name == 'release' && 'prod' || 'dev' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  #     - name: Set up environment
-  #       uses: ./.github/actions/setup
-  #       with:
-  #         job-name: test
+      - name: Set up environment
+        uses: ./.github/actions/setup
+        with:
+          job-name: test
 
-  #     - name: Run tests
-  #       run: pnpm test:ci
+      - name: Run tests
+        run: pnpm test:ci
 
   # Run our E2E tests (only run on releases)
   e2e:
@@ -155,7 +155,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     environment: ${{ github.event_name == 'release' && 'prod' || 'dev' }}
-    if: github.event_name == 'release'
+    # if: github.event_name == 'release'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -213,9 +213,9 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, e2e]
+    needs: [lint, typecheck, test, e2e]
     environment: ${{ github.event_name == 'release' && 'prod' || 'dev' }}
-    if: always() && (needs.lint.result == 'success' && needs.typecheck.result == 'success') && (github.event_name != 'release' || needs.e2e.result == 'success')
+    if: always() && (needs.lint.result == 'success' && needs.typecheck.result == 'success' && needs.test.result == 'success') && (github.event_name != 'release' || needs.e2e.result == 'success')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
