@@ -11,8 +11,8 @@ importers:
         specifier: ^0.24.0
         version: 0.24.0
       '@posthog/cli':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: ^0.3.3
+        version: 0.3.3
       '@repo/eslint':
         specifier: workspace:*
         version: link:packages/eslint
@@ -2979,10 +2979,10 @@ packages:
         integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==,
       }
 
-  '@posthog/cli@0.1.0':
+  '@posthog/cli@0.3.3':
     resolution:
       {
-        integrity: sha512-aP0EHXpdYFfvVMyewOe7aE3urS9q0nn5KQHnKFO2FexDxOkbG+wjLC4Q7e38BRQF0cR6cLUEFI+WRZnJWS2iXw==,
+        integrity: sha512-Lbb12w6Ra1vaQ2LUHeztTSpCebxBuzTsHitdiEUnm6egma1+d1MK8hqG8vuEytWK5h8cc8w4dqN+8j3RDji1PA==,
       }
     engines: { node: '>=14', npm: '>=6' }
     hasBin: true
@@ -16592,7 +16592,7 @@ snapshots:
 
   '@polka/url@1.0.0-next.29': {}
 
-  '@posthog/cli@0.1.0':
+  '@posthog/cli@0.3.3':
     dependencies:
       axios: 1.9.0
       axios-proxy-builder: 0.1.2

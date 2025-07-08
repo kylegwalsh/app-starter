@@ -7,7 +7,7 @@
     "dev": "sst shell -- next dev",
     "start": "sst shell -- next start",
     "build": "next build",
-    "build:ci": "pnpm dlx open-next build && pnpm exec posthog-cli sourcemap inject --directory .next/static && pnpm exec posthog-cli sourcemap upload --directory .next/static",
+    "build:ci": "pnpm dlx open-next build && pnpm exec posthog-cli sourcemap inject --directory .next/static/chunks && pnpm exec posthog-cli sourcemap upload --directory .next/static/chunks",
     "build:analyze": "cross-env ANALYZE=true NEXT_PUBLIC_STAGE=dev sst shell -- next build",
     "test": "sst shell -- vitest run",
     "test:ci": "sst shell --print-logs --stage ci -- vitest run",
