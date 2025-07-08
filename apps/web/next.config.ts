@@ -55,13 +55,6 @@ if (process.env.ANALYZE === 'true') {
   } satisfies NextConfig);
 }
 
-console.log(
-  'SKIP_SOURCEMAPS',
-  process.env.SKIP_SOURCEMAPS,
-  !process.env.SKIP_SOURCEMAPS &&
-    !!(process.env.POSTHOG_CLI_TOKEN && process.env.POSTHOG_CLI_ENV_ID)
-);
-
 // Configure PostHog for source maps / error tracking
 export default withPostHogConfig(nextConfig, {
   personalApiKey: process.env.POSTHOG_CLI_TOKEN ?? '',
