@@ -260,6 +260,7 @@ jobs:
       - name: Log posthog cli options
         run: |
           pnpm exec posthog-cli -h
+          pnpm exec posthog-cli sourcemap upload -h
 
       # Deploy main apps using sst
       - name: Deploy app
