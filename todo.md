@@ -1,15 +1,6 @@
 # TODO
 
-PostHog
-
-- Ensure we don't run source map stuff if posthog is not set up
-- Double check posthog source maps from CI
-  - The CI also mentioned we were missing a project name (see if we need to set that up)
-- Figure out if we need source map uploads for NextJS (maybe create a turbo command so that it runs for all necessary subrepos?)
-- Swap the isEnabled boolean in the config to be isDeployment after testing
-- Add --delete-after flag to posthog-cli sourcemap upload
-- Consider caching .open-next folder
-
+- Fix backend source maps in PostHog
 - Figure out how to handle page titles / seo stuff with next
   - Add seo meta data handler for next - https://github.com/search?q=repo%3Ahaydenbleasel%2Fnext-forge+createMetadata&type=code
 - Add better auth
