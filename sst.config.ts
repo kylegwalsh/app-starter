@@ -85,8 +85,6 @@ export default $config({
       // ---------- ENVIRONMENT ----------
       // Add any environment variables
       args.environment = {
-        // Generate source maps for our deployments so we can upload them for error tracking
-        NODE_OPTIONS: $dev ? '' : '--enable-source-maps',
         // Add this so that AWS will re-use TCP connections instead of re-connecting every time
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       };
