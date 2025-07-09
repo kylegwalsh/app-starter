@@ -83,6 +83,7 @@
     "nextjs",
     "ohash",
     "openai",
+    "postbuild",
     "posthog",
     "serviceworker",
     "shadcn",

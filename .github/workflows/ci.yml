@@ -270,10 +270,3 @@ jobs:
       # Update database using prisma
       - name: Update database
         run: pnpm backend exec prisma db push --skip-generate --accept-data-loss
-
-      # Upload sourcemaps to PostHog (the source maps for web are handled by the next.config.ts file)
-      - name: Upload remaining sourcemaps to PostHog
-        if: env.POSTHOG_CLI_ENV_ID && env.POSTHOG_CLI_TOKEN
-        run: |
-          pnpm exec posthog-cli sourcemap inject --directory .sst/artifacts
-          pnpm exec posthog-cli sourcemap upload --directory .sst/artifacts --project "${{ github.repository }} (backend)" --version ${{ github.sha }}
