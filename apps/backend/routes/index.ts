@@ -5,8 +5,8 @@ import { db } from '@/db';
 import { t } from './trpc/init';
 import { publicProcedure } from './trpc/procedures';
 
-const triggerError5 = () => {
-  throw new Error('Triggering a backend error 5');
+const triggerError6 = () => {
+  throw new Error('Triggering a backend error 6');
 };
 
 /** The actual router used to handle all tRPC traffic */
@@ -15,8 +15,8 @@ export const router = t.router({
     const count = await db.settings.count();
     return count;
   }),
-  triggerError: publicProcedure.mutation(() => {
-    triggerError5();
+  triggerErrorNew: publicProcedure.mutation(() => {
+    triggerError6();
   }),
   ai: publicProcedure.mutation(async () => {
     const { text } = await ai.generateText({

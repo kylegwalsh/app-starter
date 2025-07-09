@@ -79,7 +79,6 @@ export default $config({
           } else {
             console.log('PostHog env vars not set, skipping backend sourcemap upload.');
           }
-          await Promise.resolve();
         },
       };
 

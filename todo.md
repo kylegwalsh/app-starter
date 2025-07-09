@@ -1,6 +1,5 @@
 # TODO
 
-- Remove CI artifact after testing
 - Fix backend source maps in PostHog
 - Push link to logs + requestId into PostHog when an error occurs (easy log lookup)
 - See if we need the --enable-source-maps flag + sourceMaps boolean in the sst.config.ts file
