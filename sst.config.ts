@@ -1,5 +1,7 @@
 /// <reference path="./.sst/platform/config.d.ts" />
 
+import { execSync } from 'node:child_process';
+
 // The config that manages our SST application / deployments
 export default $config({
   app(input) {
@@ -24,9 +26,12 @@ export default $config({
 
     // Apply default settings to all functions
     $transform(sst.aws.Function, (args) => {
+      // ---------- SECRETS ----------
       // Link the secrets to every method
       // eslint-disable-next-line unicorn/prefer-spread
       args.link = ([] as unknown[]).concat((args.link as unknown[]) || [], Object.values(secrets));
+
+      // ---------- PERMISSIONS ----------
       // Add permissions for the Bedrock AI API
       args.permissions ??= [];
       if (Array.isArray(args.permissions)) {
@@ -36,6 +41,41 @@ export default $config({
           resources: ['*'],
         });
       }
+
+      // ---------- SOURCE MAP UPLOAD ----------
+      // Upload our function source maps to PostHog after building the functions
+      args.hook ??= {
+        postbuild: async (dir) => {
+          // Upload backend sourcemaps to PostHog after build
+          if (
+            !process.env.SKIP_SOURCEMAPS &&
+            process.env.POSTHOG_CLI_ENV_ID &&
+            process.env.POSTHOG_CLI_TOKEN &&
+            process.env.GITHUB_REPO &&
+            process.env.GITHUB_SHA
+          ) {
+            try {
+              // Inject sourcemaps with posthog metadata
+              execSync(`pnpm exec posthog-cli sourcemap inject --directory ${dir}`, {
+                stdio: 'inherit',
+              });
+              // Upload sourcemaps
+              execSync(
+                `pnpm exec posthog-cli sourcemap upload --directory ${dir} --project "${process.env.GITHUB_REPO} (backend)" --version ${process.env.GITHUB_SHA}`,
+                { stdio: 'inherit' }
+              );
+              console.log('✔ Uploaded backend sourcemaps to PostHog.');
+            } catch (error) {
+              console.error('PostHog sourcemap upload failed:', error);
+            }
+          } else {
+            console.log('PostHog env vars not set, skipping backend sourcemap upload.');
+          }
+          await Promise.resolve();
+        },
+      };
+
+      // ---------- ENVIRONMENT ----------
       // Add any environment variables
       args.environment = {
         // Generate source maps for our deployments so we can upload them for error tracking
@@ -75,6 +115,8 @@ export default $config({
               external: ['@prisma/client'],
             },
           };
+
+      // ---------- RUNTIME ----------
       // Select the architecture and runtime
       args.architecture ??= 'arm64';
       args.runtime ??= 'nodejs20.x';
