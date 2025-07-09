@@ -275,13 +275,13 @@ jobs:
       - name: Temporary artifact source map
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: apiHandler-src-map
           path: .sst/artifacts/apiHandler-src/bundle.mjs.map
           retention-days: 1
 
       - name: Temporary artifact bundle
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: apiHandler-src-bundle
           path: .sst/artifacts/apiHandler-src/bundle.mjs
           retention-days: 1
