@@ -1,6 +1,9 @@
 # TODO
 
+- Remove CI artifact after testing
 - Fix backend source maps in PostHog
+- Push link to logs + requestId into PostHog when an error occurs (easy log lookup)
+- See if we need the --enable-source-maps flag + sourceMaps boolean in the sst.config.ts file
 - Re-add isDeployment check to config
 - Figure out how to handle page titles / seo stuff with next
   - Add seo meta data handler for next - https://github.com/search?q=repo%3Ahaydenbleasel%2Fnext-forge+createMetadata&type=code
