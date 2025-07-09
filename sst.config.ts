@@ -44,7 +44,7 @@ export default $config({
       // Upload our function source maps to PostHog after building the functions
       args.hook ??= {
         postbuild: async (dir) => {
-          // Upload backend sourcemaps to PostHog after build
+          // Upload backend sourcemaps to PostHog after build (if we're running in the CI)
           if (
             !process.env.SKIP_SOURCEMAPS &&
             process.env.POSTHOG_CLI_ENV_ID &&
@@ -53,20 +53,28 @@ export default $config({
             process.env.GITHUB_SHA
           ) {
             try {
-              const { execSync } = await import('node:child_process');
+              // Check if this build dir contains source maps
+              const fs = await import('node:fs/promises');
+              let hasSourceMaps = false;
+              const files = await fs.readdir(dir);
+              hasSourceMaps = files.some((file) => file.endsWith('.map'));
 
-              // Inject sourcemaps with posthog metadata
-              execSync(`pnpm exec posthog-cli sourcemap inject --directory ${dir}`, {
-                stdio: 'inherit',
-              });
-              // Upload sourcemaps
-              execSync(
-                `pnpm exec posthog-cli sourcemap upload --directory ${dir} --project "${process.env.GITHUB_REPO} (backend)" --version ${process.env.GITHUB_SHA}`,
-                { stdio: 'inherit' }
-              );
-              console.log('✔ Uploaded backend sourcemaps to PostHog.');
+              // Only run if the dir contains source map files
+              if (hasSourceMaps) {
+                const { execSync } = await import('node:child_process');
+
+                // Inject sourcemaps with posthog metadata
+                execSync(`pnpm exec posthog-cli sourcemap inject --directory ${dir}`, {
+                  stdio: 'inherit',
+                });
+                // Upload sourcemaps
+                execSync(
+                  `pnpm exec posthog-cli sourcemap upload --directory ${dir} --project "${process.env.GITHUB_REPO} (backend)" --version ${process.env.GITHUB_SHA}`,
+                  { stdio: 'inherit' }
+                );
+              }
             } catch (error) {
-              console.error('PostHog sourcemap upload failed:', error);
+              console.error('❌ PostHog sourcemap upload failed:', error);
             }
           } else {
             console.log('PostHog env vars not set, skipping backend sourcemap upload.');
