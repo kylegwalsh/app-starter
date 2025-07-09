@@ -1,7 +1,5 @@
 /// <reference path="./.sst/platform/config.d.ts" />
 
-import { execSync } from 'node:child_process';
-
 // The config that manages our SST application / deployments
 export default $config({
   app(input) {
@@ -55,6 +53,8 @@ export default $config({
             process.env.GITHUB_SHA
           ) {
             try {
+              const { execSync } = await import('node:child_process');
+
               // Inject sourcemaps with posthog metadata
               execSync(`pnpm exec posthog-cli sourcemap inject --directory ${dir}`, {
                 stdio: 'inherit',
