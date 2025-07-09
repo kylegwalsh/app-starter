@@ -42,7 +42,7 @@ export const config = {
   /** The configuration for PostHog */
   posthog: {
     /** Whether posthog is enabled */
-    isEnabled: true,
+    isEnabled: isDeployment,
     /** The PostHog API key */
     apiKey: isProd
       ? 'phc_LE5qHtqyJtBrzG4vRkfTY5OKmc3bBhEf7u8OEPyneCD'

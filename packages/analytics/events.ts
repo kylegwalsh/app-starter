@@ -304,7 +304,8 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
           platformAnalytics.captureException(error, userId as string, {
             awsRequestId,
             langfuseTraceId,
-            request,
+            path: request?.path,
+            method: request?.method,
             ...properties,
           });
         } else if (platform === 'web') {
