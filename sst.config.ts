@@ -38,6 +38,8 @@ export default $config({
       }
       // Add any environment variables
       args.environment = {
+        // Generate source maps for our deployments so we can upload them for error tracking
+        NODE_OPTIONS: $dev ? '' : '--enable-source-maps',
         // Add this so that AWS will re-use TCP connections instead of re-connecting every time
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       };
@@ -58,13 +60,16 @@ export default $config({
               to: 'node_modules/prisma',
             },
           ];
+      // Set any default node options
       args.nodejs ??= $dev
         ? {
+            // Exclude prisma from our local functions
             install: ['@prisma/client'],
           }
         : {
             // Generate source maps for our deployments so we can upload them for error tracking
             sourcemap: true,
+            // Copy the necessary prisma files over to our functions
             esbuild: {
               platform: 'node',
               external: ['@prisma/client'],
