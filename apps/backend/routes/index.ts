@@ -1,12 +1,14 @@
 import { ai } from '@repo/ai';
+import { analytics } from '@repo/analytics';
 
 import { db } from '@/db';
 
 import { t } from './trpc/init';
 import { publicProcedure } from './trpc/procedures';
 
-const triggerError7 = () => {
-  throw new Error('Triggering a backend error 7');
+const triggerError8 = async () => {
+  await analytics.captureException(new Error('Manual trigger 1'));
+  throw new Error('Triggering a backend error 8');
 };
 
 /** The actual router used to handle all tRPC traffic */
@@ -15,8 +17,8 @@ export const router = t.router({
     const count = await db.settings.count();
     return count;
   }),
-  triggerError: publicProcedure.mutation(() => {
-    triggerError7();
+  triggerError: publicProcedure.mutation(async () => {
+    await triggerError8();
   }),
   ai: publicProcedure.mutation(async () => {
     const { text } = await ai.generateText({

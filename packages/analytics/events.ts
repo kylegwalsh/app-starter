@@ -1,5 +1,5 @@
 import { config } from '@repo/config';
-import type { flushLogs, log } from '@repo/logs';
+import type { flushLogs, getLogMetadata, log } from '@repo/logs';
 import { time } from '@repo/utils';
 import type { PostHog as PostHogWeb } from 'posthog-js';
 import type { PostHog as PostHogBackend } from 'posthog-node';
@@ -16,6 +16,7 @@ type WebAnalyticsProps = SharedAnalyticsProps & {
   platform: 'web';
   log?: typeof console;
   flushLogs?: undefined;
+  getLogMetadata?: undefined;
 };
 
 /** Platform-specific properties for backend analytics */
@@ -24,6 +25,7 @@ type BackendAnalyticsProps = SharedAnalyticsProps & {
   platform: 'backend';
   log?: typeof log;
   flushLogs?: typeof flushLogs;
+  getLogMetadata?: typeof getLogMetadata;
 };
 
 /** Backend events require additional parameters */
@@ -99,6 +101,7 @@ export const createAnalyticsEvents = <T extends 'web' | 'backend'>({
   onSignOut,
   log = console,
   flushLogs,
+  getLogMetadata,
 }: // Ensure our posthog library is typed correctly based on platform
 T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
   /**
@@ -289,20 +292,21 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
     /** Capture an error */
     captureException: async (
       error: unknown,
-      // The properties are optional on web
-      ...args: T extends 'backend'
-        ? [{ userId?: string } & Record<string, unknown>]
-        : [Record<string, unknown>?]
+      /** Any additional properties to attach to the error */
+      properties?: Record<string, unknown>
     ) => {
       log.error(error);
 
       await safeInvoke(() => {
-        const properties = args?.[0] ?? {};
-
         // Track the error differently based on platform
         if (platform === 'backend') {
-          const { userId, ...restProperties } = properties;
-          platformAnalytics.captureException(error, userId as string, restProperties);
+          const { awsRequestId, userId, langfuseTraceId, request } = getLogMetadata?.() ?? {};
+          platformAnalytics.captureException(error, userId as string, {
+            awsRequestId,
+            langfuseTraceId,
+            request,
+            ...properties,
+          });
         } else if (platform === 'web') {
           platformAnalytics.captureException(error, properties);
         }
