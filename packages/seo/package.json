@@ -1,0 +1,30 @@
+{
+  "name": "@repo/seo",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "pretty": "prettier --write . --ignore-path ../../.prettierignore",
+    "format": "pnpm lint:fix & pnpm pretty",
+    "types:check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "workspace:*",
+    "@types/lodash.merge": "^4.6.9",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "next": "15.3.1",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@repo/config": "workspace:*",
+    "lodash.merge": "^4.6.2",
+    "react": "^19.0.0",
+    "schema-dts": "^1.1.5"
+  }
+}

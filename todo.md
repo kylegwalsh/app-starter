@@ -1,8 +1,5 @@
 # TODO
 
-- Ensure favicon works
-- Figure out how to handle page titles / seo stuff with next
-  - Add seo meta data handler for next - https://github.com/search?q=repo%3Ahaydenbleasel%2Fnext-forge+createMetadata&type=code
 - Add better auth
   - Remove prisma settings model in favor of auth user model
   - Add auth provider setup to initialization script

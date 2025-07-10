@@ -2,15 +2,15 @@ import '@repo/design/globals.css';
 
 import { config } from '@repo/config';
 import { Toaster } from '@repo/design';
-import { Metadata } from 'next';
+import { createMetadata } from '@repo/seo';
 import Script from 'next/script';
 
 import { ErrorBoundary, Providers } from '@/components';
 
-export const metadata: Metadata = {
-  title: config.app.name,
-};
+/** The default metadata for the app */
+export const metadata = createMetadata();
 
+/** Our primary layout wrapping the entire app */
 export default function RootLayout({
   children,
 }: Readonly<{

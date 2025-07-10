@@ -289,6 +289,9 @@ importers:
       '@repo/design':
         specifier: workspace:*
         version: link:../../packages/design
+      '@repo/seo':
+        specifier: workspace:*
+        version: link:../../packages/seo
       '@repo/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -721,6 +724,40 @@ importers:
       '@repo/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+
+  packages/seo:
+    dependencies:
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../config
+      lodash.merge:
+        specifier: ^4.6.2
+        version: 4.6.2
+      react:
+        specifier: ^19.0.0
+        version: 19.1.0
+      schema-dts:
+        specifier: ^1.1.5
+        version: 1.1.5
+    devDependencies:
+      '@repo/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@types/lodash.merge':
+        specifier: ^4.6.9
+        version: 4.6.9
+      '@types/react':
+        specifier: ^19
+        version: 19.1.4
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.1.5(@types/react@19.1.4)
+      next:
+        specifier: 15.3.1
+        version: 15.3.1(@babel/core@7.27.3)(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.49.11)
       typescript:
         specifier: ^5.8.3
         version: 5.8.3
@@ -5423,6 +5460,12 @@ packages:
     resolution:
       {
         integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==,
+      }
+
+  '@types/lodash.merge@4.6.9':
+    resolution:
+      {
+        integrity: sha512-23sHDPmzd59kUgWyKGiOMO2Qb9YtqRO/x4IhkgNUiPQ1+5MUVqi6bCZeq9nBJ17msjIMbEIO5u+XW4Kz6aGUhQ==,
       }
 
   '@types/lodash@4.17.16':
@@ -12589,6 +12632,12 @@ packages:
         integrity: sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==,
       }
 
+  schema-dts@1.1.5:
+    resolution:
+      {
+        integrity: sha512-RJr9EaCmsLzBX2NDiO5Z3ux2BVosNZN5jo0gWgsyKvxKIUL5R3swNvoorulAeL9kLB0iTSX7V6aokhla2m7xbg==,
+      }
+
   scroll-into-view-if-needed@3.1.0:
     resolution:
       {
@@ -18464,6 +18513,10 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
+  '@types/lodash.merge@4.6.9':
+    dependencies:
+      '@types/lodash': 4.17.16
+
   '@types/lodash@4.17.16': {}
 
   '@types/mdast@3.0.15':
@@ -18770,7 +18823,7 @@ snapshots:
       sirv: 3.0.1
       tinyglobby: 0.2.13
       tinyrainbow: 2.0.0
-      vitest: 3.1.4(@types/debug@4.1.12)(@types/node@22.15.29)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jiti@2.4.2)(jsdom@26.1.0)(lightningcss@1.30.1)(msw@2.8.7(@types/node@22.15.29)(typescript@5.8.3))(sass@1.49.11)(terser@5.40.0)(tsx@4.19.4)(yaml@2.8.0)
+      vitest: 3.1.4(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jiti@2.4.2)(jsdom@26.1.0)(lightningcss@1.30.1)(msw@2.8.7(@types/node@20.17.19)(typescript@5.8.3))(sass@1.49.11)(terser@5.40.0)(tsx@4.19.4)(yaml@2.8.0)
 
   '@vitest/utils@3.0.9':
     dependencies:
@@ -23493,6 +23546,8 @@ snapshots:
       xmlchars: 2.2.0
 
   scheduler@0.26.0: {}
+
+  schema-dts@1.1.5: {}
 
   scroll-into-view-if-needed@3.1.0:
     dependencies:

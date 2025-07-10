@@ -27,6 +27,7 @@
     "@repo/config": "workspace:*",
     "@repo/constants": "workspace:*",
     "@repo/design": "workspace:*",
+    "@repo/seo": "workspace:*",
     "@repo/utils": "workspace:*",
     "@tanstack/react-query": "^5.77.2",
     "@trpc/client": "^11.2.0",
