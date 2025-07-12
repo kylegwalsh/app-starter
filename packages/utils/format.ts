@@ -1,6 +1,6 @@
 import * as changeCase from 'change-case';
 import dayjs from 'dayjs';
-import { isArray, isObject, transform } from 'lodash';
+import { isArray, isObject, transform } from 'lodash-es';
 
 /** The different casing options available */
 type Cases = Exclude<keyof typeof changeCase, 'split' | 'splitSeparateNumbers'>;

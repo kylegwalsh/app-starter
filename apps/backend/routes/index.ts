@@ -14,7 +14,7 @@ const triggerError8 = async () => {
 /** The actual router used to handle all tRPC traffic */
 export const router = t.router({
   test: publicProcedure.query(async () => {
-    const count = await db.settings.count();
+    const count = await db.user.count();
     return count;
   }),
   triggerError: publicProcedure.mutation(async () => {

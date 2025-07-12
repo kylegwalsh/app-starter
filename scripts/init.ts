@@ -1,17 +1,11 @@
-import { exec, execSync } from 'node:child_process';
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import readline from 'node:readline';
-import { promisify } from 'node:util';
 
 import axios from 'axios';
 import inquirer from 'inquirer';
-
-import sstConfig from '../sst.config';
-
-// Promisify exec for async/await usage
-const execAsync = promisify(exec);
 
 // ---------- INPUT HELPERS ----------
 /** Prompt the user for input */
@@ -77,12 +71,17 @@ const CLI_REQUIREMENTS = [
     versionCmd: 'aws --version',
     url: 'https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html',
   },
+  {
+    name: 'docker',
+    versionCmd: 'docker --version',
+    url: 'https://docs.docker.com/get-docker/',
+  },
 ];
 
 /** Check if the user is authenticated with GitHub CLI */
-const checkGhAuth = async () => {
+const checkGhAuth = () => {
   try {
-    await execAsync('gh auth status');
+    execSync('gh auth status');
   } catch {
     console.log("❌ GitHub CLI is not authenticated. Please run 'gh auth login' and try again.\n");
     process.exit(1);
@@ -90,14 +89,14 @@ const checkGhAuth = async () => {
 };
 
 /** Check if required CLIs are installed */
-const checkCLIs = async () => {
+const checkCLIs = () => {
   console.log('Checking CLI tools...');
 
   // Check to ensure the user has all the CLI tools installed
   const missing: { name: string; url: string }[] = [];
   for (const cli of CLI_REQUIREMENTS) {
     try {
-      await execAsync(cli.versionCmd);
+      execSync(cli.versionCmd);
     } catch {
       missing.push({ name: cli.name, url: cli.url });
     }
@@ -112,7 +111,7 @@ const checkCLIs = async () => {
   }
 
   // Check that the user is authenticated with gh
-  await checkGhAuth();
+  checkGhAuth();
 
   console.log('✔ All CLI tools are installed\n');
 };
@@ -166,7 +165,7 @@ const configureGithubUrl = async () => {
         }
 
         // Check whether it's a valid repo
-        await execAsync(`git ls-remote ${newUrl}`);
+        execSync(`git ls-remote ${newUrl}`);
 
         console.log('✔ Updated repo\n');
         return newUrl;
@@ -202,42 +201,34 @@ const setupGithub = async ({
   console.log(`Setting up GitHub environments and secrets...`);
 
   // Create environments (idempotent)
-  await execAsync(
+  execSync(
     `gh api --method PUT -H "Accept: application/vnd.github+json" repos/${repo}/environments/dev`
   );
-  await execAsync(
+  execSync(
     `gh api --method PUT -H "Accept: application/vnd.github+json" repos/${repo}/environments/prod`
   );
 
   // Set AWS secrets
-  await execAsync(`gh secret set AWS_ACCESS_KEY_ID -a actions -b "${awsConfig.ci.awsAccessKey}"`);
-  await execAsync(
-    `gh secret set AWS_SECRET_ACCESS_KEY -a actions -b "${awsConfig.ci.awsSecretKey}"`
-  );
+  execSync(`gh secret set AWS_ACCESS_KEY_ID -a actions -b "${awsConfig.ci.awsAccessKey}"`);
+  execSync(`gh secret set AWS_SECRET_ACCESS_KEY -a actions -b "${awsConfig.ci.awsSecretKey}"`);
 
   // Set sst stage (for each environment)
-  await execAsync(`gh variable set SST_STAGE -b "dev" -e dev`);
-  await execAsync(`gh variable set SST_STAGE -b "prod" -e prod`);
+  execSync(`gh variable set SST_STAGE -b "dev" -e dev`);
+  execSync(`gh variable set SST_STAGE -b "prod" -e prod`);
 
   // Set database secrets (for each environment)
-  await execAsync(`gh secret set DATABASE_URL -a actions -b "${dbConfig.prod.dbUrl}" -e prod`);
-  await execAsync(
-    `gh secret set DIRECT_DATABASE_URL -a actions -b "${dbConfig.prod.directUrl}" -e prod`
-  );
-  await execAsync(`gh secret set DATABASE_URL -a actions -b "${dbConfig.dev.dbUrl}" -e dev`);
-  await execAsync(
-    `gh secret set DIRECT_DATABASE_URL -a actions -b "${dbConfig.dev.directUrl}" -e dev`
-  );
+  execSync(`gh secret set DATABASE_URL -a actions -b "${dbConfig.prod.dbUrl}" -e prod`);
+  execSync(`gh secret set DIRECT_DATABASE_URL -a actions -b "${dbConfig.prod.directUrl}" -e prod`);
+  execSync(`gh secret set DATABASE_URL -a actions -b "${dbConfig.dev.dbUrl}" -e dev`);
+  execSync(`gh secret set DIRECT_DATABASE_URL -a actions -b "${dbConfig.dev.directUrl}" -e dev`);
 
   // If we aren't given a posthog details, we'll skip this step
   if (posthogConfig) {
     // Set up the CLI token
-    await execAsync(`gh secret set POSTHOG_CLI_TOKEN -a actions -b "${posthogConfig.cliToken}"`);
+    execSync(`gh secret set POSTHOG_CLI_TOKEN -a actions -b "${posthogConfig.cliToken}"`);
     // Set project ids (for each environment)
-    await execAsync(`gh variable set POSTHOG_CLI_ENV_ID -b "${posthogConfig.devProjectId}" -e dev`);
-    await execAsync(
-      `gh variable set POSTHOG_CLI_ENV_ID -b "${posthogConfig.prodProjectId}" -e prod`
-    );
+    execSync(`gh variable set POSTHOG_CLI_ENV_ID -b "${posthogConfig.devProjectId}" -e dev`);
+    execSync(`gh variable set POSTHOG_CLI_ENV_ID -b "${posthogConfig.prodProjectId}" -e prod`);
   }
 
   console.log('✔ GitHub environments and secrets have been set up.\n');
@@ -413,9 +404,9 @@ const getOrCreateStage = async () => {
  * @param output The stdout from the secret list command
  * @returns Object containing all secrets as key-value pairs
  */
-const getAllSecrets = async (stage: string) => {
+const getAllSecrets = (stage: string) => {
   const result: Record<string, string> = {};
-  const { stdout: output } = await execAsync(`pnpm sst secret list --stage ${stage}`);
+  const output = execSync(`pnpm sst secret list --stage ${stage}`).toString();
 
   const lines = output.split('\n');
   for (const line of lines) {
@@ -540,7 +531,7 @@ export const selectOrCreateAwsProfile = async () => {
 
   // Run aws configure to set the current active profile (helpful for the rest of this run)
   try {
-    await execAsync(`aws configure set profile ${profile}`);
+    execSync(`aws configure set profile ${profile}`);
   } catch {}
 
   // ---------- CI CREDENTIALS ----------
@@ -641,8 +632,8 @@ const setupSupabase = async (projectName: string) => {
   let alreadyConfigured = false;
   try {
     // Retrieve the secrets for dev and prod
-    const devSecrets = await getAllSecrets('dev');
-    const prodSecrets = await getAllSecrets('prod');
+    const devSecrets = getAllSecrets('dev');
+    const prodSecrets = getAllSecrets('prod');
 
     // Extract database URLs from the parsed secrets
     databaseConfig.dev = {
@@ -705,12 +696,10 @@ const setupSupabase = async (projectName: string) => {
   console.log('\nAdding Supabase secrets to SST...');
   const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
   // For prod
-  await execAsync(
+  execSync(
     `pnpm tsx ${addSecretScript} DIRECT_DATABASE_URL "${devUrls.directUrl}" "${prodUrls.directUrl}"`
   );
-  await execAsync(
-    `pnpm tsx ${addSecretScript} DATABASE_URL "${devUrls.dbUrl}" "${prodUrls.dbUrl}"`
-  );
+  execSync(`pnpm tsx ${addSecretScript} DATABASE_URL "${devUrls.dbUrl}" "${prodUrls.dbUrl}"`);
   console.log('✔ Supabase secrets have been set in SST.\n');
 
   // Update the config object with the new values
@@ -718,6 +707,35 @@ const setupSupabase = async (projectName: string) => {
   databaseConfig.dev = devUrls;
 
   return databaseConfig;
+};
+
+// ---------- BETTER AUTH HELPERS ----------
+/** Guides the user through setting up Better Auth */
+const setupBetterAuth = () => {
+  console.log('Setting up Better Auth...');
+
+  // Check if BETTER_AUTH_SECRET is already configured in SST secrets
+  try {
+    const devSecrets = getAllSecrets('dev');
+    const prodSecrets = getAllSecrets('prod');
+    if (devSecrets.BETTER_AUTH_SECRET && prodSecrets.BETTER_AUTH_SECRET) {
+      console.log('✔ Better Auth secret already configured.\n');
+      return true;
+    }
+  } catch {}
+
+  // Generate a random 32-character string
+  const randomString = Array.from({ length: 32 }, () =>
+    Math.floor(Math.random() * 36).toString(36)
+  ).join('');
+
+  // Add secret to SST
+  console.log('Adding Better Auth secret to SST...');
+  const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
+  execSync(`pnpm tsx ${addSecretScript} BETTER_AUTH_SECRET "${randomString}" "${randomString}"`);
+  console.log('✔ Better Auth secret has been set in SST.\n');
+
+  return true;
 };
 
 // ---------- POSTHOG HELPERS ----------
@@ -967,8 +985,8 @@ const setupAxiom = async (): Promise<boolean> => {
   // Check if Axiom is already configured in SST secrets
   try {
     // Retrieve the secrets for dev and prod
-    const devSecrets = await getAllSecrets('dev');
-    const prodSecrets = await getAllSecrets('prod');
+    const devSecrets = getAllSecrets('dev');
+    const prodSecrets = getAllSecrets('prod');
 
     // Check if both dev and prod have their secrets configured
     if (
@@ -1022,8 +1040,8 @@ const setupAxiom = async (): Promise<boolean> => {
   // Add secrets to SST
   console.log('\nAdding Axiom secrets to SST...');
   const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
-  await execAsync(`pnpm tsx ${addSecretScript} AXIOM_TOKEN "${token}" "${token}"`);
-  await execAsync(`pnpm tsx ${addSecretScript} AXIOM_DATASET "${dataset}" "${dataset}"`);
+  execSync(`pnpm tsx ${addSecretScript} AXIOM_TOKEN "${token}" "${token}"`);
+  execSync(`pnpm tsx ${addSecretScript} AXIOM_DATASET "${dataset}" "${dataset}"`);
 
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
@@ -1048,8 +1066,8 @@ const setupLangfuse = async () => {
 
   // Check if Langfuse is already configured in SST secrets
   try {
-    const devSecrets = await getAllSecrets('dev');
-    const prodSecrets = await getAllSecrets('prod');
+    const devSecrets = getAllSecrets('dev');
+    const prodSecrets = getAllSecrets('prod');
     if (
       devSecrets.LANGFUSE_SECRET_KEY &&
       prodSecrets.LANGFUSE_SECRET_KEY &&
@@ -1099,8 +1117,8 @@ const setupLangfuse = async () => {
   // Add secrets to SST
   console.log('\nAdding Langfuse secrets to SST...');
   const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
-  await execAsync(`pnpm tsx ${addSecretScript} LANGFUSE_SECRET_KEY "${secretKey}" "${secretKey}"`);
-  await execAsync(`pnpm tsx ${addSecretScript} LANGFUSE_PUBLIC_KEY "${publicKey}" "${publicKey}"`);
+  execSync(`pnpm tsx ${addSecretScript} LANGFUSE_SECRET_KEY "${secretKey}" "${secretKey}"`);
+  execSync(`pnpm tsx ${addSecretScript} LANGFUSE_PUBLIC_KEY "${publicKey}" "${publicKey}"`);
 
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
@@ -1170,7 +1188,7 @@ const init = async () => {
   console.log('Setting up starter...\n');
 
   // Check that all CLI tools are setup
-  await checkCLIs();
+  checkCLIs();
 
   // Get and possibly update the project name
   const projectName = await getProjectName();
@@ -1186,6 +1204,9 @@ const init = async () => {
 
   // Setup Supabase
   const dbConfig = await setupSupabase(projectName);
+
+  // Setup Better Auth
+  setupBetterAuth();
 
   // Setup PostHog
   const posthogConfig = await setupPosthog(projectName);

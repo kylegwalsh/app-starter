@@ -1,5 +1,8 @@
 {
   "extends": "@repo/tsconfig/base.json",
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"]
+  },
   "include": ["**/*", "../../global.d.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
+      <body className="flex min-h-svh flex-col antialiased">
         <ErrorBoundary>
           <Providers>{children}</Providers>
           <Toaster />

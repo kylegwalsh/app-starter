@@ -1,7 +1,6 @@
 import { config } from '@repo/config';
 import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
 import { createOpenApiAwsLambdaHandler, generateOpenApiDocument } from 'better-trpc-openapi';
-import { Resource } from 'sst';
 
 import { withLambdaContext } from '@/core';
 import { router } from '@/routes';
@@ -44,7 +43,7 @@ export const handler = withLambdaContext<'api'>(async (event, context) => {
     const openApiDocument = generateOpenApiDocument(router, {
       title: config.app.name,
       version: '1.0.0',
-      baseUrl: Resource.api.url,
+      baseUrl: config.api.url,
     });
     const swaggerHtml = `
       <!DOCTYPE html>

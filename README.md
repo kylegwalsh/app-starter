@@ -48,8 +48,9 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Documentation:** [Fumadocs](https://fumadocs.org/) for building a documentation site (optional, see below).
 - **Continuous Integration:** Automated testing and deployment via GitHub Actions.
 - **Alerts:** Slack integration for real-time notifications and alerts.
-- **AI Integration:** Pre-configured with Cursor rules for AI-powered workflows.
 - **Logging:** Shared logging package (Pino) with pretty local output, and production integration with Axiom and CloudWatch.
+- **AI Tracing & Evaluation:** Integrated with Langfuse for tracing, monitoring, and evaluating AI generations.
+- **AI-Assisted Development:** Pre-configured with Cursor rules for AI-powered workflows.
 
 ---
 
@@ -66,6 +67,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Slack:** Integration for deployment and error alerts.
 - **Posthog:** Analytics and error tracking.
 - **Axiom:** Log management platform integrated for production observability.
+- **Langfuse:** Open-source platform for AI tracing, monitoring, and evaluation.
 
 _All packages and apps are written in TypeScript for consistency and type safety._
 
@@ -122,10 +124,11 @@ _All packages and apps are written in TypeScript for consistency and type safety
 
 Before you start, make sure you have the following prerequisites installed and configured:
 
-- **Node.js** (recommended: latest LTS version)
+- **Node.js** (recommend using nvm) - [Install guide](https://github.com/nvm-sh/nvm#install--update-script)
 - **pnpm** (for package and monorepo management) — [Install guide](https://pnpm.io/installation)
 - **gh** (GitHub CLI) — [Install guide](https://github.com/cli/cli#installation)
 - **aws-cli** (AWS CLI) — [Install guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- **Docker** (for running a shadow DB for migrations) — [Install guide](https://docs.docker.com/get-docker/)
 
 ### 1. Install Dependencies
 
@@ -142,15 +145,18 @@ pnpm run init
 This script will guide you through the following steps:
 
 - Verifies required CLIs are installed and authenticated (pnpm, gh, aws-cli)
-- Prompts for your project name and environment name, updating config files as needed
+- Prompts for your project name, environment name, and domain
 - Ensures your repository is connected to GitHub
 - Initializes AWS credentials and profile for deployment
 - Guides you through setting up Supabase projects (production and development)
-- Configures Better Auth provider with required user roles and permissions
-- Optionally sets up Posthog for analytics and error tracking
+- Configures Better Auth for authentication
+- Optionally sets up PostHog for analytics and error tracking
 - Configures GitHub environments and secrets for CI/CD
-- Initializes authentication provider and Slack integration for notifications
+- Sets up documentation site
 - Sets up Slack integration for CI notifications and error alerts
+- Sets up Crisp Chat for customer support
+- Sets up Axiom for observability
+- Sets up AI features and Langfuse
 
 ---
 

@@ -155,6 +155,24 @@ jobs:
       - name: Run tests
         run: pnpm test:ci
 
+  # Run our standard tests
+  verify-migrations:
+    name: Verify migrations
+    runs-on: ubuntu-latest
+    needs: setup
+    environment: ${{ github.event_name == 'release' && 'prod' || 'dev' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up environment
+        uses: ./.github/actions/setup
+        with:
+          job-name: verify-migrations
+
+      - name: Run migration validation
+        run: pnpm backend db:migrate:validate
+
   # Run our E2E tests (only run on releases)
   e2e:
     name: E2E Test

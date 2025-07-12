@@ -13,6 +13,10 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "BETTER_AUTH_SECRET": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "DATABASE_URL": {
       "type": "sst.sst.Secret"
       "value": string
@@ -38,6 +42,10 @@ declare module "sst" {
       "url": string
     }
     "apiHandler": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
+    "authHandler": {
       "name": string
       "type": "sst.aws.Function"
     }

@@ -1,3 +1,4 @@
+import { resources } from './cloud-resources';
 import { env } from './env';
 
 // ---------- HELPERS ----------
@@ -11,11 +12,20 @@ const stage =
 // If we still don't have stage, something went wrong
 if (!stage) throw new Error('[config] Stage not found - check your environment variables.');
 
-/** Determine if we're running against production resources */
+/** Whether we're running against production resources */
 let isProd = false;
 // Prod should both use prod resources
 if (stage === 'prod' || stage === 'staging') {
   isProd = true;
+}
+
+/** The URL of our web app */
+let appUrl: string | undefined;
+if (typeof window !== 'undefined') appUrl = window.location.origin;
+if (!appUrl) {
+  appUrl = resources?.web?.url?.includes?.('dev.mode')
+    ? 'http://localhost:3000'
+    : resources?.web?.url;
 }
 
 /** Whether this application is running as one of our main deployments (not locally) */
@@ -36,8 +46,8 @@ export const config = {
   app: {
     /** The name of the project */
     name: 'My App',
-    /** The url of the project */
-    url: process.env.NEXT_PUBLIC_APP_URL,
+    /** The url of the project (found differently for frontend and backend) */
+    url: appUrl,
   },
   /** The configuration for PostHog */
   posthog: {
@@ -55,7 +65,7 @@ export const config = {
   },
   /** Details for our backend API */
   api: {
-    /** The URL of our own API */
-    url: process.env.NEXT_PUBLIC_API_URL,
+    /** The URL of our own API (found differently for frontend and backend) */
+    url: process.env.NEXT_PUBLIC_API_URL ?? resources?.api?.url,
   },
 };

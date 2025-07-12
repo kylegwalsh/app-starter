@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { Resource } from 'sst';
+import { config } from '@repo/config';
 
 // Sets up our playwright test environment
 // https://playwright.dev/docs/test-configuration
@@ -20,7 +20,7 @@ export default defineConfig({
   use: {
     // Base URL to use in actions like `await page.goto('/')`
     // For
-    baseURL: process.env.CI ? Resource.web.url : 'http://localhost:3000',
+    baseURL: process.env.CI ? config.app.url : 'http://localhost:3000',
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
   },

@@ -76,8 +76,6 @@ export default $config({
             } catch (error) {
               console.error('❌ PostHog sourcemap upload failed:', error);
             }
-          } else {
-            console.log('PostHog env vars not set, skipping backend sourcemap upload.');
           }
         },
       };

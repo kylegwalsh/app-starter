@@ -3,13 +3,16 @@
 import { ThemeProvider } from '@repo/design';
 import * as React from 'react';
 
+import { AuthProvider } from './auth-provider';
 import { QueryProvider } from './query-provider';
 
 /** All the necessary providers required for the app to function */
 export const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
-    <QueryProvider>
-      <ThemeProvider>{children}</ThemeProvider>
-    </QueryProvider>
+    <ThemeProvider>
+      <QueryProvider>
+        <AuthProvider>{children}</AuthProvider>
+      </QueryProvider>
+    </ThemeProvider>
   );
 };
