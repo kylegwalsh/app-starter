@@ -21,6 +21,7 @@ if (stage === 'prod' || stage === 'staging') {
 
 /** The URL of our web app */
 let appUrl: string | undefined;
+// @ts-expect-error - window is only available in the browser
 if (typeof window !== 'undefined') appUrl = window.location.origin;
 if (!appUrl) {
   appUrl = resources?.web?.url?.includes?.('dev.mode')

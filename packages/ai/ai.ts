@@ -153,6 +153,52 @@ export const ai = {
 
     return traceId;
   },
+  /** Gets the ID of the current trace */
+  getTraceId: () => {
+    const { langfuseTraceId } = getLogMetadata();
+    return langfuseTraceId;
+  },
+  /** Scores a trace */
+  scoreTrace: ({
+    traceId,
+    name = 'feedback',
+    score,
+    comment,
+  }: {
+    /** The trace ID to score */
+    traceId: string;
+    /** The name of the score (defaults to 'feedback') */
+    name?: string;
+    /** The score to give the trace */
+    score: number | boolean | string;
+    /** A comment to add to the score */
+    comment?: string;
+  }) => {
+    // Determine the data type based on the score type
+    let dataType: Parameters<NonNullable<typeof langfuse>['score']>[0]['dataType'];
+    switch (typeof score) {
+      case 'boolean': {
+        dataType = 'BOOLEAN';
+        break;
+      }
+      case 'number': {
+        dataType = 'NUMERIC';
+        break;
+      }
+      case 'string': {
+        dataType = 'CATEGORICAL';
+        break;
+      }
+    }
+
+    langfuse?.score({
+      traceId,
+      name,
+      value: typeof score === 'boolean' ? (score ? 1 : 0) : score,
+      dataType: dataType,
+      comment,
+    });
+  },
   /** Ensure all traces get flushed to Langfuse */
   flush: async () => {
     await Promise.all([

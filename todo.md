@@ -1,10 +1,6 @@
 # TODO
 
 - Fix linting of config file (can't reference window) - lint entire project
-- Add scoring utils to Langfuse AI helper
-
-- Introduce DB migrations + migration function (maybe remove database stuff from CI)
-- Add migration verification to CI (new step?)
 
 - Add better auth
   - Fix CORS issue and test auth screens
@@ -13,6 +9,7 @@
   - Update the backend mocked router to have user context (mirror output of better auth)
   - Add some kind of frontend for better auth (maybe host statically?)
 - Add stripe support and add to setup script (plugin for better auth)
+- Test migration logic in CI
 - Maybe add an optional dashboard setup
 - Consider implementing posthog feature flags
 - Cursor rules
