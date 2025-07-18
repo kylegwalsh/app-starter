@@ -1,13 +1,12 @@
 # TODO
 
-- Fix linting of config file (can't reference window) - lint entire project
+- Test auth screens
+- Enable reset password
 
-- Add better auth
-  - Fix CORS issue and test auth screens
-  - Test PostHog user signed up / out events (does it track and reset session / crisp?)
-  - Test crisp + analytics for crisp
-  - Update the backend mocked router to have user context (mirror output of better auth)
-  - Add some kind of frontend for better auth (maybe host statically?)
+- Consider adding nextJS middleware to redirect the user to the appropriate page server side
+- Fix error where it says "web" is not linked to keep-database-awake.handler (best to ignore it)
+- Consider omitting some better-auth-ui pages (like settings)
+- Add some kind of frontend for better auth (maybe host statically?)
 - Add stripe support and add to setup script (plugin for better auth)
 - Test migration logic in CI
 - Maybe add an optional dashboard setup
@@ -15,7 +14,7 @@
 - Cursor rules
 - Add marketing site setup (get prompts / framework from Chad)
 - Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)
-- When pushing final starter: Remove posthog settings from config / crisp chat settings from config / comment out the axiom secret / comment out the langfuse secrets
+- When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets
 - Lock packages to a certain version in package.json's
 - Add README's to all packages / apps
 
@@ -27,3 +26,4 @@ Minor Improvements:
 - If axiom fixes their API, we can remove the extra "severity" field we're sending
 - Upgrade SST to see if it improves windows support (like hot reloading backend when modifying packages outside the backend)
 - Fix unmet peer dependencies when installing
+- Consider finding a way to exclude playwright install from postinstall to speed up installs (handle in CI too)

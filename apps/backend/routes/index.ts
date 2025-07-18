@@ -4,7 +4,7 @@ import { analytics } from '@repo/analytics';
 import { db } from '@/db';
 
 import { t } from './trpc/init';
-import { publicProcedure } from './trpc/procedures';
+import { protectedProcedure, publicProcedure } from './trpc/procedures';
 
 const triggerError8 = async () => {
   await analytics.captureException(new Error('Manual trigger 1'));
@@ -20,7 +20,7 @@ export const router = t.router({
   triggerError: publicProcedure.mutation(async () => {
     await triggerError8();
   }),
-  ai: publicProcedure.mutation(async () => {
+  ai: protectedProcedure.mutation(async () => {
     const { text } = await ai.generateText({
       prompt: 'Generate a random number between 1 and 100',
     });

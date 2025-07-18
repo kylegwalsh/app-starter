@@ -23,6 +23,13 @@ export const QueryProvider = ({ children }: { children: React.ReactNode }) => {
         httpBatchLink({
           transformer: superjson,
           url: `${config.api.url}/trpc`,
+          // Ensure we send our auth cookies to the backend
+          fetch(url, options) {
+            return fetch(url, {
+              ...options,
+              credentials: 'include',
+            });
+          },
         }),
       ],
     })

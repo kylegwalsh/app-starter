@@ -38,6 +38,7 @@ export const analytics = createAnalyticsEvents<'web'>({
     if (typeof $crisp !== 'undefined') {
       $crisp.push(['set', 'session:data', ['user-id', userId]]);
       if (traits?.email) $crisp.push(['set', 'user:email', [traits.email]]);
+      if (traits?.name) $crisp.push(['set', 'user:nickname', [traits.name]]);
     }
   },
   // We need to sign the user out of other platforms

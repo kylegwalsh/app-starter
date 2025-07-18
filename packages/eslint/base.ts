@@ -127,6 +127,7 @@ export default defineConfig([
       'unicorn/no-null': 'off',
       'react/no-unescaped-entities': 'off',
       'storybook/use-storybook-expect': 'off',
+      'unicorn/no-typeof-undefined': 'off',
     },
   },
   // Warn on console usage in backend code (should use log package)

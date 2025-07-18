@@ -1,5 +1,11 @@
 // Our main backend API
-export const api = new sst.aws.ApiGatewayV2('api');
+export const api = new sst.aws.ApiGatewayV2('api', {
+  cors: {
+    allowOrigins: ['http://*', 'https://*'],
+    allowHeaders: ['content-type', 'authorization'],
+    allowCredentials: true,
+  },
+});
 
 // Import the web app so that we can access it's URL in our functions
 const { site } = await import('./web');

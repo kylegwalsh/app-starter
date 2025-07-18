@@ -5,7 +5,7 @@ import { Toaster } from '@repo/design';
 import { createMetadata } from '@repo/seo';
 import Script from 'next/script';
 
-import { ErrorBoundary, Providers } from '@/components';
+import { ErrorBoundary, Providers, UserInitializer } from '@/components';
 
 /** The default metadata for the app */
 export const metadata = createMetadata();
@@ -20,8 +20,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="flex min-h-svh flex-col antialiased">
         <ErrorBoundary>
-          <Providers>{children}</Providers>
-          <Toaster />
+          <Providers>
+            {children}
+            <UserInitializer />
+            <Toaster />
+          </Providers>
           {/* Add third part scripts */}
           {/* Live chat widget */}
           {config.crisp.websiteId && (

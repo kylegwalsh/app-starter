@@ -10,9 +10,9 @@ import { QueryProvider } from './query-provider';
 export const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
     <ThemeProvider>
-      <QueryProvider>
-        <AuthProvider>{children}</AuthProvider>
-      </QueryProvider>
+      <AuthProvider>
+        <QueryProvider>{children}</QueryProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 };

@@ -1,4 +1,5 @@
 import { log } from '@repo/logs';
+import { TRPCError } from '@trpc/server';
 
 import { t } from './init';
 
@@ -17,4 +18,20 @@ export const timeProcedure = t.middleware(async ({ path, next }) => {
   else log.error(`Request to "${path}" failed in ${durationMs}ms`);
 
   return result;
+});
+
+/** Middleware that ensures the user is authenticated */
+export const isAuthed = t.middleware(async ({ next, ctx }) => {
+  // Ensure the user was correctly authed and parsed
+  if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
+
+  // https://trpc.io/docs/v10/middlewares#context-swapping
+  return next({
+    ctx: {
+      // General context
+      ...ctx,
+      // Narrow the type of the user since we know it exists
+      user: ctx.user,
+    },
+  });
 });

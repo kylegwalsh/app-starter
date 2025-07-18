@@ -11,6 +11,7 @@ export default $config({
     };
   },
   async run() {
+    // ---------- LOCAL DB ----------
     // Start DB connection when running the dev command
     new sst.x.DevCommand('DB', {
       dev: {
@@ -19,9 +20,11 @@ export default $config({
       },
     });
 
+    // ---------- SECRETS ----------
     // Import secrets first since other stacks might need them
     const secrets = await import('./infra/secrets');
 
+    // ---------- FUNCTION DEFAULTS ----------
     // Apply default settings to all functions
     $transform(sst.aws.Function, (args) => {
       // ---------- SECRETS ----------
@@ -125,7 +128,8 @@ export default $config({
       args.runtime ??= 'nodejs20.x';
     });
 
-    // Import other stacks
+    // ---------- MAIN ----------
+    // Import primary application stacks
     await import('./infra/api');
     await import('./infra/web');
     await import('./infra/ping-db');

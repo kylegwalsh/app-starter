@@ -21,8 +21,8 @@ if (stage === 'prod' || stage === 'staging') {
 
 /** The URL of our web app */
 let appUrl: string | undefined;
-// @ts-expect-error - window is only available in the browser
-if (typeof window !== 'undefined') appUrl = window.location.origin;
+declare const window: any; // eslint-disable-line
+if (typeof window !== 'undefined') appUrl = window.location.origin; // eslint-disable-line
 if (!appUrl) {
   appUrl = resources?.web?.url?.includes?.('dev.mode')
     ? 'http://localhost:3000'
