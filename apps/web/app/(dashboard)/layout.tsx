@@ -1,0 +1,24 @@
+'use client';
+
+import { AuthLoading, RedirectToSignIn, SignedIn } from '@daveyplate/better-auth-ui';
+import { LoadingLayout } from '@repo/design';
+import React from 'react';
+
+/** The layout for the dashboard (enforce authentication) */
+export default function RootLayout({ children }: Component) {
+  // When signed in, render our app
+  return (
+    <>
+      {/* Redirect to the sign in page if the user is not signed in */}
+      <RedirectToSignIn />
+
+      {/* Show a loading state while we wait for the user to be authenticated */}
+      <AuthLoading>
+        <LoadingLayout />
+      </AuthLoading>
+
+      {/* Once logged in, render our app */}
+      <SignedIn>{children}</SignedIn>
+    </>
+  );
+}

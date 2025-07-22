@@ -9,6 +9,7 @@ import { db } from '@/db';
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: config.api.url,
+  appName: config.app.name,
   trustedOrigins: [config.app.url],
   // Connect to our prisma database
   database: prismaAdapter(db, {
