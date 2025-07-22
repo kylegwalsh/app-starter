@@ -18,5 +18,8 @@ export const AXIOM_DATASET = new sst.Secret('AXIOM_DATASET');
 export const LANGFUSE_SECRET_KEY = new sst.Secret('LANGFUSE_SECRET_KEY');
 export const LANGFUSE_PUBLIC_KEY = new sst.Secret('LANGFUSE_PUBLIC_KEY');
 
+// Loops
+export const LOOPS_API_KEY = new sst.Secret('LOOPS_API_KEY');
+
 // Set the default secrets for the stage...
 export const STAGE = new sst.Secret('STAGE', $app.stage);

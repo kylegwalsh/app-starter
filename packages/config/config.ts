@@ -50,6 +50,11 @@ export const config = {
     /** The url of the project (found differently for frontend and backend) */
     url: appUrl,
   },
+  /** Details for our backend API */
+  api: {
+    /** The URL of our own API (found differently for frontend and backend) */
+    url: process.env.NEXT_PUBLIC_API_URL ?? resources?.api?.url,
+  },
   /** The configuration for PostHog */
   posthog: {
     /** Whether posthog is enabled */
@@ -64,9 +69,12 @@ export const config = {
     /** The crisp chat website ID */
     websiteId: '',
   },
-  /** Details for our backend API */
-  api: {
-    /** The URL of our own API (found differently for frontend and backend) */
-    url: process.env.NEXT_PUBLIC_API_URL ?? resources?.api?.url,
+  /** The configuration for our email system (Loops) */
+  loops: {
+    /** The transactional emails we support */
+    transactional: {
+      /** The transactional email for reset password */
+      resetPassword: 'cmddvjz0v1hmexb0inad4bz0h',
+    },
   },
 };

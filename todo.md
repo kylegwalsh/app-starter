@@ -3,6 +3,7 @@
 - Test auth screens
 - Enable reset password
 
+- Ensure we handle the different user environments with Loops
 - Consider adding nextJS middleware to redirect the user to the appropriate page server side
 - Fix error where it says "web" is not linked to keep-database-awake.handler (best to ignore it)
 - Consider omitting some better-auth-ui pages (like settings)
@@ -14,7 +15,7 @@
 - Cursor rules
 - Add marketing site setup (get prompts / framework from Chad)
 - Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)
-- When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets
+- When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config
 - Lock packages to a certain version in package.json's
 - Add README's to all packages / apps
 

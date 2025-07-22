@@ -1137,6 +1137,108 @@ const setupLangfuse = async () => {
   return true;
 };
 
+// ---------- LOOPS SETUP HELPER ----------
+/** Guides the user through setting up Loops for emails */
+const setupLoops = async () => {
+  console.log('Setting up Loops...');
+
+  // Get secrets
+  let devSecrets: Record<string, string> = {};
+  let prodSecrets: Record<string, string> = {};
+  try {
+    devSecrets = getAllSecrets('dev');
+    prodSecrets = getAllSecrets('prod');
+  } catch {}
+
+  // Read config
+  const configPath = path.resolve('packages/config/config.ts');
+  let configContent = fs.readFileSync(configPath, 'utf8');
+  const resetPasswordMatch = configContent.match(/resetPassword:\s*['"]([^'"]*)['"]/);
+  const resetPasswordId = resetPasswordMatch ? resetPasswordMatch[1] : '';
+
+  // Check if Loops is already configured (API key in secrets and resetPassword in config)
+  if (
+    false &&
+    devSecrets.LOOPS_API_KEY &&
+    prodSecrets.LOOPS_API_KEY &&
+    resetPasswordId &&
+    resetPasswordId !== ''
+  ) {
+    console.log('✔ Loops is already configured.\n');
+    return true;
+  }
+
+  // Ask if they want to set up Loops
+  const doSetup = await promptYesNo(
+    'Would you like to set up Loops for emails (required for reset password)? (y/n) '
+  );
+  if (!doSetup) {
+    console.log('Loops setup skipped.\n');
+    return false;
+  }
+
+  // Guide to signup and API key
+  console.log(
+    '\n1. Sign up or log in to Loops and then set up your DNS records: https://app.loops.so/register'
+  );
+  console.log('2. Generate an API key: https://app.loops.so/settings?page=api');
+  // Prompt for API key
+  let apiKey = '';
+  while (!apiKey) {
+    const input = await promptUser('Enter your Loops API key: ');
+    apiKey = input.trim();
+    if (!apiKey) {
+      console.log('Please enter a valid Loops API key.');
+      apiKey = '';
+    }
+  }
+
+  // Store the API key as a secret for both dev and prod
+  const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
+  execSync(`pnpm tsx ${addSecretScript} LOOPS_API_KEY "${apiKey}" "${apiKey}"`);
+
+  // Uncomment secrets in infra/secrets.ts
+  const secretsPath = path.resolve('infra/secrets.ts');
+  let secretsContent = fs.readFileSync(secretsPath, 'utf8');
+  secretsContent = secretsContent.replaceAll(
+    '// export const LOOPS_API_KEY',
+    'export const LOOPS_API_KEY'
+  );
+  fs.writeFileSync(secretsPath, secretsContent);
+  console.log('✔ Loops API key has been set in SST.\n');
+
+  // Guide to creating the transactional email
+  console.log(
+    '3. Clone the reset password template: https://app.loops.so/templates?templateId=clfn0wbo0000008mr1fri2516'
+  );
+  console.log('   - Click the "Reset Password" button and click the "Link" option in the sidebar.');
+  console.log('   - Click the icon in the link area to add a data variable called `resetLink`.');
+  console.log('   - Publish the email.');
+  console.log('   - Click the review button in the left sidebar and copy the Transactional ID.');
+
+  // Prompt for the transactional email ID
+  let transactionalId = '';
+  while (!transactionalId) {
+    const input = await promptUser('Enter the Transactional ID for your reset password email: ');
+    transactionalId = input.trim();
+    if (!transactionalId) {
+      console.log('Please enter a valid Transactional ID.');
+      transactionalId = '';
+    }
+  }
+
+  // Update the config file with the transactionalId
+  configContent = configContent.replace(
+    /resetPassword:\s*['"][^'"]*['"]/, // match both single and double quotes
+    `resetPassword: '${transactionalId}'`
+  );
+  fs.writeFileSync(configPath, configContent);
+  console.log('✔ Loops reset password transactional ID saved to config.\n');
+
+  console.log('Loops setup complete!');
+  return true;
+};
+
 // ---------- AI SETUP HELPER ----------
 /** Guides the user through setting up AI */
 const setupAI = async () => {
@@ -1162,18 +1264,28 @@ const setupAI = async () => {
 
 // ---------- FINAL NOTES HELPER ----------
 /** Prints final setup instructions and tips for the user. */
-const printFinalNotes = ({ setupPosthog }: { setupPosthog: boolean }) => {
+const printFinalNotes = ({
+  posthogSetup,
+  loopsSetup,
+}: {
+  posthogSetup: boolean;
+  loopsSetup: boolean;
+}) => {
   console.log('--- Final Steps ---');
-  console.log('You can start the app with: pnpm start\n');
+  console.log('You can start the app with: pnpm dev\n');
 
   // Only mention the error tracking setup if they opted in
-  if (setupPosthog) {
+  if (posthogSetup) {
     console.log(
-      '- Consider setting up error notifications for Slack: https://us.posthog.com/error_tracking/configuration?tab=error-tracking-alerting#selectedSetting=error-tracking-alerting'
+      '- Set up error notifications for Slack: https://us.posthog.com/error_tracking/configuration?tab=error-tracking-alerting#selectedSetting=error-tracking-alerting'
     );
-    console.log(
-      '- You can set up an email system by connecting Posthog to Loops or another email service.'
-    );
+
+    // If they also set up loops, mention that they can trigger email campaigns based on events
+    if (loopsSetup) {
+      console.log(
+        '- Add Loops as a PostHog destination and set up an onboarding campaign based on the "User Signed Up" event.'
+      );
+    }
   }
 
   console.log(
@@ -1230,6 +1342,9 @@ const init = async () => {
   // Setup Axiom observability
   await setupAxiom();
 
+  // Setup Loops
+  const loopsSetup = await setupLoops();
+
   // Setup AI
   const didSetupAI = await setupAI();
 
@@ -1237,7 +1352,7 @@ const init = async () => {
   if (didSetupAI) await setupLangfuse();
 
   // Print final notes
-  printFinalNotes({ setupPosthog: !!posthogConfig });
+  printFinalNotes({ posthogSetup: !!posthogConfig, loopsSetup });
 };
 
 void init();

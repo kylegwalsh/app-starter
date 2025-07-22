@@ -51,6 +51,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Logging:** Shared logging package (Pino) with pretty local output, and production integration with Axiom and CloudWatch.
 - **AI Tracing & Evaluation:** Integrated with Langfuse for tracing, monitoring, and evaluating AI generations.
 - **AI-Assisted Development:** Pre-configured with Cursor rules for AI-powered workflows.
+- **Email:** Transactional and marketing/engagement email system powered by Loops (for password resets, onboarding, and user communications).
 
 ---
 
@@ -68,6 +69,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Posthog:** Analytics and error tracking.
 - **Axiom:** Log management platform integrated for production observability.
 - **Langfuse:** Open-source platform for AI tracing, monitoring, and evaluation.
+- **Loops:** Email platform for transactional (e.g., password reset) and user engagement emails.
 
 _All packages and apps are written in TypeScript for consistency and type safety._
 
@@ -150,6 +152,7 @@ This script will guide you through the following steps:
 - Initializes AWS credentials and profile for deployment
 - Guides you through setting up Supabase projects (production and development)
 - Configures Better Auth for authentication
+- Configures Loops for email (e.g., password reset, onboarding, user campaigns)
 - Optionally sets up PostHog for analytics and error tracking
 - Configures GitHub environments and secrets for CI/CD
 - Sets up documentation site
