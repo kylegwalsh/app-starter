@@ -1,6 +1,7 @@
 'use client';
 
 import { AuthUIProvider } from '@daveyplate/better-auth-ui';
+import { config } from '@repo/config';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -14,13 +15,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthUIProvider
       authClient={auth}
+      baseURL={config.app.url}
       navigate={(...args) => router.push(...args)}
       replace={(...args) => router.replace(...args)}
-      onSessionChange={() => {
-        // Clear router cache (protected routes)
-        router.refresh();
+      Link={Link}
+      credentials={{
+        forgotPassword: !!config.loops.transactional.resetPassword,
       }}
-      Link={Link}>
+      // Clear router cache (protected routes)
+      onSessionChange={() => {
+        router.refresh();
+      }}>
       {children}
     </AuthUIProvider>
   );

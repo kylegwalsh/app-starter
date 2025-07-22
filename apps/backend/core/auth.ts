@@ -1,4 +1,5 @@
 import { config, env } from '@repo/config';
+import { email } from '@repo/email';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 
@@ -7,8 +8,7 @@ import { db } from '@/db';
 /** Our Better Auth instance */
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
-  // Where our frontend is hosted
-  baseURL: config.app.url,
+  baseURL: config.api.url,
   trustedOrigins: [config.app.url],
   // Connect to our prisma database
   database: prismaAdapter(db, {
@@ -17,6 +17,12 @@ export const auth = betterAuth({
   // Enable email and password authentication
   emailAndPassword: {
     enabled: true,
+    sendResetPassword: async ({ user, url }) => {
+      await email.sendResetPasswordEmail({
+        email: user.email,
+        resetLink: url,
+      });
+    },
   },
   // If your API and frontend are on the same top-level domain, you can remove this
   advanced: {

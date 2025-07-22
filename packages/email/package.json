@@ -1,0 +1,24 @@
+{
+  "name": "@repo/email",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "pretty": "prettier --write . --ignore-path ../../.prettierignore",
+    "format": "pnpm lint:fix & pnpm pretty",
+    "types:check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@repo/config": "workspace:*",
+    "@repo/tsconfig": "workspace:*",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "loops": "^5.0.1"
+  }
+}

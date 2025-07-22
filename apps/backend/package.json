@@ -43,6 +43,7 @@
     "@repo/analytics": "workspace:*",
     "@repo/config": "workspace:*",
     "@repo/constants": "workspace:*",
+    "@repo/email": "workspace:*",
     "@repo/logs": "workspace:*",
     "@repo/utils": "workspace:*",
     "@trpc/server": "11.2.0",

@@ -1,9 +1,7 @@
 # TODO
 
-- Test auth screens
-- Enable reset password
-
 - Ensure we handle the different user environments with Loops
+- Add organization plugin to better auth
 - Consider adding nextJS middleware to redirect the user to the appropriate page server side
 - Fix error where it says "web" is not linked to keep-database-awake.handler (best to ignore it)
 - Consider omitting some better-auth-ui pages (like settings)
