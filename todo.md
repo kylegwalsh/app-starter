@@ -4,6 +4,7 @@
 - Add organization plugin to better auth
 - Add stripe support and add to setup script (plugin for better auth)
 - Maybe add some react-form utils
+- Ensure langfuse is using correct "environment" field
 - Test migration logic in CI
 - Maybe add an optional dashboard setup
 - Consider implementing posthog feature flags
