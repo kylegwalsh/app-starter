@@ -12,7 +12,7 @@
     "test:ui": "sst shell -- vitest --ui",
     "remove": "sst remove",
     "console": "sst console",
-    "auth:generate": "sst shell -- npx @better-auth/cli generate --config ./core/auth.ts --output ./db/schema.prisma",
+    "auth:generate": "sst shell -- pnpm dlx @better-auth/cli generate --config ./core/auth.ts --output ./db/schema.prisma",
     "db:start": "pnpm db:get-url \"prisma db push && prisma studio --browser none\"",
     "db:push": "pnpm db:get-url \"prisma db push\"",
     "db:migrate": "tsx ./scripts/migrations/create-migration.ts",
