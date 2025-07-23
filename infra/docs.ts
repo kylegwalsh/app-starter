@@ -1,8 +1,7 @@
-/** The domain where we will host the docs site */
-const domain = undefined;
+import { domain } from './constants';
 
 // Our documentation site
 export const site = new sst.aws.Nextjs('docs', {
-  domain,
+  domain: domain ? `docs.${domain}` : undefined,
   path: 'apps/docs',
 });

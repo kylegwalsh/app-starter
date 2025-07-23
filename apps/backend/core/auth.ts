@@ -2,6 +2,7 @@ import { config, env } from '@repo/config';
 import { email } from '@repo/email';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { admin } from 'better-auth/plugins';
 
 import { db } from '@/db';
 
@@ -40,6 +41,8 @@ export const auth = betterAuth({
       maxAge: 5 * 60,
     },
   },
+  // The various plugins we're using
+  plugins: [admin()],
 });
 
 /** The type of the auth session object */

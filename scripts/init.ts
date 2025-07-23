@@ -294,23 +294,31 @@ const getProjectName = async () => {
 };
 
 /** Prompt for and update the website domain if still default */
-const getBaseDomain = (domain: string) => {
-  const parts = domain.split('.');
-  if (parts.length >= 2) {
-    return parts.slice(-2).join('.');
-  }
-  return domain;
-};
-
-/** Prompt for and update the website domain if still default */
 const getDomain = async () => {
   console.log('Checking for the website domain...');
-  const webPath = path.resolve('infra/web.ts');
-  let webContent = fs.readFileSync(webPath, 'utf8');
+  const constantsPath = path.resolve('infra/constants.ts');
+  let constantsContent = fs.readFileSync(constantsPath, 'utf8');
 
-  // Check if domain is undefined, we haven't set this up yet
-  if (webContent.includes('domain = undefined')) {
-    // Ask if they want to use a custom domain
+  // Regex to match: const baseDomain = ...;
+  const baseDomainRegex = /const\s+baseDomain(?:\s*:\s*string)?\s*=\s*(['"])([^'\"]*)\1/;
+  const match = constantsContent.match(baseDomainRegex);
+
+  // If we don't find a match, we are missing something important in the constants file
+  if (!match) {
+    console.log('❌ Could not find the baseDomain assignment in infra/constants.ts.');
+    process.exit(1);
+  }
+
+  // Extract the value from the match
+  const currentValue = match[2];
+
+  // If baseDomain is set, we'll use that
+  if (currentValue) {
+    console.log(`✔ Web domain already configured: ${currentValue}\n`);
+    return currentValue;
+  }
+  // If we don't find a value, we'll prompt the user for a custom domain
+  else {
     const wantsCustomDomain = await promptYesNo(
       'Would you like to use a custom domain for your app? (y/n) '
     );
@@ -334,26 +342,14 @@ const getDomain = async () => {
       baseDomain = trimmed;
     }
 
-    // Replace the undefined domain line with the new template
-    const domainTemplate = `$app.stage === 'prod' ? 'app.${baseDomain}' : \`\${$app.stage}.${baseDomain}\``;
-    webContent = webContent.replace(/domain\s*=\s*undefined/, `domain = ${domainTemplate}`);
-    fs.writeFileSync(webPath, webContent);
-    console.log(
-      `✔ Web domain set to app.${baseDomain} (prod) and <stage>.${baseDomain} (other stages).\n`
+    // Replace only the empty string at the end of the baseDomain line
+    constantsContent = constantsContent.replace(
+      baseDomainRegex,
+      `const baseDomain: string = '${baseDomain}'`
     );
+    fs.writeFileSync(constantsPath, constantsContent);
+    console.log(`✔ Web base domain set to: ${baseDomain}\n`);
     return baseDomain;
-  } else {
-    // Extract the domain from the file
-    const domainPropMatch = webContent.match(/domain\s*=\s*[\s\S]*?['"`]app\.([^'"`]+)['"`]/);
-    if (domainPropMatch) {
-      const baseDomain = domainPropMatch[1];
-      console.log(`✔ Web domain already configured: ${baseDomain}\n`);
-      return baseDomain;
-    }
-
-    // Sanity check (should never happen)
-    console.log('❌ Could not determine the current domain.\n');
-    process.exit(1);
   }
 };
 
@@ -1342,7 +1338,7 @@ const init = async () => {
   // Setup Axiom observability
   await setupAxiom();
 
-  // Setup Loops
+  // Setup Loops emails
   const loopsSetup = await setupLoops();
 
   // Setup AI

@@ -1,15 +1,13 @@
 import { api } from './api';
+import { domain } from './constants';
 
 // const username = 'username';
 // const password = 'password';
 // const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');
 
-/** The domain where we will host the web app */
-const domain = undefined;
-
 // Our main web app
 export const site = new sst.aws.Nextjs('web', {
-  domain,
+  domain: domain ? `app.${domain}` : undefined,
   link: [api],
   path: 'apps/web',
   buildCommand: 'pnpm dlx open-next build',

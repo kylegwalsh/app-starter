@@ -1,11 +1,7 @@
 # TODO
 
-- Ensure we handle the different user environments with Loops
-- Add organization plugin to better auth
-- Consider adding nextJS middleware to redirect the user to the appropriate page server side
 - Fix error where it says "web" is not linked to keep-database-awake.handler (best to ignore it)
-- Consider omitting some better-auth-ui pages (like settings)
-- Add some kind of frontend for better auth (maybe host statically?)
+- Add organization plugin to better auth
 - Add stripe support and add to setup script (plugin for better auth)
 - Test migration logic in CI
 - Maybe add an optional dashboard setup

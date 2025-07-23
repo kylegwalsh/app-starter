@@ -68,9 +68,11 @@
     "authed",
     "autocapture",
     "autodocs",
+    "cmdk",
     "codegen",
     "daveyplate",
     "deepmerge",
+    "embla",
     "fumadocs",
     "hookform",
     "ingestor",
@@ -93,6 +95,7 @@
     "superjson",
     "trpc",
     "typecheck",
-    "unauthed"
+    "unauthed",
+    "vaul"
   ]
 }

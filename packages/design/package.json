@@ -1,6 +1,6 @@
 {
   "name": "@repo/design",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "private": true,
   "sideEffects": false,
@@ -8,7 +8,9 @@
     ".": "./index.ts",
     "./globals.css": "./styles/globals.css",
     "./postcss.config": "./postcss.config.mjs",
+    "./components": "./components/index.ts",
     "./components/*": "./components/*.tsx",
+    "./components/ui": "./components/ui/index.ts",
     "./components/ui/*": "./components/ui/*.tsx",
     "./lib/*": "./lib/*.ts",
     "./hooks/*": "./hooks/*.ts"

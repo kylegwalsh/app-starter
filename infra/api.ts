@@ -1,5 +1,8 @@
+import { domain } from './constants';
+
 // Our main backend API
 export const api = new sst.aws.ApiGatewayV2('api', {
+  domain: domain ? `api.${domain}` : undefined,
   cors: {
     allowOrigins: ['http://*', 'https://*'],
     allowHeaders: ['content-type', 'authorization'],
