@@ -1,13 +1,13 @@
 import { config, env } from '@repo/config';
 import { email } from '@repo/email';
-import { betterAuth } from 'better-auth';
+import { betterAuth, BetterAuthOptions } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { admin } from 'better-auth/plugins';
+import { admin, apiKey, organization } from 'better-auth/plugins';
 
 import { db } from '@/db';
 
-/** Our Better Auth instance */
-export const auth = betterAuth({
+/** The config for our Better Auth instance (defined separately to avoid TypeScript issues) */
+const authConfig = {
   secret: env.BETTER_AUTH_SECRET,
   baseURL: config.api.url,
   appName: config.app.name,
@@ -42,8 +42,12 @@ export const auth = betterAuth({
     },
   },
   // The various plugins we're using
-  plugins: [admin()],
-});
+  plugins: [admin(), organization(), apiKey()],
+} satisfies BetterAuthOptions;
+
+/** Our Better Auth instance */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+export const auth = betterAuth(authConfig) as ReturnType<typeof betterAuth<typeof authConfig>>;
 
 /** The type of the auth session object */
 export type AuthSession = typeof auth.$Infer.Session.session;
