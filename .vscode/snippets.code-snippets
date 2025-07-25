@@ -4,6 +4,7 @@
     "prefix": "component-create",
     "body": [
       "'use client';",
+      "",
       "import React from 'react';",
       "",
       "type Props = Component & {",
@@ -24,6 +25,7 @@
     "prefix": "screen-create",
     "body": [
       "'use client';",
+      "",
       "import React from 'react';",
       "",
       "/** ${2:DESCRIPTION} */",

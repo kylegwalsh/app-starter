@@ -1,12 +1,12 @@
 # TODO
 
 - Fix error where it says "web" is not linked to keep-database-awake.handler (best to ignore it)
-- Add organization plugin to better auth
+- Figure out why auth function responds with 500 every once in a while
+- Add settings page and change the organization switcher to point to the organization option (maybe change where user one points as well)
 - Add stripe support and add to setup script (plugin for better auth)
 - Maybe add some react-form utils
 - Ensure langfuse is using correct "environment" field
 - Test migration logic in CI
-- Maybe add an optional dashboard setup
 - Consider implementing posthog feature flags
 - Decide on global state management
 - Cursor rules

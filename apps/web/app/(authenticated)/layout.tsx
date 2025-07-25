@@ -4,6 +4,8 @@ import { AuthLoading, RedirectToSignIn, SignedIn } from '@daveyplate/better-auth
 import { LoadingLayout } from '@repo/design';
 import React from 'react';
 
+import { AppSidebar } from '@/components';
+
 /** The layout for the dashboard (enforce authentication) */
 export default function RootLayout({ children }: Component) {
   // When signed in, render our app
@@ -18,7 +20,9 @@ export default function RootLayout({ children }: Component) {
       </AuthLoading>
 
       {/* Once logged in, render our app */}
-      <SignedIn>{children}</SignedIn>
+      <SignedIn>
+        <AppSidebar>{children}</AppSidebar>
+      </SignedIn>
     </>
   );
 }

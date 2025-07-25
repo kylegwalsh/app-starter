@@ -1,6 +1,6 @@
 'use client';
 
-import { ThemeProvider } from '@repo/design';
+import { SidebarProvider, ThemeProvider } from '@repo/design';
 import * as React from 'react';
 
 import { AuthProvider } from './auth-provider';
@@ -11,7 +11,9 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <SidebarProvider>{children}</SidebarProvider>
+        </QueryProvider>
       </AuthProvider>
     </ThemeProvider>
   );
