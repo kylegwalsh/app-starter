@@ -1,9 +1,10 @@
 # TODO
 
-- Fix error where it says "web" is not linked to keep-database-awake.handler (best to ignore it)
-- Figure out why auth function responds with 500 every once in a while
-- Add settings page and change the organization switcher to point to the organization option (maybe change where user one points as well)
-- Add stripe support and add to setup script (plugin for better auth)
+- Change the organization switcher in the sidebar to point to the organization settings page (might need to open a PR)
+- Add stripe support
+  - Add plugin for better auth
+  - Add stripe to the setup script
+  - Create /settings/payments page
 - Maybe add some react-form utils
 - Ensure langfuse is using correct "environment" field
 - Test migration logic in CI
@@ -15,6 +16,7 @@
 - When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config
 - Lock packages to a certain version in package.json's
 - Add README's to all packages / apps
+- Figure out why auth function responds with 500 every once in a while?
 
 Minor Improvements:
 

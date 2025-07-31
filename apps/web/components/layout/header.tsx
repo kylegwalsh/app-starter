@@ -8,6 +8,7 @@ import {
   Separator,
   SidebarTrigger,
 } from '@repo/design';
+import Link from 'next/link';
 import { Fragment } from 'react';
 
 type Props = Component & {
@@ -30,7 +31,9 @@ export const Header = ({ breadcrumbs, children }: Props) => (
               {index > 0 && <BreadcrumbSeparator className="hidden md:block" />}
               <BreadcrumbItem className="hidden md:block">
                 {page.href ? (
-                  <BreadcrumbLink href={page.href}>{page.label}</BreadcrumbLink>
+                  <BreadcrumbLink asChild>
+                    <Link href={page.href}>{page.label}</Link>
+                  </BreadcrumbLink>
                 ) : (
                   <BreadcrumbPage>{page.label}</BreadcrumbPage>
                 )}

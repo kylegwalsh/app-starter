@@ -11,7 +11,7 @@ const authConfig = {
   secret: env.BETTER_AUTH_SECRET,
   baseURL: config.api.url,
   appName: config.app.name,
-  trustedOrigins: [config.app.url],
+  trustedOrigins: [config.app.url as string],
   // Connect to our prisma database
   database: prismaAdapter(db, {
     provider: 'postgresql',

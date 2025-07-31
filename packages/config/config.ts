@@ -24,9 +24,11 @@ let appUrl: string | undefined;
 declare const window: any; // eslint-disable-line
 if (typeof window !== 'undefined') appUrl = window.location.origin; // eslint-disable-line
 if (!appUrl) {
-  appUrl = resources?.web?.url?.includes?.('dev.mode')
-    ? 'http://localhost:3000'
-    : resources?.web?.url;
+  try {
+    appUrl = resources?.web?.url?.includes?.('dev.mode')
+      ? 'http://localhost:3000'
+      : resources?.web?.url;
+  } catch {}
 }
 
 /** Whether this application is running as one of our main deployments (not locally) */
