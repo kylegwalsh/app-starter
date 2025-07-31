@@ -8,7 +8,7 @@
 - Ensure langfuse is using correct "environment" field
 - Test migration logic in CI
 - Consider implementing posthog feature flags
-- Decide on global state management
+- Decide on global state management (add it and a README mentioning it in the web app)
 - Cursor rules
 - Add marketing site setup (get prompts / framework from Chad)
 - Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)

@@ -6,11 +6,13 @@ import { auth } from '@/core';
 /** Create a hono instance to handle routing for our auth routes */
 const app = new Hono();
 // Have better auth handle the request
-app.on(['POST', 'GET'], '/**', (c) => {
+app.on(['POST', 'GET'], '/**', async (c) => {
   try {
-    return auth.handler(c.req.raw);
+    const result = await auth.handler(c.req.raw);
+    return result;
   } catch (error) {
-    console.error(error);
+    // eslint-disable-next-line no-console
+    console.error('[auth]', error);
     return c.json({ error: 'Internal server error' }, 500);
   }
 });
