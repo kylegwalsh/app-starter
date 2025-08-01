@@ -1,3 +1,4 @@
+import { stripe } from '@better-auth/stripe';
 import { config, env } from '@repo/config';
 import { email } from '@repo/email';
 import { betterAuth, BetterAuthOptions } from 'better-auth';
@@ -5,6 +6,8 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { admin, apiKey, organization } from 'better-auth/plugins';
 
 import { db } from '@/db';
+
+import { stripe as stripeClient } from './stripe';
 
 /** The config for our Better Auth instance (defined separately to avoid TypeScript issues) */
 const authConfig = {
@@ -42,7 +45,26 @@ const authConfig = {
     },
   },
   // The various plugins we're using
-  plugins: [admin(), organization(), apiKey()],
+  plugins: [
+    admin(),
+    organization(),
+    apiKey(),
+    // stripe({
+    //   stripeClient,
+    //   stripeWebhookSecret: (env as Record<string, string>).STRIPE_WEBHOOK_SECRET,
+    //   createCustomerOnSignUp: true,
+    //   // Configure stripe plans
+    //   // subscription: {
+    //   //   enabled: true,
+    //   //   plans: [
+    //   //     {
+    //   //       name: 'basic',
+    //   //       priceId: 'price_1234567890',
+    //   //     }
+    //   //   ],
+    //   // },
+    // }),
+  ],
 } satisfies BetterAuthOptions;
 
 /** Our Better Auth instance */

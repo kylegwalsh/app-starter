@@ -57,7 +57,7 @@ export const config = {
     /** The URL of our own API (found differently for frontend and backend) */
     url: process.env.NEXT_PUBLIC_API_URL ?? resources?.api?.url,
   },
-  /** The configuration for PostHog */
+  /** The configuration for PostHog (our analytics system) */
   posthog: {
     /** Whether posthog is enabled */
     isEnabled: isDeployment,
@@ -66,17 +66,22 @@ export const config = {
       ? 'phc_LE5qHtqyJtBrzG4vRkfTY5OKmc3bBhEf7u8OEPyneCD'
       : 'phc_xKfOXqc9QAqX5E1KIepSG9EcG2FddQWvupGTvogQ0AH',
   },
-  /** The configuration for our crisp chat */
+  /** The configuration for crisp (our chat system) */
   crisp: {
     /** The crisp chat website ID */
     websiteId: '',
   },
-  /** The configuration for our email system (Loops) */
+  /** The configuration for our Loops (our email system) */
   loops: {
     /** The transactional emails we support */
     transactional: {
       /** The transactional email for reset password */
       resetPassword: 'cmddvjz0v1hmexb0inad4bz0h',
     },
+  },
+  /** The configuration for Stripe (our payment system) */
+  stripe: {
+    /** The Stripe publishable key */
+    publishableKey: '',
   },
 };

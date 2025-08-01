@@ -4,7 +4,12 @@
 - Add stripe support
   - Add plugin for better auth
   - Add stripe to the setup script
+    - Use API to create webhook and store it in SST (for both environments - skip any that already exist in SST or ask if they want to create a new one)
+    - Maybe comment out stripe client or ensure it doesn't run without env vars (like langfuse)
+    - Ensure our final notes check prints about setting up stripe onboarding and re-running the stripe:init script
+    - At bottom, include a note about setting up stripe plans in apps/backend/core/auth if they want to support subscriptions
   - Create /settings/payments page
+  - Add stripe to README
 - Maybe add some react-form utils
 - Ensure langfuse is using correct "environment" field
 - Test migration logic in CI
@@ -13,7 +18,7 @@
 - Cursor rules
 - Add marketing site setup (get prompts / framework from Chad)
 - Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)
-- When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config
+- When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secret
 - Lock packages to a certain version in package.json's
 - Add README's to all packages / apps
 - Figure out why auth function responds with 500 every once in a while?

@@ -25,6 +25,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Clear router cache (protected routes)
       onSessionChange={() => {
         router.refresh();
+      }}
+      // Add some custom paths for our auth routes because we manage our own settings pages
+      settings={{ basePath: '/settings' }}
+      viewPaths={{
+        SETTINGS: '',
+        MEMBERS: 'organization',
+        ORGANIZATION: 'organization',
+        ORGANIZATIONS: 'organization',
+        SECURITY: 'account',
       }}>
       {children}
     </AuthUIProvider>

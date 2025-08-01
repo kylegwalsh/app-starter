@@ -2,56 +2,10 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import readline from 'node:readline';
 
 import axios from 'axios';
-import inquirer from 'inquirer';
 
-// ---------- INPUT HELPERS ----------
-/** Prompt the user for input */
-const promptUser = async (question: string): Promise<string> => {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      rl.close();
-      resolve(answer);
-    });
-  });
-};
-
-/** Prompt the user for a yes/no answer */
-const promptYesNo = async (question: string): Promise<boolean> => {
-  while (true) {
-    const rawAnswer = await promptUser(question);
-    const answer = rawAnswer.trim().toLowerCase();
-    if (['y', 'yes'].includes(answer)) return true;
-    if (['n', 'no'].includes(answer)) return false;
-    console.log("Please enter 'y' or 'n'.");
-  }
-};
-
-/**
- * Prompt the user to select from a list of choices using arrow keys.
- * @param message The message to display
- * @param choices The list of choices (array of strings)
- * @returns The selected choice (string)
- */
-export const promptSelect = async (message: string, choices: string[]): Promise<string> => {
-  const response = await inquirer.prompt<{
-    selected: string;
-  }>([
-    {
-      type: 'list',
-      name: 'selected',
-      message,
-      choices,
-    },
-  ]);
-  return response.selected;
-};
+import { promptSelect, promptUser, promptYesNo } from './utils/input.js';
 
 // ---------- CLI HELPERS ----------
 /** The CLIs we require to run the initialization script */
@@ -421,6 +375,21 @@ const getAllSecrets = (stage: string) => {
   return result;
 };
 
+/** Script for adding secrets to SST */
+const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
+/** SST secrets for dev environment */
+let devSecrets: Record<string, string> = {};
+/** SST secrets for prod environment */
+let prodSecrets: Record<string, string> = {};
+
+/** Initialize both our global secret variables */
+const initSecrets = () => {
+  try {
+    devSecrets = getAllSecrets('dev');
+    prodSecrets = getAllSecrets('prod');
+  } catch {}
+};
+
 // ---------- AWS HELPERS ----------
 /**
  * Prompt the user to select an AWS profile or create a new one.
@@ -624,33 +593,30 @@ const setupSupabase = async (projectName: string) => {
     },
   };
 
+  // If the secrets haven't been setup yet, let's try to init them
+  if (Object.keys(devSecrets).length === 0) initSecrets();
+
   // Check if Supabase is already configured
   let alreadyConfigured = false;
-  try {
-    // Retrieve the secrets for dev and prod
-    const devSecrets = getAllSecrets('dev');
-    const prodSecrets = getAllSecrets('prod');
+  // Extract database URLs from the parsed secrets
+  databaseConfig.dev = {
+    dbUrl: devSecrets.DATABASE_URL || '',
+    directUrl: devSecrets.DIRECT_DATABASE_URL || '',
+  };
+  databaseConfig.prod = {
+    dbUrl: prodSecrets.DATABASE_URL || '',
+    directUrl: prodSecrets.DIRECT_DATABASE_URL || '',
+  };
 
-    // Extract database URLs from the parsed secrets
-    databaseConfig.dev = {
-      dbUrl: devSecrets.DATABASE_URL || '',
-      directUrl: devSecrets.DIRECT_DATABASE_URL || '',
-    };
-    databaseConfig.prod = {
-      dbUrl: prodSecrets.DATABASE_URL || '',
-      directUrl: prodSecrets.DIRECT_DATABASE_URL || '',
-    };
-
-    // Check if both dev and prod have all their secrets configured
-    if (
-      databaseConfig.dev.dbUrl &&
-      databaseConfig.prod.dbUrl &&
-      databaseConfig.dev.directUrl &&
-      databaseConfig.prod.directUrl
-    ) {
-      alreadyConfigured = true;
-    }
-  } catch {}
+  // Check if both dev and prod have all their secrets configured
+  if (
+    databaseConfig.dev.dbUrl &&
+    databaseConfig.prod.dbUrl &&
+    databaseConfig.dev.directUrl &&
+    databaseConfig.prod.directUrl
+  ) {
+    alreadyConfigured = true;
+  }
 
   // See what the user would like to do if it's already setup
   if (alreadyConfigured) {
@@ -690,7 +656,6 @@ const setupSupabase = async (projectName: string) => {
 
   // --- Call add-secret script for each secret ---
   console.log('\nAdding Supabase secrets to SST...');
-  const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
   // For prod
   execSync(
     `pnpm tsx ${addSecretScript} DIRECT_DATABASE_URL "${devUrls.directUrl}" "${prodUrls.directUrl}"`
@@ -710,15 +675,14 @@ const setupSupabase = async (projectName: string) => {
 const setupBetterAuth = () => {
   console.log('Setting up Better Auth...');
 
+  // If the secrets haven't been setup yet, let's try to init them
+  if (Object.keys(devSecrets).length === 0) initSecrets();
+
   // Check if BETTER_AUTH_SECRET is already configured in SST secrets
-  try {
-    const devSecrets = getAllSecrets('dev');
-    const prodSecrets = getAllSecrets('prod');
-    if (devSecrets.BETTER_AUTH_SECRET && prodSecrets.BETTER_AUTH_SECRET) {
-      console.log('✔ Better Auth secret already configured.\n');
-      return true;
-    }
-  } catch {}
+  if (devSecrets.BETTER_AUTH_SECRET && prodSecrets.BETTER_AUTH_SECRET) {
+    console.log('✔ Better Auth secret already configured.\n');
+    return true;
+  }
 
   // Generate a random 32-character string
   const randomString = Array.from({ length: 32 }, () =>
@@ -727,7 +691,6 @@ const setupBetterAuth = () => {
 
   // Add secret to SST
   console.log('Adding Better Auth secret to SST...');
-  const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
   execSync(`pnpm tsx ${addSecretScript} BETTER_AUTH_SECRET "${randomString}" "${randomString}"`);
   console.log('✔ Better Auth secret has been set in SST.\n');
 
@@ -939,9 +902,6 @@ const setupDocsSite = async ({ domain }: { domain?: string }) => {
   }
 
   // Ask if they want to set up the docs site
-  console.log(
-    'To set up a custom docs site domain, you must have your domain managed by AWS Route 53.'
-  );
   const doSetup = await promptYesNo('Would you like to set up a website for documentation? (y/n) ');
   if (!doSetup) {
     console.log('Docs site setup skipped.\n');
@@ -978,23 +938,19 @@ const setupDocsSite = async ({ domain }: { domain?: string }) => {
 const setupAxiom = async (): Promise<boolean> => {
   console.log('Setting up Axiom observability...');
 
-  // Check if Axiom is already configured in SST secrets
-  try {
-    // Retrieve the secrets for dev and prod
-    const devSecrets = getAllSecrets('dev');
-    const prodSecrets = getAllSecrets('prod');
+  // If the secrets haven't been setup yet, let's try to init them
+  if (Object.keys(devSecrets).length === 0) initSecrets();
 
-    // Check if both dev and prod have their secrets configured
-    if (
-      devSecrets.AXIOM_TOKEN &&
-      prodSecrets.AXIOM_TOKEN &&
-      devSecrets.AXIOM_DATASET &&
-      prodSecrets.AXIOM_DATASET
-    ) {
-      console.log('✔ Axiom already configured.\n');
-      return true;
-    }
-  } catch {}
+  // Check if Axiom is already configured in SST secrets
+  if (
+    devSecrets.AXIOM_TOKEN &&
+    prodSecrets.AXIOM_TOKEN &&
+    devSecrets.AXIOM_DATASET &&
+    prodSecrets.AXIOM_DATASET
+  ) {
+    console.log('✔ Axiom already configured.\n');
+    return true;
+  }
 
   console.log('Axiom provides enhanced log searching and monitoring beyond AWS CloudWatch.');
   // Ask if they want to set up Axiom
@@ -1035,7 +991,6 @@ const setupAxiom = async (): Promise<boolean> => {
 
   // Add secrets to SST
   console.log('\nAdding Axiom secrets to SST...');
-  const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
   execSync(`pnpm tsx ${addSecretScript} AXIOM_TOKEN "${token}" "${token}"`);
   execSync(`pnpm tsx ${addSecretScript} AXIOM_DATASET "${dataset}" "${dataset}"`);
 
@@ -1060,20 +1015,19 @@ const setupAxiom = async (): Promise<boolean> => {
 const setupLangfuse = async () => {
   console.log('Setting up Langfuse...');
 
+  // If the secrets haven't been setup yet, let's try to init them
+  if (Object.keys(devSecrets).length === 0) initSecrets();
+
   // Check if Langfuse is already configured in SST secrets
-  try {
-    const devSecrets = getAllSecrets('dev');
-    const prodSecrets = getAllSecrets('prod');
-    if (
-      devSecrets.LANGFUSE_SECRET_KEY &&
-      prodSecrets.LANGFUSE_SECRET_KEY &&
-      devSecrets.LANGFUSE_PUBLIC_KEY &&
-      prodSecrets.LANGFUSE_PUBLIC_KEY
-    ) {
-      console.log('✔ Langfuse already configured.\n');
-      return true;
-    }
-  } catch {}
+  if (
+    devSecrets.LANGFUSE_SECRET_KEY &&
+    prodSecrets.LANGFUSE_SECRET_KEY &&
+    devSecrets.LANGFUSE_PUBLIC_KEY &&
+    prodSecrets.LANGFUSE_PUBLIC_KEY
+  ) {
+    console.log('✔ Langfuse already configured.\n');
+    return true;
+  }
 
   const doSetup = await promptYesNo(
     'Would you like to set up Langfuse for AI traces, evals, and prompt management? (y/n) '
@@ -1112,7 +1066,6 @@ const setupLangfuse = async () => {
 
   // Add secrets to SST
   console.log('\nAdding Langfuse secrets to SST...');
-  const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
   execSync(`pnpm tsx ${addSecretScript} LANGFUSE_SECRET_KEY "${secretKey}" "${secretKey}"`);
   execSync(`pnpm tsx ${addSecretScript} LANGFUSE_PUBLIC_KEY "${publicKey}" "${publicKey}"`);
 
@@ -1138,23 +1091,17 @@ const setupLangfuse = async () => {
 const setupLoops = async () => {
   console.log('Setting up Loops...');
 
-  // Get secrets
-  let devSecrets: Record<string, string> = {};
-  let prodSecrets: Record<string, string> = {};
-  try {
-    devSecrets = getAllSecrets('dev');
-    prodSecrets = getAllSecrets('prod');
-  } catch {}
-
   // Read config
   const configPath = path.resolve('packages/config/config.ts');
   let configContent = fs.readFileSync(configPath, 'utf8');
   const resetPasswordMatch = configContent.match(/resetPassword:\s*['"]([^'"]*)['"]/);
   const resetPasswordId = resetPasswordMatch ? resetPasswordMatch[1] : '';
 
+  // If the secrets haven't been setup yet, let's try to init them
+  if (Object.keys(devSecrets).length === 0) initSecrets();
+
   // Check if Loops is already configured (API key in secrets and resetPassword in config)
   if (
-    false &&
     devSecrets.LOOPS_API_KEY &&
     prodSecrets.LOOPS_API_KEY &&
     resetPasswordId &&
@@ -1190,7 +1137,6 @@ const setupLoops = async () => {
   }
 
   // Store the API key as a secret for both dev and prod
-  const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
   execSync(`pnpm tsx ${addSecretScript} LOOPS_API_KEY "${apiKey}" "${apiKey}"`);
 
   // Uncomment secrets in infra/secrets.ts
@@ -1235,6 +1181,181 @@ const setupLoops = async () => {
   return true;
 };
 
+// ---------- STRIPE SETUP HELPER ----------
+/** Guides the user through setting up Stripe for payments */
+export const setupStripe = async () => {
+  console.log('Setting up Stripe...');
+
+  // Read config
+  const configPath = path.resolve('packages/config/config.ts');
+  let configContent = fs.readFileSync(configPath, 'utf8');
+
+  // Read config
+  const publishableKeyMatch = configContent.match(
+    /stripe:\s*{[^}]*publishableKey:\s*isProd\s*\?\s*['"]([^'"]*)['"]\s*:\s*['"]([^'"]*)['"]/
+  );
+  const prodPublishableKey = publishableKeyMatch ? publishableKeyMatch[1] : '';
+  const devPublishableKey = publishableKeyMatch ? publishableKeyMatch[2] : '';
+
+  // If the secrets haven't been setup yet, let's try to init them
+  if (Object.keys(devSecrets).length === 0) initSecrets();
+
+  // Check if Stripe is already configured (secret key in secrets and publishable key in config)
+  if (
+    devSecrets.STRIPE_SECRET_KEY &&
+    prodSecrets.STRIPE_SECRET_KEY &&
+    devPublishableKey &&
+    devPublishableKey !== '' &&
+    prodPublishableKey &&
+    prodPublishableKey !== ''
+  ) {
+    console.log('✔ Stripe is already configured.\n');
+    return true;
+  }
+
+  // Ask if they want to set up Stripe
+  const doSetup = await promptYesNo('Would you like to set up Stripe for payments? (y/n) ');
+  if (!doSetup) {
+    console.log('Stripe setup skipped.\n');
+    return false;
+  }
+
+  // Guide to signup
+  console.log('\n1. Sign up or log in to Stripe: https://dashboard.stripe.com/register');
+  console.log(
+    '2. In your sandbox, get the API keys (use the switcher at the top left to enter your sandbox): https://dashboard.stripe.com/test/apikeys'
+  );
+
+  // Prompt for sandbox keys
+  let testPublishableKey = '';
+  while (!testPublishableKey) {
+    const input = await promptUser('Enter your sandbox publishable key (starts with pk_test_): ');
+    testPublishableKey = input.trim();
+    if (!testPublishableKey.startsWith('pk_test_')) {
+      console.log('Please enter a valid sandbox publishable key (should start with pk_test_).');
+      testPublishableKey = '';
+    }
+  }
+
+  let testSecretKey = '';
+  while (!testSecretKey) {
+    const input = await promptUser('Enter your sandbox secret key (starts with sk_test_): ');
+    testSecretKey = input.trim();
+    if (!testSecretKey.startsWith('sk_test_')) {
+      console.log('Please enter a valid sandbox secret key (should start with sk_test_).');
+      testSecretKey = '';
+    }
+  }
+
+  // Ask about live account setup
+  console.log(
+    "\nFor production, you need to complete Stripe's onboarding process at: https://dashboard.stripe.com/profile/account/onboarding"
+  );
+  console.log(
+    'This process takes time and requires verification. You can always finish this later and re-configure Stripe with `pnpm run init:stripe`.'
+  );
+  console.log(
+    'You will still be able to test with your sandbox keys, but the live account will be required for production.'
+  );
+
+  const hasLiveAccount = await promptYesNo(
+    'Have you already been approved and set up your live Stripe account? (y/n) '
+  );
+
+  // If they want to proceed with a live account, get the live keys
+  let livePublishableKey = '';
+  let liveSecretKey = '';
+  if (hasLiveAccount) {
+    console.log('\n3. Get your live API keys: https://dashboard.stripe.com/apikeys');
+
+    while (!livePublishableKey) {
+      const input = await promptUser('Enter your live publishable key (starts with pk_live_): ');
+      livePublishableKey = input.trim();
+      if (!livePublishableKey.startsWith('pk_live_')) {
+        console.log('Please enter a valid live publishable key (should start with pk_live_).');
+        livePublishableKey = '';
+      }
+    }
+
+    while (!liveSecretKey) {
+      const input = await promptUser('Enter your live secret key (starts with sk_live_): ');
+      liveSecretKey = input.trim();
+      if (!liveSecretKey.startsWith('sk_live_')) {
+        console.log('Please enter a valid live secret key (should start with sk_live_).');
+        liveSecretKey = '';
+      }
+    }
+  } else {
+    // Use test keys for both environments if no live account
+    livePublishableKey = testPublishableKey;
+    liveSecretKey = testSecretKey;
+    console.log(
+      '✔ Continuing with sandbox keys. You can update your live keys later with `pnpm run init:stripe`.'
+    );
+  }
+
+  // Store the secret keys in SST secrets
+  console.log('\nAdding Stripe secrets to SST...');
+  execSync(`pnpm tsx ${addSecretScript} STRIPE_SECRET_KEY "${testSecretKey}" "${liveSecretKey}"`);
+
+  // Uncomment secrets in infra/secrets.ts
+  const secretsPath = path.resolve('infra/secrets.ts');
+  let secretsContent = fs.readFileSync(secretsPath, 'utf8');
+  secretsContent = secretsContent.replaceAll(
+    '// export const STRIPE_SECRET_KEY',
+    'export const STRIPE_SECRET_KEY'
+  );
+  fs.writeFileSync(secretsPath, secretsContent);
+  console.log('✔ Stripe secret keys have been set in SST.');
+
+  // Update config with publishable keys
+  configContent = configContent.replace(
+    /publishableKey:\s*isProd \? ['"][^'"]*['"] : ['"][^'"]*['"]/,
+    `publishableKey: isProd ? "${livePublishableKey}" : "${testPublishableKey}"`
+  );
+  fs.writeFileSync(configPath, configContent);
+  console.log('✔ Stripe publishable keys have been saved to config.');
+
+  // Uncomment stripe plugin in auth.ts
+  const authPath = path.resolve('apps/backend/core/auth.ts');
+  if (fs.existsSync(authPath)) {
+    let authContent = fs.readFileSync(authPath, 'utf8');
+
+    // Find and uncomment the entire stripe block using regex
+    // This regex matches the entire stripe block from "// stripe({" to "// }),"
+    const stripeBlockRegex = /^(\s*)\/\/ stripe\(\{[\s\S]*?^(\s*)\/\/ \}\),$/gm;
+
+    const hasStripeBlock = stripeBlockRegex.test(authContent);
+
+    if (hasStripeBlock) {
+      // Reset regex since test() consumed it
+      stripeBlockRegex.lastIndex = 0;
+
+      authContent = authContent.replaceAll(stripeBlockRegex, (match) => {
+        // Split the match into lines and process each one
+        return match
+          .split('\n')
+          .map((line) => {
+            // Remove "// " from the beginning of lines that start with "// "
+            if (/^(\s*)\/\/ /.test(line)) {
+              return line.replace(/^(\s*)\/\/ /, '$1');
+            }
+            return line;
+          })
+          .join('\n');
+      });
+
+      fs.writeFileSync(authPath, authContent);
+      console.log('✔ Stripe plugin has been enabled in auth.ts.');
+    } else {
+      console.log('⚠ Could not find stripe configuration block in auth.ts to uncomment.');
+    }
+  }
+
+  console.log('✔ Stripe setup complete!\n');
+  return true;
+};
+
 // ---------- AI SETUP HELPER ----------
 /** Guides the user through setting up AI */
 const setupAI = async () => {
@@ -1263,9 +1384,11 @@ const setupAI = async () => {
 const printFinalNotes = ({
   posthogSetup,
   loopsSetup,
+  stripeConfig,
 }: {
   posthogSetup: boolean;
   loopsSetup: boolean;
+  stripeConfig: boolean;
 }) => {
   console.log('--- Final Steps ---');
   console.log('You can start the app with: pnpm dev\n');
@@ -1284,6 +1407,13 @@ const printFinalNotes = ({
     }
   }
 
+  // Mention Stripe setup if they configured it
+  if (stripeConfig) {
+    console.log(
+      '- If you used sandbox keys for production, remember to complete Stripe onboarding and update your keys with `pnpm run init:stripe`.'
+    );
+  }
+
   console.log(
     '- Make sure you restart your terminal for your AWS profile changes to take effect.\n'
   );
@@ -1295,60 +1425,64 @@ const printFinalNotes = ({
 const init = async () => {
   console.log('Setting up starter...\n');
 
-  // Check that all CLI tools are setup
-  checkCLIs();
+  // // Check that all CLI tools are setup
+  // checkCLIs();
 
-  // Get and possibly update the project name
-  const projectName = await getProjectName();
+  // // Get and possibly update the project name
+  // const projectName = await getProjectName();
 
-  // Get and possibly update the web url
-  const domain = await getDomain();
+  // // Get and possibly update the web url
+  // const domain = await getDomain();
 
-  // Get or create the user's personal environment stage
-  await getOrCreateStage();
+  // // Get or create the user's personal environment stage
+  // await getOrCreateStage();
 
-  // Select or create an AWS profile
-  const awsConfig = await selectOrCreateAwsProfile();
+  // // Select or create an AWS profile
+  // const awsConfig = await selectOrCreateAwsProfile();
 
-  // Setup Supabase
-  const dbConfig = await setupSupabase(projectName);
+  // // Setup Supabase
+  // const dbConfig = await setupSupabase(projectName);
 
-  // Setup Better Auth
-  setupBetterAuth();
+  // // Setup Better Auth
+  // setupBetterAuth();
 
-  // Setup PostHog
-  const posthogConfig = await setupPosthog(projectName);
+  // // Setup PostHog
+  // const posthogConfig = await setupPosthog(projectName);
 
-  // Configure github url and secrets
-  const githubUrl = await setupGithub({
-    awsConfig,
-    dbConfig,
-    posthogConfig,
-  });
+  // // Configure github url and secrets
+  // const githubUrl = await setupGithub({
+  //   awsConfig,
+  //   dbConfig,
+  //   posthogConfig,
+  // });
 
-  // Setup Slack
-  await setupSlack(githubUrl);
+  // // Setup Slack
+  // await setupSlack(githubUrl);
 
-  // Setup Crisp Chat
-  await setupCrispChat();
+  // // Setup Crisp Chat
+  // await setupCrispChat();
 
-  // Setup docs site
-  await setupDocsSite({ domain });
+  // // Setup docs site
+  // await setupDocsSite({ domain });
 
-  // Setup Axiom observability
-  await setupAxiom();
+  // // Setup Axiom observability
+  // await setupAxiom();
 
-  // Setup Loops emails
-  const loopsSetup = await setupLoops();
+  // // Setup Loops emails
+  // const loopsSetup = await setupLoops();
 
-  // Setup AI
-  const didSetupAI = await setupAI();
+  // // Setup AI
+  // const didSetupAI = await setupAI();
 
-  // Setup Langfuse
-  if (didSetupAI) await setupLangfuse();
+  // // Setup Langfuse
+  // if (didSetupAI) await setupLangfuse();
+
+  // Setup Stripe
+  const stripeConfig = await setupStripe();
 
   // Print final notes
-  printFinalNotes({ posthogSetup: !!posthogConfig, loopsSetup });
+  // printFinalNotes({ posthogSetup: !!posthogConfig, loopsSetup, stripeConfig });
+  printFinalNotes({ posthogSetup: false, loopsSetup: false, stripeConfig });
 };
 
 void init();

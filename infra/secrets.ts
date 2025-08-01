@@ -21,5 +21,8 @@ export const LANGFUSE_PUBLIC_KEY = new sst.Secret('LANGFUSE_PUBLIC_KEY');
 // Loops
 export const LOOPS_API_KEY = new sst.Secret('LOOPS_API_KEY');
 
+// Stripe
+// export const STRIPE_SECRET_KEY = new sst.Secret('STRIPE_SECRET_KEY');
+
 // Set the default secrets for the stage...
 export const STAGE = new sst.Secret('STAGE', $app.stage);

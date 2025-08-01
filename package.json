@@ -23,6 +23,7 @@
     "types:check": "turbo types:check --continue",
     "format": "turbo format --continue",
     "init": "tsx scripts/init",
+    "init:stripe": "tsx scripts/init-stripe",
     "update-readme": "doctoc README.md",
     "get-package-version": "tsx scripts/get-package-version",
     "create:package": "tsx scripts/create-package",
