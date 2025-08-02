@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import axios from 'axios';
 
-import { promptSelect, promptUser, promptYesNo } from './utils/input.js';
+import { promptSelect, promptUser, promptYesNo } from '../utils/input.js';
 
 // ---------- CLI HELPERS ----------
 /** The CLIs we require to run the initialization script */
@@ -44,7 +44,7 @@ const checkGhAuth = () => {
 };
 
 /** Check if required CLIs are installed */
-const checkCLIs = () => {
+export const checkCLIs = () => {
   console.log('Checking CLI tools...');
 
   // Check to ensure the user has all the CLI tools installed
@@ -309,7 +309,7 @@ export const getDomain = async () => {
 };
 
 /** Get or create the user's personal environment stage */
-const getOrCreateStage = async () => {
+export const getOrCreateStage = async () => {
   console.log("Checking for the user's personal environment stage...");
 
   // Check if the user has a .sst/stage file
@@ -487,11 +487,12 @@ export const selectOrCreateAwsProfile = async () => {
     // If selecting an existing profile, try to read the keys from the credentials file
     if (fs.existsSync(credPath)) {
       const credContent = fs.readFileSync(credPath, 'utf8');
-      const profileRegex = new RegExp(`\[${profile}\][^\[]*`, 'g');
-      const match = credContent.match(profileRegex);
-      if (match && match[0]) {
-        const keyMatch = match[0].match(/aws_access_key_id=([^\n]+)/);
-        const secretMatch = match[0].match(/aws_secret_access_key=([^\n]+)/);
+      const profileRegex = new RegExp(`\\[${profile}\\]([\\s\\S]*?)(?=\\n\\[|$)`, 'g');
+      const match = profileRegex.exec(credContent);
+      if (match && match[1]) {
+        const sectionContent = match[1];
+        const keyMatch = sectionContent.match(/aws_access_key_id\s*=\s*([^\n]+)/);
+        const secretMatch = sectionContent.match(/aws_secret_access_key\s*=\s*([^\n]+)/);
         accessKey = keyMatch ? keyMatch[1].trim() : '';
         secretKey = secretMatch ? secretMatch[1].trim() : '';
       }
@@ -1641,67 +1642,66 @@ const printFinalNotes = ({
 const init = async () => {
   console.log('Setting up starter...\n');
 
-  // // Check that all CLI tools are setup
-  // checkCLIs();
+  // Check that all CLI tools are setup
+  checkCLIs();
 
-  // // Mention some tips and disclosures
-  // await printTips();
+  // Mention some tips and disclosures
+  await printTips();
 
-  // // Get and possibly update the project name
-  // const projectName = await getProjectName();
+  // Get and possibly update the project name
+  const projectName = await getProjectName();
 
-  // // Get and possibly update the web url
-  // const domain = await getDomain();
+  // Get and possibly update the web url
+  const domain = await getDomain();
 
-  // // Get or create the user's personal environment stage
-  // await getOrCreateStage();
+  // Get or create the user's personal environment stage
+  await getOrCreateStage();
 
-  // // Select or create an AWS profile
-  // const awsConfig = await selectOrCreateAwsProfile();
+  // Select or create an AWS profile
+  const awsConfig = await selectOrCreateAwsProfile();
 
-  // // Setup Supabase
-  // const dbConfig = await setupSupabase(projectName);
+  // Setup Supabase
+  const dbConfig = await setupSupabase(projectName);
 
-  // // Setup Better Auth
-  // setupBetterAuth();
+  // Setup Better Auth
+  setupBetterAuth();
 
-  // // Setup PostHog
-  // const posthogConfig = await setupPosthog(projectName);
+  // Setup PostHog
+  const posthogConfig = await setupPosthog(projectName);
 
-  // // Configure github url and secrets
-  // const githubUrl = await setupGithub({
-  //   awsConfig,
-  //   dbConfig,
-  //   posthogConfig,
-  // });
+  // Configure github url and secrets
+  const githubUrl = await setupGithub({
+    awsConfig,
+    dbConfig,
+    posthogConfig,
+  });
 
-  // // Setup Slack
-  // await setupSlack(githubUrl);
+  // Setup Slack
+  await setupSlack(githubUrl);
 
-  // // Setup Crisp Chat
-  // await setupCrispChat();
+  // Setup Crisp Chat
+  await setupCrispChat();
 
-  // // Setup docs site
-  // await setupDocsSite({ domain });
+  // Setup docs site
+  await setupDocsSite({ domain });
 
-  // // Setup Axiom observability
-  // await setupAxiom();
+  // Setup Axiom observability
+  await setupAxiom();
 
-  // // Setup Loops emails
-  // const loopsSetup = await setupLoops();
+  // Setup Loops emails
+  const loopsSetup = await setupLoops();
 
-  // // Setup AI
-  // const didSetupAI = await setupAI();
+  // Setup AI
+  const didSetupAI = await setupAI();
 
-  // // Setup Langfuse
-  // if (didSetupAI) await setupLangfuse();
+  // Setup Langfuse
+  if (didSetupAI) await setupLangfuse();
 
   // Setup Stripe
-  const stripeConfig = await setupStripe({ domain: 'coolstuff.com' });
+  const stripeConfig = await setupStripe({ domain });
 
   // Print final notes
-  // printFinalNotes({ posthogSetup: !!posthogConfig, loopsSetup, stripeConfig });
-  printFinalNotes({ posthogSetup: false, loopsSetup: false, stripeConfig });
+  printFinalNotes({ posthogSetup: !!posthogConfig, loopsSetup, stripeConfig });
 };
 
 // Only run init if this file is executed directly (not imported)

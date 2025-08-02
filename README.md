@@ -42,6 +42,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Analytics:** Integrated with Posthog for product analytics and user behavior tracking.
 - **Error Tracking:** Centralized error monitoring using Posthog.
 - **Authentication:** Built-in authentication powered by Better Auth.
+- **Payments:** Stripe integration for subscriptions and one-time payments.
 - **Database:** Supabase for scalable, hosted Postgres and real-time data.
 - **Backend:** Serverless backend managed with SST, deployed to AWS.
 - **Web Frontend:** Next.js for fast, modern web applications.
@@ -62,11 +63,13 @@ This starter template comes pre-configured with a robust set of features to acce
 - **SST:** Infrastructure as code framework for deploying serverless backends and resources to **AWS**.
 - **Supabase:** Hosted Postgres database with real-time capabilities.
 - **Prisma:** Type-safe ORM for database access and migrations.
+- **Better Auth:** Modern authentication library for managing users and organizations (integrates with Stripe).
 - **Next.js:** React framework for building fast, production-grade web applications.
 - **Node.js & TypeScript:** Strongly-typed backend and shared code.
 - **GitHub Actions:** CI/CD pipelines for automated testing and deployment.
 - **Slack:** Integration for deployment and error alerts.
 - **Posthog:** Analytics and error tracking.
+- **Stripe:** Payment processing platform for subscriptions and one-time payments.
 - **Axiom:** Log management platform integrated for production observability.
 - **Langfuse:** Open-source platform for AI tracing, monitoring, and evaluation.
 - **Loops:** Email platform for transactional (e.g., password reset) and user engagement emails.
@@ -116,15 +119,15 @@ _All packages and apps are written in TypeScript for consistency and type safety
 - **templates/**: Templates for scaffolding new projects or packages.
 - **prompts/**: Prompt files for AI or automation.
 
-> Each app or package includes its own README with more details.
-
-> **Note:** The `apps/docs` documentation app is present but deployment is disabled by default. To enable deployment, uncomment or add the relevant deployment in `sst.config.ts`.
+> **Note:** Each app or package includes its own README with more details.
 
 ---
 
 ## Setup
 
-Before you start, make sure you have the following prerequisites installed and configured:
+### Prerequisites
+
+Before you start, make sure you have the following tools installed and configured:
 
 - **Node.js** (recommend using nvm) - [Install guide](https://github.com/nvm-sh/nvm#install--update-script)
 - **pnpm** (for package and monorepo management) — [Install guide](https://pnpm.io/installation)
@@ -132,19 +135,25 @@ Before you start, make sure you have the following prerequisites installed and c
 - **aws-cli** (AWS CLI) — [Install guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - **Docker** (for running a shadow DB for migrations) — [Install guide](https://docs.docker.com/get-docker/)
 
-### 1. Install Dependencies
+### Initial Project Setup
+
+Use this section when setting up the starter template for the first time or creating a new project.
+
+> **Note:** The setup script works best if you already have a domain purchased and managed by AWS Route 53
+
+#### 1. Install Base Dependencies
 
 ```sh
 pnpm install
 ```
 
-### 2. Run the Initialization Script
+#### 2. Run the Initialization Script
 
 ```sh
 pnpm run init
 ```
 
-This script will guide you through the following steps:
+This interactive script will guide you through configuring all the services and integrations:
 
 - Verifies required CLIs are installed and authenticated (pnpm, gh, aws-cli)
 - Prompts for your project name, environment name, and domain
@@ -160,6 +169,33 @@ This script will guide you through the following steps:
 - Sets up Crisp Chat for customer support
 - Sets up Axiom for observability
 - Sets up AI features and Langfuse
+- Sets up Stripe for payments
+
+#### 3. Complete Stripe Setup (Optional)
+
+If you plan on using Stripe and didn't configure your live production environment during the initial setup (for example, if you weren't yet approved by Stripe for production access), you can run the Stripe-specific initialization script:
+
+```sh
+pnpm run init:stripe
+```
+
+### Working with an Existing Project
+
+Use this section when joining an existing project or working on a codebase that's already been initialized.
+
+#### 1. Install Current Dependencies
+
+```sh
+pnpm install
+```
+
+#### 2. Set Up Your Environment
+
+```sh
+pnpm run init:existing
+```
+
+This interactive script will guide you through the setup of your local environment.
 
 ---
 
@@ -290,8 +326,6 @@ You can also run the Vitest UI for interactive test running:
 ```sh
 pnpm backend test:ui
 ```
-
----
 
 ### Web
 
