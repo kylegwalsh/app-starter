@@ -7,7 +7,7 @@ import React from 'react';
 import { AppSidebar } from '@/components';
 
 /** The layout for the dashboard (enforce authentication) */
-export default function RootLayout({ children }: Component) {
+const RootLayout: FC = ({ children }) => {
   // When signed in, render our app
   return (
     <>
@@ -25,4 +25,6 @@ export default function RootLayout({ children }: Component) {
       </SignedIn>
     </>
   );
-}
+};
+
+export default RootLayout;

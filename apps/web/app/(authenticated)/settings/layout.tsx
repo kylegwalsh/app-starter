@@ -9,7 +9,7 @@ import { Header } from '@/components';
 import { useOrganization } from '@/hooks';
 
 /** The layout for settings pages with top navigation */
-export default function SettingsLayout({ children }: Component) {
+const SettingsLayout: FC = ({ children }) => {
   const pathname = usePathname();
   const { isActive } = useOrganization();
 
@@ -53,4 +53,6 @@ export default function SettingsLayout({ children }: Component) {
       <div className="flex flex-1 p-10 py-8">{children}</div>
     </>
   );
-}
+};
+
+export default SettingsLayout;

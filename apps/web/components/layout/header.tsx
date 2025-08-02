@@ -11,7 +11,7 @@ import {
 import Link from 'next/link';
 import { Fragment } from 'react';
 
-type Props = Component & {
+type Props = {
   breadcrumbs: {
     label: string;
     href?: string;
@@ -19,7 +19,7 @@ type Props = Component & {
 };
 
 /** The standard header used in our application */
-export const Header = ({ breadcrumbs, children }: Props) => (
+export const Header: FC<Props> = ({ breadcrumbs, children }) => (
   <header className="flex h-16 shrink-0 items-center justify-between gap-2">
     <div className="flex items-center gap-2 px-4">
       <SidebarTrigger className="-ml-1" />

@@ -7,13 +7,14 @@
   - Create /settings/payments page
   - Add stripe to README
 - Maybe add some react-form utils
-- Ensure langfuse is using correct "environment" field
 - Test migration logic in CI
 - Consider implementing posthog feature flags
 - Decide on global state management (add it and a README mentioning it in the web app)
 - Cursor rules
 - Add marketing site setup (get prompts / framework from Chad)
 - Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)
+- Ensure langfuse is using correct "environment" field
+- Consider flushing langfuse locally to ensure testing traces appear with lcl environment
 - When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
 - Lock packages to a certain version in package.json's
 - Add README's to all packages / apps

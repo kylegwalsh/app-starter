@@ -41,10 +41,8 @@ type NavItem = {
   items?: NavItem[];
 };
 
-type Props = Component;
-
 /** The sidebar for the application */
-export const AppSidebar = ({ children }: Props) => {
+export const AppSidebar: FC = ({ children }) => {
   return (
     <>
       <Sidebar collapsible="icon">

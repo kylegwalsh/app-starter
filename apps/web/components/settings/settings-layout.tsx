@@ -1,13 +1,13 @@
 import { Separator } from '@repo/design';
 import * as React from 'react';
 
-type Props = Component & {
+type Props = {
   title: string;
   description: string;
 };
 
 /** The standard layout for the settings pages */
-export const SettingsLayout = ({ children, title, description }: Props) => {
+export const SettingsLayout: FC<Props> = ({ children, title, description }) => {
   return (
     <div className="w-full space-y-6">
       <div>

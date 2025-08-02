@@ -1,7 +1,7 @@
 import { Logo } from '@repo/design';
 
 /** The layout for the authentication pages */
-const AuthLayout = ({ children }: Component) => (
+const AuthLayout: FC = ({ children }) => (
   <div className="relative flex w-full flex-col lg:grid lg:h-dvh lg:max-w-none lg:grid-cols-2 lg:items-center lg:justify-center lg:px-0">
     <div className="bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-r">
       <div className="absolute inset-0 bg-zinc-900" />
