@@ -49,21 +49,21 @@ const authConfig = {
     admin(),
     organization(),
     apiKey(),
-    // stripe({
-    //   stripeClient,
-    //   stripeWebhookSecret: (env as Record<string, string>).STRIPE_WEBHOOK_SECRET,
-    //   createCustomerOnSignUp: true,
-    //   // Configure stripe plans
-    //   // subscription: {
-    //   //   enabled: true,
-    //   //   plans: [
-    //   //     {
-    //   //       name: 'basic',
-    //   //       priceId: 'price_1234567890',
-    //   //     }
-    //   //   ],
-    //   // },
-    // }),
+    stripe({
+      stripeClient,
+      stripeWebhookSecret: (env as Record<string, string>).STRIPE_WEBHOOK_SECRET,
+      createCustomerOnSignUp: true,
+      // Configure stripe plans
+      // subscription: {
+      //   enabled: true,
+      //   plans: [
+      //     {
+      //       name: 'basic',
+      //       priceId: 'price_1234567890',
+      //     }
+      //   ],
+      // },
+    }),
   ],
 } satisfies BetterAuthOptions;
 

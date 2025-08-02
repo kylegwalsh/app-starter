@@ -1,6 +1,5 @@
 # TODO
 
-- Change the organization switcher in the sidebar to point to the organization settings page (might need to open a PR)
 - Add stripe support
   - Add plugin for better auth
   - Add stripe to the setup script
@@ -15,7 +14,7 @@
 - Cursor rules
 - Add marketing site setup (get prompts / framework from Chad)
 - Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)
-- When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secret
+- When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
 - Lock packages to a certain version in package.json's
 - Add README's to all packages / apps
 - Figure out why auth function responds with 500 every once in a while?

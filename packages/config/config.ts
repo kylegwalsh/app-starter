@@ -82,6 +82,8 @@ export const config = {
   /** The configuration for Stripe (our payment system) */
   stripe: {
     /** The Stripe publishable key */
-    publishableKey: isProd ? '' : '',
+    publishableKey: isProd
+      ? ''
+      : 'pk_test_51Rr8XGF1kcHuFeSjRYuUsOPbO4vHqodx3ilCrCzk18ijECQFqbo5N29ZwLU9gaFmEkto0b0OyoqLAjlcnEygxf3M00a89ydOqu',
   },
 };
