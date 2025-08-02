@@ -82,6 +82,6 @@ export const config = {
   /** The configuration for Stripe (our payment system) */
   stripe: {
     /** The Stripe publishable key */
-    publishableKey: '',
+    publishableKey: isProd ? '' : '',
   },
 };
