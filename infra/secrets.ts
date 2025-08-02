@@ -23,6 +23,7 @@ export const LOOPS_API_KEY = new sst.Secret('LOOPS_API_KEY');
 
 // Stripe
 // export const STRIPE_SECRET_KEY = new sst.Secret('STRIPE_SECRET_KEY');
+// export const STRIPE_WEBHOOK_SECRET = new sst.Secret('STRIPE_WEBHOOK_SECRET');
 
 // Set the default secrets for the stage...
 export const STAGE = new sst.Secret('STAGE', $app.stage);

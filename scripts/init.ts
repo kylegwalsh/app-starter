@@ -1181,10 +1181,55 @@ const setupLoops = async () => {
   return true;
 };
 
-// ---------- STRIPE SETUP HELPER ----------
+// ---------- STRIPE SETUP HELPERS ----------
+/** Create a Stripe webhook endpoint for Better Auth*/
+const createStripeWebhookForBetterAuth = async (
+  url: string,
+  secretKey: string
+): Promise<string | null> => {
+  /** The webhook events we need to listen to for Better Auth */
+  const webhookEvents = [
+    'checkout.session.completed',
+    'customer.subscription.updated',
+    'customer.subscription.deleted',
+  ];
+
+  try {
+    const response = await axios.post(
+      'https://api.stripe.com/v1/webhook_endpoints',
+      new URLSearchParams({
+        url,
+        ...webhookEvents.reduce(
+          (acc, event, index) => {
+            acc[`enabled_events[${index}]`] = event;
+            return acc;
+          },
+          {} as Record<string, string>
+        ),
+      }).toString(),
+      {
+        headers: {
+          Authorization: `Bearer ${secretKey}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+
+    return response.data.secret;
+  } catch (error: any) {
+    console.log(
+      `❌ Failed to create webhook at ${url}: ${error?.response?.data?.error?.message || error.message}`
+    );
+    return null;
+  }
+};
+
 /** Guides the user through setting up Stripe for payments */
-export const setupStripe = async () => {
+export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
   console.log('Setting up Stripe...');
+
+  // If the secrets haven't been setup yet, let's try to init them
+  if (Object.keys(devSecrets).length === 0) initSecrets();
 
   // Read config
   const configPath = path.resolve('packages/config/config.ts');
@@ -1194,30 +1239,35 @@ export const setupStripe = async () => {
   const publishableKeyMatch = configContent.match(
     /stripe:\s*{[^}]*publishableKey:\s*isProd\s*\?\s*['"]([^'"]*)['"]\s*:\s*['"]([^'"]*)['"]/
   );
-  const prodPublishableKey = publishableKeyMatch ? publishableKeyMatch[1] : '';
-  const devPublishableKey = publishableKeyMatch ? publishableKeyMatch[2] : '';
 
-  // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) initSecrets();
+  // Initialize all the required variables
+  let prodPublishableKey = publishableKeyMatch ? publishableKeyMatch[1] : '';
+  let devPublishableKey = publishableKeyMatch ? publishableKeyMatch[2] : '';
+  let prodSecretKey = prodSecrets.STRIPE_SECRET_KEY || '';
+  let devSecretKey = devSecrets.STRIPE_SECRET_KEY || '';
+  let prodWebhookSecret = prodSecrets.STRIPE_WEBHOOK_SECRET || '';
+  let devWebhookSecret = devSecrets.STRIPE_WEBHOOK_SECRET || '';
 
   // Check if Stripe is already configured (secret key in secrets and publishable key in config)
   if (
     devSecrets.STRIPE_SECRET_KEY &&
     prodSecrets.STRIPE_SECRET_KEY &&
+    devSecrets.STRIPE_WEBHOOK_SECRET &&
+    prodSecrets.STRIPE_WEBHOOK_SECRET &&
     devPublishableKey &&
     devPublishableKey !== '' &&
     prodPublishableKey &&
     prodPublishableKey !== ''
   ) {
     console.log('✔ Stripe is already configured.\n');
-    return true;
+    return { didSetup: true, didSetupProd: true };
   }
 
   // Ask if they want to set up Stripe
   const doSetup = await promptYesNo('Would you like to set up Stripe for payments? (y/n) ');
   if (!doSetup) {
     console.log('Stripe setup skipped.\n');
-    return false;
+    return { didSetup: false, didSetupProd: false };
   }
 
   // Guide to signup
@@ -1226,24 +1276,35 @@ export const setupStripe = async () => {
     '2. In your sandbox, get the API keys (use the switcher at the top left to enter your sandbox): https://dashboard.stripe.com/test/apikeys'
   );
 
-  // Prompt for sandbox keys
-  let testPublishableKey = '';
-  while (!testPublishableKey) {
-    const input = await promptUser('Enter your sandbox publishable key (starts with pk_test_): ');
-    testPublishableKey = input.trim();
-    if (!testPublishableKey.startsWith('pk_test_')) {
-      console.log('Please enter a valid sandbox publishable key (should start with pk_test_).');
-      testPublishableKey = '';
+  // Check if sandbox keys are already configured and ask if user wants to reset
+  if (devPublishableKey && devSecretKey) {
+    const resetSandboxKeys = await promptYesNo(
+      'Sandbox keys are already configured. Do you want to enter new sandbox keys? (y/n) '
+    );
+    if (resetSandboxKeys) {
+      devPublishableKey = '';
+      devSecretKey = '';
+    } else {
+      console.log('✔ Using existing sandbox keys');
     }
   }
 
-  let testSecretKey = '';
-  while (!testSecretKey) {
+  // Prompt for sandbox keys if they're empty
+  while (!devPublishableKey) {
+    const input = await promptUser('Enter your sandbox publishable key (starts with pk_test_): ');
+    devPublishableKey = input.trim();
+    if (!devPublishableKey.startsWith('pk_test_')) {
+      console.log('Please enter a valid sandbox publishable key (should start with pk_test_).');
+      devPublishableKey = '';
+    }
+  }
+
+  while (!devSecretKey) {
     const input = await promptUser('Enter your sandbox secret key (starts with sk_test_): ');
-    testSecretKey = input.trim();
-    if (!testSecretKey.startsWith('sk_test_')) {
+    devSecretKey = input.trim();
+    if (!devSecretKey.startsWith('sk_test_')) {
       console.log('Please enter a valid sandbox secret key (should start with sk_test_).');
-      testSecretKey = '';
+      devSecretKey = '';
     }
   }
 
@@ -1263,40 +1324,54 @@ export const setupStripe = async () => {
   );
 
   // If they want to proceed with a live account, get the live keys
-  let livePublishableKey = '';
-  let liveSecretKey = '';
   if (hasLiveAccount) {
     console.log('\n3. Get your live API keys: https://dashboard.stripe.com/apikeys');
 
-    while (!livePublishableKey) {
-      const input = await promptUser('Enter your live publishable key (starts with pk_live_): ');
-      livePublishableKey = input.trim();
-      if (!livePublishableKey.startsWith('pk_live_')) {
-        console.log('Please enter a valid live publishable key (should start with pk_live_).');
-        livePublishableKey = '';
+    // Check if production keys are already configured and ask if user wants to reset
+    if (prodPublishableKey && prodSecretKey) {
+      console.log(`Current live publishable key: ${prodPublishableKey.slice(0, 12)}...`);
+      const resetProdKeys = await promptYesNo(
+        'Live keys are already configured. Do you want to enter new live keys? (y/n) '
+      );
+      if (resetProdKeys) {
+        prodPublishableKey = '';
+        prodSecretKey = '';
+      } else {
+        console.log('✔ Using existing live keys');
       }
     }
 
-    while (!liveSecretKey) {
-      const input = await promptUser('Enter your live secret key (starts with sk_live_): ');
-      liveSecretKey = input.trim();
-      if (!liveSecretKey.startsWith('sk_live_')) {
-        console.log('Please enter a valid live secret key (should start with sk_live_).');
-        liveSecretKey = '';
+    // Prompt for production keys if they're empty
+    while (!prodPublishableKey) {
+      const input = await promptUser('Enter your live publishable key (starts with pk_live_): ');
+      prodPublishableKey = input.trim();
+      if (!prodPublishableKey.startsWith('pk_live_')) {
+        console.log('Please enter a valid live publishable key (should start with pk_live_).');
+        prodPublishableKey = '';
       }
     }
-  } else {
-    // Use test keys for both environments if no live account
-    livePublishableKey = testPublishableKey;
-    liveSecretKey = testSecretKey;
+
+    while (!prodSecretKey) {
+      const input = await promptUser('Enter your live secret key (starts with sk_live_): ');
+      prodSecretKey = input.trim();
+      if (!prodSecretKey.startsWith('sk_live_')) {
+        console.log('Please enter a valid live secret key (should start with sk_live_).');
+        prodSecretKey = '';
+      }
+    }
+  }
+  // Otherwise, skip it for now
+  else {
     console.log(
-      '✔ Continuing with sandbox keys. You can update your live keys later with `pnpm run init:stripe`.'
+      '✔ Skipping live keys setup. You can update your live keys later with `pnpm run init:stripe`.'
     );
   }
 
   // Store the secret keys in SST secrets
   console.log('\nAdding Stripe secrets to SST...');
-  execSync(`pnpm tsx ${addSecretScript} STRIPE_SECRET_KEY "${testSecretKey}" "${liveSecretKey}"`);
+  if (hasLiveAccount)
+    execSync(`pnpm tsx ${addSecretScript} STRIPE_SECRET_KEY "${devSecretKey}" "${prodSecretKey}"`);
+  else execSync(`pnpm sst secret set STRIPE_SECRET_KEY "${devSecretKey}"`);
 
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
@@ -1305,13 +1380,17 @@ export const setupStripe = async () => {
     '// export const STRIPE_SECRET_KEY',
     'export const STRIPE_SECRET_KEY'
   );
+  secretsContent = secretsContent.replaceAll(
+    '// export const STRIPE_WEBHOOK_SECRET',
+    'export const STRIPE_WEBHOOK_SECRET'
+  );
   fs.writeFileSync(secretsPath, secretsContent);
   console.log('✔ Stripe secret keys have been set in SST.');
 
   // Update config with publishable keys
   configContent = configContent.replace(
     /publishableKey:\s*isProd \? ['"][^'"]*['"] : ['"][^'"]*['"]/,
-    `publishableKey: isProd ? "${livePublishableKey}" : "${testPublishableKey}"`
+    `publishableKey: isProd ? "${prodPublishableKey}" : "${devPublishableKey}"`
   );
   fs.writeFileSync(configPath, configContent);
   console.log('✔ Stripe publishable keys have been saved to config.');
@@ -1346,14 +1425,112 @@ export const setupStripe = async () => {
       });
 
       fs.writeFileSync(authPath, authContent);
-      console.log('✔ Stripe plugin has been enabled in auth.ts.');
+      console.log('✔ Stripe plugin has been enabled in auth.ts.\n');
     } else {
-      console.log('⚠ Could not find stripe configuration block in auth.ts to uncomment.');
+      console.log('⚠ Could not find stripe configuration block in auth.ts to uncomment.\n');
     }
   }
 
+  // ---------- WEBHOOK SETUP ----------
+  console.log('\nSetting up Stripe webhook...');
+
+  if (domain) {
+    // We have a domain, so we can create the webhook automatically
+    console.log(`Using domain: ${domain} for webhook creation`);
+
+    // Check dev webhook setup
+    if (devWebhookSecret) {
+      const resetDevWebhook = await promptYesNo(
+        'Dev webhook secret already exists. Do you want to create a new dev webhook? (y/n) '
+      );
+      if (resetDevWebhook) {
+        devWebhookSecret = '';
+      } else {
+        console.log('✔ Using existing dev webhook secret');
+      }
+    }
+
+    // Create dev webhook if needed
+    if (!devWebhookSecret) {
+      console.log('Creating dev webhook endpoint...');
+      const devWebhookUrl = `https://dev.api.${domain}/api/auth/stripe/webhook`;
+      const secret = await createStripeWebhookForBetterAuth(devWebhookUrl, devSecretKey);
+      if (secret) {
+        devWebhookSecret = secret;
+        console.log(`✔ Created dev webhook: ${devWebhookUrl}`);
+      } else {
+        console.log('You will need to create the dev webhook manually.');
+      }
+    }
+
+    // Check prod webhook setup (only if they have live keys)
+    if (prodSecretKey) {
+      if (prodWebhookSecret) {
+        const resetProdWebhook = await promptYesNo(
+          'Prod webhook secret already exists. Do you want to create a new prod webhook? (y/n) '
+        );
+        if (resetProdWebhook) {
+          prodWebhookSecret = '';
+        } else {
+          console.log('✔ Using existing prod webhook secret');
+        }
+      }
+
+      // Create prod webhook if needed
+      if (!prodWebhookSecret) {
+        console.log('Creating prod webhook endpoint...');
+        const prodWebhookUrl = `https://api.${domain}/api/auth/stripe/webhook`;
+        const secret = await createStripeWebhookForBetterAuth(prodWebhookUrl, prodSecretKey);
+        if (secret) {
+          prodWebhookSecret = secret;
+          console.log(`✔ Created prod webhook: ${prodWebhookUrl}`);
+        } else {
+          console.log('You will need to create the prod webhook manually.');
+        }
+      }
+    } else {
+      console.log('Skipping prod webhook setup since no prod secret key was provided.');
+    }
+
+    // Set webhook secrets if we have them
+    console.log('\nAdding webhook secrets to SST...');
+    if (prodWebhookSecret)
+      execSync(
+        `pnpm tsx ${addSecretScript} STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" "${prodWebhookSecret}"`
+      );
+    else execSync(`pnpm sst secret set STRIPE_WEBHOOK_SECRET "${devWebhookSecret}"`);
+
+    console.log('✔ Stripe webhook setup complete!');
+  } else {
+    // No domain available, provide manual instructions
+    console.log('⚠ No custom domain configured for webhook creation.\n');
+    console.log(
+      'Tip: You can re-run this setup script with a custom domain to automate webhook creation.\n'
+    );
+    console.log('To set up Stripe webhooks manually:');
+    console.log(
+      '1. Deploy your infrastructure first (dev and prod) and note the API URL from the output:'
+    );
+    console.log('   - pnpm deploy');
+    console.log('   - pnpm deploy --stage prod');
+    console.log(
+      '2. Go to https://dashboard.stripe.com/webhooks (do this in both test/sandbox and live accounts)'
+    );
+    console.log(
+      '3. Create a new webhook endpoint with URL: https://your-sst-api-url.com/api/auth/stripe/webhook'
+    );
+    console.log('4. Select the following events:');
+    console.log('   - checkout.session.completed');
+    console.log('   - customer.subscription.updated');
+    console.log('   - customer.subscription.deleted');
+    console.log('5. Copy the webhook signing secret and set it as a secret:');
+    console.log(
+      '   pnpm backend add-secret STRIPE_WEBHOOK_SECRET "your-dev-webhook-secret" "your-prod-webhook-secret"'
+    );
+  }
+
   console.log('✔ Stripe setup complete!\n');
-  return true;
+  return { didSetup: true, didSetupProd: hasLiveAccount };
 };
 
 // ---------- AI SETUP HELPER ----------
@@ -1379,7 +1556,16 @@ const setupAI = async () => {
   return true;
 };
 
-// ---------- FINAL NOTES HELPER ----------
+// ---------- NOTES HELPERs ----------
+/** Prints tips and disclosures for the user. */
+const printTips = async () => {
+  console.log('--- Tips and Disclosures ---');
+  console.log(
+    '- This script works best if you already have a domain purchased and managed by AWS Route 53.\n'
+  );
+  await promptUser('Press enter to continue...\n');
+};
+
 /** Prints final setup instructions and tips for the user. */
 const printFinalNotes = ({
   posthogSetup,
@@ -1388,10 +1574,22 @@ const printFinalNotes = ({
 }: {
   posthogSetup: boolean;
   loopsSetup: boolean;
-  stripeConfig: boolean;
+  stripeConfig: Awaited<ReturnType<typeof setupStripe>>;
 }) => {
   console.log('--- Final Steps ---');
   console.log('You can start the app with: pnpm dev\n');
+
+  // Mention Stripe setup if they configured it
+  if (stripeConfig.didSetup) {
+    if (!stripeConfig.didSetupProd) {
+      console.log(
+        '- Production Stripe is not yet configured. Finish your Stripe onboarding and re-run the stripe-specific setup with: pnpm run init:stripe'
+      );
+    }
+    console.log(
+      '- If you want to support subscriptions with Stripe, set up your plans in apps/backend/core/auth.ts'
+    );
+  }
 
   // Only mention the error tracking setup if they opted in
   if (posthogSetup) {
@@ -1407,13 +1605,6 @@ const printFinalNotes = ({
     }
   }
 
-  // Mention Stripe setup if they configured it
-  if (stripeConfig) {
-    console.log(
-      '- If you used sandbox keys for production, remember to complete Stripe onboarding and update your keys with `pnpm run init:stripe`.'
-    );
-  }
-
   console.log(
     '- Make sure you restart your terminal for your AWS profile changes to take effect.\n'
   );
@@ -1427,6 +1618,9 @@ const init = async () => {
 
   // // Check that all CLI tools are setup
   // checkCLIs();
+
+  // // Mention some tips and disclosures
+  // await printTips();
 
   // // Get and possibly update the project name
   // const projectName = await getProjectName();
@@ -1478,7 +1672,7 @@ const init = async () => {
   // if (didSetupAI) await setupLangfuse();
 
   // Setup Stripe
-  const stripeConfig = await setupStripe();
+  const stripeConfig = await setupStripe({ domain: undefined });
 
   // Print final notes
   // printFinalNotes({ posthogSetup: !!posthogConfig, loopsSetup, stripeConfig });
