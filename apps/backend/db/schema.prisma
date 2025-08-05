@@ -38,6 +38,8 @@ model User {
   invitations Invitation[]
   apikeys     Apikey[]
 
+  stripeCustomerId String?
+
   @@unique([email])
   @@map("user")
 }
@@ -155,4 +157,19 @@ model Apikey {
   metadata            String?
 
   @@map("apikey")
+}
+
+model Subscription {
+  id                   String    @id
+  plan                 String
+  referenceId          String
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  status               String?
+  periodStart          DateTime?
+  periodEnd            DateTime?
+  cancelAtPeriodEnd    Boolean?
+  seats                Int?
+
+  @@map("subscription")
 }

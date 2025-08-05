@@ -5,7 +5,7 @@
   - Add stripe to the setup script
     - Maybe comment out stripe client or ensure it doesn't run without env vars (like langfuse)
   - Create /settings/payments page
-  - Add stripe to README
+  - Comment out plans in stripe plugin
 - Maybe add some react-form utils
 - Test migration logic in CI
 - Consider implementing posthog feature flags

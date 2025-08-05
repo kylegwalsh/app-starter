@@ -41,6 +41,14 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "STRIPE_SECRET_KEY": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "STRIPE_WEBHOOK_SECRET": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "api": {
       "type": "sst.aws.ApiGatewayV2"
       "url": string

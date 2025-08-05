@@ -54,15 +54,15 @@ const authConfig = {
       stripeWebhookSecret: (env as Record<string, string>).STRIPE_WEBHOOK_SECRET,
       createCustomerOnSignUp: true,
       // Configure stripe plans
-      // subscription: {
-      //   enabled: true,
-      //   plans: [
-      //     {
-      //       name: 'basic',
-      //       priceId: 'price_1234567890',
-      //     }
-      //   ],
-      // },
+      subscription: {
+        enabled: true,
+        plans: [
+          {
+            name: 'basic',
+            priceId: 'price_1234567890',
+          },
+        ],
+      },
     }),
   ],
 } satisfies BetterAuthOptions;
