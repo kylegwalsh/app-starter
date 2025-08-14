@@ -1,0 +1,97 @@
+---
+alwaysApply: true
+---
+
+<project_structure>
+
+- Monorepo managed with pnpm + SST + Turborepo; TypeScript across apps and packages
+- Directory Structure:
+
+```text
+/
+├── apps/
+│   ├── web/           # Next.js frontend app
+│   ├── backend/       # Serverless backend (SST)
+│   ├── storybook/     # Storybook for UI components
+│   └── docs/          # (Optional) Fumadocs-powered docs app
+├── packages/
+│   ├── design/        # Shared design system (Radix/shadcn, Tailwind v4)
+│   ├── config/        # Shared runtime config + environment helpers
+│   ├── constants/     # Shared constants (plans, etc.)
+│   ├── schemas/       # Shared Zod schemas (validation/forms)
+│   ├── logs/          # Logging utilities (backend only)
+│   ├── ai/            # AI utilities/integration
+│   ├── analytics/     # Analytics utilities (PostHog)
+│   ├── seo/           # SEO helpers and metadata
+│   ├── utils/         # General utilities (formatting, time, etc.)
+│   ├── email/         # Email helpers
+│   ├── eslint/        # Shared ESLint config
+│   └── tsconfig/      # Shared TypeScript config
+├── infra/             # SST/AWS infrastructure
+├── scripts/           # Project init, Stripe setup, migrations, etc.
+├── templates/         # Scaffolding templates for new packages/apps
+├── prompts/           # Prompt files for AI-assisted workflows
+├── sst.config.ts      # SST application config
+├── turbo.json         # Turborepo pipeline config
+├── pnpm-workspace.yaml
+└── README.md
+```
+
+</project_structure>
+
+<apps_overview>
+
+- `apps/web`:
+  - Next.js (TypeScript), Tailwind CSS v4, `@repo/design` components
+  - tRPC React client + TanStack Query; Jotai for global state
+  - Better Auth client integration; PostHog analytics and sourcemaps
+- `apps/backend`:
+  - SST (AWS), Hono, tRPC server with SuperJSON
+  - Prisma with Postgres, Stripe integration, Better Auth server
+  - Vitest for backend tests; migrations and DB helpers under `scripts/`
+- `apps/storybook`:
+  - Storybook configuration and stories for UI components
+- `apps/docs` (optional):
+  - Next.js + Fumadocs for documentation
+
+</apps_overview>
+
+<packages_overview>
+
+- `@repo/design`: Component library (Radix/shadcn), theming, global styles
+- `@repo/config`: Shared configuration and env accessors (web + backend variants)
+- `@repo/constants`: Shared constants (e.g., plans)
+- `@repo/schemas`: Zod schemas for validation
+- `@repo/logs`: Logging utilities (backend only)
+- `@repo/ai`: AI utilities (backend only)
+- `@repo/analytics`: Analytics utilities (PostHog)
+- `@repo/seo`: SEO helpers and metadata
+- `@repo/utils`: General utilities (formatting, time, etc.)
+- `@repo/email`: Email helpers
+- `@repo/eslint`, `@repo/tsconfig`: Shared linting and TS config
+
+</packages_overview>
+
+<infra_overview>
+
+- SST stacks and deployment configuration in `infra/`
+- Primary configuration is in `sst.config.ts`
+- Directory structure:
+
+  ```text
+  /infra
+  ├── api           # API Gateway
+  ├── constants     # Shared constants (domain, etc.)
+  ├── docs          # Documentation site (Fumadocs)
+  ├── secrets       # Shared secrets (AWS Secrets Manager)
+  └── web           # Web app (Next.js)
+  ```
+
+</infra_overview>
+
+<testing_overview>
+
+- Backend: Vitest with in-memory SQLite for realistic integration testing
+- Web: Vitest for unit tests; Playwright for end-to-end tests
+
+</testing_overview>

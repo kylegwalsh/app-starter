@@ -1,5 +1,6 @@
 import { stripe } from '@better-auth/stripe';
 import { config, env } from '@repo/config';
+import { plans } from '@repo/constants';
 import { email } from '@repo/email';
 import { betterAuth, BetterAuthOptions } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
@@ -56,12 +57,7 @@ const authConfig = {
       // Configure stripe plans
       subscription: {
         enabled: true,
-        plans: [
-          {
-            name: 'basic',
-            priceId: 'price_1234567890',
-          },
-        ],
+        plans: Object.values(plans),
       },
     }),
   ],

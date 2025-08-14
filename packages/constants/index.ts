@@ -1,1 +1,1 @@
-export const MY_CONSTANT = 'example';
+export * from './plans';

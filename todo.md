@@ -1,5 +1,7 @@
 # TODO
 
+- Fix AuthProvider settings field being moved
+- Update billing.test with new logic and mock user factory
 - Add stripe support
   - Add plugin for better auth
   - Add stripe to the setup script
@@ -8,10 +10,10 @@
   - Comment out plans in stripe plugin
 - Maybe add some react-form utils
 - Test migration logic in CI
-- Consider implementing posthog feature flags
-- Decide on global state management (add it and a README mentioning it in the web app)
+- Make sure light mode looks good
+- Consider implementing posthog/vercel feature flags
 - Cursor rules
-- Add marketing site setup (get prompts / framework from Chad)
+- Expand or deprecate all mention of the "prompts" folder
 - Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)
 - Ensure langfuse is using correct "environment" field
 - Consider flushing langfuse locally to ensure testing traces appear with lcl environment

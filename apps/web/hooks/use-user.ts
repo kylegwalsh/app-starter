@@ -1,7 +1,7 @@
 import { auth } from '@/core';
 
 /** Grabs the current user's details */
-export const useCurrentUser = () => {
+export const useUser = () => {
   const { data, isPending, error, refetch } = auth.useSession();
   const user = data?.user;
 

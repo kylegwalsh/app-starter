@@ -50,7 +50,7 @@ export const AppSidebar: FC = ({ children }) => {
           <OrganizationSwitcher
             classNames={{
               trigger: {
-                base: 'w-full h-fit group-data-[collapsible=icon]:!bg-transparent group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:[&>svg]:hidden',
+                base: 'w-full group-data-[collapsible=icon]:!bg-transparent group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:[&>svg]:hidden',
                 user: {
                   content: 'group-data-[collapsible=icon]:hidden',
                   title: 'group-data-[collapsible=icon]:hidden',

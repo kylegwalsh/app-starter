@@ -18,7 +18,8 @@ const SettingsLayout: FC = ({ children }) => {
     () => [
       { label: 'General', href: '/settings' },
       { label: 'Account', href: '/settings/account' },
-      { label: 'Payment', href: '/settings/payment' },
+      { label: 'Plans', href: '/settings/plans' },
+      { label: 'Billing', href: '/settings/billing' },
       // Only show the organization tab if the user is logged into their organization
       ...(isActive ? [{ label: 'Organization', href: '/settings/organization' }] : []),
     ],

@@ -40,7 +40,7 @@
   "Create Generic Function Type": {
     "scope": "typescript,typescriptreact,javascript,react",
     "prefix": "function-type",
-    "body": ["(...args: any[]) => any"],
+    "body": ["(...args: unknown[]) => void"],
     "description": "Inserts a generic function type",
   },
   "Create React Hook": {

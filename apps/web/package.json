@@ -22,7 +22,7 @@
     "postinstall": "npx playwright install chromium --with-deps"
   },
   "dependencies": {
-    "@daveyplate/better-auth-ui": "^2.0.16",
+    "@daveyplate/better-auth-ui": "^3.0.0",
     "@posthog/nextjs-config": "^1.0.0",
     "@repo/analytics": "workspace:*",
     "@repo/config": "workspace:*",

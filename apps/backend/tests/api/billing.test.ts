@@ -17,7 +17,7 @@ describe('Example Route Test', () => {
     });
 
     // Ensure the router returns the correct count
-    const result = await trpc.test();
+    const result = await trpc.billing.getPortalUrl();
     expect(result).toBe(1);
   });
 });

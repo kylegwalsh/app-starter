@@ -64,6 +64,10 @@ export const format = {
   number: (number: number) => {
     return number.toLocaleString();
   },
+  /** Formats a number as a currency */
+  currency: (number: number) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(number);
+  },
   /** Formats date as "Oct 31, 2018" default case (can provide override format) */
   date: (date: Date, format = 'MMM D, YYYY') => dayjs(date).format(format),
   /** Formats time as "12:30 PM" */

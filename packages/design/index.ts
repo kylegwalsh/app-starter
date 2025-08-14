@@ -3,6 +3,7 @@
 // for tree-shaking to prevent the bundle from getting too large
 export * from './components/brand';
 export * from './components/layout';
+export * from './components/payment';
 export * from './components/providers';
 export * from './components/ui';
 export * from './hooks';

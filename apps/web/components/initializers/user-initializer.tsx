@@ -5,11 +5,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 import { storage } from '@/core';
-import { useCurrentUser } from '@/hooks';
+import { useUser } from '@/hooks';
 
 /** Watches user changes and performs tasks */
 export const UserInitializer = () => {
-  const { user, isLoading, isLoggedIn } = useCurrentUser();
+  const { user, isLoading, isLoggedIn } = useUser();
   const queryClient = useQueryClient();
   const [previouslyIdentified, setPreviouslyIdentified] = useState(false);
 
