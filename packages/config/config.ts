@@ -31,6 +31,12 @@ if (!appUrl) {
   } catch {}
 }
 
+/** The URL of our API */
+let apiUrl = '';
+try {
+  apiUrl = process.env.NEXT_PUBLIC_API_URL ?? resources?.api?.url ?? '';
+} catch {}
+
 /** Whether this application is running as one of our main deployments (not locally) */
 const isDeployment = ['prod', 'dev'].includes(stage ?? '');
 
@@ -55,7 +61,7 @@ export const config = {
   /** Details for our backend API */
   api: {
     /** The URL of our own API (found differently for frontend and backend) */
-    url: process.env.NEXT_PUBLIC_API_URL ?? resources?.api?.url,
+    url: apiUrl,
   },
   /** The configuration for PostHog (our analytics system) */
   posthog: {

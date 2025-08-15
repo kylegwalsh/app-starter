@@ -25,8 +25,8 @@ model User {
   test          Boolean?
   emailVerified Boolean
   image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
 
@@ -48,8 +48,8 @@ model Session {
   id        String   @id
   expiresAt DateTime
   token     String
-  createdAt DateTime
-  updatedAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   ipAddress String?
   userAgent String?
   userId    String
@@ -75,19 +75,19 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
-  createdAt             DateTime
-  updatedAt             DateTime
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   @@map("account")
 }
 
 model Verification {
-  id         String    @id
+  id         String   @id
   identifier String
   value      String
   expiresAt  DateTime
-  createdAt  DateTime?
-  updatedAt  DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@map("verification")
 }
@@ -97,7 +97,7 @@ model Organization {
   name        String
   slug        String?
   logo        String?
-  createdAt   DateTime
+  createdAt   DateTime     @default(now())
   metadata    String?
   members     Member[]
   invitations Invitation[]
@@ -113,7 +113,7 @@ model Member {
   userId         String
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   role           String
-  createdAt      DateTime
+  createdAt      DateTime     @default(now())
 
   @@map("member")
 }
@@ -151,8 +151,8 @@ model Apikey {
   remaining           Int?
   lastRequest         DateTime?
   expiresAt           DateTime?
-  createdAt           DateTime
-  updatedAt           DateTime
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
   permissions         String?
   metadata            String?
 

@@ -1,0 +1,115 @@
+---
+description: These are the guidelines for the backend portion of the app.
+globs: apps/backend/**/*
+alwaysApply: false
+---
+
+<code_editing_rules>
+
+<guiding_principles>
+
+- Clarity and Reuse: Keep modules small, focused, and composable. Extract repeated logic into shared utilities or domain-specific modules.
+- Consistency: Prefer established backend patterns (routing, context, error handling, logging). Use shared packages for config, schemas, logs, and utils.
+- Simplicity: Choose straightforward designs over clever abstractions. Optimize for readability and maintainability.
+- Reliability: Prioritize type-safety, input validation, transactional integrity, and explicit error handling.
+- Observability: Produce structured logs, useful error messages, and metrics-friendly patterns using our `@repo/logs` package.
+
+</guiding_principles>
+
+<backend_stack_defaults>
+
+- Runtime: Node.js + TypeScript
+- Framework/Infra: SST (AWS) for infra, Lambda handlers for runtime
+- API: tRPC
+- Database: Prisma (Postgres in prod; SQLite in tests)
+- Auth: Better Auth (user/org), passed through request context
+- Payments: Stripe (webhooks, billing flows)
+- Tests: Vitest
+- Directory Structure:
+
+  ```text
+  /core        # Core services (auth, stripe, etc)
+  /db          # Prisma schema, migrations, connection utilities
+  /functions   # Lambda entrypoints (api, auth, crons)
+  /routes      # tRPC routers, context, procedures, middleware
+  /tests       # Vitest setup, factories, mocks
+  ```
+
+</backend_stack_defaults>
+
+<architecture_and_directories>
+
+- Entrypoints live under `apps/backend/functions`. You should be able to just use tRPC routes for most changes.
+- Route logic belongs in `apps/backend/routes` (transport concerns separate from domain logic).
+- Core integrations and helpers (auth clients, stripe helpers, etc) live in `apps/backend/core`.
+- Database schemas live in `apps/backend/db` and go through Prisma.
+
+</architecture_and_directories>
+
+<code_style_and_structure>
+
+- Helper Modules: Export helpers as cohesive namespaced objects with related sub-methods (e.g., `time.parse()`, `time.format()`), rather than scattering many unrelated top-level functions.
+- Naming: Use meaningful, descriptive names; avoid abbreviations. Functions are verbs; values are nouns.
+- Control Flow: Use guard clauses and early returns. Avoid deep nesting beyond two levels.
+- Errors: Throw typed/semantic errors; never swallow errors silently. Map errors to HTTP-appropriate responses at the edge.
+- Validation: Validate all complex external inputs with Zod schemas from `@repo/schemas`.
+- Types: Strongly type public APIs and module boundaries. Avoid `any`; prefer generics or discriminated unions.
+- Comments: Be generous about including helpful comments where appropriate.
+- Formatting: Match repo style. Favor multi-line readability over dense one-liners.
+
+</code_style_and_structure>
+
+<api_and_routing>
+
+- Routes: Create new tRPC routes in `apps/backend/routes`.
+- Context: Request context is passed to all routes via the `apps/backend/routes/trpc/context` file.
+- Procedures: Procedures are defined in the `apps/backend/routes/trpc/procedures` file.
+- Errors: Errors are automatically handled by the `apps/backend/routes/trpc/error` file.
+
+</api_and_routing>
+
+<database_and_migrations>
+
+- Prisma as the single source of truth; schema changes go through migrations in `apps/backend/db/migrations`.
+- When working locally, we make changes by just running `pnpm backend db:push`.
+- When we're ready to deploy, we generate an actual migration to sync the database state with `pnpm backend db:migrate`.
+- Prefer Prisma query builders over raw SQL. Use raw queries only when necessary and always parameterize.
+- Transactions: When possible, group multi-step mutations in a single transaction to ensure consistency.
+- Indexes: Add indexes in migrations for frequently queried fields.
+
+</database_and_migrations>
+
+<auth_and_security>
+
+- Better Auth: We derive identity and org membership in request context. Enforce access via middleware/procedures.
+- Secrets: Never log secrets or PII. Use the `env` export from `@repo/config` to access env vars; fail fast if required values are missing.
+- Webhooks: Verify signatures (e.g., Stripe) and handle idempotency.
+
+</auth_and_security>
+
+<observability_and_operations>
+
+- Logging: Use `@repo/logs` for structured logs (leverages `pino` library).
+- Retries/Backoff: For transient external failures, use bounded retries with timeouts. Make operations idempotent.
+
+</observability_and_operations>
+
+<testing>
+
+- Runner: Vitest.
+- Database: Tests use a mocked Prisma client backed by in-memory SQLite, provided in `apps/backend/tests/mocks/db.ts`.
+- tRPC Factory: Router callers are initialized with a default user for testing in `apps/backend/tests/factories/trpc.ts` (additional factories exist alongside it).
+- Scope: Prefer integration-style tests that exercise routes/procedures and DB interactions with minimal mocking. Always at least test the basic cases for each route.
+- Isolation: Each test must be independent; we reset the DB state between tests.
+
+</testing>
+
+<review_and_ci>
+
+- Lint/Typecheck: Ensure no linter or type errors. Keep public types stable.
+- Edits: Keep changes scoped and well-factored. Avoid mixing refactors with behavior changes.
+- Tests: Add/adjust tests alongside changes. Ensure green test run locally before merging.
+
+</review_and_ci>
+
+</code_editing_rules>

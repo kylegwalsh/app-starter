@@ -1,12 +1,11 @@
 # TODO
 
-- Fix AuthProvider settings field being moved
-- Update billing.test with new logic and mock user factory
 - Add stripe support
   - Add plugin for better auth
   - Add stripe to the setup script
     - Maybe comment out stripe client or ensure it doesn't run without env vars (like langfuse)
-  - Create /settings/payments page
+  - Create /settings/payments page (ability to add / cancel plan)
+  - Ensure normal charges work with stripe and billing table looks good
   - Comment out plans in stripe plugin
 - Maybe add some react-form utils
 - Test migration logic in CI

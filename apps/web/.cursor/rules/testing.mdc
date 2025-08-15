@@ -1,0 +1,65 @@
+---
+description: How to run and write web app tests (unit + e2e)
+globs: apps/web/**/*
+alwaysApply: false
+---
+
+<testing_rules>
+
+<how_to_run_tests>
+
+- Unit tests use Vitest. End-to-end tests use Playwright.
+
+- Unit test command:
+
+```bash
+pnpm web test [-- <vitest-args>]
+```
+
+- Examples:
+  - Watch mode UI:
+
+```bash
+pnpm web test:ui
+```
+
+- Run a specific file with verbose reporter:
+
+```bash
+pnpm web test -- tests/e2e/render.test.ts --reporter=verbose
+```
+
+- E2E test command:
+
+```bash
+pnpm web test:e2e [-- <playwright-args>]
+```
+
+- Examples:
+  - Headed and UI mode:
+
+```bash
+pnpm web test:e2e:ui
+```
+
+- Filter by title:
+
+```bash
+pnpm web test:e2e -- -g "renders dashboard"
+```
+
+- Environment: Tests run under `sst shell`, so environment variables and SST bindings are available at runtime.
+
+</how_to_run_tests>
+
+<guidelines>
+
+- Prefer unit tests for component logic and hooks. Use E2E for user flows.
+- Keep unit tests fast and deterministic; mock network calls and time.
+- For E2E, prefer stable selectors (data-testid) and avoid asserting on transient animations.
+- Mocks: Only mock external services; prefer mocking low-level modules by their concrete path rather than high-level barrels.
+- Do NOT mock `@repo/config`. It is initialized via `sst shell`.
+
+</guidelines>
+
+</testing_rules>

@@ -85,7 +85,7 @@ export default $config({
 
       // ---------- ENVIRONMENT ----------
       // Add any environment variables
-      args.environment = {
+      args.environment ??= {
         // Add this so that AWS will re-use TCP connections instead of re-connecting every time
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       };

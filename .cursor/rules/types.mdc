@@ -1,0 +1,24 @@
+---
+description: These are the type rules for this app.
+globs: **.ts,**.tsx
+alwaysApply: false
+---
+
+<type_guidelines>
+
+- Prefer `type` over `interface` for defining shapes; compose with unions/intersections; avoid declaration merging and `namespace`.
+- Prefer inference over re-declaration. Annotate return types only for exported/public APIs; let locals infer.
+- Derive from implementations instead of duplicating:
+  - Use `ReturnType<typeof fn>` and `Awaited<ReturnType<typeof fn>>` for function and async results.
+  - Use `z.infer<typeof Schema>` for Zod schemas.
+  - Use generated `@prisma/client` types for DB entities and inputs.
+- Avoid `any`. If a boundary requires an unknown shape, use `unknown` and narrow immediately via type guards.
+- Narrowing: Use discriminated unions such as `in`, `typeof`, `Array.isArray`, etc.
+- Prefer string literal unions over enums. For value maps, use `as const` objects and `keyof typeof`.
+- Utility types: Use `Pick`, `Omit`, `Partial`, `Required`, `Readonly`, `Record`, `NonNullable`, `Extract`, `Exclude` to transform shapes safely.
+- `satisfies`: Prefer the `satisfies` operator for constant objects to keep keys/types in sync without widening.
+- Nullability: Prefer `undefined` for optional fields. Use `null` only when it is a meaningful domain value and model it explicitly.
+- Assertions: Avoid non-null (`!`) and type assertions; model types correctly or narrow.
+- Documentation: Use concise JSDoc on exported types/functions to document intent and constraints.
+
+</type_guidelines>

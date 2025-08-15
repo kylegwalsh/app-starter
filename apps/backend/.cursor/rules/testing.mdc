@@ -1,0 +1,43 @@
+---
+description: How to run and write backend tests
+globs: apps/backend/**/*.test.ts
+alwaysApply: false
+---
+
+<testing_rules>
+
+<how_to_run_tests>
+
+- Use the workspace script to run backend tests.
+- Command:
+
+```bash
+pnpm backend test [-- <vitest-args>]
+```
+
+- Run a specific file with verbose reporter:
+
+```bash
+pnpm backend test -- tests/api/billing.test.ts --reporter=verbose
+```
+
+- Environment: Tests run under `sst shell`, so environment variables and SST bindings are available at runtime.
+
+</how_to_run_tests>
+
+<guidelines>
+
+- Runner: Vitest.
+- Database: Tests use a mocked Prisma client backed by in-memory SQLite, provided in `apps/backend/tests/mocks/db.ts`.
+- tRPC Factory: Router callers are initialized with a default user for testing in `apps/backend/tests/factories/trpc-factory.ts` (additional factories exist alongside it).
+- Scope: Prefer integration-style tests that exercise routes/procedures and DB interactions with minimal mocking. Always at least test the basic cases for each route.
+- Isolation: Each test must be independent; we reset the DB state between tests.
+- Mocks: Only mock external services (e.g., Stripe, HTTP calls). Prefer mocking low-level modules by their concrete file path (e.g., `@/core/stripe`) instead of high-level barrels like `@/core`.
+- Do NOT mock `@repo/config`. It is initialized via `sst shell` with environment and resource bindings.
+- Example: See `apps/backend/tests/api/billing.test.ts` for a good test example including mocking and our tRPC caller pattern.
+- Errors: Assert on expected error types/messages for unhappy paths.
+- Performance: Keep tests fast; avoid unnecessary sleeps/timeouts.
+
+</guidelines>
+
+</testing_rules>

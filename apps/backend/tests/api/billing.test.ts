@@ -1,23 +1,99 @@
-import { db } from '@/db';
+import { trpcFactory } from '../factories';
 
-import { trpc } from '../mocks/trpc';
-
-describe('Example Route Test', () => {
-  it('should have access to the tRPC router', async () => {
-    // Create item in DB
-    await db.user.create({
-      data: {
-        id: 'test-user-id',
-        email: 'test@test.com',
-        name: 'Test User',
-        emailVerified: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+// Mock stripe
+const { mockStripe } = vi.hoisted(() => ({
+  mockStripe: {
+    billingPortal: {
+      sessions: {
+        create: vi.fn(),
       },
+    },
+    invoices: {
+      list: vi.fn(),
+    },
+    charges: {
+      list: vi.fn(),
+    },
+  },
+}));
+vi.mock('@/core/stripe', () => ({ stripe: mockStripe }));
+
+// Test our router
+describe('Billing Router', () => {
+  let trpc: Awaited<ReturnType<typeof trpcFactory.createRouter>>['router'];
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const mock = await trpcFactory.createRouter({
+      user: { stripeCustomerId: 'test-customer-id' },
+    });
+    trpc = mock.router;
+  });
+
+  describe('getPortalUrl', () => {
+    it('throws when user has no Stripe customer ID', async () => {
+      const { router: noStripeTrpc } = await trpcFactory.createRouter({
+        user: { stripeCustomerId: null },
+      });
+
+      await expect(noStripeTrpc.billing.getPortalUrl()).rejects.toThrow(
+        'User does not have a Stripe customer ID'
+      );
     });
 
-    // Ensure the router returns the correct count
-    const result = await trpc.billing.getPortalUrl();
-    expect(result).toBe(1);
+    it('returns a billing portal URL when user has a Stripe customer ID', async () => {
+      const url = 'https://stripe.test/portal/session_123';
+      mockStripe.billingPortal.sessions.create.mockResolvedValueOnce({ url });
+
+      const result = await trpc.billing.getPortalUrl();
+      expect(result).toEqual({ url });
+    });
+  });
+
+  describe('getHistory', () => {
+    it('returns an empty history when user has no Stripe customer ID', async () => {
+      const result = await trpc.billing.getHistory();
+      expect(result).toEqual({ history: [] });
+    });
+
+    it('returns combined and sorted history from invoices and charges', async () => {
+      mockStripe.invoices.list.mockResolvedValueOnce({
+        data: [
+          {
+            id: 'in_1',
+            amount_paid: 5000,
+            status: 'paid',
+            description: null,
+            created: 200,
+            hosted_invoice_url: 'https://stripe.test/invoices/in_1',
+          },
+        ],
+      });
+      mockStripe.charges.list.mockResolvedValueOnce({
+        data: [
+          {
+            id: 'ch_1',
+            amount: 2500,
+            status: 'succeeded',
+            description: 'Test charge',
+            created: 100,
+            receipt_url: 'https://stripe.test/charges/ch_1',
+          },
+        ],
+      });
+
+      const { history } = await trpc.billing.getHistory();
+      expect(history).toHaveLength(2);
+      // Should be sorted desc by date, so invoice (created 200) first
+      expect(history[0]).toMatchObject({ id: 'in_1', type: 'invoice', amount: 50 });
+      expect(history[1]).toMatchObject({ id: 'ch_1', type: 'payment', amount: 25 });
+    });
+
+    it('returns empty history if Stripe APIs throw', async () => {
+      mockStripe.invoices.list.mockRejectedValueOnce(new Error('stripe down'));
+
+      const result = await trpc.billing.getHistory();
+      expect(result).toEqual({ history: [] });
+    });
   });
 });

@@ -1,4 +1,5 @@
 ---
+description: These are the guidelines for the frontend portion of the app.
 globs: apps/web/**/*
 alwaysApply: false
 ---
