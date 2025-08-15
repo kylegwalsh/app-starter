@@ -1,5 +1,6 @@
 # TODO
 
+- Ensure stripe is automatically creating the customer and their stripe id on sign up (maybe add fallback handling)
 - Add stripe support
   - Add plugin for better auth
   - Add stripe to the setup script
