@@ -8,18 +8,19 @@ import {
 } from '@daveyplate/better-auth-ui';
 import * as React from 'react';
 
-import { SettingsLayout } from '@/components';
+import { DashboardLayout } from '@/components';
 
 /** The account settings page */
 export default function AccountSettingsPage() {
   return (
-    <SettingsLayout
+    <DashboardLayout
       title="Your profile"
-      description="Update your account settings and login details">
+      description="Update your account settings and login details"
+      className="px-0">
       <UpdateAvatarCard />
       <UpdateNameCard />
       <ChangeEmailCard />
       <ChangePasswordCard />
-    </SettingsLayout>
+    </DashboardLayout>
   );
 }

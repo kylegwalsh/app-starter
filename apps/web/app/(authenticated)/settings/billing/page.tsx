@@ -15,7 +15,7 @@ import Link from 'next/link';
 import React from 'react';
 
 import { BillingHistory } from '@/components';
-import { SettingsLayout } from '@/components';
+import { DashboardLayout } from '@/components';
 import { trpc } from '@/core';
 
 /** The payment and billing settings page */
@@ -24,9 +24,10 @@ export default function BillingPage() {
   const { url } = data ?? {};
 
   return (
-    <SettingsLayout
+    <DashboardLayout
       title="Billing"
-      description="Manage your payment settings and access billing information">
+      description="Manage your payment settings and access billing information"
+      className="px-0">
       <div className="flex flex-col gap-6">
         <SettingsCard
           title="Manage payment settings"
@@ -63,6 +64,6 @@ export default function BillingPage() {
           </CardContent>
         </Card>
       </div>
-    </SettingsLayout>
+    </DashboardLayout>
   );
 }

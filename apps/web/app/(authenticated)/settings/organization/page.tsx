@@ -12,7 +12,7 @@ import { LoadingLayout } from '@repo/design';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
-import { SettingsLayout } from '@/components';
+import { DashboardLayout } from '@/components';
 import { useOrganization } from '@/hooks';
 
 /** The organization settings page */
@@ -33,13 +33,16 @@ export default function OrganizationSettingsPage() {
   }
 
   return (
-    <SettingsLayout title="Organization" description="Update your organization settings">
+    <DashboardLayout
+      title="Organization"
+      description="Update your organization settings"
+      className="px-0">
       <OrganizationLogoCard />
       <OrganizationNameCard />
       <OrganizationSlugCard />
       <OrganizationMembersCard />
       <OrganizationInvitationsCard />
       <DeleteOrganizationCard />
-    </SettingsLayout>
+    </DashboardLayout>
   );
 }

@@ -43,7 +43,7 @@ import {
 import * as React from 'react';
 
 import { Header } from '@/components';
-import { DashboardLayout } from '@/components/dashboard-layout';
+import { DashboardLayout } from '@/components';
 
 // ----- Types -----
 

@@ -2,13 +2,13 @@
 
 import React from 'react';
 
-import { PlanCards, SettingsLayout } from '@/components';
+import { DashboardLayout, PlanCards } from '@/components';
 
 /** The plans settings page */
 export default function PlansPage() {
   return (
-    <SettingsLayout title="Plans" description="Find a plan that works for you">
+    <DashboardLayout title="Plans" description="Find a plan that works for you" className="px-0">
       <PlanCards />
-    </SettingsLayout>
+    </DashboardLayout>
   );
 }
