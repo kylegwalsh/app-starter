@@ -13,7 +13,6 @@
 - Make sure light mode looks good
 - Consider implementing posthog/vercel feature flags
 - Cursor rules
-- Expand or deprecate all mention of the "prompts" folder
 - Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)
 - Ensure langfuse is using correct "environment" field
 - Consider flushing langfuse locally to ensure testing traces appear with lcl environment

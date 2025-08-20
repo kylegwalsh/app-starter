@@ -1,0 +1,10 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+<function_guidelines>
+
+- Prefer `const` with arrow functions (`const fn = () => {}`) over `function fn() {}`. Keep exported page and component functions named for clarity.
+
+</function_guidelines>

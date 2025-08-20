@@ -73,6 +73,18 @@ export const AppSidebar: FC = ({ children }) => {
               ]}
             />
           </SidebarGroup>
+          <SidebarGroup>
+            <AppSidebarGroup
+              label="Investments"
+              navItems={[
+                {
+                  title: 'Sleeves',
+                  url: '/sleeves',
+                  icon: LayoutDashboard,
+                },
+              ]}
+            />
+          </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
           <AppSidebarGroup

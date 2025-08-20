@@ -47,4 +47,11 @@ alwaysApply: false
 
 </ui_ux_best_practices>
 
+
+<nextjs_best_practices>
+
+- Next.js pages: Always use named exports with explicit, descriptive names (e.g., `export default function SettingsPage() {}`) rather than anonymous defaults.
+
+</nextjs_best_practices>
+
 <code_editing_rules>
