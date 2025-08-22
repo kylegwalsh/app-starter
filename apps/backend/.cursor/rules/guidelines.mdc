@@ -76,6 +76,7 @@ alwaysApply: false
 - Prefer Prisma query builders over raw SQL. Use raw queries only when necessary and always parameterize.
 - Transactions: When possible, group multi-step mutations in a single transaction to ensure consistency.
 - Indexes: Add indexes in migrations for frequently queried fields.
+- You should never try to run migrations yourself. If you need to update the schema, just run `pnpm backend db:generate`.
 
 </database_and_migrations>
 

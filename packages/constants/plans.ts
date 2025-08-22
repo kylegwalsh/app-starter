@@ -17,8 +17,8 @@ export const plans = {
     title: 'Free',
     price: 0,
     annualPrice: 0,
-    priceId: 'price_1RstZwF1kcHuFeSjmUap4a30',
-    annualDiscountPriceId: 'price_1RstZwF1kcHuFeSjmUap4a30',
+    priceId: '',
+    annualDiscountPriceId: '',
   },
   pro: {
     name: 'pro',

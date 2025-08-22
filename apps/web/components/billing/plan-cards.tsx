@@ -4,6 +4,7 @@ import { plans } from '@repo/constants';
 import { Badge, Label, PricingCard, Switch } from '@repo/design';
 import React from 'react';
 
+import { auth } from '@/core';
 import { useUser } from '@/hooks';
 
 type Props = {
@@ -14,7 +15,22 @@ type Props = {
 /** Our list of plan cards */
 export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
   const { user } = useUser();
-  console.log(user);
+
+  /** Change the user's plan */
+  const changePlan = async (plan: keyof typeof plans) => {
+    if (plan === 'free') {
+      await auth.subscription.cancel({
+        returnUrl: '/settings/plans',
+      });
+      return;
+    } else {
+      await auth.subscription.upgrade({
+        plan,
+        successUrl: '/',
+        cancelUrl: '/settings/plans',
+      });
+    }
+  };
 
   return (
     <>
@@ -56,16 +72,18 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
           price={plans.free.price}
           description="Get started with the essentials"
           features={['1 user', 'Plan features', 'Product support']}
-          onClick={() => console.log('Free plan selected')}
+          onClick={() => void changePlan('free')}
+          // disabled={user?.subscription === 'free'}
         />
 
         <PricingCard
+          popular
           plan={plans.pro.title}
           price={plans.pro.price}
           description="Everything you need for a growing business"
           features={['5 user', 'Plan features', 'Product support']}
-          onClick={() => console.log('Team plan selected')}
-          popular
+          onClick={() => void changePlan('pro')}
+          // disabled={user?.subscription === 'pro'}
         />
 
         <PricingCard
@@ -73,7 +91,8 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
           price={plans.enterprise.price}
           description="Advanced features for scaling your business"
           features={['10 user', 'Plan features', 'Product support']}
-          onClick={() => console.log('Enterprise plan selected')}
+          onClick={() => void changePlan('enterprise')}
+          // disabled={user?.subscription === 'enterprise'}
         />
       </div>
     </>

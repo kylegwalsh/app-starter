@@ -6,12 +6,12 @@ import { usePathname } from 'next/navigation';
 import { useMemo } from 'react';
 
 import { Header } from '@/components';
-import { useOrganization } from '@/hooks';
+import { useUser } from '@/hooks';
 
 /** The layout for settings pages with top navigation */
 const SettingsLayout: FC = ({ children }) => {
   const pathname = usePathname();
-  const { isActive } = useOrganization();
+  const { isLoading, organization } = useUser();
 
   /** The settings navigation tabs */
   const settingsTabs = useMemo(
@@ -20,10 +20,14 @@ const SettingsLayout: FC = ({ children }) => {
       { label: 'Account', href: '/settings/account' },
       { label: 'Plans', href: '/settings/plans' },
       { label: 'Billing', href: '/settings/billing' },
-      // Only show the organization tab if the user is logged into their organization
-      ...(isActive ? [{ label: 'Organization', href: '/settings/organization' }] : []),
+      // Only show the organization tab if the user is logged into a non-personal organization
+      // TODO: Upgrade better auth to fix this
+      // @ts-expect-error - better auth is fixing the types here
+      ...(isLoading || organization?.isPersonal
+        ? []
+        : [{ label: 'Organization', href: '/settings/organization' }]),
     ],
-    [isActive]
+    [isLoading, organization]
   );
 
   /** The tab that is currently active based on the pathname */

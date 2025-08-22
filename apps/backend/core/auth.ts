@@ -1,4 +1,5 @@
 import { stripe } from '@better-auth/stripe';
+import { Organization } from '@prisma/client';
 import { config, env } from '@repo/config';
 import { plans } from '@repo/constants';
 import { email } from '@repo/email';
@@ -10,6 +11,102 @@ import { db } from '@/db';
 
 import { stripe as stripeClient } from './stripe';
 
+// ---------- HELPERS ----------
+/**
+ * Whether the system should support personal organizations.
+ * A valid use case for not supporting them is if you want to manually create organizations and invite users.
+ */
+const SUPPORT_PERSONAL_ORGANIZATIONS = true;
+
+/** Get or create a personal organization for a user */
+const getOrCreatePersonalOrganization = async ({ userId }: { userId: string }) => {
+  // First, try to find existing personal organization for this user
+  const existingPersonalOrg = await db.organization.findFirst({
+    where: {
+      isPersonal: true,
+      members: {
+        some: {
+          userId: userId,
+          role: 'owner',
+        },
+      },
+    },
+  });
+  if (existingPersonalOrg) return existingPersonalOrg;
+
+  // If we haven't created one, create a new personal organization
+  const personalOrg = await db.organization.create({
+    data: {
+      name: `Personal account`,
+      isPersonal: true,
+      members: {
+        create: {
+          userId: userId,
+          role: 'owner',
+        },
+      },
+    },
+  });
+
+  return personalOrg;
+};
+
+/** Get the active organization for a user, attempt to use the  */
+const getActiveOrganization = async ({
+  userId,
+  defaultOrganizationId,
+}: {
+  userId: string;
+  defaultOrganizationId?: string | null;
+}) => {
+  let activeOrganization: Organization | null = null;
+
+  // If they already have a default organization, use it
+  if (defaultOrganizationId) {
+    activeOrganization = await db.organization.findFirst({
+      where: {
+        id: defaultOrganizationId,
+        members: {
+          some: {
+            userId: userId,
+          },
+        },
+      },
+    });
+  }
+
+  // If we didn't locate their default organization, we'll try to find a new one
+  if (!activeOrganization) {
+    activeOrganization = SUPPORT_PERSONAL_ORGANIZATIONS
+      ? // If we allow personal organizations and the default organization doesn't
+        // exist for some reason (it may have been deleted), then we'll create one
+        await getOrCreatePersonalOrganization({ userId })
+      : // If we don't allow personal organizations, we'll try finding any organization the user belongs to
+        await db.organization.findFirst({
+          where: {
+            members: {
+              some: {
+                userId: userId,
+              },
+            },
+          },
+        });
+
+    // If we found a replacement, we'll update the user's default organization
+    if (activeOrganization) {
+      await db.user.update({
+        where: { id: userId },
+        data: { defaultOrganizationId: activeOrganization.id },
+      });
+    }
+  }
+  // If we STILL don't have an active organization, then we'll err
+  if (!activeOrganization) throw new Error('No organizations found for user');
+
+  return activeOrganization;
+};
+
+// ---------- CONFIG ----------
 /** The config for our Better Auth instance (defined separately to avoid TypeScript issues) */
 const authConfig = {
   secret: env.BETTER_AUTH_SECRET,
@@ -20,6 +117,76 @@ const authConfig = {
   database: prismaAdapter(db, {
     provider: 'postgresql',
   }),
+  // Add some additional fields to our user
+  user: {
+    additionalFields: {
+      defaultOrganizationId: {
+        type: 'string',
+        required: false,
+      },
+    },
+  },
+  // Create database hooks to enforce user's always have an active organization (simplifies db usage)
+  databaseHooks: {
+    user: {
+      // Ensure all new user's get a personal organization by default
+      create: {
+        after: async (user) => {
+          if (SUPPORT_PERSONAL_ORGANIZATIONS) {
+            await getOrCreatePersonalOrganization({ userId: user.id });
+          }
+        },
+      },
+    },
+    session: {
+      // When creating a session, make sure that the user has an active organization set
+      create: {
+        before: async (session) => {
+          if (session.userId) {
+            // Get the user's default organization details
+            const user = await db.user.findUnique({
+              where: { id: session.userId },
+              select: { defaultOrganizationId: true },
+            });
+
+            // Validate the default organization and grab a different one if it doesn't exist
+            const activeOrganization = await getActiveOrganization({
+              userId: session.userId,
+              defaultOrganizationId: user?.defaultOrganizationId,
+            });
+
+            return {
+              data: {
+                ...session,
+                // Add the active organization to the session
+                activeOrganizationId: activeOrganization.id,
+              },
+            };
+          }
+        },
+      },
+      // When the user updates their session, ensure we update their default organization
+      update: {
+        after: async (session) => {
+          if (session.userId) {
+            // Retrieve the session details
+            const currentSession = await db.session.findUnique({
+              where: { id: session.id },
+              select: { activeOrganizationId: true },
+            });
+
+            // If the session has an active organization, we'll update the user's default organization
+            if (currentSession?.activeOrganizationId) {
+              await db.user.update({
+                where: { id: session.userId },
+                data: { defaultOrganizationId: currentSession.activeOrganizationId },
+              });
+            }
+          }
+        },
+      },
+    },
+  },
   // Enable email and password authentication
   emailAndPassword: {
     enabled: true,
@@ -48,7 +215,19 @@ const authConfig = {
   // The various plugins we're using
   plugins: [
     admin(),
-    organization(),
+    organization({
+      schema: {
+        organization: {
+          additionalFields: {
+            isPersonal: {
+              type: 'boolean',
+              required: false,
+              returned: true,
+            },
+          },
+        },
+      },
+    }),
     apiKey(),
     stripe({
       stripeClient,
@@ -57,7 +236,7 @@ const authConfig = {
       // Configure stripe plans
       subscription: {
         enabled: true,
-        plans: Object.values(plans),
+        plans: Object.values(plans).filter((plan) => !!plan.priceId),
       },
     }),
   ],

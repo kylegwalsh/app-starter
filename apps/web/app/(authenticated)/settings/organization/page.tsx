@@ -13,22 +13,26 @@ import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
 import { DashboardLayout } from '@/components';
-import { useOrganization } from '@/hooks';
+import { useUser } from '@/hooks';
 
 /** The organization settings page */
 export default function OrganizationSettingsPage() {
-  const organization = useOrganization();
+  const { isLoading, organization } = useUser();
   const router = useRouter();
 
-  // If the user is not logged into their organization, redirect to the main settings page
+  // If the user is not logged into an organization, redirect to the main settings page
   React.useEffect(() => {
-    if (!organization.isActive && !organization.isLoading) {
+    // TODO: Upgrade better auth to fix this
+    // @ts-expect-error - better auth is fixing the types here
+    if (!isLoading && organization?.isPersonal) {
       router.push('/settings');
     }
-  }, [organization, router]);
+  }, [isLoading, organization, router]);
 
   // Show loading or nothing while redirecting
-  if (!organization.isActive) {
+  // TODO: Upgrade better auth to fix this
+  // @ts-expect-error - better auth is fixing the types here
+  if (isLoading || organization?.isPersonal) {
     return <LoadingLayout />;
   }
 

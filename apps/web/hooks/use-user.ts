@@ -1,9 +1,26 @@
 import { auth } from '@/core';
 
-/** Grabs the current user's details */
+import { useOrganization } from './use-organization';
+
+/** Grabs the current user's details along with their organization data */
 export const useUser = () => {
   const { data, isPending, error, refetch } = auth.useSession();
-  const user = data?.user;
+  const { organization, isLoading: isOrgLoading, refetch: refetchOrg } = useOrganization();
 
-  return { user, isLoggedIn: !!user, isLoading: isPending, error, refetch };
+  const user = data?.user;
+  const isLoading = isPending || isOrgLoading;
+
+  // Combined refetch function that refreshes both user and org data
+  const refetchAll = async () => {
+    await Promise.all([refetch(), refetchOrg()]);
+  };
+
+  return {
+    user,
+    organization,
+    isLoggedIn: !!user,
+    isLoading,
+    error,
+    refetch: refetchAll,
+  };
 };

@@ -19,16 +19,17 @@ datasource db {
 // ---------------------- END SETUP ---------------------- //
 
 model User {
-  id            String    @id
-  name          String
-  email         String
-  test          Boolean?
-  emailVerified Boolean
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  id                    String    @id @default(cuid())
+  name                  String
+  email                 String
+  test                  Boolean?
+  emailVerified         Boolean
+  image                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  defaultOrganizationId String?
+  sessions              Session[]
+  accounts              Account[]
 
   role        String?
   banned      Boolean?
@@ -45,7 +46,7 @@ model User {
 }
 
 model Session {
-  id        String   @id
+  id        String   @id @default(cuid())
   expiresAt DateTime
   token     String
   createdAt DateTime @default(now())
@@ -63,7 +64,7 @@ model Session {
 }
 
 model Account {
-  id                    String    @id
+  id                    String    @id @default(cuid())
   accountId             String
   providerId            String
   userId                String
@@ -82,7 +83,7 @@ model Account {
 }
 
 model Verification {
-  id         String   @id
+  id         String   @id @default(cuid())
   identifier String
   value      String
   expiresAt  DateTime
@@ -93,12 +94,13 @@ model Verification {
 }
 
 model Organization {
-  id          String       @id
+  id          String       @id @default(cuid())
   name        String
   slug        String?
   logo        String?
   createdAt   DateTime     @default(now())
   metadata    String?
+  isPersonal  Boolean      @default(false)
   members     Member[]
   invitations Invitation[]
 
@@ -107,7 +109,7 @@ model Organization {
 }
 
 model Member {
-  id             String       @id
+  id             String       @id @default(cuid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String
@@ -119,7 +121,7 @@ model Member {
 }
 
 model Invitation {
-  id             String       @id
+  id             String       @id @default(cuid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   email          String
@@ -133,7 +135,7 @@ model Invitation {
 }
 
 model Apikey {
-  id                  String    @id
+  id                  String    @id @default(cuid())
   name                String?
   start               String?
   prefix              String?
@@ -160,7 +162,7 @@ model Apikey {
 }
 
 model Subscription {
-  id                   String    @id
+  id                   String    @id @default(cuid())
   plan                 String
   referenceId          String
   stripeCustomerId     String?

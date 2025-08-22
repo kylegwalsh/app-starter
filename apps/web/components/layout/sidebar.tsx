@@ -27,6 +27,8 @@ import { usePathname } from 'next/navigation';
 import * as React from 'react';
 import { ComponentType, SVGProps } from 'react';
 
+import { useUser } from '@/hooks';
+
 /** The type for a navigation item */
 type NavItem = {
   /** The text to show with this item */
@@ -43,11 +45,14 @@ type NavItem = {
 
 /** The sidebar for the application */
 export const AppSidebar: FC = ({ children }) => {
+  const { organization } = useUser();
+
   return (
     <>
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <OrganizationSwitcher
+            hidePersonal
             classNames={{
               trigger: {
                 base: 'w-full group-data-[collapsible=icon]:!bg-transparent group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:[&>svg]:hidden',
@@ -55,6 +60,17 @@ export const AppSidebar: FC = ({ children }) => {
                   content: 'group-data-[collapsible=icon]:hidden',
                   title: 'group-data-[collapsible=icon]:hidden',
                   subtitle: 'group-data-[collapsible=icon]:hidden',
+                },
+                organization: {
+                  subtitle: 'hidden',
+                },
+              },
+              content: {
+                // TODO: Upgrade better auth to fix this
+                // @ts-expect-error - better auth is fixing the types here
+                base: organization?.isPersonal ? '[&_a]:hidden' : '',
+                organization: {
+                  subtitle: 'hidden',
                 },
               },
             }}
