@@ -1,13 +1,16 @@
+import { Organization } from '@prisma/client';
 import { addLogMetadata } from '@repo/logs';
 import { log } from '@repo/logs';
 import { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
 import { APIGatewayProxyEventV2 } from 'aws-lambda';
 
 import { auth, AuthUser } from '@/core';
+import { db } from '@/db';
 
 /** The context type for our tRPC calls */
 export type Context = {
   user?: AuthUser;
+  organization?: Organization;
 };
 
 /**
@@ -23,9 +26,10 @@ export const createContext = async ({
 
   // If we have a better auth cookie, we will attempt to populate the user context
   let user: AuthUser | undefined;
+  let organization: Organization | undefined;
   try {
     if (cookies.includes('better-auth')) {
-      const session = await auth.api.getSession({
+      const sessionData = await auth.api.getSession({
         // It needs the cookie header to get the session, but lambda removes it
         // so we need to re-add it manually here
         headers: {
@@ -33,7 +37,16 @@ export const createContext = async ({
           cookie: event.cookies?.join('; ') ?? '',
         },
       });
-      user = session?.user;
+      user = sessionData?.user;
+
+      // If the user has an active organization, we will populate the organization context
+      const activeOrganizationId = sessionData?.session?.activeOrganizationId;
+      if (activeOrganizationId) {
+        organization =
+          (await db.organization.findUnique({
+            where: { id: activeOrganizationId },
+          })) ?? undefined;
+      }
     }
   } catch (error) {
     log.warn({ error }, 'Failed to get session');
@@ -46,5 +59,5 @@ export const createContext = async ({
   });
 
   // Return context
-  return { user };
+  return { user, organization };
 };

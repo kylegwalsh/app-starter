@@ -25,23 +25,23 @@ describe('Billing Router', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     const mock = await trpcFactory.createRouter({
-      user: { stripeCustomerId: 'test-customer-id' },
+      organization: { stripeCustomerId: 'test-customer-id' },
     });
     trpc = mock.router;
   });
 
   describe('getPortalUrl', () => {
-    it('throws when user has no Stripe customer ID', async () => {
+    it('throws when organization has no Stripe customer ID', async () => {
       const { router: noStripeTrpc } = await trpcFactory.createRouter({
-        user: { stripeCustomerId: null },
+        organization: { stripeCustomerId: null },
       });
 
       await expect(noStripeTrpc.billing.getPortalUrl()).rejects.toThrow(
-        'User does not have a Stripe customer ID'
+        'Organization does not have a Stripe customer ID'
       );
     });
 
-    it('returns a billing portal URL when user has a Stripe customer ID', async () => {
+    it('returns a billing portal URL when organization has a Stripe customer ID', async () => {
       const url = 'https://stripe.test/portal/session_123';
       mockStripe.billingPortal.sessions.create.mockResolvedValueOnce({ url });
 
@@ -51,7 +51,7 @@ describe('Billing Router', () => {
   });
 
   describe('getHistory', () => {
-    it('returns an empty history when user has no Stripe customer ID', async () => {
+    it('returns an empty history when organization has no Stripe customer ID', async () => {
       const result = await trpc.billing.getHistory();
       expect(result).toEqual({ history: [] });
     });

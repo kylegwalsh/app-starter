@@ -1,22 +1,24 @@
 # TODO
 
-- Figure out why stripe types broke in billing router
-- Get organization in the trpc context for basically all db queries
+- BETTER AUTH NEEDS TO ADD BETTER STRIPE SUPPORT FOR ORGANIZATIONS (https://github.com/better-auth/better-auth/issues/3772, https://github.com/better-auth/better-auth/issues/2079)
 - Add stripe support
+
+  - Attach stripeCustomerId to organization
+  - Uncomment billing router
   - Create /settings/plans page (ability to add / cancel plan)
   - Ensure subscriptions work with organizations
   - Test normal charges + subscriptions
   - Comment out plans in stripe plugin
   - Maybe comment out stripe client or ensure it doesn't run without env vars (like langfuse) - ensure it works with setup script
+
+- Ensure langfuse is using correct "environment" field
+- Consider flushing langfuse locally to ensure testing traces appear with lcl environment
 - Maybe add some react-form utils
 - Test migration logic in CI
 - Make sure light mode looks good
 - Consider implementing posthog/vercel feature flags
-- Cursor rules
-- Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)
-- Ensure langfuse is using correct "environment" field
-- Consider flushing langfuse locally to ensure testing traces appear with lcl environment
 - When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
+- Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)
 - Lock packages to a certain version in package.json's
 - Add README's to all packages / apps
 - Debug why first stripe invocation causes SST proxy to die (could be related to below issue) - https://github.com/sst/sst/issues/6051

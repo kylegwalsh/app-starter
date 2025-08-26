@@ -8,37 +8,38 @@ import { protectedProcedure } from './trpc/procedures';
 
 /** The billing router */
 export const billingRouter = t.router({
-  /** Create a URL to allow users to view their billing details */
+  /** Create a URL to allow organizations to view their billing details */
   getPortalUrl: protectedProcedure.query(async ({ ctx }) => {
-    const { user } = ctx;
+    const { organization } = ctx;
 
-    // If the user doesn't have a Stripe customer ID, throw an error
-    if (!user.stripeCustomerId) throw new Error('User does not have a Stripe customer ID');
+    // If the organization doesn't have a Stripe customer ID, throw an error
+    if (!organization.stripeCustomerId)
+      throw new Error('Organization does not have a Stripe customer ID');
 
     /** Create a stripe billing portal session so they can change their settings */
     const session = await stripe.billingPortal.sessions.create({
-      customer: user.stripeCustomerId,
+      customer: organization.stripeCustomerId,
       return_url: `${config.app.url}/settings/billing`,
     });
 
     return { url: session.url };
   }),
-  /** Gets a list of all the user's invoices */
+  /** Gets a list of all the organization's invoices */
   getHistory: protectedProcedure.query(async ({ ctx }) => {
-    const { user } = ctx;
+    const { organization } = ctx;
 
-    // If the user doesn't have a Stripe customer ID, return an empty array
-    if (!user.stripeCustomerId) return { history: [] };
+    // If the organization doesn't have a Stripe customer ID, return an empty array
+    if (!organization.stripeCustomerId) return { history: [] };
 
     try {
       // Get billing history from Stripe
       const [invoices, charges] = await Promise.all([
         stripe.invoices.list({
-          customer: user.stripeCustomerId,
+          customer: organization.stripeCustomerId,
           limit: 100,
         }),
         stripe.charges.list({
-          customer: user.stripeCustomerId,
+          customer: organization.stripeCustomerId,
           limit: 100,
         }),
       ]);

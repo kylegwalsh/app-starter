@@ -53,4 +53,14 @@ alwaysApply: false
 
 </nextjs_best_practices>
 
-<code_editing_rules>
+<typescript_conventions>
+
+- Component Types: Use the global `FC` type for all component type definitions. This flexible type supports multiple overloads:
+  - `FC` - Standard component with children
+  - `FC<Props>` - Component with custom props and children
+  - `FC<typeof Component>` - Inherits props from referenced component plus children
+  - `FC<typeof Component, Props>` - Inherits props from referenced component plus custom props and children
+
+</typescript_conventions>
+
+</code_editing_rules>

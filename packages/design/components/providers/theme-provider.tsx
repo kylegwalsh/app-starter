@@ -5,8 +5,7 @@ export const ThemeProvider: FC<typeof NextThemesProvider> = ({ children, ...prop
   return (
     <NextThemesProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
+      defaultTheme="light"
       disableTransitionOnChange
       enableColorScheme
       {...props}>

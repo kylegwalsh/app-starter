@@ -237,6 +237,17 @@ const authConfig = {
       subscription: {
         enabled: true,
         plans: Object.values(plans).filter((plan) => !!plan.priceId),
+        // Ensure that we validate whether a user can manage this organization's subscription
+        authorizeReference: async ({ user, referenceId }) => {
+          const member = await db.member.findFirst({
+            where: {
+              userId: user.id,
+              organizationId: referenceId,
+            },
+          });
+
+          return member?.role === 'owner' || member?.role === 'admin';
+        },
       },
     }),
   ],
@@ -250,3 +261,5 @@ export const auth = betterAuth(authConfig) as ReturnType<typeof betterAuth<typeo
 export type AuthSession = typeof auth.$Infer.Session.session;
 /** The type of the auth user object */
 export type AuthUser = typeof auth.$Infer.Session.user;
+/** The type of the auth organization object */
+export type AuthOrganization = typeof auth.$Infer.Organization;

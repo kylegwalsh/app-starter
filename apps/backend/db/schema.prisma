@@ -28,6 +28,7 @@ model User {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   defaultOrganizationId String?
+  stripeCustomerId      String?
   sessions              Session[]
   accounts              Account[]
 
@@ -38,8 +39,6 @@ model User {
   members     Member[]
   invitations Invitation[]
   apikeys     Apikey[]
-
-  stripeCustomerId String?
 
   @@unique([email])
   @@map("user")
@@ -94,15 +93,16 @@ model Verification {
 }
 
 model Organization {
-  id          String       @id @default(cuid())
-  name        String
-  slug        String?
-  logo        String?
-  createdAt   DateTime     @default(now())
-  metadata    String?
-  isPersonal  Boolean      @default(false)
-  members     Member[]
-  invitations Invitation[]
+  id               String       @id @default(cuid())
+  name             String
+  slug             String?
+  logo             String?
+  createdAt        DateTime     @default(now())
+  metadata         String?
+  isPersonal       Boolean      @default(false)
+  stripeCustomerId String?
+  members          Member[]
+  invitations      Invitation[]
 
   @@unique([slug])
   @@map("organization")
