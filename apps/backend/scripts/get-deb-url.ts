@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { exec, execSync } from 'node:child_process';
 import { promisify } from 'node:util';
 

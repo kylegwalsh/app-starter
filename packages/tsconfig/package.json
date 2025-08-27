@@ -4,6 +4,6 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@tsconfig/node20": "^20.1.5"
+    "@tsconfig/node20": "20.1.5"
   }
 }

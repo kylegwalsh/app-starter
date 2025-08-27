@@ -16,9 +16,9 @@
   "devDependencies": {
     "@repo/config": "workspace:*",
     "@repo/tsconfig": "workspace:*",
-    "typescript": "^5.8.3"
+    "typescript": "5.8.3"
   },
   "dependencies": {
-    "loops": "^5.0.1"
+    "loops": "5.0.1"
   }
 }

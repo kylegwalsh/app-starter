@@ -16,7 +16,7 @@
   "devDependencies": {
     "@repo/config": "workspace:*",
     "@repo/tsconfig": "workspace:*",
-    "typescript": "^5.8.3"
+    "typescript": "5.8.3"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "3.0.0-beta.3",
@@ -24,13 +24,13 @@
     "@ai-sdk/google": "2.0.0-beta.6",
     "@ai-sdk/openai": "2.0.0-beta.3",
     "@ai-sdk/provider": "2.0.0-beta.1",
-    "@aws-sdk/credential-providers": "^3.840.0",
-    "@opentelemetry/auto-instrumentations-node": "^0.60.1",
-    "@opentelemetry/sdk-node": "^0.202.0",
+    "@aws-sdk/credential-providers": "3.840.0",
+    "@opentelemetry/auto-instrumentations-node": "0.60.1",
+    "@opentelemetry/sdk-node": "0.202.0",
     "@repo/logs": "workspace:*",
     "ai": "5.0.0-beta.6",
-    "langfuse": "^3.37.6",
-    "langfuse-vercel": "^3.37.6",
+    "langfuse": "3.38.4",
+    "langfuse-vercel": "3.38.4",
     "zod": "3.25.49"
   }
 }

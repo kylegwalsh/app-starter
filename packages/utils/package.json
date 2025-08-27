@@ -15,12 +15,12 @@
   },
   "devDependencies": {
     "@repo/tsconfig": "workspace:*",
-    "@types/lodash-es": "^4.17.12",
-    "typescript": "^5.8.3"
+    "@types/lodash-es": "4.17.12",
+    "typescript": "5.8.3"
   },
   "dependencies": {
-    "change-case": "^5.4.4",
-    "dayjs": "^1.11.13",
-    "lodash-es": "^4.17.21"
+    "change-case": "5.4.4",
+    "dayjs": "1.11.13",
+    "lodash-es": "4.17.21"
   }
 }

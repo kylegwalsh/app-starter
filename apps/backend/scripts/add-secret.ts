@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { execSync, ExecSyncOptionsWithBufferEncoding } from 'node:child_process';
 import * as readline from 'node:readline';
 

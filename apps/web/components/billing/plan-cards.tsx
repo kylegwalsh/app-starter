@@ -5,7 +5,6 @@ import { Badge, Label, PricingCard, Switch } from '@repo/design';
 import React from 'react';
 
 import { auth } from '@/core';
-import { useUser } from '@/hooks';
 
 type Props = {
   /** Whether we should show our monthly/annual switch */
@@ -14,8 +13,6 @@ type Props = {
 
 /** Our list of plan cards */
 export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
-  const { user } = useUser();
-
   /** Change the user's plan */
   const changePlan = async (plan: keyof typeof plans) => {
     if (plan === 'free') {
