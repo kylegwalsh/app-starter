@@ -55,7 +55,7 @@ export const AppSidebar: FC = ({ children }) => {
             hidePersonal
             classNames={{
               trigger: {
-                base: 'w-full group-data-[collapsible=icon]:!bg-transparent group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:[&>svg]:hidden',
+                base: 'w-full bg-background text-foreground shadow-md hover:bg-background hover:bg-background/30 dark:hover:bg-background/60 group-data-[collapsible=icon]:!bg-transparent group-data-[collapsible=icon]:!shadow-none group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:[&>svg]:hidden',
                 user: {
                   content: 'group-data-[collapsible=icon]:hidden',
                   title: 'group-data-[collapsible=icon]:hidden',
@@ -126,7 +126,7 @@ export const AppSidebar: FC = ({ children }) => {
                 ]}
                 classNames={{
                   trigger: {
-                    base: 'w-full group-data-[collapsible=icon]:!bg-transparent group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:[&>svg]:hidden',
+                    base: 'w-full bg-background text-foreground shadow-md hover:bg-background/30 dark:hover:bg-background/60 group-data-[collapsible=icon]:!bg-transparent group-data-[collapsible=icon]:!shadow-none group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:[&>svg]:hidden',
                     user: {
                       content: 'group-data-[collapsible=icon]:hidden',
                       title: 'group-data-[collapsible=icon]:hidden',

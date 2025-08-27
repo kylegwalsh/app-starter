@@ -15,7 +15,6 @@
 - Consider flushing langfuse locally to ensure testing traces appear with lcl environment
 - Maybe add some react-form utils
 - Test migration logic in CI
-- Make sure light mode looks good
 - Consider implementing posthog/vercel feature flags
 - When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
 - Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)
