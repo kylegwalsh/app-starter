@@ -19,6 +19,6 @@
   },
   "dependencies": {
     "libphonenumber-js": "^1.12.8",
-    "zod": "3.25.46"
+    "zod": "3.25.49"
   }
 }

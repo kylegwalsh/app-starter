@@ -54,7 +54,7 @@
     "sst": "3.17.10",
     "stripe": "^18.4.0",
     "superjson": "^2.2.2",
-    "zod": "3.25.46"
+    "zod": "3.25.49"
   },
   "prisma": {
     "schema": "db/schema.prisma"

@@ -77,14 +77,14 @@ importers:
         specifier: ^3.1.4
         version: 3.1.4(@types/debug@4.1.12)(@types/node@22.15.29)(@vitest/browser@3.1.4)(@vitest/ui@3.1.4)(jiti@2.4.2)(jsdom@26.1.0)(less@2.7.3)(lightningcss@1.30.1)(msw@2.8.7(@types/node@22.15.29)(typescript@5.8.3))(sass@1.49.11)(terser@5.40.0)(tsx@4.19.4)(yaml@2.8.0)
       zod:
-        specifier: 3.25.46
-        version: 3.25.46
+        specifier: 3.25.49
+        version: 3.25.49
 
   apps/backend:
     dependencies:
       '@better-auth/stripe':
         specifier: ^1.3.7
-        version: 1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.46)
+        version: 1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.49)
       '@prisma/client':
         specifier: ^6.7.0
         version: 6.7.0(prisma@6.7.0(typescript@5.8.3))(typescript@5.8.3)
@@ -114,10 +114,10 @@ importers:
         version: 11.2.0(typescript@5.8.3)
       better-auth:
         specifier: ^1.3.7
-        version: 1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.46)
+        version: 1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.49)
       better-trpc-openapi:
         specifier: github:kylegwalsh/trpc-openapi#69359b66b170d3a251aa4aca5f832ab25b93fa7f
-        version: https://codeload.github.com/kylegwalsh/trpc-openapi/tar.gz/69359b66b170d3a251aa4aca5f832ab25b93fa7f(@trpc/server@11.2.0(typescript@5.8.3))(@types/express@4.17.23)(@types/node@20.17.19)(zod@3.25.46)
+        version: https://codeload.github.com/kylegwalsh/trpc-openapi/tar.gz/69359b66b170d3a251aa4aca5f832ab25b93fa7f(@trpc/server@11.2.0(typescript@5.8.3))(@types/express@4.17.23)(@types/node@20.17.19)(zod@3.25.49)
       hono:
         specifier: ^4.8.4
         version: 4.8.4
@@ -134,8 +134,8 @@ importers:
         specifier: ^2.2.2
         version: 2.2.2
       zod:
-        specifier: 3.25.46
-        version: 3.25.46
+        specifier: 3.25.49
+        version: 3.25.49
     devDependencies:
       '@repo/eslint':
         specifier: workspace:*
@@ -291,7 +291,7 @@ importers:
     dependencies:
       '@daveyplate/better-auth-ui':
         specifier: ^3.0.0
-        version: 3.0.2(00600f004d551e61f8e64caee60c9db5)
+        version: 3.0.2(9201e19a0202b22ae4f5fcd8f773cf99)
       '@posthog/nextjs-config':
         specifier: ^1.0.0
         version: 1.0.0(next@15.3.1(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.49.11))
@@ -324,7 +324,7 @@ importers:
         version: 11.2.0(@tanstack/react-query@5.79.0(react@19.1.0))(@trpc/client@11.2.0(@trpc/server@11.2.0(typescript@5.8.3))(typescript@5.8.3))(@trpc/server@11.2.0(typescript@5.8.3))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.3)
       better-auth:
         specifier: ^1.3.7
-        version: 1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.46)
+        version: 1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.49)
       jotai:
         specifier: ^2.12.4
         version: 2.12.4(@types/react@19.1.4)(react@19.1.0)
@@ -391,16 +391,16 @@ importers:
     dependencies:
       '@ai-sdk/amazon-bedrock':
         specifier: 3.0.0-beta.3
-        version: 3.0.0-beta.3(zod@3.25.46)
+        version: 3.0.0-beta.3(zod@3.25.49)
       '@ai-sdk/anthropic':
         specifier: 2.0.0-beta.3
-        version: 2.0.0-beta.3(zod@3.25.46)
+        version: 2.0.0-beta.3(zod@3.25.49)
       '@ai-sdk/google':
         specifier: 2.0.0-beta.6
-        version: 2.0.0-beta.6(zod@3.25.46)
+        version: 2.0.0-beta.6(zod@3.25.49)
       '@ai-sdk/openai':
         specifier: 2.0.0-beta.3
-        version: 2.0.0-beta.3(zod@3.25.46)
+        version: 2.0.0-beta.3(zod@3.25.49)
       '@ai-sdk/provider':
         specifier: 2.0.0-beta.1
         version: 2.0.0-beta.1
@@ -418,16 +418,16 @@ importers:
         version: link:../logs
       ai:
         specifier: 5.0.0-beta.6
-        version: 5.0.0-beta.6(zod@3.25.46)
+        version: 5.0.0-beta.6(zod@3.25.49)
       langfuse:
         specifier: ^3.37.6
         version: 3.38.4
       langfuse-vercel:
         specifier: ^3.37.6
-        version: 3.38.4(ai@5.0.0-beta.6(zod@3.25.46))
+        version: 3.38.4(ai@5.0.0-beta.6(zod@3.25.49))
       zod:
-        specifier: 3.25.46
-        version: 3.25.46
+        specifier: 3.25.49
+        version: 3.25.49
     devDependencies:
       '@repo/config':
         specifier: workspace:*
@@ -477,7 +477,7 @@ importers:
     devDependencies:
       '@better-auth/stripe':
         specifier: ^1.3.7
-        version: 1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.46)
+        version: 1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.49)
       '@repo/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
@@ -489,7 +489,7 @@ importers:
     dependencies:
       '@daveyplate/better-auth-ui':
         specifier: ^3.0.0
-        version: 3.0.2(00600f004d551e61f8e64caee60c9db5)
+        version: 3.0.2(9201e19a0202b22ae4f5fcd8f773cf99)
       '@hookform/resolvers':
         specifier: ^5.0.1
         version: 5.0.1(react-hook-form@7.56.4(react@19.1.0))
@@ -602,8 +602,8 @@ importers:
         specifier: ^19.0.0
         version: 19.1.0
       react-day-picker:
-        specifier: 8.10.1
-        version: 8.10.1(date-fns@4.1.0)(react@19.1.0)
+        specifier: 9.9.0
+        version: 9.9.0(react@19.1.0)
       react-dom:
         specifier: ^19.0.0
         version: 19.1.0(react@19.1.0)
@@ -615,7 +615,7 @@ importers:
         version: 3.0.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       recharts:
         specifier: ^2.15.3
-        version: 2.15.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 2.15.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       sonner:
         specifier: ^2.0.3
         version: 2.0.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -629,8 +629,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.1.5(@types/react@19.1.4))(@types/react@19.1.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       zod:
-        specifier: 3.25.46
-        version: 3.25.46
+        specifier: 3.25.49
+        version: 3.25.49
     devDependencies:
       '@repo/eslint':
         specifier: workspace:*
@@ -764,8 +764,8 @@ importers:
         specifier: ^1.12.8
         version: 1.12.8
       zod:
-        specifier: 3.25.46
-        version: 3.25.46
+        specifier: 3.25.49
+        version: 3.25.49
     devDependencies:
       '@repo/tsconfig':
         specifier: workspace:*
@@ -1367,6 +1367,12 @@ packages:
         integrity: sha512-UJnjoFsmxfKUdNYdWgOB0mWUypuLvAfQPH1+pyvRJs6euowbFkFC6P13w1l8mJyi3vxYMxc9kld5jZEGRQs6bw==,
       }
     engines: { node: '>=18' }
+
+  '@date-fns/tz@1.4.1':
+    resolution:
+      {
+        integrity: sha512-P5LUNhtbj6YfI3iJjw5EL9eUAG6OitD0W3fWQcpQjDRc/QIsL0tRNuO1PcDvPccWL1fSTXXdE1ds+l95DV/OFA==,
+      }
 
   '@daveyplate/better-auth-tanstack@1.3.6':
     resolution:
@@ -7770,6 +7776,12 @@ packages:
       }
     engines: { node: '>= 0.4' }
 
+  date-fns-jalali@4.1.0-0:
+    resolution:
+      {
+        integrity: sha512-hTIP/z+t+qKwBDcmmsnmjWTduxCg+5KfdqWQvb2X/8C9+knYY6epN/pfxdDuyVlSVeFz0sM5eEfwIUQ70U4ckg==,
+      }
+
   date-fns@4.1.0:
     resolution:
       {
@@ -13058,14 +13070,14 @@ packages:
     peerDependencies:
       react: '>=16.4.1'
 
-  react-day-picker@8.10.1:
+  react-day-picker@9.9.0:
     resolution:
       {
-        integrity: sha512-TMx7fNbhLk15eqcMt+7Z7S2KF7mfTId/XJDjKE8f+IUcFn0l08/kI4FiYTL/0yuOLmEcbR4Fwe3GJf/NiiMnPA==,
+        integrity: sha512-NtkJbuX6cl/VaGNb3sVVhmMA6LSMnL5G3xNL+61IyoZj0mUZFWTg4hmj7PHjIQ8MXN9dHWhUHFoJWG6y60DKSg==,
       }
+    engines: { node: '>=18' }
     peerDependencies:
-      date-fns: ^2.28.0 || ^3.0.0
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react: '>=16.8.0'
 
   react-docgen-typescript@2.2.2:
     resolution:
@@ -13276,10 +13288,10 @@ packages:
         integrity: sha512-kivNFO+0OcUNu7jQquLXAxz1FIwZj8nrj+YkOKc5694NbjCvcT6aSZiIzNzd2Kul4o4rTto8QVR9lMNtxD4G1w==,
       }
 
-  recharts@2.15.3:
+  recharts@2.15.4:
     resolution:
       {
-        integrity: sha512-EdOPzTwcFSuqtvkDoaM5ws/Km1+WTAO2eizL7rqiG0V2UVhTnz0m7J2i0CjVPUCdEkZImaWvXLbZDS2H5t6GFQ==,
+        integrity: sha512-UT/q6fwS3c1dHbXv2uFgYJ9BMFHu3fwnd7AYZaEQhXuYQ4hgsxLvsUXzGdKeZrW5xopzDCvuA2N41WJ88I7zIw==,
       }
     engines: { node: '>=14' }
     peerDependencies:
@@ -15914,10 +15926,10 @@ packages:
         integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==,
       }
 
-  zod@3.25.46:
+  zod@3.25.49:
     resolution:
       {
-        integrity: sha512-IqRxcHEIjqLd4LNS/zKffB3Jzg3NwqJxQQ0Ns7pdrvgGkwQsEBdEQcOHaBVqvvZArShRzI39+aMST3FBGmTrLQ==,
+        integrity: sha512-JMMPMy9ZBk3XFEdbM3iL1brx4NUSejd6xr3ELrrGEfGb355gjhiAWtG3K5o+AViV/3ZfkIrCzXsZn6SbLwTR8Q==,
       }
 
   zwitch@1.0.5:
@@ -15935,46 +15947,46 @@ packages:
 snapshots:
   '@adobe/css-tools@4.4.3': {}
 
-  '@ai-sdk/amazon-bedrock@3.0.0-beta.3(zod@3.25.46)':
+  '@ai-sdk/amazon-bedrock@3.0.0-beta.3(zod@3.25.49)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.1
-      '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.46)
+      '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.49)
       '@smithy/eventstream-codec': 4.0.4
       '@smithy/util-utf8': 4.0.0
       aws4fetch: 1.0.20
-      zod: 3.25.46
+      zod: 3.25.49
 
-  '@ai-sdk/anthropic@2.0.0-beta.3(zod@3.25.46)':
+  '@ai-sdk/anthropic@2.0.0-beta.3(zod@3.25.49)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.1
-      '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.46)
-      zod: 3.25.46
+      '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.49)
+      zod: 3.25.49
 
-  '@ai-sdk/gateway@1.0.0-beta.3(zod@3.25.46)':
+  '@ai-sdk/gateway@1.0.0-beta.3(zod@3.25.49)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.1
-      '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.46)
-      zod: 3.25.46
+      '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.49)
+      zod: 3.25.49
 
-  '@ai-sdk/google@2.0.0-beta.6(zod@3.25.46)':
+  '@ai-sdk/google@2.0.0-beta.6(zod@3.25.49)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.1
-      '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.46)
-      zod: 3.25.46
+      '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.49)
+      zod: 3.25.49
 
-  '@ai-sdk/openai@2.0.0-beta.3(zod@3.25.46)':
+  '@ai-sdk/openai@2.0.0-beta.3(zod@3.25.49)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.1
-      '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.46)
-      zod: 3.25.46
+      '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.49)
+      zod: 3.25.49
 
-  '@ai-sdk/provider-utils@3.0.0-beta.2(zod@3.25.46)':
+  '@ai-sdk/provider-utils@3.0.0-beta.2(zod@3.25.49)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.1
       '@standard-schema/spec': 1.0.0
       eventsource-parser: 3.0.3
-      zod: 3.25.46
-      zod-to-json-schema: 3.24.3(zod@3.25.46)
+      zod: 3.25.49
+      zod-to-json-schema: 3.24.3(zod@3.25.49)
 
   '@ai-sdk/provider@2.0.0-beta.1':
     dependencies:
@@ -16497,10 +16509,10 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@better-auth/stripe@1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.46)':
+  '@better-auth/stripe@1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.49)':
     dependencies:
-      better-auth: 1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.46)
-      zod: 3.25.46
+      better-auth: 1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.49)
+      zod: 3.25.49
     transitivePeerDependencies:
       - react
       - react-dom
@@ -16563,18 +16575,20 @@ snapshots:
 
   '@csstools/css-tokenizer@3.0.3': {}
 
-  '@daveyplate/better-auth-tanstack@1.3.6(@tanstack/query-core@5.79.0)(@tanstack/react-query@5.79.0(react@19.1.0))(better-auth@1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.46))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+  '@date-fns/tz@1.4.1': {}
+
+  '@daveyplate/better-auth-tanstack@1.3.6(@tanstack/query-core@5.79.0)(@tanstack/react-query@5.79.0(react@19.1.0))(better-auth@1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.49))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
       '@tanstack/query-core': 5.79.0
       '@tanstack/react-query': 5.79.0(react@19.1.0)
-      better-auth: 1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.46)
+      better-auth: 1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.49)
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
 
-  '@daveyplate/better-auth-ui@3.0.2(00600f004d551e61f8e64caee60c9db5)':
+  '@daveyplate/better-auth-ui@3.0.2(9201e19a0202b22ae4f5fcd8f773cf99)':
     dependencies:
       '@better-fetch/fetch': 1.1.18
-      '@daveyplate/better-auth-tanstack': 1.3.6(@tanstack/query-core@5.79.0)(@tanstack/react-query@5.79.0(react@19.1.0))(better-auth@1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.46))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@daveyplate/better-auth-tanstack': 1.3.6(@tanstack/query-core@5.79.0)(@tanstack/react-query@5.79.0(react@19.1.0))(better-auth@1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.49))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@hcaptcha/react-hcaptcha': 1.12.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@hookform/resolvers': 5.0.1(react-hook-form@7.56.4(react@19.1.0))
       '@instantdb/react': 0.20.6(react@19.1.0)
@@ -16598,7 +16612,7 @@ snapshots:
       '@triplit/client': 1.0.46(typescript@5.8.3)
       '@triplit/react': 1.0.46(react@19.1.0)(typescript@5.8.3)
       '@wojtekmaj/react-recaptcha-v3': 0.1.4(@types/react@19.1.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      better-auth: 1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.46)
+      better-auth: 1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.49)
       class-variance-authority: 0.7.1
       clsx: 2.1.1
       input-otp: 1.4.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -16613,7 +16627,7 @@ snapshots:
       tailwindcss: 4.1.7
       ua-parser-js: 2.0.4(encoding@0.1.13)
       vaul: 1.1.2(@types/react-dom@19.1.5(@types/react@19.1.4))(@types/react@19.1.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      zod: 3.25.46
+      zod: 3.25.49
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
@@ -17095,8 +17109,8 @@ snapshots:
       express-rate-limit: 7.5.0(express@5.1.0)
       pkce-challenge: 5.0.0
       raw-body: 3.0.0
-      zod: 3.25.46
-      zod-to-json-schema: 3.24.3(zod@3.25.46)
+      zod: 3.25.49
+      zod-to-json-schema: 3.24.3(zod@3.25.49)
     transitivePeerDependencies:
       - supports-color
 
@@ -17109,8 +17123,8 @@ snapshots:
       express-rate-limit: 7.5.0(express@5.1.0)
       pkce-challenge: 4.1.0
       raw-body: 3.0.0
-      zod: 3.25.46
-      zod-to-json-schema: 3.24.3(zod@3.25.46)
+      zod: 3.25.49
+      zod-to-json-schema: 3.24.3(zod@3.25.49)
     transitivePeerDependencies:
       - supports-color
 
@@ -20451,13 +20465,13 @@ snapshots:
       clean-stack: 2.2.0
       indent-string: 4.0.0
 
-  ai@5.0.0-beta.6(zod@3.25.46):
+  ai@5.0.0-beta.6(zod@3.25.49):
     dependencies:
-      '@ai-sdk/gateway': 1.0.0-beta.3(zod@3.25.46)
+      '@ai-sdk/gateway': 1.0.0-beta.3(zod@3.25.49)
       '@ai-sdk/provider': 2.0.0-beta.1
-      '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.46)
+      '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.49)
       '@opentelemetry/api': 1.9.0
-      zod: 3.25.46
+      zod: 3.25.49
 
   ajv@4.11.8:
     dependencies:
@@ -20688,7 +20702,7 @@ snapshots:
       tweetnacl: 0.14.5
     optional: true
 
-  better-auth@1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.46):
+  better-auth@1.3.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(zod@3.25.49):
     dependencies:
       '@better-auth/utils': 0.2.6
       '@better-fetch/fetch': 1.1.18
@@ -20701,7 +20715,7 @@ snapshots:
       jose: 5.10.0
       kysely: 0.28.5
       nanostores: 0.11.4
-      zod: 3.25.46
+      zod: 3.25.49
     optionalDependencies:
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
@@ -20717,7 +20731,7 @@ snapshots:
     dependencies:
       open: 8.4.2
 
-  better-trpc-openapi@https://codeload.github.com/kylegwalsh/trpc-openapi/tar.gz/69359b66b170d3a251aa4aca5f832ab25b93fa7f(@trpc/server@11.2.0(typescript@5.8.3))(@types/express@4.17.23)(@types/node@20.17.19)(zod@3.25.46):
+  better-trpc-openapi@https://codeload.github.com/kylegwalsh/trpc-openapi/tar.gz/69359b66b170d3a251aa4aca5f832ab25b93fa7f(@trpc/server@11.2.0(typescript@5.8.3))(@types/express@4.17.23)(@types/node@20.17.19)(zod@3.25.49):
     dependencies:
       '@trpc/server': 11.2.0(typescript@5.8.3)
       co-body: 6.2.0
@@ -20725,8 +20739,8 @@ snapshots:
       lodash.clonedeep: 4.5.0
       node-mocks-http: 1.17.2(@types/express@4.17.23)(@types/node@20.17.19)
       openapi-types: 12.1.3
-      zod: 3.25.46
-      zod-to-json-schema: 3.24.3(zod@3.25.46)
+      zod: 3.25.49
+      zod-to-json-schema: 3.24.3(zod@3.25.49)
     transitivePeerDependencies:
       - '@types/express'
       - '@types/node'
@@ -21257,6 +21271,8 @@ snapshots:
       call-bound: 1.0.4
       es-errors: 1.3.0
       is-data-view: 1.0.2
+
+  date-fns-jalali@4.1.0-0: {}
 
   date-fns@4.1.0: {}
 
@@ -21849,7 +21865,7 @@ snapshots:
       minimatch: 3.1.2
       natural-compare: 1.4.0
       optionator: 0.9.4
-      zod: 3.25.46
+      zod: 3.25.49
     optionalDependencies:
       jiti: 2.4.2
     transitivePeerDependencies:
@@ -22211,7 +22227,7 @@ snapshots:
       next: 15.3.1(@babel/core@7.27.3)(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.49.11)
       picocolors: 1.1.1
       unist-util-visit: 5.0.0
-      zod: 3.25.46
+      zod: 3.25.49
     transitivePeerDependencies:
       - acorn
       - supports-color
@@ -23201,9 +23217,9 @@ snapshots:
     dependencies:
       mustache: 4.2.0
 
-  langfuse-vercel@3.38.4(ai@5.0.0-beta.6(zod@3.25.46)):
+  langfuse-vercel@3.38.4(ai@5.0.0-beta.6(zod@3.25.49)):
     dependencies:
-      ai: 5.0.0-beta.6(zod@3.25.46)
+      ai: 5.0.0-beta.6(zod@3.25.49)
       langfuse: 3.38.4
       langfuse-core: 3.38.4
 
@@ -24949,9 +24965,11 @@ snapshots:
       prop-types: 15.8.1
       react: 19.1.0
 
-  react-day-picker@8.10.1(date-fns@4.1.0)(react@19.1.0):
+  react-day-picker@9.9.0(react@19.1.0):
     dependencies:
+      '@date-fns/tz': 1.4.1
       date-fns: 4.1.0
+      date-fns-jalali: 4.1.0-0
       react: 19.1.0
 
   react-docgen-typescript@2.2.2(typescript@5.8.3):
@@ -25100,7 +25118,7 @@ snapshots:
     dependencies:
       decimal.js-light: 2.5.1
 
-  recharts@2.15.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+  recharts@2.15.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       clsx: 2.1.1
       eventemitter3: 4.0.7
@@ -27088,13 +27106,13 @@ snapshots:
     dependencies:
       zod: 3.24.2
 
-  zod-to-json-schema@3.24.3(zod@3.25.46):
+  zod-to-json-schema@3.24.3(zod@3.25.49):
     dependencies:
-      zod: 3.25.46
+      zod: 3.25.49
 
   zod@3.24.2: {}
 
-  zod@3.25.46: {}
+  zod@3.25.49: {}
 
   zwitch@1.0.5: {}
 

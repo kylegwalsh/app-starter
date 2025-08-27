@@ -26,7 +26,6 @@ Minor Improvements:
 - Search codebase for all TODO comments and fix them (need to upgrade better auth for one - https://github.com/better-auth/better-auth/issues/3686)
 - Maybe see if there's a reason turbo cache is missing in the CI (it seems like it should hit)
 - Upgrade SST to see if it improves windows support (like hot reloading backend when modifying packages outside the backend)
-- Fix unmet peer dependencies when installing
 - Consider finding a way to exclude playwright install from postinstall to speed up installs (handle in CI too)
 - Potentially remove separate authConfig after issue is resolved - https://github.com/better-auth/better-auth/issues/3408
 - Try pglite with backend tests whenever the prisma adapter works better
