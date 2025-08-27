@@ -9,9 +9,6 @@ const stage =
   // The frontend (deployed) uses NEXT_PUBLIC_STAGE (set inside website stack)
   process.env.NEXT_PUBLIC_STAGE;
 
-// If we still don't have stage, something went wrong
-if (!stage) throw new Error('[config] Stage not found - check your environment variables.');
-
 /** Whether we're running against production resources */
 let isProd = false;
 // Prod should both use prod resources
