@@ -19,6 +19,7 @@
     "pretty": "prettier --write . --ignore-path ../../.prettierignore",
     "format": "pnpm lint:fix & pnpm pretty",
     "types:check": "pnpm --filter @repo/backend types:generate && tsc --noEmit",
+    "update-readme": "doctoc README.md",
     "postinstall": "tsx scripts/install-playwright"
   },
   "dependencies": {

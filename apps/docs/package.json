@@ -11,6 +11,7 @@
     "pretty": "prettier --write . --ignore-path ../../.prettierignore",
     "format": "pnpm lint:fix & pnpm pretty",
     "types:check": "tsc --noEmit",
+    "update-readme": "doctoc README.md",
     "postinstall": "fumadocs-mdx"
   },
   "dependencies": {

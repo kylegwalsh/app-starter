@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "type": "module",
   "private": true,
+  "scripts": {
+    "update-readme": "doctoc README.md"
+  },
   "devDependencies": {
     "@tsconfig/node20": "20.1.5"
   }

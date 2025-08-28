@@ -4,14 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "sst dev",
-    "build": "sst build",
-    "deploy": "sst deploy",
     "test": "sst shell -- vitest run",
     "test:ci": "sst shell --stage ci -- vitest run",
     "test:ui": "sst shell -- vitest --ui",
-    "remove": "sst remove",
-    "console": "sst console",
     "auth:generate": "sst shell -- pnpm dlx @better-auth/cli generate --config ./core/auth.ts --output ./db/schema.prisma",
     "db:start": "pnpm db:get-url \"prisma db push && prisma studio --browser none\"",
     "db:push": "pnpm db:get-url \"prisma db push\"",
@@ -28,6 +23,7 @@
     "format": "pnpm lint:fix & pnpm pretty",
     "types:check": "tsc --noEmit",
     "types:generate": "tsc --emitDeclarationOnly",
+    "update-readme": "doctoc README.md",
     "postinstall": "pnpm db:generate"
   },
   "devDependencies": {
