@@ -1,4 +1,4 @@
-import { log } from '@repo/logs';
+import { analytics } from '@repo/analytics';
 import { Hono } from 'hono';
 import { handle } from 'hono/aws-lambda';
 
@@ -12,7 +12,7 @@ app.on(['POST', 'GET'], '/**', async (c) => {
     const result = await auth.handler(c.req.raw);
     return result;
   } catch (error) {
-    log.error({ error }, '[auth]');
+    await analytics.captureException(error);
     return c.json({ error: 'Internal server error' }, 500);
   }
 });
