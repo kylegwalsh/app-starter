@@ -451,11 +451,11 @@ importers:
         specifier: workspace:*
         version: link:../utils
       posthog-js:
-        specifier: 1.250.2
-        version: 1.250.2
+        specifier: 1.261.0
+        version: 1.261.0
       posthog-node:
-        specifier: 5.0.0
-        version: 5.0.0
+        specifier: 5.8.1
+        version: 5.8.1
     devDependencies:
       '@repo/tsconfig':
         specifier: workspace:*
@@ -3250,6 +3250,12 @@ packages:
       }
     engines: { node: '>=14', npm: '>=6' }
     hasBin: true
+
+  '@posthog/core@1.0.2':
+    resolution:
+      {
+        integrity: sha512-hWk3rUtJl2crQK0WNmwg13n82hnTwB99BT99/XI5gZSvIlYZ1TPmMZE8H2dhJJ98J/rm9vYJ/UXNzw3RV5HTpQ==,
+      }
 
   '@posthog/nextjs-config@1.0.0':
     resolution:
@@ -12719,10 +12725,10 @@ packages:
       }
     engines: { node: '>=0.10.0' }
 
-  posthog-js@1.250.2:
+  posthog-js@1.261.0:
     resolution:
       {
-        integrity: sha512-g/H9lJhjhsYPnpxntqp36osK7oJ6CFqul2+mVUkaacAJUG4DqCG8iawsSnZvvUmapjapbf2HUA7PCRrpRsl06A==,
+        integrity: sha512-jyiXqyrCU+VlpbNNVRA6OQYAVut0XZMYNELCZH+XvTd981VqbE4jXn4XCBreo7XCL2gdPgDVxUVOuzNvEuKcmw==,
       }
     peerDependencies:
       '@rrweb/types': 2.0.0-alpha.17
@@ -12733,10 +12739,10 @@ packages:
       rrweb-snapshot:
         optional: true
 
-  posthog-node@5.0.0:
+  posthog-node@5.8.1:
     resolution:
       {
-        integrity: sha512-gontigBt1pGHGXZme3+ojDdCYL66h/vvo+6KaQ6A51xqUOYgRvyzCLkS9Xv816jNBesRO8ouRjG428SDb2fFkg==,
+        integrity: sha512-YJYlYnlpItVjHqM9IhvZx8TzK8gnx2nU+0uhiog4RN47NnV0Z0K1AdC4ul+O8VuvS/jHqKCQvL8iAONRA37+0A==,
       }
     engines: { node: '>=20' }
 
@@ -18041,6 +18047,8 @@ snapshots:
       rimraf: 5.0.10
     transitivePeerDependencies:
       - debug
+
+  '@posthog/core@1.0.2': {}
 
   '@posthog/nextjs-config@1.0.0(next@15.3.1(@opentelemetry/api@1.9.0)(@playwright/test@1.52.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.49.11))':
     dependencies:
@@ -24797,14 +24805,17 @@ snapshots:
     dependencies:
       xtend: 4.0.2
 
-  posthog-js@1.250.2:
+  posthog-js@1.261.0:
     dependencies:
+      '@posthog/core': 1.0.2
       core-js: 3.43.0
       fflate: 0.4.8
       preact: 10.26.9
       web-vitals: 4.2.4
 
-  posthog-node@5.0.0: {}
+  posthog-node@5.8.1:
+    dependencies:
+      '@posthog/core': 1.0.2
 
   preact@10.26.9: {}
 

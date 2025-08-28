@@ -32,6 +32,8 @@ type BackendAnalyticsProps = SharedAnalyticsProps & {
 type BackendEventProps = {
   /** The user's ID */
   userId: string;
+  /** The organization's ID */
+  organizationId: string;
   /** Some optional additional context that can help with matching users in third party platforms */
   context?: {
     /** The user's traits */
@@ -90,6 +92,19 @@ type IdentifyEvent = {
   };
 };
 
+/** The properties for the organization identify event */
+type OrganizationIdentifyEvent = {
+  /** The id of the organization */
+  organizationId: string;
+  /** Any additional traits to associate with the organization */
+  traits?: {
+    /** The organization's name */
+    name?: string;
+    /** When the organization was created */
+    createdAt?: Date | string | number;
+  };
+};
+
 /**
  * Extends an analytics library and returns a list of available events
  * @param analytics - The analytics library being extended (must be a Segment library)
@@ -134,13 +149,16 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
     // Track the event differently based on platform
     switch (platform) {
       case 'backend': {
-        const { userId, ...restProperties } = properties as BackendEventProps &
+        const { userId, organizationId, ...restProperties } = properties as BackendEventProps &
           Record<string, unknown>;
 
         platformAnalytics.capture({
           distinctId: userId,
           event,
           properties: restProperties,
+          groups: {
+            organization: organizationId,
+          },
         });
 
         break;
@@ -169,6 +187,57 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
           ]);
         });
       }
+    },
+    /** Identifies the user after sign in */
+    identify: async ({ userId, traits }: IdentifyEvent) => {
+      log.info('[analytics] Event: Identify', userId, traits);
+
+      // Standardize their traits a little bit
+      try {
+        // Build first and last name from full name
+        if (traits?.name) {
+          const nameArray = traits.name.split(' ');
+          if (nameArray.length >= 1) traits.firstName = nameArray.splice(0, 1).join(' ');
+          if (nameArray.length >= 2) traits.firstName = nameArray.splice(1).join(' ');
+        }
+        // Build full name from first and last name
+        else if (traits?.firstName || traits?.lastName) {
+          traits.name = `${traits?.firstName ?? ''}${
+            traits?.firstName && traits?.lastName ? ' ' : ''
+          }${traits?.lastName ?? ''}`;
+        }
+      } catch {
+        console.warn('[analytics] Error building names');
+      }
+
+      await safeInvoke(() => {
+        // Make sure that all the emails are lower cased when being added in identify
+        if (traits?.email) traits.email = traits.email.toLowerCase();
+        // Track the event differently based on platform
+        switch (platform) {
+          case 'backend': {
+            platformAnalytics.identify({
+              distinctId: userId,
+              properties: traits,
+            });
+            break;
+          }
+          case 'web': {
+            platformAnalytics.identify(userId, traits);
+            break;
+          }
+          default: {
+            throw new Error('You forgot to define platform in when initializing analytics');
+          }
+        }
+
+        // If the platform defined an onIdentify function, run it
+        try {
+          onIdentify?.({ userId, traits });
+        } catch (error) {
+          log.error({ error }, '[analytics] Error on identify');
+        }
+      });
     },
     /** Track when the user signs out */
     userSignedOut: async (
@@ -220,6 +289,8 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         {
           /** The user's email address */
           email: string;
+          /** The user's name */
+          name: string;
         }
       >
     ) => {
@@ -231,54 +302,49 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         });
       });
     },
-    /** Identifies the user after sign in */
-    identify: async ({ userId, traits }: IdentifyEvent) => {
-      log.info('[analytics] Event: Identify', userId, traits);
-
-      // Standardize their traits a little bit
-      try {
-        // Build first and last name from full name
-        if (traits?.name) {
-          const nameArray = traits.name.split(' ');
-          if (nameArray.length >= 1) traits.firstName = nameArray.splice(0, 1).join(' ');
-          if (nameArray.length >= 2) traits.firstName = nameArray.splice(1).join(' ');
+    /** Track when a new organization is created */
+    organizationCreated: async (
+      properties: EventProps<
+        T,
+        {
+          /** The organization's id */
+          organizationId: string;
+          /** The organization's name */
+          name: string;
         }
-        // Build full name from first and last name
-        else if (traits?.firstName || traits?.lastName) {
-          traits.name = `${traits?.firstName ?? ''}${
-            traits?.firstName && traits?.lastName ? ' ' : ''
-          }${traits?.lastName ?? ''}`;
-        }
-      } catch {
-        console.warn('[analytics] Error building names');
-      }
-
+      >
+    ) => {
+      log.info('[analytics] Event: Organization Created', {
+        ...properties,
+        category: 'Organization',
+      });
       await safeInvoke(() => {
-        // Make sure that all the emails are lower cased when being added in identify
-        if (traits?.email) traits.email = traits.email.toLowerCase();
+        track('Organization Created', { category: 'Organization', ...properties });
+      });
+    },
+    /** Identifies and creates the organization (if it doesn't exist) */
+    organizationIdentify: async ({ organizationId, traits }: OrganizationIdentifyEvent) => {
+      log.info('[analytics] Event: Organization Identify', organizationId, traits);
+      await safeInvoke(() => {
         // Track the event differently based on platform
         switch (platform) {
           case 'backend': {
-            platformAnalytics.identify({
-              distinctId: userId,
-              properties: traits,
+            platformAnalytics.groupIdentify({
+              groupType: 'organization',
+              groupKey: organizationId,
+              properties: {
+                ...traits,
+              },
             });
             break;
           }
           case 'web': {
-            platformAnalytics.identify(userId, traits);
+            platformAnalytics.group('organization', organizationId, traits);
             break;
           }
           default: {
             throw new Error('You forgot to define platform in when initializing analytics');
           }
-        }
-
-        // If the platform defined an onIdentify function, run it
-        try {
-          onIdentify?.({ userId, traits });
-        } catch (error) {
-          log.error({ error }, '[analytics] Error on identify');
         }
       });
     },

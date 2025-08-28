@@ -18,7 +18,7 @@ export const useUser = () => {
   return {
     user,
     organization,
-    isLoggedIn: !!user,
+    isLoggedIn: !!user && !!organization,
     isLoading,
     error,
     refetch: refetchAll,

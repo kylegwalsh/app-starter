@@ -1,6 +1,6 @@
 import { ai } from '@repo/ai';
 import { analytics } from '@repo/analytics';
-import { addLambdaRequestContext, flushLogs } from '@repo/logs';
+import { addLambdaRequestContext, addLogMetadata, flushLogs } from '@repo/logs';
 import { APIGatewayProxyEventV2, Context, SQSEvent } from 'aws-lambda';
 
 /** The lambda event options we accept */
@@ -31,6 +31,12 @@ export const withLambdaContext = <T extends EventType = undefined>(
   return async (event, context) => {
     // Add Lambda request context for logging
     addLambdaRequestContext(event, context);
+    if ('requestContext' in event) {
+      const { path, method } = event.requestContext.http;
+      addLogMetadata({
+        request: { path, method },
+      });
+    }
 
     try {
       // Execute the handler

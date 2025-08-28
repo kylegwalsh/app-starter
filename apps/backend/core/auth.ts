@@ -1,5 +1,6 @@
 import { stripe } from '@better-auth/stripe';
 import { Organization } from '@prisma/client';
+import { analytics } from '@repo/analytics';
 import { config, env } from '@repo/config';
 import { plans } from '@repo/constants';
 import { email } from '@repo/email';
@@ -132,9 +133,37 @@ const authConfig = {
       // Ensure all new user's get a personal organization by default
       create: {
         after: async (user) => {
+          let organizationId = '';
+
+          // If we support personal organizations, we'll create a personal organization for the user
           if (SUPPORT_PERSONAL_ORGANIZATIONS) {
-            await getOrCreatePersonalOrganization({ userId: user.id });
+            const organization = await getOrCreatePersonalOrganization({ userId: user.id });
+            organizationId = organization.id;
+            // Track the organization creation
+            await analytics.organizationIdentify({
+              organizationId: organization.id,
+              traits: {
+                name: organization.name,
+                createdAt: organization.createdAt,
+              },
+            });
           }
+
+          // Track the user creation
+          await analytics.identify({
+            userId: user.id,
+            traits: {
+              email: user.email,
+              name: user.name,
+              createdAt: user.createdAt,
+            },
+          });
+          await analytics.userSignedUp({
+            userId: user.id,
+            organizationId,
+            email: user.email,
+            name: user.name,
+          });
         },
       },
     },
@@ -225,6 +254,20 @@ const authConfig = {
               returned: true,
             },
           },
+        },
+      },
+      // Whenever we create a new organization, we'll track it
+      organizationCreation: {
+        afterCreate: async ({ organization, user }) => {
+          await analytics.organizationIdentify({
+            organizationId: organization.id,
+            traits: { name: organization.name, createdAt: organization.createdAt },
+          });
+          await analytics.organizationCreated({
+            userId: user.id,
+            organizationId: organization.id,
+            name: organization.name,
+          });
         },
       },
     }),

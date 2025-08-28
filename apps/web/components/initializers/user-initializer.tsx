@@ -9,9 +9,10 @@ import { useUser } from '@/hooks';
 
 /** Watches user changes and performs tasks */
 export const UserInitializer = () => {
-  const { user, isLoading, isLoggedIn } = useUser();
+  const { user, organization, isLoading, isLoggedIn } = useUser();
   const queryClient = useQueryClient();
   const [previouslyIdentified, setPreviouslyIdentified] = useState(false);
+  const [previousOrganizationId, setPreviousOrganizationId] = useState<string>();
 
   // Once the user becomes defined, identify them
   useEffect(() => {
@@ -34,8 +35,23 @@ export const UserInitializer = () => {
     // If the user logs out, reset their previously identified state
     else if (!isLoggedIn && previouslyIdentified) {
       setPreviouslyIdentified(false);
+      setPreviousOrganizationId(undefined);
     }
   }, [isLoggedIn, user, previouslyIdentified]);
+
+  // Whenever the organization changes, identify it
+  useEffect(() => {
+    if (isLoggedIn && organization?.id && organization.id !== previousOrganizationId) {
+      setPreviousOrganizationId(organization.id);
+      void analytics.organizationIdentify({
+        organizationId: organization.id,
+        traits: {
+          name: organization.name,
+          createdAt: organization.createdAt?.toISOString() ?? undefined,
+        },
+      });
+    }
+  }, [isLoggedIn, organization, previousOrganizationId]);
 
   // Once the user logs in, store something indicating that they had a session at some point (used to detect session expiration)
   useEffect(() => {

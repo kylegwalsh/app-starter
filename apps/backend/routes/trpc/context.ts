@@ -20,8 +20,7 @@ export type Context = {
 export const createContext = async ({
   event,
 }: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>): Promise<Context> => {
-  // Extract request details
-  const { path, method } = event.requestContext.http;
+  // Grab auth cookie
   const cookies = event.cookies?.join('; ') ?? '';
 
   // If we have a better auth cookie, we will attempt to populate the user context
@@ -55,7 +54,7 @@ export const createContext = async ({
   // Add some metadata to our logs
   addLogMetadata({
     userId: user?.id,
-    request: { path, method },
+    organizationId: organization?.id,
   });
 
   // Return context
