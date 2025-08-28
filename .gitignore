@@ -59,3 +59,6 @@ npm-debug.log*
 **/.contentlayer
 **/.content-collections
 **/.source
+
+# Playwright
+.playwright-installed
