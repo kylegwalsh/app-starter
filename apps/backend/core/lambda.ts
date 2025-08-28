@@ -46,6 +46,8 @@ export const withLambdaContext = <T extends EventType = undefined>(
       // Return the result
       return result;
     } catch (error) {
+      // Report the error
+      await analytics.captureException(error);
       // Wait for all async observability tools to be flushed
       await flushObservability();
       // Re-throw the error

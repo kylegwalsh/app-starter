@@ -14,6 +14,7 @@
 
 ## LANGFUSE
 
+- Upgrade to latest langfuse (in stash)
 - Ensure langfuse is using correct "environment" field
 - Consider flushing langfuse locally to ensure testing traces appear with lcl environment
 - Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)
@@ -22,10 +23,10 @@
 ## OTHER
 
 - Test migration logic in CI
+- Add README's to all packages / apps
 - Consider implementing posthog/vercel feature flags
 - When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
-- Add README's to all packages / apps
-- Debug why first stripe invocation causes SST proxy to die (could be related to below issue) - https://github.com/sst/sst/issues/6051
+- Debug why first stripe invocation causes SST proxy to die on Windows (could be related to below issue) - https://github.com/sst/sst/issues/6051
 
 ## MINOR IMPROVEMENTS
 
