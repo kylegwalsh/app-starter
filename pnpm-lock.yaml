@@ -307,6 +307,9 @@ importers:
       '@repo/design':
         specifier: workspace:*
         version: link:../../packages/design
+      '@repo/flags':
+        specifier: workspace:*
+        version: link:../../packages/flags
       '@repo/seo':
         specifier: workspace:*
         version: link:../../packages/seo
@@ -732,6 +735,22 @@ importers:
       typescript-eslint:
         specifier: 8.32.1
         version: 8.32.1(eslint@9.26.0(jiti@2.4.2))(typescript@5.8.3)
+
+  packages/flags:
+    dependencies:
+      '@repo/analytics':
+        specifier: workspace:*
+        version: link:../analytics
+      posthog-js:
+        specifier: 1.261.0
+        version: 1.261.0
+    devDependencies:
+      '@repo/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: 5.8.3
+        version: 5.8.3
 
   packages/logs:
     dependencies:

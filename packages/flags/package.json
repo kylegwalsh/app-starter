@@ -1,0 +1,25 @@
+{
+  "name": "@repo/flags",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "pretty": "prettier --write . --ignore-path ../../.prettierignore",
+    "format": "pnpm lint:fix & pnpm pretty",
+    "types:check": "tsc --noEmit",
+    "update-readme": "doctoc README.md"
+  },
+  "dependencies": {
+    "@repo/analytics": "workspace:*",
+    "posthog-js": "1.261.0"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "workspace:*",
+    "typescript": "5.8.3"
+  }
+}
