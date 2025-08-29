@@ -27,6 +27,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 
 import { Header } from '@/components';
+import { trpc } from '@/core';
 
 const chartData = [
   { date: '2024-04-01', desktop: 222, mobile: 150 },
@@ -145,6 +146,8 @@ export default function DashboardPage() {
       setTimeRange('7d');
     }
   }, [isMobile]);
+
+  const { data: aiData } = trpc.ai.useQuery();
 
   const filteredData = useMemo(
     () =>

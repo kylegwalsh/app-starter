@@ -6,28 +6,24 @@ import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 // import { createOpenAI } from '@ai-sdk/openai';
 import { LanguageModelV2 } from '@ai-sdk/provider';
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { LangfuseSpanProcessor } from '@langfuse/otel';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { env } from '@repo/config';
 import { config } from '@repo/config';
 import { addLogMetadata, getLogMetadata } from '@repo/logs';
 import { generateObject, GenerateObjectResult, generateText } from 'ai';
 import { Langfuse } from 'langfuse';
-import { LangfuseExporter } from 'langfuse-vercel';
 import { z } from 'zod';
 
 // ---------- LANGFUSE ----------
-/** OpenTelemetry SDK instance */
-let langfuseTelemetry: NodeSDK | undefined;
-/** Langfuse telemetry exporter */
-let langfuseTelemetryExporter: LangfuseExporter | undefined;
 /** Langfuse client */
 let langfuse: Langfuse | undefined;
+/** Langfuse telemetry exporter */
+let langfuseSpanProcessor: LangfuseSpanProcessor | undefined;
 // Only initialize Langfuse if it's setup and we're running in AWS
 if (
   (env as Record<string, string>).LANGFUSE_SECRET_KEY &&
-  (env as Record<string, string>).LANGFUSE_PUBLIC_KEY &&
-  config.isAWS
+  (env as Record<string, string>).LANGFUSE_PUBLIC_KEY
 ) {
   /** Config for Langfuse */
   const langfuseConfig: ConstructorParameters<typeof Langfuse>[0] = {
@@ -39,12 +35,14 @@ if (
 
   // Initialize everything needed for Langfuse
   langfuse = new Langfuse(langfuseConfig);
-  langfuseTelemetryExporter = new LangfuseExporter(langfuseConfig);
-  langfuseTelemetry = new NodeSDK({
-    traceExporter: langfuseTelemetryExporter,
-    instrumentations: [getNodeAutoInstrumentations()],
+  langfuseSpanProcessor = new LangfuseSpanProcessor({
+    ...langfuseConfig,
+    exportMode: 'immediate',
   });
-  langfuseTelemetry.start();
+  const openTelemetry = new NodeSDK({
+    spanProcessors: [langfuseSpanProcessor],
+  });
+  openTelemetry.start();
 }
 
 /** Get the telemetry config for a given method */
@@ -201,11 +199,7 @@ export const ai = {
   },
   /** Ensure all traces get flushed to Langfuse */
   flush: async () => {
-    await Promise.all([
-      langfuse?.flushAsync(),
-      langfuseTelemetryExporter?.forceFlush(),
-      langfuseTelemetry?.shutdown(),
-    ]);
+    await Promise.all([langfuse?.flushAsync(), langfuseSpanProcessor?.forceFlush()]);
   },
   /** Generate text using an LLM */
   generateText: async ({

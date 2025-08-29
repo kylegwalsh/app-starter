@@ -19,6 +19,7 @@
 - Consider flushing langfuse locally to ensure testing traces appear with lcl environment
 - Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)
 - Try adding posthog LLM analytics
+- Remove AI route when done testing
 
 ## OTHER
 
