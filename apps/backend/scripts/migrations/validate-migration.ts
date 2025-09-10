@@ -8,8 +8,8 @@ import { spawn } from 'node:child_process';
  */
 
 const command = 'pnpm';
-const args = ['db:migrate'];
-const prompt = 'What type of migration';
+const args = ['db:migrate', '--method', 'schema'];
+const prompt = 'Enter a name for the new migration:';
 
 const child = spawn(command, args, { shell: true });
 

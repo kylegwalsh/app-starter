@@ -63,15 +63,37 @@ const getMigrationDirName = async (): Promise<string> => {
   return `${year}${month}${day}${hours}${minutes}${seconds}_${format.case(name, 'snakeCase')}`;
 };
 
+/** Parse CLI arguments for non-interactive usage */
+const parseCliArgs = (): { method?: 'schema' | 'manual' } => {
+  const argv = process.argv.slice(2);
+  let method: string | undefined;
+
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === '--method' || arg === '-m') {
+      method = argv[i + 1];
+      i++;
+      continue;
+    }
+    if (arg.startsWith('--method=')) {
+      method = arg.split('=')[1];
+      continue;
+    }
+  }
+
+  if (method && method !== 'schema' && method !== 'manual') {
+    console.error('❌ Invalid value for --method. Expected "schema" or "manual".');
+    process.exit(1);
+  }
+
+  return { method: method as 'schema' | 'manual' | undefined };
+};
+
 /** Syncs local changes to the migration */
 const syncLocalChangesToMigration = async () => {
   try {
     // Remove any existing container
     stopShadowDB();
-
-    // Prompt for migration name
-    const migrationDirName = await getMigrationDirName();
-    const migrationPath = `db/migrations/${migrationDirName}`;
 
     // Start new container
     console.log('\nStarting shadow DB container...');
@@ -91,6 +113,10 @@ const syncLocalChangesToMigration = async () => {
       console.log(`✔ Your DB is already up to date.\n`);
       process.exit(0);
     }
+
+    // Prompt for migration name only when there are changes
+    const migrationDirName = await getMigrationDirName();
+    const migrationPath = `db/migrations/${migrationDirName}`;
 
     // Generate the down migration as well (for convenience)
     const migrationDownBuffer = execSync(
@@ -147,20 +173,27 @@ const generateManualMigrationFile = () => {
 // ---------- MIGRATION CREATION ----------
 /** Create a migration using the shadow DB */
 const createMigration = async () => {
-  // Ask user which type of migration they're running
-  const { migrationType } = await inquirer.prompt<{
-    migrationType: string;
-  }>([
-    {
-      type: 'list',
-      name: 'migrationType',
-      message: 'What type of migration are you running?',
-      choices: [
-        { name: 'Schema change (sync changes during deployments)', value: 'schema' },
-        { name: 'Manual data migration (custom SQL for complex changes)', value: 'manual' },
-      ],
-    },
-  ]);
+  const { method } = parseCliArgs();
+
+  // Ask user which type of migration they're running if not provided via CLI
+  let migrationType = method;
+  if (!migrationType) {
+    const { migrationType: selectedMigrationType } = await inquirer.prompt<{
+      migrationType: string;
+    }>([
+      {
+        type: 'list',
+        name: 'migrationType',
+        message: 'What type of migration are you running?',
+        choices: [
+          { name: 'Schema change (sync changes during deployments)', value: 'schema' },
+          { name: 'Manual data migration (custom SQL for complex changes)', value: 'manual' },
+        ],
+      },
+    ]);
+
+    migrationType = selectedMigrationType as 'schema' | 'manual';
+  }
 
   // Run the appropriate migration type
   switch (migrationType) {
