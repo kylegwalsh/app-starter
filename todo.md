@@ -14,11 +14,8 @@
 
 ## LANGFUSE
 
-- Upgrade to latest langfuse (in stash)
-- Ensure langfuse is using correct "environment" field
-- Consider flushing langfuse locally to ensure testing traces appear with lcl environment
-- Figure out how to reliably flush the Langfuse traces (shutting down SDK and forceFlushing don't seem to work)
-- Try adding posthog LLM analytics
+- Get langfuse generations linked under one trace
+- Consider upgrading to latest langfuse (in stash)
 - Remove AI route when done testing
 
 ## OTHER

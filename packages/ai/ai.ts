@@ -8,8 +8,7 @@ import { LanguageModelV2 } from '@ai-sdk/provider';
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
 import { LangfuseSpanProcessor } from '@langfuse/otel';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { env } from '@repo/config';
-import { config } from '@repo/config';
+import { config, env } from '@repo/config';
 import { addLogMetadata, getLogMetadata } from '@repo/logs';
 import { generateObject, GenerateObjectResult, generateText } from 'ai';
 import { Langfuse } from 'langfuse';
@@ -20,7 +19,7 @@ import { z } from 'zod';
 let langfuse: Langfuse | undefined;
 /** Langfuse telemetry exporter */
 let langfuseSpanProcessor: LangfuseSpanProcessor | undefined;
-// Only initialize Langfuse if it's setup and we're running in AWS
+// Only initialize Langfuse if it's setup
 if (
   (env as Record<string, string>).LANGFUSE_SECRET_KEY &&
   (env as Record<string, string>).LANGFUSE_PUBLIC_KEY
