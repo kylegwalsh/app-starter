@@ -88,28 +88,30 @@ _All packages and apps are written in TypeScript for consistency and type safety
 
 ```text
 /
-├── apps/
+├── apps/              # Deployable applications (frontend, backend, documentation)
 │   ├── web/           # Next.js frontend app
 │   ├── backend/       # Serverless backend (SST)
 │   ├── storybook/     # Storybook documentation and testing for components
 │   └── docs/          # (Optional) Fumadocs-powered documentation app (deployment disabled by default)
-├── packages/
+├── packages/          # Shared packages and utilities
 │   ├── config/        # Shared configuration
 │   ├── eslint/        # Shared ESLint config
 │   ├── tsconfig/      # Shared TypeScript config
-│   ├── design/ # Shared design system (React)
+│   ├── design/        # Shared design system (React)
 │   ├── schemas/       # Shared schemas (forms + validation)
 │   ├── logs/          # Shared logging package (uses pino)
-│   └── ...            # (More packages can be added)
+│   └── ...
 ├── infra/             # Infrastructure code (SST, AWS)
-│   ├── api.ts
-│   ├── secrets.ts
-│   ├── website.ts
+│   ├── api.ts         # Backend API infrastructure
+│   ├── web.ts         # Web-app deployment infrastructure
+│   ├── secrets.ts     # Backend environment secrets
+│   ├── docs.ts        # (Optional) Documentation site deployment infrastructure
+│   ├── ping-db.ts     # Simple function to keep free database awake
+│   ├── constants.ts   # Shared constants (domain, etc.)
 │   └── ...
 ├── scripts/           # Helper scripts for setup and development
 ├── .github/           # GitHub Actions workflows
 ├── templates/         # Project/package templates
-├── prompts/           # Prompt files for AI or automation
 ├── sst.config.ts      # SST configuration
 ├── package.json
 ├── pnpm-workspace.yaml
