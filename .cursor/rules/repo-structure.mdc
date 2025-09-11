@@ -1,6 +1,5 @@
 ---
-description: This is the project structure for this app.
-globs: 
+description: This is the project structure for this monorepo
 alwaysApply: true
 ---
 

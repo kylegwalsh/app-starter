@@ -1,5 +1,5 @@
 ---
-description: These are the guidelines for the backend portion of the app.
+description: These are the guidelines for the backend portion of the app
 globs: apps/backend/**/*
 alwaysApply: false
 ---

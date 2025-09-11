@@ -1,6 +1,6 @@
 ---
-description: These are the type rules for this app.
-globs: **.ts,**.tsx
+description: These are the type rules for this repo
+globs: *.ts, *.tsx
 alwaysApply: false
 ---
 
