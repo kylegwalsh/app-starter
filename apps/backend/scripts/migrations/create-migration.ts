@@ -2,7 +2,6 @@
 import { execSync } from 'node:child_process';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
-import net from 'node:net';
 import readline from 'node:readline';
 
 import { format } from '@repo/utils';
@@ -91,51 +90,17 @@ const parseCliArgs = (): { method?: 'schema' | 'manual' } => {
   return { method: method as 'schema' | 'manual' | undefined };
 };
 
-/** Returns true if a TCP port is accepting connections */
-const isPortOpen = (port: number, host = '127.0.0.1'): Promise<boolean> =>
-  new Promise((resolve) => {
-    const socket = new net.Socket();
-    socket.setTimeout(750);
-    socket.once('connect', () => {
-      socket.destroy();
-      resolve(true);
-    });
-    socket.once('timeout', () => {
-      socket.destroy();
-      resolve(false);
-    });
-    socket.once('error', () => {
-      resolve(false);
-    });
-    socket.connect(port, host);
-  });
-
-/** Wait for a port to be open for up to timeoutMs */
-const waitForPortOpen = async (port: number, timeoutMs = 15_000) => {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    if (await isPortOpen(port)) return;
-    await new Promise((r) => setTimeout(r, 300));
-  }
-  throw new Error(`Port ${port} did not open within ${timeoutMs}ms`);
-};
-
 /** Syncs local changes to the migration */
 const syncLocalChangesToMigration = async () => {
-  /** Whether we had to start a shadow DB container manually */
-  let startedShadowContainer = false;
-
   try {
-    // If a service is already running on localhost:DB_PORT, use it; otherwise start a container
-    const isOpen = await isPortOpen(DB_PORT);
-    if (!isOpen) {
-      console.log('\nStarting shadow DB container...');
-      execSync(
-        `docker run -d --rm --name ${DOCKER_NAME} -e POSTGRES_PASSWORD=shadow -e POSTGRES_DB=shadowdb -p ${DB_PORT}:5432 ${POSTGRES_IMAGE}`
-      );
-      startedShadowContainer = true;
-      await waitForPortOpen(DB_PORT);
-    }
+    // Remove any existing container
+    stopShadowDB();
+
+    // Start new container
+    console.log('\nStarting shadow DB container...');
+    execSync(
+      `docker run -d --rm --name ${DOCKER_NAME} -e POSTGRES_PASSWORD=shadow -e POSTGRES_DB=shadowdb -p ${DB_PORT}:5432 ${POSTGRES_IMAGE}`
+    );
 
     // Run Prisma migrate diff to generate up migration (if any is needed)
     console.log('\nChecking whether there were any changes to the schema...');
@@ -184,8 +149,7 @@ const syncLocalChangesToMigration = async () => {
 
     process.exit(1);
   } finally {
-    // Stop only if we started the container (do not kill CI service)
-    if (startedShadowContainer) stopShadowDB();
+    stopShadowDB();
   }
 };
 
