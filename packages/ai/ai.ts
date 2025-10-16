@@ -6,17 +6,17 @@ import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 // import { createOpenAI } from '@ai-sdk/openai';
 import { LanguageModelV2 } from '@ai-sdk/provider';
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
+import { LangfuseClient } from '@langfuse/client';
 import { LangfuseSpanProcessor } from '@langfuse/otel';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { config, env } from '@repo/config';
 import { addLogMetadata, getLogMetadata } from '@repo/logs';
 import { generateObject, GenerateObjectResult, generateText } from 'ai';
-import { Langfuse } from 'langfuse';
 import { z } from 'zod';
 
 // ---------- LANGFUSE ----------
 /** Langfuse client */
-let langfuse: Langfuse | undefined;
+let langfuse: LangfuseClient | undefined;
 /** Langfuse telemetry exporter */
 let langfuseSpanProcessor: LangfuseSpanProcessor | undefined;
 // Only initialize Langfuse if it's setup
@@ -24,24 +24,27 @@ if (
   (env as Record<string, string>).LANGFUSE_SECRET_KEY &&
   (env as Record<string, string>).LANGFUSE_PUBLIC_KEY
 ) {
+  console.log('INIT LANGFUSE');
   /** Config for Langfuse */
-  const langfuseConfig: ConstructorParameters<typeof Langfuse>[0] = {
-    environment: config.stage,
+  const langfuseConfig: ConstructorParameters<typeof LangfuseClient>[0] = {
     secretKey: (env as Record<string, string>).LANGFUSE_SECRET_KEY,
     publicKey: (env as Record<string, string>).LANGFUSE_PUBLIC_KEY,
     baseUrl: 'https://us.cloud.langfuse.com',
   };
 
   // Initialize everything needed for Langfuse
-  langfuse = new Langfuse(langfuseConfig);
+  langfuse = new LangfuseClient(langfuseConfig);
   langfuseSpanProcessor = new LangfuseSpanProcessor({
     ...langfuseConfig,
+    environment: config.stage,
     exportMode: 'immediate',
+    shouldExportSpan: () => false,
   });
   const openTelemetry = new NodeSDK({
     spanProcessors: [langfuseSpanProcessor],
   });
   openTelemetry.start();
+  console.log('DONE');
 }
 
 /** Get the telemetry config for a given method */
@@ -49,24 +52,24 @@ const getTelemetryConfig = ({ name, parentTraceId }: { name?: string; parentTrac
   const { langfuseTraceId, userId, awsRequestId, request } = getLogMetadata();
 
   // If we haven't created a parent trace yet, create one
-  let traceId = parentTraceId ?? langfuseTraceId;
-  if (!traceId) {
-    traceId = ai.createTrace({
-      name: request?.path ? `${request?.method} ${request?.path}` : 'Unknown',
-      userId,
-      awsRequestId,
-    }) as string;
-    addLogMetadata({ langfuseTraceId: traceId });
-  }
+  // let traceId = parentTraceId ?? langfuseTraceId;
+  // if (!traceId) {
+  //   traceId = ai.createTrace({
+  //     name: request?.path ? `${request?.method} ${request?.path}` : 'Unknown',
+  //     userId,
+  //     awsRequestId,
+  //   }) as string;
+  //   addLogMetadata({ langfuseTraceId: traceId });
+  // }
 
   return {
-    isEnabled: true,
-    functionId: name,
+    // isEnabled: true,
+    // functionId: name,
     // Attach each run to our overall route trace
-    metadata: {
-      langfuseTraceId: traceId,
-      langfuseUpdateParent: false, // Do not update the parent trace with execution results
-    },
+    // metadata: {
+    //   langfuseTraceId: traceId,
+    //   langfuseUpdateParent: false, // Do not update the parent trace with execution results
+    // },
   };
 };
 
@@ -129,27 +132,27 @@ export const ai = {
   /** Our available AI models */
   models,
   /** Generate a new parent trace */
-  createTrace: ({
-    name,
-    userId,
-    awsRequestId,
-  }: {
-    name: string;
-    userId?: string;
-    awsRequestId?: string;
-  }) => {
-    const traceId = randomUUID();
-    langfuse?.trace({
-      id: traceId,
-      name,
-      userId,
-      metadata: {
-        awsRequestId,
-      },
-    });
+  // createTrace: ({
+  //   name,
+  //   userId,
+  //   awsRequestId,
+  // }: {
+  //   name: string;
+  //   userId?: string;
+  //   awsRequestId?: string;
+  // }) => {
+  //   const traceId = randomUUID();
+  //   langfuse?.trace({
+  //     id: traceId,
+  //     name,
+  //     userId,
+  //     metadata: {
+  //       awsRequestId,
+  //     },
+  //   });
 
-    return traceId;
-  },
+  //   return traceId;
+  // },
   /** Gets the ID of the current trace */
   getTraceId: () => {
     const { langfuseTraceId } = getLogMetadata();
@@ -172,7 +175,7 @@ export const ai = {
     comment?: string;
   }) => {
     // Determine the data type based on the score type
-    let dataType: Parameters<NonNullable<typeof langfuse>['score']>[0]['dataType'];
+    let dataType: Parameters<NonNullable<typeof langfuse>['score']['create']>[0]['dataType'];
     switch (typeof score) {
       case 'boolean': {
         dataType = 'BOOLEAN';
@@ -188,7 +191,7 @@ export const ai = {
       }
     }
 
-    langfuse?.score({
+    langfuse?.score.create({
       traceId,
       name,
       value: typeof score === 'boolean' ? (score ? 1 : 0) : score,
@@ -198,7 +201,7 @@ export const ai = {
   },
   /** Ensure all traces get flushed to Langfuse */
   flush: async () => {
-    await Promise.all([langfuse?.flushAsync(), langfuseSpanProcessor?.forceFlush()]);
+    await Promise.all([langfuse?.flush(), langfuseSpanProcessor?.forceFlush()]);
   },
   /** Generate text using an LLM */
   generateText: async ({

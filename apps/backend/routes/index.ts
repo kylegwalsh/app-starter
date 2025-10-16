@@ -6,13 +6,13 @@ import { protectedProcedure } from './trpc/procedures';
 
 /** The actual router used to handle all tRPC traffic */
 export const router = t.router({
-  ai: protectedProcedure.query(() => {
-    const result = ai.generateText({
+  ai: protectedProcedure.mutation(async () => {
+    const result = await ai.generateText({
       name: 'Generate 1 to 100',
       prompt: 'Generate a random number between 1 and 100',
     });
 
-    const result2 = ai.generateText({
+    const result2 = await ai.generateText({
       name: 'Generate 1 to 1000',
       prompt: 'Generate a random number between 1 and 1000',
     });

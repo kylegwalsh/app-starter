@@ -17,6 +17,11 @@
 - Get langfuse generations linked under one trace
 - Consider upgrading to latest langfuse (in stash)
 - Remove AI route when done testing
+- Set langfuse input/output to be endpoint input/output
+
+## POSTHOG WORKFLOWS
+
+- Deprecate Loops in favor of PostHog workflows
 
 ## OTHER
 

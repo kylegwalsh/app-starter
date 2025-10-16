@@ -2,6 +2,7 @@
 
 import {
   Badge,
+  Button,
   Card,
   CardAction,
   CardContent,
@@ -147,7 +148,7 @@ export default function DashboardPage() {
     }
   }, [isMobile]);
 
-  const { data: aiData } = trpc.ai.useQuery();
+  const { mutate } = trpc.ai.useMutation();
 
   const filteredData = useMemo(
     () =>
@@ -170,6 +171,7 @@ export default function DashboardPage() {
   return (
     <>
       <Header breadcrumbs={[{ label: 'Overview' }]} />
+      <Button onClick={() => mutate()}>Generate</Button>
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
           <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
