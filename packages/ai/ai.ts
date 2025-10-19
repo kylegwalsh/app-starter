@@ -25,11 +25,14 @@ import { z } from 'zod';
 let langfuse: LangfuseClient | undefined;
 /** Langfuse telemetry exporter */
 let langfuseSpanProcessor: LangfuseSpanProcessor | undefined;
-// Only initialize Langfuse if it's setup
-if (
+
+/** Check if Langfuse is enabled */
+const langfuseEnabled =
   (env as Record<string, string>).LANGFUSE_SECRET_KEY &&
-  (env as Record<string, string>).LANGFUSE_PUBLIC_KEY
-) {
+  (env as Record<string, string>).LANGFUSE_PUBLIC_KEY;
+
+// Only initialize Langfuse if it's setup
+if (langfuseEnabled) {
   /** Config for Langfuse */
   const langfuseConfig: ConstructorParameters<typeof LangfuseClient>[0] = {
     secretKey: (env as Record<string, string>).LANGFUSE_SECRET_KEY,
@@ -55,6 +58,9 @@ const traceGeneration = <TArgs extends unknown[], TReturn>(
   fn: (...args: TArgs) => Promise<TReturn>
 ): ((...args: TArgs) => Promise<TReturn>) => {
   return async (...args: TArgs): Promise<TReturn> => {
+    // If Langfuse is not enabled, just skip the tracing
+    if (!langfuseEnabled) return await fn(...args);
+
     // Get our log data (indicates if we have a top-level request trace)
     const { langfuseTraceId, userId, awsRequestId, request } = getLogMetadata();
     // See if we have an active trace wrapping this invocation (indicates we're inside another observation)

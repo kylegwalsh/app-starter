@@ -15,7 +15,6 @@
 ## LANGFUSE
 
 - Upgrade Haiku to 4.5
-- Ensure AI works when langfuse is disabled
 - Remove AI route when done testing
 
 ## POSTHOG WORKFLOWS

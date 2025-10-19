@@ -15,8 +15,8 @@ export const AXIOM_DATASET = new sst.Secret('AXIOM_DATASET');
 // export const GOOGLE_GENERATIVE_AI_API_KEY = new sst.Secret('GOOGLE_GENERATIVE_AI_API_KEY');
 
 // Langfuse
-export const LANGFUSE_SECRET_KEY = new sst.Secret('LANGFUSE_SECRET_KEY');
-export const LANGFUSE_PUBLIC_KEY = new sst.Secret('LANGFUSE_PUBLIC_KEY');
+// export const LANGFUSE_SECRET_KEY = new sst.Secret('LANGFUSE_SECRET_KEY');
+// export const LANGFUSE_PUBLIC_KEY = new sst.Secret('LANGFUSE_PUBLIC_KEY');
 
 // Loops
 export const LOOPS_API_KEY = new sst.Secret('LOOPS_API_KEY');
