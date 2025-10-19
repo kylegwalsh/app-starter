@@ -1,6 +1,6 @@
 import { ai } from '@repo/ai';
 import { analytics } from '@repo/analytics';
-import { addLambdaRequestContext, addLogMetadata, flushLogs } from '@repo/logs';
+import { addLambdaRequestContext, addLogMetadata, flushLogs, log } from '@repo/logs';
 import { APIGatewayProxyEventV2, Context, SQSEvent } from 'aws-lambda';
 
 /** The lambda event options we accept */
@@ -17,7 +17,11 @@ export type LambdaHandler<T extends EventType> = (
 
 /** Flush all async observability tools */
 const flushObservability = async () => {
-  await Promise.all([analytics.flush(), ai.flush(), flushLogs()]);
+  try {
+    await Promise.all([analytics.flush(), ai.flush(), flushLogs()]);
+  } catch (error) {
+    log.error({ error }, 'Error flushing observability');
+  }
 };
 
 /**

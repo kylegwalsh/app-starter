@@ -148,7 +148,11 @@ export default function DashboardPage() {
     }
   }, [isMobile]);
 
-  const { mutate } = trpc.ai.useMutation();
+  const { mutate } = trpc.ai.useMutation({
+    onSuccess: (data) => {
+      console.log(data);
+    },
+  });
 
   const filteredData = useMemo(
     () =>

@@ -1,3 +1,4 @@
+import { ai } from '@repo/ai';
 import { log } from '@repo/logs';
 import { TRPCError } from '@trpc/server';
 
@@ -35,4 +36,14 @@ export const isAuthed = t.middleware(async ({ next, ctx }) => {
       organization: ctx.organization,
     },
   });
+});
+
+/** Automatically intercepts the response and uses it to update our AI trace metadata */
+export const updateAiTrace = t.middleware(async ({ next, getRawInput }) => {
+  // Wait for the procedure to complete
+  const [result, input] = await Promise.all([next(), getRawInput()]);
+
+  // Update the AI trace with the input and output of our request
+  ai.updateRequestTrace({ input, output: 'data' in result ? result.data : undefined });
+  return result;
 });

@@ -20,7 +20,7 @@
     "typescript": "5.8.3"
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "3.0.36",
+    "@ai-sdk/amazon-bedrock": "3.0.43",
     "@ai-sdk/anthropic": "2.0.27",
     "@ai-sdk/google": "2.0.23",
     "@ai-sdk/openai": "2.0.52",
@@ -29,11 +29,9 @@
     "@langfuse/client": "4.2.0",
     "@langfuse/otel": "4.2.0",
     "@langfuse/tracing": "4.2.0",
-    "@opentelemetry/sdk-node": "0.206.0",
+    "@opentelemetry/sdk-trace-node": "2.1.0",
     "@repo/logs": "workspace:*",
-    "ai": "5.0.68",
-    "langfuse": "3.38.4",
-    "langfuse-vercel": "3.38.4",
+    "ai": "5.0.75",
     "zod": "3.25.49"
   }
 }

@@ -1,4 +1,5 @@
 import { ai } from '@repo/ai';
+import { z } from 'zod';
 
 import { billingRouter } from './billing';
 import { t } from './trpc/init';
@@ -12,11 +13,15 @@ export const router = t.router({
       prompt: 'Generate a random number between 1 and 100',
     });
 
-    const result2 = await ai.generateText({
+    const result2 = await ai.generateObject({
       name: 'Generate 1 to 1000',
       prompt: 'Generate a random number between 1 and 1000',
+      schema: z.object({
+        number: z.number(),
+      }),
     });
-    return { result, result2 };
+
+    return { result1: result.text, result2: result2.object };
   }),
   billing: billingRouter,
 });

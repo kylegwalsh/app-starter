@@ -14,14 +14,17 @@
 
 ## LANGFUSE
 
-- Get langfuse generations linked under one trace
-- Consider upgrading to latest langfuse (in stash)
+- Upgrade Haiku to 4.5
+- Ensure AI works when langfuse is disabled
 - Remove AI route when done testing
-- Set langfuse input/output to be endpoint input/output
 
 ## POSTHOG WORKFLOWS
 
-- Deprecate Loops in favor of PostHog workflows
+- Deprecate Loops in favor of PostHog workflows once it's further along
+  - Update onboarding script
+    - Go to posthog workflows > click "New channel" > add a domain like account@mail.DOMAIN.com
+    - Add the DNS records in your domain host
+    - TBD
 
 ## OTHER
 
@@ -30,6 +33,7 @@
 
 ## MINOR IMPROVEMENTS
 
+- Remove the patch we applied to the AI SDK after this PR is addressed: https://github.com/vercel/ai/issues/9593
 - Upgrade SST to see if it improves windows support (like hot reloading backend when modifying packages outside the backend)
 - Search codebase for all TODO comments and fix them (need to upgrade better auth for one - https://github.com/better-auth/better-auth/issues/3686)
 - Potentially remove separate authConfig after issue is resolved - https://github.com/better-auth/better-auth/issues/3408

@@ -1,5 +1,5 @@
 {
   "extends": "@repo/tsconfig/base.json",
   "include": ["**/*", ".lintstagedrc.js", "global.d.ts"],
-  "exclude": ["node_modules", "apps", "packages", "dist"]
+  "exclude": ["node_modules", "apps", "packages", "dist", ".sst", ".turbo"]
 }
