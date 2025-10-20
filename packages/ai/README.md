@@ -29,7 +29,7 @@ AI functionality and tracing utilities (backend-only).
 
 ## Usage
 
-Generate text (default Bedrock model):
+Generate text:
 
 ```ts
 import { ai } from '@repo/ai';
@@ -45,23 +45,48 @@ Generate a typed object with Zod:
 import { ai } from '@repo/ai';
 import { z } from 'zod';
 
-const ReleaseNotes = z.object({ summary: z.string(), highlights: z.array(z.string()) });
+const releaseNotes = z.object({ summary: z.string(), highlights: z.array(z.string()) });
 
 const result = await ai.generateObject({
-  schema: ReleaseNotes,
+  schema: releaseNotes,
   prompt: 'Create a JSON object of highlights from this changelog: ...',
 });
 
-const notes = result.object; // typed to z.infer<typeof ReleaseNotes>
+const notes = result.object; // typed to z.infer<typeof releaseNotes>
 ```
 
-Attach to an existing trace (Langfuse):
+Group multiple generations under a custom observation:
 
 ```ts
 import { ai } from '@repo/ai';
 
-const parentTraceId = ai.createTrace({ name: 'POST /trpc/release.summarize', userId });
-await ai.generateText({ prompt: '...', parentTraceId, name: 'summary_step' });
+// Wrap multiple AI calls in a custom observation
+const result = await ai.startActiveObservation('Analyze Release', async () => {
+  const summary = await ai.generateText({
+    prompt: 'Summarize the release notes',
+    name: 'Generate Summary',
+  });
+
+  const highlights = await ai.generateObject({
+    schema: HighlightsSchema,
+    prompt: `Extract highlights from: ${summary.text}`,
+    name: 'Extract Highlights',
+  });
+
+  return { summary, highlights };
+});
+
+// In Langfuse, this creates the hierarchy:
+// Analyze Release
+//   > Generate Summary
+//   > Extract Highlights
+```
+
+Without `startActiveObservation`, generations are grouped at the request level:
+
+```ts
+// Creates: GET /my-route > generateText
+await ai.generateText({ prompt: '...' });
 ```
 
 Score a trace:
@@ -74,3 +99,4 @@ Notes:
 
 - Langfuse is activated when the required env vars are present and running in AWS. Telemetry is attached automatically to generations.
 - The default provider is Amazon Bedrock (using AWS credentials from the Lambda environment). Other providers are scaffolded and can be enabled with API keys.
+- Use `startActiveObservation` to create logical groupings of AI operations in your traces, making it easier to analyze and debug complex workflows in Langfuse.
