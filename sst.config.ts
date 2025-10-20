@@ -38,7 +38,7 @@ export default $config({
       if (Array.isArray(args.permissions)) {
         args.permissions.push({
           effect: 'allow',
-          actions: ['bedrock:*'],
+          actions: ['bedrock:*', 'aws-marketplace:*'],
           resources: ['*'],
         });
       }

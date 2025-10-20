@@ -12,11 +12,6 @@
 - Comment out plans in stripe plugin
 - Maybe comment out stripe client or ensure it doesn't run without env vars (like langfuse) - ensure it works with setup script
 
-## LANGFUSE
-
-- Upgrade Haiku to 4.5
-- Remove AI route when done testing
-
 ## POSTHOG WORKFLOWS
 
 - Deprecate Loops in favor of PostHog workflows once it's further along

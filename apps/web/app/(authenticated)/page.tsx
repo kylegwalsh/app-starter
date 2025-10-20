@@ -2,7 +2,6 @@
 
 import {
   Badge,
-  Button,
   Card,
   CardAction,
   CardContent,
@@ -28,7 +27,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 
 import { Header } from '@/components';
-import { trpc } from '@/core';
 
 const chartData = [
   { date: '2024-04-01', desktop: 222, mobile: 150 },
@@ -148,12 +146,6 @@ export default function DashboardPage() {
     }
   }, [isMobile]);
 
-  const { mutate } = trpc.ai.useMutation({
-    onSuccess: (data) => {
-      console.log(data);
-    },
-  });
-
   const filteredData = useMemo(
     () =>
       chartData.filter((item) => {
@@ -175,7 +167,6 @@ export default function DashboardPage() {
   return (
     <>
       <Header breadcrumbs={[{ label: 'Overview' }]} />
-      <Button onClick={() => mutate()}>Generate</Button>
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
           <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">

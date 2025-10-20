@@ -142,21 +142,18 @@ const bedrock = createAmazonBedrock({
 /** Our available AI models */
 export const models = {
   bedrock: {
-    'claude-4-5-haiku': bedrock('us.anthropic.claude-3-5-haiku-20241022-v1:0'),
+    'claude-4-5-haiku': bedrock('us.anthropic.claude-haiku-4-5-20251001-v1:0'),
     'claude-4-5-sonnet': bedrock('us.anthropic.claude-sonnet-4-5-20250929-v1:0'),
   },
   // anthropic: {
-  //   'claude-3-5-haiku': anthropic('claude-3-5-haiku-20241022'),
-  //   'claude-4-sonnet': anthropic('claude-4-sonnet-20250514'),
+  //   'claude-haiku-4-5': anthropic('claude-haiku-4-5'),
+  //   'claude-sonnet-4-5': anthropic('claude-sonnet-4-5'),
   // },
   // openai: {
-  //   'gpt-4.1': openai('gpt-4.1'),
-  //   'gpt-4.1-mini': openai('gpt-4.1-mini'),
-  //   'o3': openai('o3'),
-  //   'o3-mini': openai('o3-mini'),
+  //   'gpt-5': openai('gpt-5'),
+  //   'gpt-5-mini': openai('gpt-5-mini'),
   // },
   // google: {
-  //   'gemini-2.0-flash': google('gemini-2.0-flash'),
   //   'gemini-2.5-flash': google('gemini-2.5-flash'),
   // },
 };
