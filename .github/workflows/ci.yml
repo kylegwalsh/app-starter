@@ -80,6 +80,22 @@ jobs:
       - name: Install SST providers
         run: pnpm exec sst install
 
+      # Cache indicator for CI initialization (never invalidates unless manually cleared)
+      - name: Cache CI initialization indicator
+        id: cache-ci-initialized
+        uses: actions/cache@v4
+        with:
+          path: .ci-initialized
+          key: sst-ci-initialized
+
+      # Initialize minimal ci stage since SST fails tests if the ci stage does't exist (only runs once)
+      - name: Initialize minimal CI stage
+        if: steps.cache-ci-initialized.outputs.cache-hit != 'true'
+        run: |
+          pnpm exec sst unlock --stage minimal || true
+          SKIP_SOURCEMAPS=true pnpm exec sst deploy --stage minimal
+          echo "initialized" > .ci-initialized
+
       # Get Playwright version
       - name: Get Playwright version
         id: playwright-version

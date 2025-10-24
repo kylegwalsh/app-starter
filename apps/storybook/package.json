@@ -7,7 +7,7 @@
     "build": "storybook build",
     "dev": "storybook dev -p 6006",
     "test": "sst shell -- vitest run",
-    "test:ci": "cross-env LOG_LEVEL=silent sst shell --stage ci -- vitest run --silent",
+    "test:ci": "cross-env LOG_LEVEL=silent sst shell --stage minimal -- vitest run --silent",
     "test:ui": "sst shell  -- vitest --ui",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",

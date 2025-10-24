@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "sst shell -- vitest run",
-    "test:ci": "cross-env LOG_LEVEL=silent sst shell --stage ci -- vitest run --silent",
+    "test:ci": "cross-env LOG_LEVEL=silent sst shell --stage minimal -- vitest run --silent",
     "test:ui": "sst shell -- vitest --ui",
     "auth:generate": "sst shell -- pnpm dlx @better-auth/cli generate --config ./core/auth.ts --output ./db/schema.prisma",
     "db:start": "pnpm db:get-url \"prisma db push && prisma studio --browser none\"",

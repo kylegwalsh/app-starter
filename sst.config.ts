@@ -129,6 +129,12 @@ export default $config({
     });
 
     // ---------- MAIN ----------
+    // SST fails if you run `sst shell` without a corresponding stage being deployed.
+    // This causes our CI to fail unless we deploy something first. To ensure we keep it
+    // speedy the first time (and this should only deploy once), we create a minimal stage
+    // and just skip the rest of the deployment.
+    if ($app.stage === 'minimal') return;
+
     // Import primary application stacks
     await import('./infra/api');
     await import('./infra/web');
