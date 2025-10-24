@@ -1,4 +1,14 @@
-import { checkCLIs, getOrCreateStage } from './init.js';
+import { checkCLIs, getOrCreateStage, selectOrCreateAwsProfile } from './init.js';
+
+const printFinalNotes = () => {
+  console.log('--- Final Steps ---');
+  console.log('You can start the app with: pnpm dev\n');
+
+  console.log(
+    '- Make sure you restart your terminal for your AWS profile changes to take effect.\n'
+  );
+  console.log('✔ Setup complete! Happy coding!\n');
+};
 
 /** Initialize a user's local environment for an existing project */
 const initExisting = async () => {
@@ -10,7 +20,11 @@ const initExisting = async () => {
   // Get or create the user's personal environment stage
   await getOrCreateStage();
 
-  console.log('✔ Setup complete! Happy coding!\n');
+  // Select or create an AWS profile
+  await selectOrCreateAwsProfile({ existing: true });
+
+  // Print final notes
+  printFinalNotes();
 };
 
 void initExisting();

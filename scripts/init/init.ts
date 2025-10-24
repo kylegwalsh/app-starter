@@ -414,13 +414,26 @@ const initSecrets = () => {
  * Updates ~/.aws/credentials, ~/.aws/config, and .vscode/settings.json as needed.
  * Returns the selected profile name and credentials for personal and CI.
  */
-export const selectOrCreateAwsProfile = async () => {
+export const selectOrCreateAwsProfile = async ({ existing }: { existing?: boolean } = {}) => {
   console.log('Setting up AWS profile...');
 
   const homedir = os.homedir();
   const credPath = path.join(homedir, '.aws/credentials');
   const configPath = path.join(homedir, '.aws/config');
   const vscodeSettingsPath = path.resolve('.vscode/settings.json');
+
+  let profile = '';
+  let accessKey = '';
+  let secretKey = '';
+
+  // If existing, read profile from vscode settings
+  if (existing && fs.existsSync(vscodeSettingsPath)) {
+    const settingsContent = fs.readFileSync(vscodeSettingsPath, 'utf8');
+    const profileMatch = settingsContent.match(
+      /"terminal\.integrated\.env\.osx"[^}]*"AWS_PROFILE"\s*:\s*"([^"]+)"/
+    );
+    profile = profileMatch ? profileMatch[1] : '';
+  }
 
   // ---------- PERSONAL CREDENTIALS ----------
   // Read existing profiles
@@ -430,124 +443,229 @@ export const selectOrCreateAwsProfile = async () => {
     profiles = [...credContent.matchAll(/^\[([^\]]+)\]/gm)].map((m) => m[1]);
   }
 
-  const choices = [...profiles, 'Create new profile...'];
-  const selected = await promptSelect('Which AWS profile would you like to use?', choices);
-
-  let profile = selected;
-  let accessKey = '';
-  let secretKey = '';
-  if (selected === 'Create new profile...') {
-    // Prompt for new profile details
-    while (true) {
-      const profileInput = await promptUser('Enter a name for the new AWS profile: ');
-      profile = profileInput.trim();
-      if (!profile) {
-        console.log('Profile name cannot be empty.');
-        continue;
-      }
-      if (profiles.includes(profile)) {
-        console.log('Profile already exists. Please choose a different name.');
-        continue;
-      }
-      break;
-    }
-
-    // Get the user's AWS details
-    while (!accessKey) {
-      const accessKeyInput = await promptUser('Enter AWS Access Key ID: ');
-      accessKey = accessKeyInput.trim();
-      if (!accessKey) {
-        console.log('AWS Access Key ID cannot be empty.');
-      }
-    }
-
-    while (!secretKey) {
-      const secretKeyInput = await promptUser('Enter AWS Secret Access Key: ');
-      secretKey = secretKeyInput.trim();
-      if (!secretKey) {
-        console.log('AWS Secret Access Key cannot be empty.');
-      }
-    }
-
-    const regionInput = await promptUser(
-      'Enter AWS Region (press enter for default of us-east-1): '
-    );
-    const region = regionInput.trim() || 'us-east-1';
-
-    // Append to credentials file
-    const credEntry = `\n[${profile}]\naws_access_key_id=${accessKey}\naws_secret_access_key=${secretKey}\nregion=${region}\n`;
-    fs.appendFileSync(credPath, credEntry);
-
-    // Append to config file
-    const configEntry = `\n[profile ${profile}]\nregion = ${region}\n`;
-    fs.appendFileSync(configPath, configEntry);
-
-    console.log(`✔ Created new AWS profile: ${profile}`);
-  } else {
-    // If selecting an existing profile, try to read the keys from the credentials file
+  // Helper function to read credentials from a profile
+  const readProfileCredentials = (profileName: string) => {
     if (fs.existsSync(credPath)) {
       const credContent = fs.readFileSync(credPath, 'utf8');
-      const profileRegex = new RegExp(`\\[${profile}\\]([\\s\\S]*?)(?=\\n\\[|$)`, 'g');
+      const profileRegex = new RegExp(`\\[${profileName}\\]([\\s\\S]*?)(?=\\n\\[|$)`, 'g');
       const match = profileRegex.exec(credContent);
       if (match && match[1]) {
         const sectionContent = match[1];
         const keyMatch = sectionContent.match(/aws_access_key_id\s*=\s*([^\n]+)/);
         const secretMatch = sectionContent.match(/aws_secret_access_key\s*=\s*([^\n]+)/);
-        accessKey = keyMatch ? keyMatch[1].trim() : '';
-        secretKey = secretMatch ? secretMatch[1].trim() : '';
+        const regionMatch = sectionContent.match(/region\s*=\s*([^\n]+)/);
+        return {
+          accessKey: keyMatch ? keyMatch[1].trim() : '',
+          secretKey: secretMatch ? secretMatch[1].trim() : '',
+          region: regionMatch ? regionMatch[1].trim() : '',
+        };
       }
+    }
+    return { accessKey: '', secretKey: '', region: '' };
+  };
+
+  // Helper function to prompt for AWS credentials and generate config entries
+  const promptAndGenerateAwsConfig = async ({
+    profileName,
+    existingAccessKey,
+    existingSecretKey,
+    existingRegion,
+  }: {
+    profileName: string;
+    existingAccessKey?: string;
+    existingSecretKey?: string;
+    existingRegion?: string;
+  }) => {
+    let accessKey = existingAccessKey;
+    let secretKey = existingSecretKey;
+    let region = existingRegion;
+
+    // Prompt for access key if not provided
+    if (!accessKey) {
+      while (!accessKey) {
+        const accessKeyInput = await promptUser('Enter AWS Access Key ID: ');
+        accessKey = accessKeyInput.trim();
+        if (!accessKey) {
+          console.log('AWS Access Key ID cannot be empty.');
+        }
+      }
+    }
+
+    // Prompt for secret key if not provided
+    if (!secretKey) {
+      while (!secretKey) {
+        const secretKeyInput = await promptUser('Enter AWS Secret Access Key: ');
+        secretKey = secretKeyInput.trim();
+        if (!secretKey) {
+          console.log('AWS Secret Access Key cannot be empty.');
+        }
+      }
+    }
+
+    // Prompt for region if not provided
+    if (!region) {
+      const regionInput = await promptUser(
+        'Enter AWS Region (press enter for default of us-east-1): '
+      );
+      region = regionInput.trim() || 'us-east-1';
+    }
+
+    // Generate config entries
+    const credEntry = `\n[${profileName}]\naws_access_key_id=${accessKey}\naws_secret_access_key=${secretKey}\nregion=${region}\n`;
+    const configEntry = `\n[profile ${profileName}]\nregion = ${region}\n`;
+
+    // Update AWS files
+    fs.appendFileSync(credPath, credEntry);
+    fs.appendFileSync(configPath, configEntry);
+
+    return { accessKey, secretKey, region };
+  };
+
+  // If we're initializing an existing project, our flow is slightly different
+  // because we want to use the same profile specified in the .vscode/settings.json
+  if (existing && profile) {
+    // Check if profile already exists if we're initializing for an existing project
+    const locatedProfile = profiles.includes(profile);
+
+    // If the profile exists, just read the credentials
+    if (locatedProfile) {
+      const credentials = readProfileCredentials(profile);
+      accessKey = credentials.accessKey;
+      secretKey = credentials.secretKey;
+      console.log(`✔ Using existing AWS profile: ${profile}\n`);
+    }
+    // If the profile from settings doesn't exist in credentials, we need to create it
+    else if (!locatedProfile) {
+      const choices = [
+        ...profiles.map((p) => `Use existing profile: ${p}`),
+        'Create new profile...',
+      ];
+      const selected = await promptSelect(
+        `Profile "${profile}" not found in AWS credentials. What would you like to do?`,
+        choices
+      );
+
+      // If the user wants to create a new profile, prompt for the credentials
+      if (selected === 'Create new profile...') {
+        const config = await promptAndGenerateAwsConfig({ profileName: profile });
+        accessKey = config.accessKey;
+        secretKey = config.secretKey;
+
+        console.log(`✔ Created new AWS profile: ${profile}\n`);
+      }
+      // If they want to use an existing profile, read the credentials from the selected profile
+      else {
+        const sourceProfile = selected.replace('Use existing profile: ', '');
+        const credentials = readProfileCredentials(sourceProfile);
+
+        if (!credentials.accessKey || !credentials.secretKey) {
+          console.log(`❌ Failed to read credentials from profile: ${sourceProfile}`);
+          process.exit(1);
+        }
+
+        // Copy credentials to new profile with the name from settings
+        const config = await promptAndGenerateAwsConfig({
+          profileName: profile,
+          existingAccessKey: credentials.accessKey,
+          existingSecretKey: credentials.secretKey,
+          existingRegion: credentials.region,
+        });
+        accessKey = config.accessKey;
+        secretKey = config.secretKey;
+
+        console.log(
+          `✔ Created AWS profile "${profile}" using credentials from "${sourceProfile}"`
+        );
+      }
+    }
+  }
+  // Otherwise, we're initializing a new project and need to prompt the user for a profile
+  else {
+    const choices = [...profiles, 'Create new profile...'];
+    const selected = await promptSelect('Which AWS profile would you like to use?', choices);
+
+    if (selected === 'Create new profile...') {
+      // Prompt for new profile details
+      while (true) {
+        const profileInput = await promptUser('Enter a name for the new AWS profile: ');
+        profile = profileInput.trim();
+        if (!profile) {
+          console.log('Profile name cannot be empty.');
+          continue;
+        }
+        if (profiles.includes(profile)) {
+          console.log('Profile already exists. Please choose a different name.');
+          continue;
+        }
+        break;
+      }
+
+      // Get the user's AWS details
+      const config = await promptAndGenerateAwsConfig({ profileName: profile });
+      accessKey = config.accessKey;
+      secretKey = config.secretKey;
+
+      console.log(`✔ Created new AWS profile: ${profile}`);
+    }
+    // If they want to use an existing profile, just read the credentials
+    else {
+      profile = selected;
+      const credentials = readProfileCredentials(profile);
+      accessKey = credentials.accessKey;
+      secretKey = credentials.secretKey;
     }
   }
 
   // If we don't have any keys at this point, we'll just fail out
   if (!accessKey || !secretKey) process.exit(1);
 
-  // Update .vscode/settings.json
-  if (fs.existsSync(vscodeSettingsPath)) {
-    let settings = fs.readFileSync(vscodeSettingsPath, 'utf8');
-    settings = settings.replaceAll(
-      /(['"]AWS_PROFILE['"]\s*:\s*['"])[^'"]*(['"])/g,
-      `$1${profile}$2`
-    );
-    fs.writeFileSync(vscodeSettingsPath, settings);
-    console.log(`✔ Updated .vscode/settings.json to use AWS profile: ${profile}\n`);
-  }
-
-  // Run aws configure to set the current active profile (helpful for the rest of this run)
-  try {
-    execSync(`aws configure set profile ${profile}`);
-  } catch {}
+  // Set the AWS_PROFILE environment variable for the rest of this script execution
+  process.env.AWS_PROFILE = profile;
 
   // ---------- CI CREDENTIALS ----------
-  // Ask if they want to use the same credentials for Github Actions CI
-  const useSameForCI = await promptYesNo(
-    'Would you like to use the same AWS credentials for your Github Actions CI deployments? (y/n) '
-  );
-
   let ciAccessKey = '';
   let ciSecretKey = '';
-  if (useSameForCI) {
-    ciAccessKey = accessKey;
-    ciSecretKey = secretKey;
-  } else {
-    // Prompt for CI credentials
-    while (!ciAccessKey) {
-      const ciAccessKeyInput = await promptUser('Enter AWS Access Key ID for CI: ');
-      ciAccessKey = ciAccessKeyInput.trim();
-      if (!ciAccessKey) {
-        console.log('AWS Access Key ID for CI cannot be empty.');
-      }
-    }
-    while (!ciSecretKey) {
-      const ciSecretKeyInput = await promptUser('Enter AWS Secret Access Key for CI: ');
-      ciSecretKey = ciSecretKeyInput.trim();
-      if (!ciSecretKey) {
-        console.log('AWS Secret Access Key for CI cannot be empty.');
-      }
-    }
-  }
 
-  console.log('✔ Configured AWS credentials for CI.\n');
+  // If we're initializing for the first time, need to do a few things
+  if (!existing) {
+    // Make sure we update our .vscode/settings.json so it defaults to this AWS profile in the future
+    if (fs.existsSync(vscodeSettingsPath)) {
+      let settings = fs.readFileSync(vscodeSettingsPath, 'utf8');
+      settings = settings.replaceAll(
+        /(['"]AWS_PROFILE['"]\s*:\s*['"])[^'"]*(['"])/g,
+        `$1${profile}$2`
+      );
+      fs.writeFileSync(vscodeSettingsPath, settings);
+      console.log(`✔ Updated .vscode/settings.json to use AWS profile: ${profile}\n`);
+    }
+
+    // Ask if they want to use the same credentials for Github Actions CI
+    const useSameForCI = await promptYesNo(
+      'Would you like to use the same AWS credentials for your Github Actions CI deployments? (y/n) '
+    );
+    if (useSameForCI) {
+      ciAccessKey = accessKey;
+      ciSecretKey = secretKey;
+    } else {
+      // Prompt for CI credentials
+      while (!ciAccessKey) {
+        const ciAccessKeyInput = await promptUser('Enter AWS Access Key ID for CI: ');
+        ciAccessKey = ciAccessKeyInput.trim();
+        if (!ciAccessKey) {
+          console.log('AWS Access Key ID for CI cannot be empty.');
+        }
+      }
+      while (!ciSecretKey) {
+        const ciSecretKeyInput = await promptUser('Enter AWS Secret Access Key for CI: ');
+        ciSecretKey = ciSecretKeyInput.trim();
+        if (!ciSecretKey) {
+          console.log('AWS Secret Access Key for CI cannot be empty.');
+        }
+      }
+    }
+
+    console.log('✔ Configured AWS credentials for CI.\n');
+  }
 
   return {
     personal: {
@@ -753,7 +871,7 @@ const setupPosthog = async (projectName: string) => {
 
       // Guide to signup/login and API key creation
       console.log(
-        '\nSign up or login, then create a personal API key (with "Organization", "Project", and "Error tracking" permissions): https://app.posthog.com/settings/user-api-keys#variables'
+        '\nSign up or login (you will need to be on the pay as you go plan), then create a personal API key (with "Organization", "Project", and "Error tracking" permissions): https://app.posthog.com/settings/user-api-keys#variables'
       );
 
       // Prompt for personal API key and create the API connection
@@ -1559,29 +1677,6 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
   return { didSetup: true, didSetupProd: hasLiveAccount };
 };
 
-// ---------- AI SETUP HELPER ----------
-/** Guides the user through setting up AI */
-const setupAI = async () => {
-  console.log('Setting up AI...');
-
-  // Ask if they want to set up AI
-  const doSetup = await promptYesNo('Would you like to set up AI (AWS Bedrock)? (y/n) ');
-  if (!doSetup) {
-    console.log('AI setup skipped.\n');
-    return false;
-  }
-
-  // Guide the user through the setup steps
-  console.log('\nTo enable AI models in AWS Bedrock:');
-  console.log(
-    '1. Go to https://us-east-1.console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess'
-  );
-  console.log('2. Request access to at least the Anthropic models.');
-  await promptUser('Press enter to continue after you have requested model access...');
-  console.log('✔ AI setup step complete.\n');
-  return true;
-};
-
 // ---------- NOTES HELPERs ----------
 /** Prints tips and disclosures for the user. */
 const printTips = async () => {
@@ -1691,11 +1786,8 @@ const init = async () => {
   // Setup Loops emails
   const loopsSetup = await setupLoops();
 
-  // Setup AI
-  const didSetupAI = await setupAI();
-
   // Setup Langfuse
-  if (didSetupAI) await setupLangfuse();
+  await setupLangfuse();
 
   // Setup Stripe
   const stripeConfig = await setupStripe({ domain });
