@@ -807,6 +807,68 @@ const setupSupabase = async (projectName: string) => {
   return databaseConfig;
 };
 
+// ---------- DATABASE MIGRATION HELPERS ----------
+/** Marks all existing migrations as applied */
+const applyExistingMigrations = () => {
+  console.log('Marking existing database migrations as applied...\n');
+
+  // Track which migrations failed (outside try-catch so we can access in catch)
+  const failedMigrations: string[] = [];
+
+  try {
+    // Get all migration directories
+    const migrationsPath = path.resolve('apps/backend/db/migrations');
+    if (!fs.existsSync(migrationsPath)) {
+      console.log('✔ No existing migrations to apply.\n');
+      return;
+    }
+
+    const entries = fs.readdirSync(migrationsPath, { withFileTypes: true });
+    const migrationDirs = entries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort();
+
+    if (migrationDirs.length === 0) {
+      console.log('✔ No existing migrations to apply.\n');
+      return;
+    }
+
+    console.log(`Found ${migrationDirs.length} migration(s) to mark as applied...`);
+
+    // Mark each migration as applied
+    for (const migrationDir of migrationDirs) {
+      try {
+        execSync(`pnpm backend db:get-url "prisma migrate resolve --applied ${migrationDir}"`, {
+          stdio: 'ignore',
+        });
+      } catch {
+        // Track migrations that failed
+        failedMigrations.push(migrationDir);
+      }
+    }
+
+    // If any migrations failed, throw an error
+    if (failedMigrations.length > 0) {
+      throw new Error(`Failed to apply ${failedMigrations.length} migration(s)`);
+    }
+
+    console.log('✔ Database migrations have been marked as applied.\n');
+  } catch {
+    // Print the failed migrations with dashes
+    if (failedMigrations.length > 0) {
+      console.log('Failed migrations:');
+      for (const migration of failedMigrations) {
+        console.log(`  - ${migration}`);
+      }
+    }
+
+    console.log(
+      '\n⚠️ Could not mark existing migrations as applied. You may need to manually apply them.\n'
+    );
+  }
+};
+
 // ---------- BETTER AUTH HELPERS ----------
 /** Guides the user through setting up Better Auth */
 const setupBetterAuth = () => {
@@ -1757,6 +1819,9 @@ const init = async () => {
 
   // Setup Supabase
   const dbConfig = await setupSupabase(projectName);
+
+  // Mark existing migrations as applied (to avoid prisma being out of sync)
+  applyExistingMigrations();
 
   // Setup Better Auth
   setupBetterAuth();

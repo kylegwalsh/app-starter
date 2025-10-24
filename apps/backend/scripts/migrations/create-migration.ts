@@ -29,6 +29,38 @@ const stopShadowDB = () => {
   }
 };
 
+/** Ensures the Docker image is available locally, pulling it if needed */
+const ensureDockerImage = () => {
+  try {
+    execSync(`docker image inspect ${POSTGRES_IMAGE}`, { stdio: 'ignore' });
+  } catch {
+    console.log(`\nPulling ${POSTGRES_IMAGE}... (this may take a minute)`);
+    execSync(`docker pull ${POSTGRES_IMAGE}`, { stdio: 'inherit' });
+  }
+};
+
+/** Starts the shadow DB container and waits for it to be ready */
+const startShadowDB = async () => {
+  console.log('\nStarting shadow DB container...');
+  execSync(
+    `docker run -d --rm --name ${DOCKER_NAME} -e POSTGRES_PASSWORD=shadow -e POSTGRES_DB=shadowdb -p ${DB_PORT}:5432 ${POSTGRES_IMAGE}`,
+    { stdio: 'ignore' }
+  );
+
+  // Wait for database to be ready
+  for (let i = 0; i < 30; i++) {
+    try {
+      execSync(`docker exec ${DOCKER_NAME} pg_isready -U postgres -d shadowdb`, {
+        stdio: 'ignore',
+      });
+      return;
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+  throw new Error('Database failed to become ready in time');
+};
+
 /** Helper to pad numbers to 2 digits */
 const pad = (n: number) => n.toString().padStart(2, '0');
 
@@ -93,14 +125,12 @@ const parseCliArgs = (): { method?: 'schema' | 'manual' } => {
 /** Syncs local changes to the migration */
 const syncLocalChangesToMigration = async () => {
   try {
-    // Remove any existing container
-    stopShadowDB();
+    // Ensure Docker image is available
+    ensureDockerImage();
 
-    // Start new container
-    console.log('\nStarting shadow DB container...');
-    execSync(
-      `docker run -d --rm --name ${DOCKER_NAME} -e POSTGRES_PASSWORD=shadow -e POSTGRES_DB=shadowdb -p ${DB_PORT}:5432 ${POSTGRES_IMAGE}`
-    );
+    // Remove any existing container and start a new one
+    stopShadowDB();
+    await startShadowDB();
 
     // Run Prisma migrate diff to generate up migration (if any is needed)
     console.log('\nChecking whether there were any changes to the schema...');
