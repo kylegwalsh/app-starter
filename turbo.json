@@ -3,8 +3,12 @@
   "tasks": {
     "lint": {},
     "format": {},
-    "test": {},
-    "test:ci": {},
+    "test": {
+      "passThroughEnv": ["AWS_*", "SST_*"]
+    },
+    "test:ci": {
+      "passThroughEnv": ["AWS_*", "SST_*"]
+    },
     "types:check": {}
   }
 }
