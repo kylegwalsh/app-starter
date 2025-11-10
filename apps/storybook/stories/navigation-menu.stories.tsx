@@ -19,7 +19,9 @@ const meta = {
     <NavigationMenu {...args}>
       <NavigationMenuList>
         <NavigationMenuItem>
-          <NavigationMenuLink className={navigationMenuTriggerStyle()}>Overview</NavigationMenuLink>
+          <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+            Overview
+          </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuList>
           <NavigationMenuItem>
@@ -51,7 +53,8 @@ const meta = {
           <NavigationMenuLink
             className={navigationMenuTriggerStyle()}
             href="https:www.google.com"
-            target="_blank">
+            target="_blank"
+          >
             External
           </NavigationMenuLink>
         </NavigationMenuItem>

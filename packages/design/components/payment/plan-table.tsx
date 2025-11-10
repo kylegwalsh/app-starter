@@ -10,7 +10,7 @@ import {
 } from '@repo/design/components/ui';
 import { cn } from '@repo/design/lib/utils';
 import { Check, Minus } from 'lucide-react';
-import React from 'react';
+import { Fragment } from 'react';
 
 /** A plan for the table */
 type Plan = {
@@ -68,13 +68,19 @@ export const PlanTable = <T extends readonly Plan[]>({
       <Table className={cn('hidden lg:table', tableClassName)}>
         <TableHeader>
           <TableRow className="bg-muted hover:bg-muted">
-            <TableHead className={cn('text-primary font-medium', `w-${featureColumnWidth}/12`)}>
+            <TableHead
+              className={cn(
+                'font-medium text-primary',
+                `w-${featureColumnWidth}/12`
+              )}
+            >
               Plans
             </TableHead>
             {plans.map((plan) => (
               <TableHead
+                className={`text-center font-medium text-lg text-primary w-${planColumnWidth}/12`}
                 key={plan.key}
-                className={`text-primary text-center text-lg font-medium w-${planColumnWidth}/12`}>
+              >
                 {plan.name}
               </TableHead>
             ))}
@@ -82,16 +88,16 @@ export const PlanTable = <T extends readonly Plan[]>({
         </TableHeader>
         <TableBody>
           {featureGroups.map((featureGroup) => (
-            <React.Fragment key={featureGroup.type}>
+            <Fragment key={featureGroup.type}>
               {/* Feature Group Header */}
               <TableRow className="bg-muted/50">
-                <TableCell colSpan={plans.length + 1} className="font-bold">
+                <TableCell className="font-bold" colSpan={plans.length + 1}>
                   {featureGroup.type}
                 </TableCell>
               </TableRow>
               {/* Features */}
               {featureGroup.features.map((feature) => (
-                <TableRow key={feature.name} className="text-muted-foreground">
+                <TableRow className="text-muted-foreground" key={feature.name}>
                   <TableCell>{feature.name}</TableCell>
                   {plans.map((plan) => (
                     <TableCell key={plan.key}>
@@ -106,7 +112,7 @@ export const PlanTable = <T extends readonly Plan[]>({
                   ))}
                 </TableRow>
               ))}
-            </React.Fragment>
+            </Fragment>
           ))}
         </TableBody>
       </Table>
@@ -117,22 +123,30 @@ export const PlanTable = <T extends readonly Plan[]>({
           {plans.map((plan) => (
             <section key={plan.key}>
               <div className="mb-4">
-                <h4 className="text-xl font-medium">{plan.name}</h4>
+                <h4 className="font-medium text-xl">{plan.name}</h4>
               </div>
               <Table>
                 <TableBody>
                   {featureGroups.map((featureGroup) => (
-                    <React.Fragment key={featureGroup.type}>
+                    <Fragment key={featureGroup.type}>
                       {/* Feature Group Header */}
                       <TableRow className="bg-muted hover:bg-muted">
-                        <TableCell colSpan={2} className="text-primary w-10/12 font-bold">
+                        <TableCell
+                          className="w-10/12 font-bold text-primary"
+                          colSpan={2}
+                        >
                           {featureGroup.type}
                         </TableCell>
                       </TableRow>
                       {/* Features */}
                       {featureGroup.features.map((feature) => (
-                        <TableRow className="text-muted-foreground" key={feature.name}>
-                          <TableCell className="w-11/12">{feature.name}</TableCell>
+                        <TableRow
+                          className="text-muted-foreground"
+                          key={feature.name}
+                        >
+                          <TableCell className="w-11/12">
+                            {feature.name}
+                          </TableCell>
                           <TableCell className="text-right">
                             {feature[plan.key as keyof typeof feature] ? (
                               <Check className="h-5 w-5" />
@@ -142,7 +156,7 @@ export const PlanTable = <T extends readonly Plan[]>({
                           </TableCell>
                         </TableRow>
                       ))}
-                    </React.Fragment>
+                    </Fragment>
                   ))}
                 </TableBody>
               </Table>

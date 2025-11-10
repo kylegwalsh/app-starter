@@ -6,7 +6,8 @@
       "@/*": ["./*"]
     },
     "declaration": false,
-    "declarationMap": false
+    "declarationMap": false,
+    "strictNullChecks": true
   },
   "include": ["**/*", ".storybook/**/*", "../../global.d.ts"],
   "exclude": ["node_modules", "dist"]

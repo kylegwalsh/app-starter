@@ -13,8 +13,9 @@ export const billingRouter = t.router({
     const { organization } = ctx;
 
     // If the organization doesn't have a Stripe customer ID, throw an error
-    if (!organization.stripeCustomerId)
+    if (!organization.stripeCustomerId) {
       throw new Error('Organization does not have a Stripe customer ID');
+    }
 
     /** Create a stripe billing portal session so they can change their settings */
     const session = await stripe.billingPortal.sessions.create({
@@ -29,7 +30,9 @@ export const billingRouter = t.router({
     const { organization } = ctx;
 
     // If the organization doesn't have a Stripe customer ID, return an empty array
-    if (!organization.stripeCustomerId) return { history: [] };
+    if (!organization.stripeCustomerId) {
+      return { history: [] };
+    }
 
     try {
       // Get billing history from Stripe

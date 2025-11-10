@@ -1,6 +1,4 @@
-/* eslint-disable no-console */
-import { execSync } from 'node:child_process';
-import { spawn } from 'node:child_process';
+import { execSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import readline from 'node:readline';
 
@@ -50,9 +48,12 @@ const startShadowDB = async () => {
   // Wait for database to be ready
   for (let i = 0; i < 30; i++) {
     try {
-      execSync(`docker exec ${DOCKER_NAME} pg_isready -U postgres -d shadowdb`, {
-        stdio: 'ignore',
-      });
+      execSync(
+        `docker exec ${DOCKER_NAME} pg_isready -U postgres -d shadowdb`,
+        {
+          stdio: 'ignore',
+        }
+      );
       return;
     } catch {
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -81,7 +82,9 @@ const getMigrationDirName = async (): Promise<string> => {
         resolve(cleaned);
       });
     });
-    if (name.length > 0) break;
+    if (name.length > 0) {
+      break;
+    }
     console.log('Please enter a valid migration name.');
   }
 
@@ -105,17 +108,18 @@ const parseCliArgs = (): { method?: 'schema' | 'manual' } => {
     const arg = argv[i];
     if (arg === '--method' || arg === '-m') {
       method = argv[i + 1];
-      i++;
+      i += 1;
       continue;
     }
     if (arg.startsWith('--method=')) {
       method = arg.split('=')[1];
-      continue;
     }
   }
 
   if (method && method !== 'schema' && method !== 'manual') {
-    console.error('❌ Invalid value for --method. Expected "schema" or "manual".');
+    console.error(
+      '❌ Invalid value for --method. Expected "schema" or "manual".'
+    );
     process.exit(1);
   }
 
@@ -141,7 +145,7 @@ const syncLocalChangesToMigration = async () => {
 
     // If it generated an empty migration, the DB is already up to date and we can stop here
     if (migrationUpContents.toLowerCase().includes('empty migration')) {
-      console.log(`✔ Your DB is already up to date.\n`);
+      console.log('✔ Your DB is already up to date.\n');
       process.exit(0);
     }
 
@@ -158,14 +162,22 @@ const syncLocalChangesToMigration = async () => {
     // Write the migration to a file
     fs.mkdirSync(migrationPath, { recursive: true });
     fs.writeFileSync(`${migrationPath}/migration.sql`, migrationUpContents);
-    fs.writeFileSync(`${migrationPath}/migration-down.sql`, migrationDownContents);
-    console.log(`✔ Migration created: apps/backend/${migrationPath}/migration.sql\n`);
+    fs.writeFileSync(
+      `${migrationPath}/migration-down.sql`,
+      migrationDownContents
+    );
+    console.log(
+      `✔ Migration created: apps/backend/${migrationPath}/migration.sql\n`
+    );
 
     // Make sure the migration file has been applied to the DB (keeps them in sync)
     console.log('\nApplying migration...');
-    execSync(`pnpm db:get-url \"prisma migrate resolve --applied ${migrationDirName}\"`, {
-      stdio: 'inherit',
-    });
+    execSync(
+      `pnpm db:get-url "prisma migrate resolve --applied ${migrationDirName}"`,
+      {
+        stdio: 'inherit',
+      }
+    );
     console.log('✔ Migration applied.\n');
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -185,10 +197,14 @@ const syncLocalChangesToMigration = async () => {
 
 /** Generates a migration file without running it so that we can specify the changes manually */
 const generateManualMigrationFile = () => {
-  const child = spawn('pnpm', ['db:get-url', '"prisma migrate dev --create-only"'], {
-    stdio: 'inherit',
-    shell: true,
-  });
+  const child = spawn(
+    'pnpm',
+    ['db:get-url', '"prisma migrate dev --create-only"'],
+    {
+      stdio: 'inherit',
+      shell: true,
+    }
+  );
 
   child.on('exit', (code: number | null) => {
     if (code === 0) {
@@ -217,8 +233,14 @@ const createMigration = async () => {
         name: 'migrationType',
         message: 'What type of migration are you running?',
         choices: [
-          { name: 'Schema change (sync changes during deployments)', value: 'schema' },
-          { name: 'Manual data migration (custom SQL for complex changes)', value: 'manual' },
+          {
+            name: 'Schema change (sync changes during deployments)',
+            value: 'schema',
+          },
+          {
+            name: 'Manual data migration (custom SQL for complex changes)',
+            value: 'manual',
+          },
         ],
       },
     ]);
@@ -236,7 +258,10 @@ const createMigration = async () => {
       generateManualMigrationFile();
       break;
     }
+    default: {
+      throw new Error(`Invalid migration type: ${migrationType}`);
+    }
   }
 };
 
-void createMigration();
+createMigration();

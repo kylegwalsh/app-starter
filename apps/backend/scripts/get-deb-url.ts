@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { exec, execSync } from 'node:child_process';
 import { promisify } from 'node:util';
 
@@ -8,11 +7,11 @@ const execAsync = promisify(exec);
 // Extract the next command
 const command = process.argv[2];
 
-interface Secrets {
+type Secrets = {
   DATABASE_URL?: string;
   DIRECT_DATABASE_URL?: string;
   [key: string]: string | undefined;
-}
+};
 
 /** Helper method used to retrieve secrets from sst */
 const parseSecrets = async (): Promise<Secrets> => {
@@ -45,7 +44,7 @@ const getDatabaseURL = async () => {
   const directDatabaseURL = secrets.DIRECT_DATABASE_URL;
 
   // If secrets don't exist, we have to error
-  if (!databaseURL || !directDatabaseURL) {
+  if (!(databaseURL && directDatabaseURL)) {
     throw new Error('DATABASE_URL is not set. Exiting...');
   }
 

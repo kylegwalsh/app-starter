@@ -11,4 +11,4 @@ const initStripe = async () => {
   await setupStripe({ domain });
 };
 
-void initStripe();
+initStripe();

@@ -10,7 +10,7 @@ import {
 } from '@daveyplate/better-auth-ui';
 import { LoadingLayout } from '@repo/design';
 import { useRouter } from 'next/navigation';
-import * as React from 'react';
+import { useEffect } from 'react';
 
 import { DashboardLayout } from '@/components';
 import { useUser } from '@/hooks';
@@ -21,7 +21,7 @@ export default function OrganizationSettingsPage() {
   const router = useRouter();
 
   // If the user is not logged into an organization, redirect to the main settings page
-  React.useEffect(() => {
+  useEffect(() => {
     // TODO: Upgrade better auth to fix this
     // @ts-expect-error - better auth is fixing the types here
     if (!isLoading && organization?.isPersonal) {
@@ -38,9 +38,10 @@ export default function OrganizationSettingsPage() {
 
   return (
     <DashboardLayout
-      title="Organization"
+      className="px-0"
       description="Update your organization settings"
-      className="px-0">
+      title="Organization"
+    >
       <OrganizationLogoCard />
       <OrganizationNameCard />
       <OrganizationSlugCard />

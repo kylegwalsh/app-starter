@@ -12,10 +12,7 @@ import {
 } from '@repo/design';
 import { ExternalLink } from 'lucide-react';
 import Link from 'next/link';
-import React from 'react';
-
-import { BillingHistory } from '@/components';
-import { DashboardLayout } from '@/components';
+import { BillingHistory, DashboardLayout } from '@/components';
 import { trpc } from '@/core';
 
 /** The payment and billing settings page */
@@ -25,29 +22,32 @@ export default function BillingPage() {
 
   return (
     <DashboardLayout
-      title="Billing"
+      className="px-0"
       description="Manage your payment settings and access billing information"
-      className="px-0">
+      title="Billing"
+    >
       <div className="flex flex-col gap-6">
         <SettingsCard
-          title="Manage payment settings"
-          description="Update your payment method, billing email, and address."
-          instructions="You’ll be redirected to Stripe to securely manage your payment details."
           classNames={{
             base: 'md:flex-row md:flex-wrap md:items-center md:gap-x-2',
             header: 'md:basis-1/2 w-full',
             content: 'md:basis-1/2 md:flex md:justify-end w-full',
             footer: 'md:basis-full w-full',
-          }}>
+          }}
+          description="Update your payment method, billing email, and address."
+          instructions="You’ll be redirected to Stripe to securely manage your payment details."
+          title="Manage payment settings"
+        >
           {isLoading ? (
             <Skeleton className="mx-6 h-9 w-48 md:ml-auto" />
           ) : (
             <Button asChild>
               <Link
+                className="mx-6 md:ml-auto"
                 href={url ?? ''}
-                target="_blank"
                 rel="noreferrer noopener"
-                className="mx-6 md:ml-auto">
+                target="_blank"
+              >
                 Open billing portal <ExternalLink />
               </Link>
             </Button>

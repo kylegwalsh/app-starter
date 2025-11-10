@@ -17,10 +17,10 @@ let pkgJsonPath = './package.json';
 for (let i = 2; i < process.argv.length; i++) {
   if (process.argv[i] === '--package' && process.argv[i + 1]) {
     pkgName = process.argv[i + 1];
-    i++;
+    i += 1;
   } else if (process.argv[i] === '--path' && process.argv[i + 1]) {
     pkgJsonPath = process.argv[i + 1];
-    i++;
+    i += 1;
   }
 }
 
@@ -49,8 +49,7 @@ if (!fs.existsSync(absPath)) {
 const pkgJson = JSON.parse(fs.readFileSync(absPath, 'utf8'));
 // Try to find the version in dependencies or devDependencies
 const version =
-  (pkgJson.dependencies && pkgJson.dependencies[pkgName]) ||
-  (pkgJson.devDependencies && pkgJson.devDependencies[pkgName]);
+  pkgJson.dependencies?.[pkgName] || pkgJson.devDependencies?.[pkgName];
 
 // Print error if the package is not found
 if (!version) {

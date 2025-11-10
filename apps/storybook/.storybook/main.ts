@@ -1,7 +1,10 @@
 import type { StorybookConfig } from '@storybook/nextjs-vite';
 
 const config: StorybookConfig = {
-  stories: ['../stories/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  stories: [
+    '../stories/**/*.mdx',
+    '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+  ],
   addons: [
     '@chromatic-com/storybook',
     '@storybook/addon-themes',
@@ -25,11 +28,17 @@ const config: StorybookConfig = {
         // so we'll filter them out here
         if (prop.parent && /node_modules/.test(prop.parent.fileName)) {
           // Filter out aria-* props
-          if (prop?.name?.startsWith('aria-')) return false;
+          if (prop?.name?.startsWith('aria-')) {
+            return false;
+          }
           // Filter out data-* attributes
-          if (prop?.name?.startsWith('data-')) return false;
+          if (prop?.name?.startsWith('data-')) {
+            return false;
+          }
           // Filter out props with EventHandler in their type (sometimes used, but exist on most elements)
-          if (prop?.type?.name?.includes('EventHandler')) return false;
+          if (prop?.type?.name?.includes('EventHandler')) {
+            return false;
+          }
           // Filter out common React props that aren't useful in Storybook (if they come from a node module)
           const ignoredProps = [
             'key',
@@ -92,10 +101,14 @@ const config: StorybookConfig = {
             'id',
             'title',
           ];
-          if (ignoredProps.includes(prop?.name ?? '')) return false;
+          if (ignoredProps.includes(prop?.name ?? '')) {
+            return false;
+          }
         }
         // Filter out "asChild" (it appears even with the above filter)
-        if (prop?.name === 'asChild') return false;
+        if (prop?.name === 'asChild') {
+          return false;
+        }
         // Otherwise, just return true
         return true;
       },

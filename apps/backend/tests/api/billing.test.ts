@@ -85,8 +85,16 @@ describe('Billing Router', () => {
       const { history } = await trpc.billing.getHistory();
       expect(history).toHaveLength(2);
       // Should be sorted desc by date, so invoice (created 200) first
-      expect(history[0]).toMatchObject({ id: 'in_1', type: 'invoice', amount: 50 });
-      expect(history[1]).toMatchObject({ id: 'ch_1', type: 'payment', amount: 25 });
+      expect(history[0]).toMatchObject({
+        id: 'in_1',
+        type: 'invoice',
+        amount: 50,
+      });
+      expect(history[1]).toMatchObject({
+        id: 'ch_1',
+        type: 'payment',
+        amount: 25,
+      });
     });
 
     it('returns empty history if Stripe APIs throw', async () => {

@@ -18,7 +18,7 @@ const meta: Meta<typeof Select> = {
   component: Select,
   render: (args) => (
     <Select {...args}>
-      <SelectTrigger title="Select" className="w-96">
+      <SelectTrigger className="w-96" title="Select">
         <SelectValue placeholder="Select a fruit" />
       </SelectTrigger>
       <SelectContent>
@@ -35,7 +35,7 @@ const meta: Meta<typeof Select> = {
           <SelectLabel>Vegetables</SelectLabel>
           <SelectItem value="aubergine">Aubergine</SelectItem>
           <SelectItem value="broccoli">Broccoli</SelectItem>
-          <SelectItem value="carrot" disabled>
+          <SelectItem disabled value="carrot">
             Carrot
           </SelectItem>
           <SelectItem value="courgette">Courgette</SelectItem>

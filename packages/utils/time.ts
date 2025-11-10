@@ -45,6 +45,7 @@ export const time = {
       const milliseconds = timeUnits[unit] * value;
 
       return milliseconds;
-    } else throw new Error('[time.stringToMilliseconds] Invalid time string format');
+    }
+    throw new Error('[time.stringToMilliseconds] Invalid time string format');
   },
 };

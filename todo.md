@@ -32,3 +32,5 @@
 - Upgrade SST to see if it improves windows support (like hot reloading backend when modifying packages outside the backend)
 - Potentially remove separate authConfig after issue is resolved - https://github.com/better-auth/better-auth/issues/3408
 - Try pglite with backend tests whenever the prisma adapter works better
+- If biome enables global detection through .d.ts files, we can remove our overrides
+- Expand biome ruleset as it evolves

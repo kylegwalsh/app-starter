@@ -24,8 +24,7 @@ import {
 import { ChevronRight, LayoutDashboard, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import * as React from 'react';
-import { ComponentType, SVGProps } from 'react';
+import type { ComponentType, SVGProps } from 'react';
 
 import { useUser } from '@/hooks';
 
@@ -52,7 +51,6 @@ export const AppSidebar: FC = ({ children }) => {
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <OrganizationSwitcher
-            hidePersonal
             classNames={{
               trigger: {
                 base: 'w-full bg-background text-foreground shadow-md hover:bg-background hover:bg-background/30 dark:hover:bg-background/60 group-data-[collapsible=icon]:!bg-transparent group-data-[collapsible=icon]:!shadow-none group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:[&>svg]:hidden',
@@ -74,6 +72,7 @@ export const AppSidebar: FC = ({ children }) => {
                 },
               },
             }}
+            hidePersonal
           />
         </SidebarHeader>
         <SidebarContent className="overflow-x-hidden">
@@ -84,18 +83,6 @@ export const AppSidebar: FC = ({ children }) => {
                 {
                   title: 'Dashboard',
                   url: '/',
-                  icon: LayoutDashboard,
-                },
-              ]}
-            />
-          </SidebarGroup>
-          <SidebarGroup>
-            <AppSidebarGroup
-              label="Investments"
-              navItems={[
-                {
-                  title: 'Sleeves',
-                  url: '/sleeves',
                   icon: LayoutDashboard,
                 },
               ]}
@@ -116,7 +103,6 @@ export const AppSidebar: FC = ({ children }) => {
           <SidebarMenu>
             <SidebarMenuItem>
               <UserButton
-                disableDefaultLinks
                 additionalLinks={[
                   {
                     label: 'Settings',
@@ -134,6 +120,7 @@ export const AppSidebar: FC = ({ children }) => {
                     },
                   },
                 }}
+                disableDefaultLinks
               />
             </SidebarMenuItem>
           </SidebarMenu>
@@ -146,7 +133,13 @@ export const AppSidebar: FC = ({ children }) => {
 };
 
 /** Renders a group of navigation items in the sidebar */
-const AppSidebarGroup = ({ navItems, label }: { navItems: NavItem[]; label?: string }) => {
+const AppSidebarGroup = ({
+  navItems,
+  label,
+}: {
+  navItems: NavItem[];
+  label?: string;
+}) => {
   const pathname = usePathname();
 
   return (
@@ -157,13 +150,17 @@ const AppSidebarGroup = ({ navItems, label }: { navItems: NavItem[]; label?: str
           const Icon = item.icon;
           return item?.items && item?.items?.length > 0 ? (
             <Collapsible
-              key={item.title}
               asChild
+              className="group/collapsible"
               defaultOpen={item.autoExpand}
-              className="group/collapsible">
+              key={item.title}
+            >
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
-                  <SidebarMenuButton tooltip={item.title} isActive={pathname === item.url}>
+                  <SidebarMenuButton
+                    isActive={pathname === item.url}
+                    tooltip={item.title}
+                  >
                     {Icon ? <Icon /> : null}
                     <span>{item.title}</span>
                     <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -173,7 +170,10 @@ const AppSidebarGroup = ({ navItems, label }: { navItems: NavItem[]; label?: str
                   <SidebarMenuSub>
                     {item.items?.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={pathname === subItem.url}
+                        >
                           <Link href={subItem.url}>
                             <span>{subItem.title}</span>
                           </Link>
@@ -186,7 +186,11 @@ const AppSidebarGroup = ({ navItems, label }: { navItems: NavItem[]; label?: str
             </Collapsible>
           ) : (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild tooltip={item.title} isActive={pathname === item.url}>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === item.url}
+                tooltip={item.title}
+              >
                 <Link href={item.url}>
                   {Icon ? <Icon /> : null}
                   <span>{item.title}</span>

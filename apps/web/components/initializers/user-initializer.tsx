@@ -12,7 +12,8 @@ export const UserInitializer = () => {
   const { user, organization, isLoading, isLoggedIn } = useUser();
   const queryClient = useQueryClient();
   const [previouslyIdentified, setPreviouslyIdentified] = useState(false);
-  const [previousOrganizationId, setPreviousOrganizationId] = useState<string>();
+  const [previousOrganizationId, setPreviousOrganizationId] =
+    useState<string>();
 
   // Once the user becomes defined, identify them
   useEffect(() => {
@@ -22,7 +23,7 @@ export const UserInitializer = () => {
 
       // If the user exists, identify them on load and set their last active time
       if (user?.id) {
-        void analytics.identify({
+        analytics.identify({
           userId: user.id,
           traits: {
             email: user.email,
@@ -41,9 +42,13 @@ export const UserInitializer = () => {
 
   // Whenever the organization changes, identify it
   useEffect(() => {
-    if (isLoggedIn && organization?.id && organization.id !== previousOrganizationId) {
+    if (
+      isLoggedIn &&
+      organization?.id &&
+      organization.id !== previousOrganizationId
+    ) {
       setPreviousOrganizationId(organization.id);
-      void analytics.organizationIdentify({
+      analytics.organizationIdentify({
         organizationId: organization.id,
         traits: {
           name: organization.name,
@@ -60,7 +65,9 @@ export const UserInitializer = () => {
       const previousSessionExisted = !!storage.get('sessionExisted');
 
       // If the user has just logged in, track it
-      if (!previousSessionExisted) void analytics.userSignedIn({});
+      if (!previousSessionExisted) {
+        analytics.userSignedIn({});
+      }
 
       // We track whether a previous session existed in order to clear some data below
       storage.set('sessionExisted', 'true');
@@ -73,7 +80,7 @@ export const UserInitializer = () => {
     const previousSessionExisted = !!storage.get('sessionExisted');
 
     // Verify all conditions are met that indicate a session expired
-    if (!isLoading && !isLoggedIn && previousSessionExisted) {
+    if (!(isLoading || isLoggedIn) && previousSessionExisted) {
       console.log('[UserInitializer] User logged out... clearing data');
 
       // Mark their session as having been cleared
@@ -83,7 +90,7 @@ export const UserInitializer = () => {
       queryClient.clear();
 
       // Track sign out
-      void analytics.userSignedOut({});
+      analytics.userSignedOut({});
     }
   }, [isLoading, isLoggedIn, queryClient]);
 

@@ -25,9 +25,16 @@ const meta = {
           <DrawerDescription>This action cannot be undone.</DrawerDescription>
         </DrawerHeader>
         <DrawerFooter>
-          <button className="bg-primary text-primary-foreground rounded px-4 py-2">Submit</button>
+          <button
+            className="rounded bg-primary px-4 py-2 text-primary-foreground"
+            type="button"
+          >
+            Submit
+          </button>
           <DrawerClose>
-            <button className="hover:underline">Cancel</button>
+            <button className="hover:underline" type="button">
+              Cancel
+            </button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>

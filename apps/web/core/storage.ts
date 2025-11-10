@@ -8,9 +8,7 @@ export const storage = {
     localStorage?.setItem?.(key, value);
   },
   /** Retrieve an item from our storage */
-  get: (key: StorageKey) => {
-    return localStorage?.getItem?.(key);
-  },
+  get: (key: StorageKey) => localStorage?.getItem?.(key),
   /** Delete an item from our storage */
   delete: (key: StorageKey) => {
     localStorage?.removeItem?.(key);

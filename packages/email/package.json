@@ -7,14 +7,13 @@
     ".": "./index.ts"
   },
   "scripts": {
-    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
-    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
-    "pretty": "prettier --write . --ignore-path ../../.prettierignore",
-    "format": "pnpm lint:fix & pnpm pretty",
+    "lint": "ultracite check .",
+    "lint:fix": "ultracite fix .",
     "types:check": "tsc --noEmit",
     "update-readme": "doctoc README.md"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.3.4",
     "@repo/config": "workspace:*",
     "@repo/tsconfig": "workspace:*",
     "typescript": "5.8.3"

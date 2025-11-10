@@ -15,16 +15,21 @@ export const timeProcedure = t.middleware(async ({ path, next }) => {
   // Determine how long it took to complete the procedure
   const durationMs = Date.now() - start;
 
-  if (result.ok) log.info(`Request to "${path}" completed in ${durationMs}ms`);
-  else log.error(`Request to "${path}" failed in ${durationMs}ms`);
+  if (result.ok) {
+    log.info(`Request to "${path}" completed in ${durationMs}ms`);
+  } else {
+    log.error(`Request to "${path}" failed in ${durationMs}ms`);
+  }
 
   return result;
 });
 
 /** Middleware that ensures the user is authenticated */
-export const isAuthed = t.middleware(async ({ next, ctx }) => {
+export const isAuthed = t.middleware(({ next, ctx }) => {
   // Ensure the user was correctly authed and parsed
-  if (!ctx.user || !ctx.organization) throw new TRPCError({ code: 'UNAUTHORIZED' });
+  if (!(ctx.user && ctx.organization)) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
 
   // https://trpc.io/docs/v10/middlewares#context-swapping
   return next({
@@ -44,6 +49,9 @@ export const updateAiTrace = t.middleware(async ({ next, getRawInput }) => {
   const [result, input] = await Promise.all([next(), getRawInput()]);
 
   // Update the AI trace with the input and output of our request
-  ai.updateRequestTrace({ input, output: 'data' in result ? result.data : undefined });
+  ai.updateRequestTrace({
+    input,
+    output: 'data' in result ? result.data : undefined,
+  });
   return result;
 });

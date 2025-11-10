@@ -21,6 +21,6 @@ export const onError = ({
     const rootError = error?.cause ?? error;
 
     // Track the error
-    void analytics.captureException(rootError);
+    analytics.captureException(rootError);
   }
 };

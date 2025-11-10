@@ -17,10 +17,8 @@
   },
   "scripts": {
     "shadcn": "pnpm dlx shadcn@latest",
-    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
-    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
-    "pretty": "prettier --write . --ignore-path ../../.prettierignore",
-    "format": "pnpm lint:fix & pnpm pretty",
+    "lint": "ultracite check .",
+    "lint:fix": "ultracite fix .",
     "types:check": "tsc --noEmit",
     "update-readme": "doctoc README.md"
   },
@@ -75,7 +73,7 @@
     "zod": "3.25.49"
   },
   "devDependencies": {
-    "@repo/eslint": "workspace:*",
+    "@biomejs/biome": "2.3.4",
     "@repo/tsconfig": "workspace:*",
     "@tailwindcss/postcss": "4.1.7",
     "@turbo/gen": "2.4.2",

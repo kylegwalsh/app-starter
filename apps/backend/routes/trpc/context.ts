@@ -1,10 +1,9 @@
-import { Organization } from '@prisma/client';
-import { addLogMetadata } from '@repo/logs';
-import { log } from '@repo/logs';
-import { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
-import { APIGatewayProxyEventV2 } from 'aws-lambda';
+import type { Organization } from '@prisma/client';
+import { addLogMetadata, log } from '@repo/logs';
+import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
+import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 
-import { auth, AuthUser } from '@/core';
+import { type AuthUser, auth } from '@/core';
 import { db } from '@/db';
 
 /** The context type for our tRPC calls */

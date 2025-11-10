@@ -11,7 +11,7 @@ import {
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { useForm } from 'react-hook-form';
 import { action } from 'storybook/actions';
-import * as z from 'zod';
+import { z } from 'zod';
 
 /**
  * Building forms with React Hook Form and Zod.
@@ -44,7 +44,7 @@ const ProfileForm = (args: Story['args']) => {
   }
   return (
     <Form {...args} {...form}>
-      <form onSubmit={() => form.handleSubmit(onSubmit)} className="space-y-8">
+      <form className="space-y-8" onSubmit={() => form.handleSubmit(onSubmit)}>
         <FormField
           control={form.control}
           name="username"
@@ -53,17 +53,22 @@ const ProfileForm = (args: Story['args']) => {
               <FormLabel>Username</FormLabel>
               <FormControl>
                 <input
-                  className="border-input bg-background w-full rounded-md border px-3 py-2"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2"
                   placeholder="username"
                   {...field}
                 />
               </FormControl>
-              <FormDescription>This is your public display name.</FormDescription>
+              <FormDescription>
+                This is your public display name.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        <button className="bg-primary text-primary-foreground rounded px-4 py-2" type="submit">
+        <button
+          className="rounded bg-primary px-4 py-2 text-primary-foreground"
+          type="submit"
+        >
           Submit
         </button>
       </form>

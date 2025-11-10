@@ -5,7 +5,8 @@
     "paths": {
       "@/.source": ["./.source/index.ts"],
       "@/*": ["./*"]
-    }
+    },
+    "strictNullChecks": true
   },
   "include": ["**/*", ".next/types/**/*.ts"],
   "exclude": ["node_modules", "dist"]

@@ -1,13 +1,20 @@
 import { ai } from '@repo/ai';
 import { analytics } from '@repo/analytics';
-import { addLambdaRequestContext, addLogMetadata, flushLogs, log } from '@repo/logs';
-import { APIGatewayProxyEventV2, Context, SQSEvent } from 'aws-lambda';
+import {
+  addLambdaRequestContext,
+  addLogMetadata,
+  flushLogs,
+  log,
+} from '@repo/logs';
+import type { APIGatewayProxyEventV2, Context, SQSEvent } from 'aws-lambda';
 
 /** The lambda event options we accept */
 export type EventType = 'sqs' | 'api' | undefined;
 
 /** The actual payload type of the event */
-export type HandlerEvent<T extends EventType> = T extends 'sqs' ? SQSEvent : APIGatewayProxyEventV2;
+export type HandlerEvent<T extends EventType> = T extends 'sqs'
+  ? SQSEvent
+  : APIGatewayProxyEventV2;
 
 /** Type for a Lambda handler function */
 export type LambdaHandler<T extends EventType> = (

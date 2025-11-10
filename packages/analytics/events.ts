@@ -1,5 +1,9 @@
 import { config } from '@repo/config';
-import type { flushLogs, getLogMetadata, log } from '@repo/logs';
+import type {
+  flushLogs as flushLogsMethod,
+  getLogMetadata as getLogMetadataMethod,
+  log as logMethod,
+} from '@repo/logs';
 import { time } from '@repo/utils';
 import type { PostHog as PostHogWeb } from 'posthog-js';
 import type { PostHog as PostHogBackend } from 'posthog-node';
@@ -23,9 +27,9 @@ type WebAnalyticsProps = SharedAnalyticsProps & {
 type BackendAnalyticsProps = SharedAnalyticsProps & {
   platformAnalytics: PostHogBackend;
   platform: 'backend';
-  log?: typeof log;
-  flushLogs?: typeof flushLogs;
-  getLogMetadata?: typeof getLogMetadata;
+  log?: typeof logMethod;
+  flushLogs?: typeof flushLogsMethod;
+  getLogMetadata?: typeof getLogMetadataMethod;
 };
 
 /** Backend events require additional parameters */
@@ -149,8 +153,8 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
     // Track the event differently based on platform
     switch (platform) {
       case 'backend': {
-        const { userId, organizationId, ...restProperties } = properties as BackendEventProps &
-          Record<string, unknown>;
+        const { userId, organizationId, ...restProperties } =
+          properties as BackendEventProps & Record<string, unknown>;
 
         platformAnalytics.capture({
           distinctId: userId,
@@ -168,7 +172,9 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         break;
       }
       default: {
-        throw new Error('You forgot to define platform in when initializing analytics');
+        throw new Error(
+          'You forgot to define platform in when initializing analytics'
+        );
       }
     }
   };
@@ -197,8 +203,12 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         // Build first and last name from full name
         if (traits?.name) {
           const nameArray = traits.name.split(' ');
-          if (nameArray.length >= 1) traits.firstName = nameArray.splice(0, 1).join(' ');
-          if (nameArray.length >= 2) traits.firstName = nameArray.splice(1).join(' ');
+          if (nameArray.length >= 1) {
+            traits.firstName = nameArray.splice(0, 1).join(' ');
+          }
+          if (nameArray.length >= 2) {
+            traits.firstName = nameArray.splice(1).join(' ');
+          }
         }
         // Build full name from first and last name
         else if (traits?.firstName || traits?.lastName) {
@@ -212,7 +222,9 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
 
       await safeInvoke(() => {
         // Make sure that all the emails are lower cased when being added in identify
-        if (traits?.email) traits.email = traits.email.toLowerCase();
+        if (traits?.email) {
+          traits.email = traits.email.toLowerCase();
+        }
         // Track the event differently based on platform
         switch (platform) {
           case 'backend': {
@@ -227,7 +239,9 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
             break;
           }
           default: {
-            throw new Error('You forgot to define platform in when initializing analytics');
+            throw new Error(
+              'You forgot to define platform in when initializing analytics'
+            );
           }
         }
 
@@ -263,17 +277,22 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         // otherwise, it doesn't remove the anonymous ID
         await time.wait(500);
         // Reset the analytics
-        void Analytics.reset();
+        Analytics.reset();
       });
 
       // If the platform defined an onSignOut function, run it
       try {
         onSignOut?.();
-      } catch {}
+      } catch {
+        // Do nothing
+      }
     },
     /** Track when the user signs in */
     userSignedIn: async (properties: EventProps<T>) => {
-      log.info('[analytics] Event: User Signed In', { category: 'User', ...properties });
+      log.info('[analytics] Event: User Signed In', {
+        category: 'User',
+        ...properties,
+      });
 
       await safeInvoke(() =>
         track('User Signed In', {
@@ -294,7 +313,10 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         }
       >
     ) => {
-      log.info('[analytics] Event: User Signed Up', { category: 'User', ...properties });
+      log.info('[analytics] Event: User Signed Up', {
+        category: 'User',
+        ...properties,
+      });
       await safeInvoke(() => {
         track('User Signed Up', {
           ...properties,
@@ -319,12 +341,22 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         category: 'Organization',
       });
       await safeInvoke(() => {
-        track('Organization Created', { category: 'Organization', ...properties });
+        track('Organization Created', {
+          category: 'Organization',
+          ...properties,
+        });
       });
     },
     /** Identifies and creates the organization (if it doesn't exist) */
-    organizationIdentify: async ({ organizationId, traits }: OrganizationIdentifyEvent) => {
-      log.info('[analytics] Event: Organization Identify', organizationId, traits);
+    organizationIdentify: async ({
+      organizationId,
+      traits,
+    }: OrganizationIdentifyEvent) => {
+      log.info(
+        '[analytics] Event: Organization Identify',
+        organizationId,
+        traits
+      );
       await safeInvoke(() => {
         // Track the event differently based on platform
         switch (platform) {
@@ -343,7 +375,9 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
             break;
           }
           default: {
-            throw new Error('You forgot to define platform in when initializing analytics');
+            throw new Error(
+              'You forgot to define platform in when initializing analytics'
+            );
           }
         }
       });
@@ -352,7 +386,9 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
     reset: async () => {
       log.info('[analytics] Resetting user');
       await safeInvoke(() => {
-        if ('reset' in platformAnalytics) platformAnalytics.reset();
+        if ('reset' in platformAnalytics) {
+          platformAnalytics.reset();
+        }
       });
     },
     /** Capture an error */
@@ -366,7 +402,8 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
       await safeInvoke(() => {
         // Track the error differently based on platform
         if (platform === 'backend') {
-          const { awsRequestId, userId, langfuseTraceId, request } = getLogMetadata?.() ?? {};
+          const { awsRequestId, userId, langfuseTraceId, request } =
+            getLogMetadata?.() ?? {};
           platformAnalytics.captureException(error, userId as string, {
             awsRequestId,
             langfuseTraceId,

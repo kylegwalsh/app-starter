@@ -20,8 +20,10 @@ try {
 
   // Write a marker file with a timestamp to avoid redundant installs
   const timestamp = new Date().toISOString();
-  fs.writeFileSync(markerFile, `installedAt=${timestamp}\n`, { encoding: 'utf8' });
-  console.log(`[postinstall] Playwright installed`);
+  fs.writeFileSync(markerFile, `installedAt=${timestamp}\n`, {
+    encoding: 'utf8',
+  });
+  console.log('[postinstall] Playwright installed');
 } catch (error) {
   // Log the error and exit with failure code if installation fails
   console.error(

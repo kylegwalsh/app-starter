@@ -1,7 +1,6 @@
 'use client';
 
 import { Separator } from '@repo/design';
-import * as React from 'react';
 
 import { DashboardLayout } from '@/components';
 
@@ -9,9 +8,10 @@ import { DashboardLayout } from '@/components';
 export default function GeneralSettingsPage() {
   return (
     <DashboardLayout
-      title="General settings"
+      className="px-0"
       description="Update your preferences and configure general settings"
-      className="px-0">
+      title="General settings"
+    >
       <p className="text-muted-foreground text-sm">Add new settings here...</p>
 
       <Separator />

@@ -5,5 +5,7 @@ export const teardown = async () => {
   const { db } = await import('../mocks/db');
 
   // Note: This type is only defined after running the tests once
-  if (db) await db.$disconnect();
+  if (db) {
+    await db.$disconnect();
+  }
 };

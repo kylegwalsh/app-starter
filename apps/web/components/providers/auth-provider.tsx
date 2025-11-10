@@ -14,21 +14,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthUIProvider
+      account={{ basePath: '/' }}
       authClient={auth}
       baseURL={config.app.url}
-      navigate={(...args) => router.push(...args)}
-      replace={(...args) => router.replace(...args)}
-      Link={Link}
       credentials={{
         forgotPassword: !!config.loops.transactional.resetPassword,
       }}
+      Link={Link}
+      navigate={(...args) => router.push(...args)}
       // Clear router cache (protected routes)
       onSessionChange={() => {
         router.refresh();
       }}
       // Add some custom paths for our auth routes because we manage our own settings pages
-      account={{ basePath: '/' }}
-      organization={{ basePath: '/settings', viewPaths: { SETTINGS: 'organization' } }}>
+      organization={{
+        basePath: '/settings',
+        viewPaths: { SETTINGS: 'organization' },
+      }}
+      replace={(...args) => router.replace(...args)}
+    >
       {children}
     </AuthUIProvider>
   );

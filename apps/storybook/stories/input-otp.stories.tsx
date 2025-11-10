@@ -1,4 +1,9 @@
-import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '@repo/design';
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from 'input-otp';
 

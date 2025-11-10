@@ -24,14 +24,19 @@ const meta = {
         <DialogHeader>
           <DialogTitle>Are you absolutely sure?</DialogTitle>
           <DialogDescription>
-            This action cannot be undone. This will permanently delete your account and remove your
-            data from our servers.
+            This action cannot be undone. This will permanently delete your
+            account and remove your data from our servers.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-4">
-          <button className="hover:underline">Cancel</button>
+          <button className="hover:underline" type="button">
+            Cancel
+          </button>
           <DialogClose>
-            <button className="bg-primary text-primary-foreground rounded px-4 py-2">
+            <button
+              className="rounded bg-primary px-4 py-2 text-primary-foreground"
+              type="button"
+            >
               Continue
             </button>
           </DialogClose>

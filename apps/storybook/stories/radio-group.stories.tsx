@@ -14,11 +14,11 @@ const meta = {
   },
   render: (args) => (
     <RadioGroup {...args}>
-      <RadioGroupItem value="default" id="r1" />
+      <RadioGroupItem id="r1" value="default" />
       <label htmlFor="r1">Default</label>
-      <RadioGroupItem value="comfortable" id="r2" />
+      <RadioGroupItem id="r2" value="comfortable" />
       <label htmlFor="r2">Comfortable</label>
-      <RadioGroupItem value="compact" id="r3" />
+      <RadioGroupItem id="r3" value="compact" />
       <label htmlFor="r3">Compact</label>
     </RadioGroup>
   ),

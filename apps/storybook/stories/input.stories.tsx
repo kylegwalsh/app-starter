@@ -70,7 +70,10 @@ export const WithButton: Story = {
   render: (args) => (
     <div className="flex items-center space-x-2">
       <Input {...args} />
-      <button className="bg-primary text-primary-foreground rounded px-4 py-2" type="submit">
+      <button
+        className="rounded bg-primary px-4 py-2 text-primary-foreground"
+        type="submit"
+      >
         Subscribe
       </button>
     </div>

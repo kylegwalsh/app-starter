@@ -1,4 +1,8 @@
-import { checkCLIs, getOrCreateStage, selectOrCreateAwsProfile } from './init.js';
+import {
+  checkCLIs,
+  getOrCreateStage,
+  selectOrCreateAwsProfile,
+} from './init.js';
 
 const printFinalNotes = () => {
   console.log('--- Final Steps ---');
@@ -27,4 +31,4 @@ const initExisting = async () => {
   printFinalNotes();
 };
 
-void initExisting();
+initExisting();

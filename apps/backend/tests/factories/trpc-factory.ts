@@ -1,7 +1,7 @@
-import { Organization, User } from '@prisma/client';
+import type { Organization, User } from '@prisma/client';
 
 import { router as trpcRouter } from '@/routes';
-import { Context } from '@/routes/trpc/context';
+import type { Context } from '@/routes/trpc/context';
 
 import { organizationFactory } from './organization-factory';
 import { userFactory } from './user-factory';

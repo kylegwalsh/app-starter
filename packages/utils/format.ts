@@ -1,3 +1,5 @@
+// biome-ignore-all lint/performance/noDynamicNamespaceImportAccess: We need to dynamically use the change-case imports
+// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
 import * as changeCase from 'change-case';
 import dayjs from 'dayjs';
 import { isArray, isObject, transform } from 'lodash-es';
@@ -30,21 +32,31 @@ export const format = {
     // Otherwise, format the keys of the object recursively
     return transform(
       obj,
-      (acc: Record<string, unknown>, value: unknown, key: string, target: unknown) => {
+      (
+        acc: Record<string, unknown>,
+        value: unknown,
+        key: string,
+        target: unknown
+      ) => {
         const camelKey = isArray(target) ? key : changeCase[casing](key);
-        acc[camelKey] = isObject(value) ? format.caseKeys(value, casing) : value;
+        acc[camelKey] = isObject(value)
+          ? format.caseKeys(value, casing)
+          : value;
       }
     );
   },
   /** Formats a date in a shorthand fashion */
-  shorthandDate: (date: string | Date, format: 'monthDay' | 'monthYear') => {
+  shorthandDate: (
+    date: string | Date,
+    dateFormat: 'monthDay' | 'monthYear'
+  ) => {
     const baseDate = dayjs(date);
 
-    switch (format) {
+    switch (dateFormat) {
       case 'monthDay': {
         return baseDate.format('MMM D');
       }
-      case 'monthYear': {
+      default: {
         return baseDate.format("MMM 'YY");
       }
     }
@@ -52,24 +64,31 @@ export const format = {
   /** Formats a number in a shorthand fashion */
   shorthandNumber: (number: number) => {
     // If the number is less than 1000, just return it as is
-    if (number < 1000) return `${number}`;
+    if (number < 1000) {
+      return `${number}`;
+    }
     // If the number is less than 1 million, format it with K
-    else if (number < 1_000_000) return `${Math.round(number / 1000)}K`;
+    if (number < 1_000_000) {
+      return `${Math.round(number / 1000)}K`;
+    }
     // If the number is less than 1 billion, format it with M
-    else if (number < 1_000_000_000) return `${Math.round(number / 1_000_000)}M`;
+    if (number < 1_000_000_000) {
+      return `${Math.round(number / 1_000_000)}M`;
+    }
     // Otherwise, format it with B
-    else return `${Math.round(number / 1_000_000_000)}B`;
+    return `${Math.round(number / 1_000_000_000)}B`;
   },
   /** Formats a number with commas */
-  number: (number: number) => {
-    return number.toLocaleString();
-  },
+  number: (number: number) => number.toLocaleString(),
   /** Formats a number as a currency */
-  currency: (number: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(number);
-  },
+  currency: (number: number) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(number),
   /** Formats date as "Oct 31, 2018" default case (can provide override format) */
-  date: (date: Date, format = 'MMM D, YYYY') => dayjs(date).format(format),
+  date: (date: Date, dateFormat = 'MMM D, YYYY') =>
+    dayjs(date).format(dateFormat),
   /** Formats time as "12:30 PM" */
   time: (date: Date) => dayjs(date).format('h:mm A'),
 };

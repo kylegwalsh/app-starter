@@ -1,8 +1,6 @@
 {
   "$schema": "https://turborepo.org/schema.json",
   "tasks": {
-    "lint": {},
-    "format": {},
     "test": {
       "passThroughEnv": ["AWS_*", "SST_*"]
     },

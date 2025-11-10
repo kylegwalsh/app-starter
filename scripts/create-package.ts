@@ -3,7 +3,6 @@ import { fileURLToPath } from 'node:url';
 
 import { copyAndReplace } from './utils/copy';
 
-// eslint-disable-next-line unicorn/no-unreadable-array-destructuring
 const [, , packageName] = process.argv;
 
 if (!packageName) {
@@ -18,6 +17,6 @@ const templateDir = path.resolve(__dirname, '../templates/package');
 const targetDir = path.resolve(__dirname, `../packages/${packageName}`);
 
 copyAndReplace(templateDir, targetDir, {
-  packageName: packageName,
+  packageName,
 });
 console.log(`New package created at /packages/${packageName}"`);

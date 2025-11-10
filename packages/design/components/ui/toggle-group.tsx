@@ -1,12 +1,13 @@
 'use client';
 
+// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
 import * as ToggleGroupPrimitive from '@radix-ui/react-toggle-group';
 import { toggleVariants } from '@repo/design/components/ui/toggle';
 import { cn } from '@repo/design/lib/utils';
-import { type VariantProps } from 'class-variance-authority';
-import * as React from 'react';
+import type { VariantProps } from 'class-variance-authority';
+import { type ComponentProps, createContext, useContext } from 'react';
 
-const ToggleGroupContext = React.createContext<VariantProps<typeof toggleVariants>>({
+const ToggleGroupContext = createContext<VariantProps<typeof toggleVariants>>({
   size: 'default',
   variant: 'default',
 });
@@ -17,17 +18,19 @@ function ToggleGroup({
   size,
   children,
   ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive.Root> & VariantProps<typeof toggleVariants>) {
+}: ComponentProps<typeof ToggleGroupPrimitive.Root> &
+  VariantProps<typeof toggleVariants>) {
   return (
     <ToggleGroupPrimitive.Root
-      data-slot="toggle-group"
-      data-variant={variant}
-      data-size={size}
       className={cn(
         'group/toggle-group flex w-fit items-center rounded-md data-[variant=outline]:shadow-xs',
         className
       )}
-      {...props}>
+      data-size={size}
+      data-slot="toggle-group"
+      data-variant={variant}
+      {...props}
+    >
       <ToggleGroupContext.Provider value={{ variant, size }}>
         {children}
       </ToggleGroupContext.Provider>
@@ -41,14 +44,12 @@ function ToggleGroupItem({
   variant,
   size,
   ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive.Item> & VariantProps<typeof toggleVariants>) {
-  const context = React.useContext(ToggleGroupContext);
+}: ComponentProps<typeof ToggleGroupPrimitive.Item> &
+  VariantProps<typeof toggleVariants>) {
+  const context = useContext(ToggleGroupContext);
 
   return (
     <ToggleGroupPrimitive.Item
-      data-slot="toggle-group-item"
-      data-variant={context.variant || variant}
-      data-size={context.size || size}
       className={cn(
         toggleVariants({
           variant: context.variant || variant,
@@ -57,7 +58,11 @@ function ToggleGroupItem({
         'min-w-0 flex-1 shrink-0 rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l',
         className
       )}
-      {...props}>
+      data-size={context.size || size}
+      data-slot="toggle-group-item"
+      data-variant={context.variant || variant}
+      {...props}
+    >
       {children}
     </ToggleGroupPrimitive.Item>
   );

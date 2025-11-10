@@ -11,7 +11,9 @@ const meta = {
   render: (args) => (
     <HoverCard {...args}>
       <HoverCardTrigger>Hover</HoverCardTrigger>
-      <HoverCardContent>The React Framework - created and maintained by @vercel.</HoverCardContent>
+      <HoverCardContent>
+        The React Framework - created and maintained by @vercel.
+      </HoverCardContent>
     </HoverCard>
   ),
   parameters: {

@@ -36,7 +36,9 @@ export const Default: Story = {
               onClick: action('Undo clicked'),
             },
           })
-        }>
+        }
+        type="button"
+      >
         Show Toast
       </button>
       <Toaster {...args} />

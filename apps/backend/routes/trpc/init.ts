@@ -1,5 +1,5 @@
 import { initTRPC } from '@trpc/server';
-import { OpenApiMeta } from 'better-trpc-openapi';
+import type { OpenApiMeta } from 'better-trpc-openapi';
 import superjson from 'superjson';
 
 import type { Context } from './context';

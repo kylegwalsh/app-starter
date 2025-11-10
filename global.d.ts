@@ -8,10 +8,8 @@
  * - FC<typeof Component, Props> - inherits the props from the referenced component + custom props
  */
 declare type FC<T = object, P = never> = [P] extends [never]
-  ? T extends React.ComponentType<any>
-    ? React.FC<React.PropsWithChildren<React.ComponentProps<T>>> // Just component type + children
+  ? // biome-ignore lint/suspicious/noExplicitAny: We need to allow any for the component type
+    T extends React.ComponentType<any>
+    ? React.FC<React.PropsWithChildren<ComponentProps<T>>> // Just component type + children
     : React.FC<React.PropsWithChildren<T>> // Just props + children
-  : React.FC<React.PropsWithChildren<React.ComponentProps<T> & P>>; // Component type + props + children
-
-// Declare modules for packages that are missing types (try to avoid this)
-declare module '@next/eslint-plugin-next';
+  : React.FC<React.PropsWithChildren<ComponentProps<T> & P>>; // Component type + props + children

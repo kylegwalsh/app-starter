@@ -2,11 +2,11 @@ import { Calendar } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { addDays } from 'date-fns';
 import { useEffect, useState } from 'react';
-import {
+import type {
   DateRange,
-  type SelectMultipleEventHandler,
-  type SelectRangeEventHandler,
-  type SelectSingleEventHandler,
+  SelectMultipleEventHandler,
+  SelectRangeEventHandler,
+  SelectSingleEventHandler,
 } from 'react-day-picker';
 import { action } from 'storybook/actions';
 
@@ -29,19 +29,29 @@ const meta = {
 
     /** The initial selected date for the single mode */
     const initialSingle = (() => {
-      if (mode !== 'single') return;
-      if ('selected' in args && args.selected instanceof Date) return args.selected;
+      if (mode !== 'single') {
+        return;
+      }
+      if ('selected' in args && args.selected instanceof Date) {
+        return args.selected;
+      }
       return;
     })();
     /** The initial selected dates for the multiple mode */
     const initialMultiple = (() => {
-      if (mode !== 'multiple') return;
-      if ('selected' in args && Array.isArray(args.selected)) return args.selected;
+      if (mode !== 'multiple') {
+        return;
+      }
+      if ('selected' in args && Array.isArray(args.selected)) {
+        return args.selected;
+      }
       return;
     })();
     /** The initial selected range for the range mode */
     const initialRange = (() => {
-      if (mode !== 'range') return;
+      if (mode !== 'range') {
+        return;
+      }
       if (
         'selected' in args &&
         args.selected &&
@@ -54,9 +64,15 @@ const meta = {
     })();
 
     // We need to track the state for each mode since the mode can change on the fly here
-    const [selectedSingle, setSelectedSingle] = useState<Date | undefined>(initialSingle);
-    const [selectedMultiple, setSelectedMultiple] = useState<Date[] | undefined>(initialMultiple);
-    const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(initialRange);
+    const [selectedSingle, setSelectedSingle] = useState<Date | undefined>(
+      initialSingle
+    );
+    const [selectedMultiple, setSelectedMultiple] = useState<
+      Date[] | undefined
+    >(initialMultiple);
+    const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(
+      initialRange
+    );
 
     // Listen to mode changes and update the state accordingly
     useEffect(() => {
@@ -117,18 +133,28 @@ const meta = {
         <Calendar
           {...args}
           mode="multiple"
-          selected={selectedMultiple}
           onSelect={handleSelectMultiple}
+          selected={selectedMultiple}
         />
       );
     }
     if (mode === 'range') {
       return (
-        <Calendar {...args} mode="range" selected={selectedRange} onSelect={handleSelectRange} />
+        <Calendar
+          {...args}
+          mode="range"
+          onSelect={handleSelectRange}
+          selected={selectedRange}
+        />
       );
     }
     return (
-      <Calendar {...args} mode="single" selected={selectedSingle} onSelect={handleSelectSingle} />
+      <Calendar
+        {...args}
+        mode="single"
+        onSelect={handleSelectSingle}
+        selected={selectedSingle}
+      />
     );
   },
 } satisfies Meta<typeof Calendar>;

@@ -18,7 +18,6 @@ ALTER TABLE "user" DROP COLUMN "banExpires",
 DROP COLUMN "banReason",
 DROP COLUMN "banned",
 DROP COLUMN "role",
-DROP COLUMN "test";
 
 -- AlterTable
 ALTER TABLE "session" DROP COLUMN "activeOrganizationId",

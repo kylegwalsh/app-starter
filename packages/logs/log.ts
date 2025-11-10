@@ -38,9 +38,8 @@ type LogMetadata = {
 };
 
 /** Gets the current request context */
-export const getLogMetadata = () => {
-  return { ...GlobalContextStorageProvider.getContext() } as LogMetadata;
-};
+export const getLogMetadata = () =>
+  ({ ...GlobalContextStorageProvider.getContext() }) as LogMetadata;
 
 /** Adds metadata to the current request context */
 export const addLogMetadata = (metadata: Record<string, unknown>) => {
@@ -50,7 +49,9 @@ export const addLogMetadata = (metadata: Record<string, unknown>) => {
 /** Ensures all logs are flushed */
 export const flushLogs = async () => {
   try {
-    if (axiom) await axiom.flush();
+    if (axiom) {
+      await axiom.flush();
+    }
   } catch (error) {
     console.error('[log] Failed to flush logs:', error);
   }
@@ -80,8 +81,11 @@ const customDestination = {
             time,
             level,
             msg,
-            'x-correlation-id': correlationId, // eslint-disable-line @typescript-eslint/no-unused-vars
-            'x-correlation-trace-id': traceId, // eslint-disable-line @typescript-eslint/no-unused-vars
+            // biome-ignore lint/correctness/noUnusedVariables: We need to extract this to avoid passing it
+            'x-correlation-id': correlationId,
+            // biome-ignore lint/correctness/noUnusedVariables: We need to extract this to avoid passing it
+            'x-correlation-trace-id': traceId,
+            // Grab the rest of the context
             ...context
           } = JSON.parse(payload) as PinoLog;
           axiom.ingest(env.AXIOM_DATASET, [
@@ -98,7 +102,9 @@ const customDestination = {
         }
       }
       // If we're running locally, show the pretty output
-      else prettyDest.write(payload);
+      else {
+        prettyDest.write(payload);
+      }
     } catch (error) {
       console.error('[log] Failed to handle log:', error);
     }
@@ -117,9 +123,7 @@ export const log = pino(
       env: config.stage,
     },
     // Add any additional global context into our logs
-    mixin: () => {
-      return getLogMetadata();
-    },
+    mixin: () => getLogMetadata(),
   },
   customDestination
 );

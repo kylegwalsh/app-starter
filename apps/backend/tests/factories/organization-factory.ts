@@ -1,4 +1,4 @@
-import { Organization } from '@prisma/client';
+import type { Organization } from '@prisma/client';
 
 import { db } from '@/db';
 
@@ -26,13 +26,12 @@ export const organizationFactory = {
     userId: string;
     organizationId: string;
     role?: string;
-  }) => {
-    return await db.member.create({
+  }) =>
+    await db.member.create({
       data: {
         userId,
         organizationId,
         role,
       },
-    });
-  },
+    }),
 };

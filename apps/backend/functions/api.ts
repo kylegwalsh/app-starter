@@ -1,6 +1,9 @@
 import { config } from '@repo/config';
 import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
-import { createOpenApiAwsLambdaHandler, generateOpenApiDocument } from 'better-trpc-openapi';
+import {
+  createOpenApiAwsLambdaHandler,
+  generateOpenApiDocument,
+} from 'better-trpc-openapi';
 
 import { withLambdaContext } from '@/core';
 import { router } from '@/routes';
@@ -24,7 +27,7 @@ const restHandler = createOpenApiAwsLambdaHandler({
 
 // ---------- MAIN API ENTRY POINT ----------
 /** The main entry point for the backend APIs */
-export const handler = withLambdaContext<'api'>(async (event, context) => {
+export const handler = withLambdaContext<'api'>((event, context) => {
   const path = event.rawPath;
 
   // If the path is /trpc, return the tRPC handler

@@ -1,8 +1,11 @@
 'use client';
 
-import { AuthLoading, RedirectToSignIn, SignedIn } from '@daveyplate/better-auth-ui';
+import {
+  AuthLoading,
+  RedirectToSignIn,
+  SignedIn,
+} from '@daveyplate/better-auth-ui';
 import { LoadingLayout } from '@repo/design';
-import React from 'react';
 
 import { AppSidebar } from '@/components';
 

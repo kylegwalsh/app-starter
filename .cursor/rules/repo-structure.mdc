@@ -26,7 +26,6 @@ alwaysApply: true
 │   ├── seo/           # SEO helpers and metadata
 │   ├── utils/         # General utilities (formatting, time, etc.)
 │   ├── email/         # Email helpers
-│   ├── eslint/        # Shared ESLint config
 │   └── tsconfig/      # Shared TypeScript config
 ├── infra/             # SST/AWS infrastructure
 ├── scripts/           # Project init, Stripe setup, migrations, etc.
@@ -69,7 +68,6 @@ alwaysApply: true
 - `@repo/seo`: SEO helpers and metadata
 - `@repo/utils`: General utilities (formatting, time, etc.)
 - `@repo/email`: Email helpers
-- `@repo/eslint`, `@repo/tsconfig`: Shared linting and TS config
 
 </packages_overview>
 

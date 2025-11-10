@@ -42,15 +42,13 @@ const preview: Preview = {
       },
       defaultTheme: 'light',
     }),
-    (Story) => {
-      return (
-        <div className="bg-background">
-          <ThemeProvider enableSystem={false}>
-            <Story />
-          </ThemeProvider>
-        </div>
-      );
-    },
+    (Story) => (
+      <div className="bg-background">
+        <ThemeProvider enableSystem={false}>
+          <Story />
+        </ThemeProvider>
+      </div>
+    ),
   ],
 };
 

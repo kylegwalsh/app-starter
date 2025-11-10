@@ -29,8 +29,10 @@ export default $config({
     $transform(sst.aws.Function, (args) => {
       // ---------- SECRETS ----------
       // Link the secrets to every method
-      // eslint-disable-next-line unicorn/prefer-spread
-      args.link = ([] as unknown[]).concat((args.link as unknown[]) || [], Object.values(secrets));
+      args.link = ([] as unknown[]).concat(
+        (args.link as unknown[]) || [],
+        Object.values(secrets)
+      );
 
       // ---------- PERMISSIONS ----------
       // Add permissions for the Bedrock AI API
@@ -67,9 +69,12 @@ export default $config({
                 const { execSync } = await import('node:child_process');
 
                 // Inject sourcemaps with posthog metadata
-                execSync(`pnpm exec posthog-cli sourcemap inject --directory ${dir}`, {
-                  stdio: 'inherit',
-                });
+                execSync(
+                  `pnpm exec posthog-cli sourcemap inject --directory ${dir}`,
+                  {
+                    stdio: 'inherit',
+                  }
+                );
                 // Upload sourcemaps
                 execSync(
                   `pnpm exec posthog-cli sourcemap upload --directory ${dir} --project "${process.env.GITHUB_REPO} (backend)" --version ${process.env.GITHUB_SHA}`,
@@ -133,7 +138,9 @@ export default $config({
     // This causes our CI to fail unless we deploy something first. To ensure we keep it
     // speedy the first time (and this should only deploy once), we create a minimal stage
     // and just skip the rest of the deployment.
-    if ($app.stage === 'minimal') return;
+    if ($app.stage === 'minimal') {
+      return;
+    }
 
     // Import primary application stacks
     await import('./infra/api');

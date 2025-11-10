@@ -7,9 +7,9 @@ type Props = {
 /** A component for rendering JSON-LD data on a page */
 export const JsonLd = ({ code }: Props) => (
   <script
-    type="application/ld+json"
     // biome-ignore lint/security/noDangerouslySetInnerHtml: "This is a JSON-LD script, not user-generated content."
     dangerouslySetInnerHTML={{ __html: JSON.stringify(code) }}
+    type="application/ld+json"
   />
 );
 

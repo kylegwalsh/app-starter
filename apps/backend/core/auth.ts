@@ -1,12 +1,16 @@
-import { stripe } from '@better-auth/stripe';
-import { Organization } from '@prisma/client';
+import { stripe as stripePlugin } from '@better-auth/stripe';
+import type { Organization } from '@prisma/client';
 import { analytics } from '@repo/analytics';
 import { config, env } from '@repo/config';
 import { plans } from '@repo/constants';
 import { email } from '@repo/email';
-import { betterAuth, BetterAuthOptions } from 'better-auth';
+import { type BetterAuthOptions, betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { admin, apiKey, organization } from 'better-auth/plugins';
+import {
+  admin as adminPlugin,
+  apiKey as apiKeyPlugin,
+  organization as organizationPlugin,
+} from 'better-auth/plugins';
 
 import { db } from '@/db';
 
@@ -20,29 +24,35 @@ import { stripe as stripeClient } from './stripe';
 const SUPPORT_PERSONAL_ORGANIZATIONS = true;
 
 /** Get or create a personal organization for a user */
-const getOrCreatePersonalOrganization = async ({ userId }: { userId: string }) => {
+const getOrCreatePersonalOrganization = async ({
+  userId,
+}: {
+  userId: string;
+}) => {
   // First, try to find existing personal organization for this user
   const existingPersonalOrg = await db.organization.findFirst({
     where: {
       isPersonal: true,
       members: {
         some: {
-          userId: userId,
+          userId,
           role: 'owner',
         },
       },
     },
   });
-  if (existingPersonalOrg) return existingPersonalOrg;
+  if (existingPersonalOrg) {
+    return existingPersonalOrg;
+  }
 
   // If we haven't created one, create a new personal organization
   const personalOrg = await db.organization.create({
     data: {
-      name: `Personal account`,
+      name: 'Personal account',
       isPersonal: true,
       members: {
         create: {
-          userId: userId,
+          userId,
           role: 'owner',
         },
       },
@@ -69,7 +79,7 @@ const getActiveOrganization = async ({
         id: defaultOrganizationId,
         members: {
           some: {
-            userId: userId,
+            userId,
           },
         },
       },
@@ -87,7 +97,7 @@ const getActiveOrganization = async ({
           where: {
             members: {
               some: {
-                userId: userId,
+                userId,
               },
             },
           },
@@ -102,7 +112,9 @@ const getActiveOrganization = async ({
     }
   }
   // If we STILL don't have an active organization, then we'll err
-  if (!activeOrganization) throw new Error('No organizations found for user');
+  if (!activeOrganization) {
+    throw new Error('No organizations found for user');
+  }
 
   return activeOrganization;
 };
@@ -137,7 +149,9 @@ const authConfig = {
 
           // If we support personal organizations, we'll create a personal organization for the user
           if (SUPPORT_PERSONAL_ORGANIZATIONS) {
-            const organization = await getOrCreatePersonalOrganization({ userId: user.id });
+            const organization = await getOrCreatePersonalOrganization({
+              userId: user.id,
+            });
             organizationId = organization.id;
             // Track the organization creation
             await analytics.organizationIdentify({
@@ -208,7 +222,9 @@ const authConfig = {
             if (currentSession?.activeOrganizationId) {
               await db.user.update({
                 where: { id: session.userId },
-                data: { defaultOrganizationId: currentSession.activeOrganizationId },
+                data: {
+                  defaultOrganizationId: currentSession.activeOrganizationId,
+                },
               });
             }
           }
@@ -243,8 +259,8 @@ const authConfig = {
   },
   // The various plugins we're using
   plugins: [
-    admin(),
-    organization({
+    adminPlugin(),
+    organizationPlugin({
       schema: {
         organization: {
           additionalFields: {
@@ -261,7 +277,10 @@ const authConfig = {
         afterCreate: async ({ organization, user }) => {
           await analytics.organizationIdentify({
             organizationId: organization.id,
-            traits: { name: organization.name, createdAt: organization.createdAt },
+            traits: {
+              name: organization.name,
+              createdAt: organization.createdAt,
+            },
           });
           await analytics.organizationCreated({
             userId: user.id,
@@ -271,10 +290,11 @@ const authConfig = {
         },
       },
     }),
-    apiKey(),
-    stripe({
+    apiKeyPlugin(),
+    stripePlugin({
       stripeClient,
-      stripeWebhookSecret: (env as Record<string, string>).STRIPE_WEBHOOK_SECRET,
+      stripeWebhookSecret: (env as Record<string, string>)
+        .STRIPE_WEBHOOK_SECRET,
       createCustomerOnSignUp: true,
       // Configure stripe plans
       subscription: {
@@ -297,8 +317,9 @@ const authConfig = {
 } satisfies BetterAuthOptions;
 
 /** Our Better Auth instance */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-export const auth = betterAuth(authConfig) as ReturnType<typeof betterAuth<typeof authConfig>>;
+export const auth = betterAuth(authConfig) as ReturnType<
+  typeof betterAuth<typeof authConfig>
+>;
 
 /** The type of the auth session object */
 export type AuthSession = typeof auth.$Infer.Session.session;

@@ -18,21 +18,28 @@ if (stage === 'prod' || stage === 'staging') {
 
 /** The URL of our web app */
 let appUrl: string | undefined;
-declare const window: any; // eslint-disable-line
-if (typeof window !== 'undefined') appUrl = window.location.origin; // eslint-disable-line
+// biome-ignore lint/suspicious/noExplicitAny: We need a few explicit any's here
+declare const window: any;
+if (typeof window !== 'undefined') {
+  appUrl = window.location.origin;
+}
 if (!appUrl) {
   try {
     appUrl = resources?.web?.url?.includes?.('dev.mode')
       ? 'http://localhost:3000'
       : resources?.web?.url;
-  } catch {}
+  } catch {
+    // Do nothing
+  }
 }
 
 /** The URL of our API */
 let apiUrl = '';
 try {
   apiUrl = process.env.NEXT_PUBLIC_API_URL ?? resources?.api?.url ?? '';
-} catch {}
+} catch {
+  // Do nothing
+}
 
 /** Whether this application is running as one of our main deployments (not locally) */
 const isDeployment = ['prod', 'dev'].includes(stage ?? '');

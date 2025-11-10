@@ -4,7 +4,7 @@ import inquirer from 'inquirer';
 
 // ---------- INPUT HELPERS ----------
 /** Prompt the user for input */
-export const promptUser = async (question: string): Promise<string> => {
+export const promptUser = (question: string): Promise<string> => {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -22,8 +22,12 @@ export const promptYesNo = async (question: string): Promise<boolean> => {
   while (true) {
     const rawAnswer = await promptUser(question);
     const answer = rawAnswer.trim().toLowerCase();
-    if (['y', 'yes'].includes(answer)) return true;
-    if (['n', 'no'].includes(answer)) return false;
+    if (['y', 'yes'].includes(answer)) {
+      return true;
+    }
+    if (['n', 'no'].includes(answer)) {
+      return false;
+    }
     console.log("Please enter 'y' or 'n'.");
   }
 };
@@ -34,7 +38,10 @@ export const promptYesNo = async (question: string): Promise<boolean> => {
  * @param choices The list of choices (array of strings)
  * @returns The selected choice (string)
  */
-export const promptSelect = async (message: string, choices: string[]): Promise<string> => {
+export const promptSelect = async (
+  message: string,
+  choices: string[]
+): Promise<string> => {
   const response = await inquirer.prompt<{
     selected: string;
   }>([

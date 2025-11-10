@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 import { promptSelect, promptUser, promptYesNo } from '../utils/input.js';
 
@@ -38,7 +38,9 @@ const checkGhAuth = () => {
   try {
     execSync('gh auth status');
   } catch {
-    console.log("❌ GitHub CLI is not authenticated. Please run 'gh auth login' and try again.\n");
+    console.log(
+      "❌ GitHub CLI is not authenticated. Please run 'gh auth login' and try again.\n"
+    );
     process.exit(1);
   }
 };
@@ -124,10 +126,9 @@ const configureGithubUrl = async () => {
 
         console.log('✔ Updated repo\n');
         return newUrl;
-      } else {
-        console.log('✔ Using current repo\n');
-        return currentUrl;
       }
+      console.log('✔ Using current repo\n');
+      return currentUrl;
     } catch {
       console.log(
         '❌ Unable to connect to the provided GitHub URL. Please verify the URL and try again.\n'
@@ -149,11 +150,15 @@ const setupGithub = async ({
   console.log('Setting up GitHub...');
 
   // Configure the GitHub URL and extract the repo path
-  const githubUrl = (await configureGithubUrl())!;
+  const githubUrl = await configureGithubUrl();
+  if (!githubUrl) {
+    console.log('❌ Unable to configure GitHub URL. Please try again.');
+    throw new Error('Failed to configure GitHub URL');
+  }
   const match = githubUrl.match(/[:/]([^/]+\/[^/.]+)(?:\.git)?$/);
   const repo = match ? match[1] : '';
 
-  console.log(`Setting up GitHub environments and secrets...`);
+  console.log('Setting up GitHub environments and secrets...');
 
   // Create environments (idempotent)
   execSync(
@@ -164,26 +169,44 @@ const setupGithub = async ({
   );
 
   // Set AWS secrets
-  execSync(`gh secret set AWS_ACCESS_KEY_ID -a actions -b "${awsConfig.ci.awsAccessKey}"`);
-  execSync(`gh secret set AWS_SECRET_ACCESS_KEY -a actions -b "${awsConfig.ci.awsSecretKey}"`);
+  execSync(
+    `gh secret set AWS_ACCESS_KEY_ID -a actions -b "${awsConfig.ci.awsAccessKey}"`
+  );
+  execSync(
+    `gh secret set AWS_SECRET_ACCESS_KEY -a actions -b "${awsConfig.ci.awsSecretKey}"`
+  );
 
   // Set sst stage (for each environment)
   execSync(`gh variable set SST_STAGE -b "dev" -e dev`);
   execSync(`gh variable set SST_STAGE -b "prod" -e prod`);
 
   // Set database secrets (for each environment)
-  execSync(`gh secret set DATABASE_URL -a actions -b "${dbConfig.prod.dbUrl}" -e prod`);
-  execSync(`gh secret set DIRECT_DATABASE_URL -a actions -b "${dbConfig.prod.directUrl}" -e prod`);
-  execSync(`gh secret set DATABASE_URL -a actions -b "${dbConfig.dev.dbUrl}" -e dev`);
-  execSync(`gh secret set DIRECT_DATABASE_URL -a actions -b "${dbConfig.dev.directUrl}" -e dev`);
+  execSync(
+    `gh secret set DATABASE_URL -a actions -b "${dbConfig.prod.dbUrl}" -e prod`
+  );
+  execSync(
+    `gh secret set DIRECT_DATABASE_URL -a actions -b "${dbConfig.prod.directUrl}" -e prod`
+  );
+  execSync(
+    `gh secret set DATABASE_URL -a actions -b "${dbConfig.dev.dbUrl}" -e dev`
+  );
+  execSync(
+    `gh secret set DIRECT_DATABASE_URL -a actions -b "${dbConfig.dev.directUrl}" -e dev`
+  );
 
   // If we aren't given a posthog details, we'll skip this step
   if (posthogConfig) {
     // Set up the CLI token
-    execSync(`gh secret set POSTHOG_CLI_TOKEN -a actions -b "${posthogConfig.cliToken}"`);
+    execSync(
+      `gh secret set POSTHOG_CLI_TOKEN -a actions -b "${posthogConfig.cliToken}"`
+    );
     // Set project ids (for each environment)
-    execSync(`gh variable set POSTHOG_CLI_ENV_ID -b "${posthogConfig.devProjectId}" -e dev`);
-    execSync(`gh variable set POSTHOG_CLI_ENV_ID -b "${posthogConfig.prodProjectId}" -e prod`);
+    execSync(
+      `gh variable set POSTHOG_CLI_ENV_ID -b "${posthogConfig.devProjectId}" -e dev`
+    );
+    execSync(
+      `gh variable set POSTHOG_CLI_ENV_ID -b "${posthogConfig.prodProjectId}" -e prod`
+    );
   }
 
   console.log('✔ GitHub environments and secrets have been set up.\n');
@@ -198,7 +221,9 @@ const getProjectName = async () => {
   // Check for the app name in the config file
   const configPath = path.resolve('packages/config/config.ts');
   let configContent = fs.readFileSync(configPath, 'utf8');
-  const appNameMatch = configContent.match(/app:\s*{[^}]*name:\s*['"][^'"]*['"]/s);
+  const appNameMatch = configContent.match(
+    /app:\s*{[^}]*name:\s*['"][^'"]*['"]/s
+  );
   let appName = appNameMatch ? appNameMatch[1] : undefined;
 
   // If the app name doesn't exist, we'll prompt the user for a new one
@@ -221,7 +246,7 @@ const getProjectName = async () => {
     // Write Title Case to config.ts
     configContent = configContent.replace(
       /app:\s*{([^}]*)name:\s*(['"])[^'"]*\2/s,
-      (m, g1, quote) => `app: {${g1}name: ${quote}${newName}${quote}`
+      (_m, g1, quote) => `app: {${g1}name: ${quote}${newName}${quote}`
     );
     fs.writeFileSync(configPath, configContent);
 
@@ -231,14 +256,17 @@ const getProjectName = async () => {
     // Update sst.config.ts, always use single quotes
     const sstConfigPath = path.resolve('sst.config.ts');
     let sstConfig = fs.readFileSync(sstConfigPath, 'utf8');
-    sstConfig = sstConfig.replace(/name:\s*['"][^'"]*['"]/, `name: '${kebabName}'`);
+    sstConfig = sstConfig.replace(
+      /name:\s*['"][^'"]*['"]/,
+      `name: '${kebabName}'`
+    );
     fs.writeFileSync(sstConfigPath, sstConfig);
 
     // Update package.json
     const pkgPath = path.resolve('package.json');
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
     pkg.name = kebabName;
-    fs.writeFileSync(pkgPath, JSON.stringify(pkg, undefined, 2) + '\n');
+    fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, undefined, 2)}\n`);
     appName = newName;
 
     console.log(`✔ Project name updated to: ${newName}\n`);
@@ -255,12 +283,15 @@ export const getDomain = async () => {
   let constantsContent = fs.readFileSync(constantsPath, 'utf8');
 
   // Regex to match: const baseDomain = ...;
-  const baseDomainRegex = /const\s+baseDomain(?:\s*:\s*string)?\s*=\s*(['"])([^'\"]*)\1/;
+  const baseDomainRegex =
+    /const\s+baseDomain(?:\s*:\s*string)?\s*=\s*(['"])([^'"]*)\1/;
   const match = constantsContent.match(baseDomainRegex);
 
   // If we don't find a match, we are missing something important in the constants file
   if (!match) {
-    console.log('❌ Could not find the baseDomain assignment in infra/constants.ts.');
+    console.log(
+      '❌ Could not find the baseDomain assignment in infra/constants.ts.'
+    );
     process.exit(1);
   }
 
@@ -273,39 +304,40 @@ export const getDomain = async () => {
     return currentValue;
   }
   // If we don't find a value, we'll prompt the user for a custom domain
-  else {
-    const wantsCustomDomain = await promptYesNo(
-      'Would you like to use a custom domain for your app? (y/n) '
-    );
 
-    if (!wantsCustomDomain) {
-      console.log('Custom domain setup skipped.\n');
-      return;
-    }
+  const wantsCustomDomain = await promptYesNo(
+    'Would you like to use a custom domain for your app? (y/n) '
+  );
 
-    let baseDomain = '';
-    while (!baseDomain) {
-      const input = await promptUser('Enter your base domain (e.g., example.com): ');
-      const trimmed = input.trim().toLowerCase();
-      // Validate: must be a valid domain, no protocol, no subdomain, no trailing dot
-      if (!/^[a-z0-9-]+\.[a-z]{2,}$/.test(trimmed)) {
-        console.log(
-          '\n❌ Please enter a valid domain (e.g., example.com). Do not include subdomains or protocols (e.g., https://).'
-        );
-        continue;
-      }
-      baseDomain = trimmed;
-    }
-
-    // Replace only the empty string at the end of the baseDomain line
-    constantsContent = constantsContent.replace(
-      baseDomainRegex,
-      `const baseDomain: string = '${baseDomain}'`
-    );
-    fs.writeFileSync(constantsPath, constantsContent);
-    console.log(`✔ Web base domain set to: ${baseDomain}\n`);
-    return baseDomain;
+  if (!wantsCustomDomain) {
+    console.log('Custom domain setup skipped.\n');
+    return;
   }
+
+  let baseDomain = '';
+  while (!baseDomain) {
+    const input = await promptUser(
+      'Enter your base domain (e.g., example.com): '
+    );
+    const trimmed = input.trim().toLowerCase();
+    // Validate: must be a valid domain, no protocol, no subdomain, no trailing dot
+    if (!/^[a-z0-9-]+\.[a-z]{2,}$/.test(trimmed)) {
+      console.log(
+        '\n❌ Please enter a valid domain (e.g., example.com). Do not include subdomains or protocols (e.g., https://).'
+      );
+      continue;
+    }
+    baseDomain = trimmed;
+  }
+
+  // Replace only the empty string at the end of the baseDomain line
+  constantsContent = constantsContent.replace(
+    baseDomainRegex,
+    `const baseDomain: string = '${baseDomain}'`
+  );
+  fs.writeFileSync(constantsPath, constantsContent);
+  console.log(`✔ Web base domain set to: ${baseDomain}\n`);
+  return baseDomain;
 };
 
 /** Get or create the user's personal environment stage */
@@ -334,7 +366,9 @@ export const getOrCreateStage = async () => {
   // If we don't find a stage, we'll prompt the user to enter one
   let stage = '';
   while (!stage) {
-    const input = await promptUser("Enter a name for your personal environment (e.g. 'kwalsh'): ");
+    const input = await promptUser(
+      "Enter a name for your personal environment (e.g. 'kwalsh'): "
+    );
     stage = input.trim();
     if (!/^[a-zA-Z0-9_-]+$/.test(stage)) {
       console.log(
@@ -345,7 +379,7 @@ export const getOrCreateStage = async () => {
   }
 
   // Write the final result to the .sst/stage file
-  fs.writeFileSync(stagePath, stage + '\n');
+  fs.writeFileSync(stagePath, `${stage}\n`);
   console.log(`✔ Created .sst/stage with value '${stage}'!\n`);
   return stage;
 };
@@ -375,11 +409,17 @@ const getAllSecrets = (stage: string) => {
     }
 
     // Skip empty lines
-    if (!line.trim()) continue;
+    if (!line.trim()) {
+      continue;
+    }
     // For dev stage: only use fallback values
-    if (isDevStage && !inFallbackSection) continue;
+    if (isDevStage && !inFallbackSection) {
+      continue;
+    }
     // For other stages: skip fallback values and use stage-specific values
-    if (!isDevStage && inFallbackSection) continue;
+    if (!isDevStage && inFallbackSection) {
+      continue;
+    }
 
     // Look for lines that contain secret key-value pairs
     // Based on the format: "SECRET_NAME=secret_value"
@@ -402,10 +442,8 @@ let prodSecrets: Record<string, string> = {};
 
 /** Initialize both our global secret variables */
 const initSecrets = () => {
-  try {
-    devSecrets = getAllSecrets('dev');
-    prodSecrets = getAllSecrets('prod');
-  } catch {}
+  devSecrets = getAllSecrets('dev');
+  prodSecrets = getAllSecrets('prod');
 };
 
 // ---------- AWS HELPERS ----------
@@ -414,7 +452,11 @@ const initSecrets = () => {
  * Updates ~/.aws/credentials, ~/.aws/config, and .vscode/settings.json as needed.
  * Returns the selected profile name and credentials for personal and CI.
  */
-export const selectOrCreateAwsProfile = async ({ existing }: { existing?: boolean } = {}) => {
+export const selectOrCreateAwsProfile = async ({
+  existing,
+}: {
+  existing?: boolean;
+} = {}) => {
   console.log('Setting up AWS profile...');
 
   const homedir = os.homedir();
@@ -447,12 +489,19 @@ export const selectOrCreateAwsProfile = async ({ existing }: { existing?: boolea
   const readProfileCredentials = (profileName: string) => {
     if (fs.existsSync(credPath)) {
       const credContent = fs.readFileSync(credPath, 'utf8');
-      const profileRegex = new RegExp(`\\[${profileName}\\]([\\s\\S]*?)(?=\\n\\[|$)`, 'g');
+      const profileRegex = new RegExp(
+        `\\[${profileName}\\]([\\s\\S]*?)(?=\\n\\[|$)`,
+        'g'
+      );
       const match = profileRegex.exec(credContent);
-      if (match && match[1]) {
+      if (match?.[1]) {
         const sectionContent = match[1];
-        const keyMatch = sectionContent.match(/aws_access_key_id\s*=\s*([^\n]+)/);
-        const secretMatch = sectionContent.match(/aws_secret_access_key\s*=\s*([^\n]+)/);
+        const keyMatch = sectionContent.match(
+          /aws_access_key_id\s*=\s*([^\n]+)/
+        );
+        const secretMatch = sectionContent.match(
+          /aws_secret_access_key\s*=\s*([^\n]+)/
+        );
         const regionMatch = sectionContent.match(/region\s*=\s*([^\n]+)/);
         return {
           accessKey: keyMatch ? keyMatch[1].trim() : '',
@@ -494,7 +543,9 @@ export const selectOrCreateAwsProfile = async ({ existing }: { existing?: boolea
     // Prompt for secret key if not provided
     if (!secretKey) {
       while (!secretKey) {
-        const secretKeyInput = await promptUser('Enter AWS Secret Access Key: ');
+        const secretKeyInput = await promptUser(
+          'Enter AWS Secret Access Key: '
+        );
         secretKey = secretKeyInput.trim();
         if (!secretKey) {
           console.log('AWS Secret Access Key cannot be empty.');
@@ -547,7 +598,9 @@ export const selectOrCreateAwsProfile = async ({ existing }: { existing?: boolea
 
       // If the user wants to create a new profile, prompt for the credentials
       if (selected === 'Create new profile...') {
-        const config = await promptAndGenerateAwsConfig({ profileName: profile });
+        const config = await promptAndGenerateAwsConfig({
+          profileName: profile,
+        });
         accessKey = config.accessKey;
         secretKey = config.secretKey;
 
@@ -558,8 +611,10 @@ export const selectOrCreateAwsProfile = async ({ existing }: { existing?: boolea
         const sourceProfile = selected.replace('Use existing profile: ', '');
         const credentials = readProfileCredentials(sourceProfile);
 
-        if (!credentials.accessKey || !credentials.secretKey) {
-          console.log(`❌ Failed to read credentials from profile: ${sourceProfile}`);
+        if (!(credentials.accessKey && credentials.secretKey)) {
+          console.log(
+            `❌ Failed to read credentials from profile: ${sourceProfile}`
+          );
           process.exit(1);
         }
 
@@ -582,19 +637,26 @@ export const selectOrCreateAwsProfile = async ({ existing }: { existing?: boolea
   // Otherwise, we're initializing a new project and need to prompt the user for a profile
   else {
     const choices = [...profiles, 'Create new profile...'];
-    const selected = await promptSelect('Which AWS profile would you like to use?', choices);
+    const selected = await promptSelect(
+      'Which AWS profile would you like to use?',
+      choices
+    );
 
     if (selected === 'Create new profile...') {
       // Prompt for new profile details
       while (true) {
-        const profileInput = await promptUser('Enter a name for the new AWS profile: ');
+        const profileInput = await promptUser(
+          'Enter a name for the new AWS profile: '
+        );
         profile = profileInput.trim();
         if (!profile) {
           console.log('Profile name cannot be empty.');
           continue;
         }
         if (profiles.includes(profile)) {
-          console.log('Profile already exists. Please choose a different name.');
+          console.log(
+            'Profile already exists. Please choose a different name.'
+          );
           continue;
         }
         break;
@@ -617,7 +679,9 @@ export const selectOrCreateAwsProfile = async ({ existing }: { existing?: boolea
   }
 
   // If we don't have any keys at this point, we'll just fail out
-  if (!accessKey || !secretKey) process.exit(1);
+  if (!(accessKey && secretKey)) {
+    process.exit(1);
+  }
 
   // Set the AWS_PROFILE environment variable for the rest of this script execution
   process.env.AWS_PROFILE = profile;
@@ -636,7 +700,9 @@ export const selectOrCreateAwsProfile = async ({ existing }: { existing?: boolea
         `$1${profile}$2`
       );
       fs.writeFileSync(vscodeSettingsPath, settings);
-      console.log(`✔ Updated .vscode/settings.json to use AWS profile: ${profile}\n`);
+      console.log(
+        `✔ Updated .vscode/settings.json to use AWS profile: ${profile}\n`
+      );
     }
 
     // Ask if they want to use the same credentials for Github Actions CI
@@ -649,14 +715,18 @@ export const selectOrCreateAwsProfile = async ({ existing }: { existing?: boolea
     } else {
       // Prompt for CI credentials
       while (!ciAccessKey) {
-        const ciAccessKeyInput = await promptUser('Enter AWS Access Key ID for CI: ');
+        const ciAccessKeyInput = await promptUser(
+          'Enter AWS Access Key ID for CI: '
+        );
         ciAccessKey = ciAccessKeyInput.trim();
         if (!ciAccessKey) {
           console.log('AWS Access Key ID for CI cannot be empty.');
         }
       }
       while (!ciSecretKey) {
-        const ciSecretKeyInput = await promptUser('Enter AWS Secret Access Key for CI: ');
+        const ciSecretKeyInput = await promptUser(
+          'Enter AWS Secret Access Key for CI: '
+        );
         ciSecretKey = ciSecretKeyInput.trim();
         if (!ciSecretKey) {
           console.log('AWS Secret Access Key for CI cannot be empty.');
@@ -687,11 +757,13 @@ const generateSupabaseUrls = (baseUrl: string, password: string) => {
   // Replace the password in the base URL (between the last ':' before @ and the @)
   const urlWithPassword = baseUrl.replace(/:(?:[^:@]+)@/, `:${password}@`);
   // For DATABASE_URL: port 6543, add ?pgbouncer=true
-  const dbUrl =
-    urlWithPassword.replace(/:(\d+)(\/postgres)/, ':6543$2').replace(/\?.*$/, '') +
-    '?pgbouncer=true';
+  const dbUrl = `${urlWithPassword
+    .replace(/:(\d+)(\/postgres)/, ':6543$2')
+    .replace(/\?.*$/, '')}?pgbouncer=true`;
   // For DIRECT_DATABASE_URL: port 5432, no query string
-  const directUrl = urlWithPassword.replace(/:(\d+)(\/postgres)/, ':5432$2').replace(/\?.*$/, '');
+  const directUrl = urlWithPassword
+    .replace(/:(\d+)(\/postgres)/, ':5432$2')
+    .replace(/\?.*$/, '');
   return { directUrl, dbUrl };
 };
 
@@ -731,7 +803,9 @@ const setupSupabase = async (projectName: string) => {
   };
 
   // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) initSecrets();
+  if (Object.keys(devSecrets).length === 0) {
+    initSecrets();
+  }
 
   // Check if Supabase is already configured
   let alreadyConfigured = false;
@@ -766,14 +840,18 @@ const setupSupabase = async (projectName: string) => {
     }
   }
 
-  console.log('Sign up or log in to Supabase: https://supabase.com/dashboard/organizations');
+  console.log(
+    'Sign up or log in to Supabase: https://supabase.com/dashboard/organizations'
+  );
   console.log(
     'You can have 2 free databases (dev/prod) per account. You may want to create a fresh account per project.'
   );
   await promptUser('Press enter to continue...');
 
   // --- Production ---
-  console.log(`\nCreate a production project in Supabase (e.g. '${projectName}')`);
+  console.log(
+    `\nCreate a production project in Supabase (e.g. '${projectName}')`
+  );
   const prodPassword = await promptUser(
     'Enter the password you set for your production database: '
   );
@@ -782,8 +860,12 @@ const setupSupabase = async (projectName: string) => {
   );
 
   // --- Development ---
-  console.log(`\nCreate a dev project in Supabase (e.g. '${projectName} (dev)')`);
-  const devPassword = await promptUser('Enter the password you set for your dev database: ');
+  console.log(
+    `\nCreate a dev project in Supabase (e.g. '${projectName} (dev)')`
+  );
+  const devPassword = await promptUser(
+    'Enter the password you set for your dev database: '
+  );
   const devBaseUrl = await promptValidSupabaseUrl(
     "After your project is created, click 'Connect' and copy the 'Transaction pooler' URL (starts with postgresql://...): "
   );
@@ -797,7 +879,9 @@ const setupSupabase = async (projectName: string) => {
   execSync(
     `pnpm tsx ${addSecretScript} DIRECT_DATABASE_URL "${devUrls.directUrl}" "${prodUrls.directUrl}"`
   );
-  execSync(`pnpm tsx ${addSecretScript} DATABASE_URL "${devUrls.dbUrl}" "${prodUrls.dbUrl}"`);
+  execSync(
+    `pnpm tsx ${addSecretScript} DATABASE_URL "${devUrls.dbUrl}" "${prodUrls.dbUrl}"`
+  );
   console.log('✔ Supabase secrets have been set in SST.\n');
 
   // Update the config object with the new values
@@ -834,14 +918,19 @@ const applyExistingMigrations = () => {
       return;
     }
 
-    console.log(`Found ${migrationDirs.length} migration(s) to mark as applied...`);
+    console.log(
+      `Found ${migrationDirs.length} migration(s) to mark as applied...`
+    );
 
     // Mark each migration as applied
     for (const migrationDir of migrationDirs) {
       try {
-        execSync(`pnpm backend db:get-url "prisma migrate resolve --applied ${migrationDir}"`, {
-          stdio: 'ignore',
-        });
+        execSync(
+          `pnpm backend db:get-url "prisma migrate resolve --applied ${migrationDir}"`,
+          {
+            stdio: 'ignore',
+          }
+        );
       } catch {
         // Track migrations that failed
         failedMigrations.push(migrationDir);
@@ -850,7 +939,9 @@ const applyExistingMigrations = () => {
 
     // If any migrations failed, throw an error
     if (failedMigrations.length > 0) {
-      throw new Error(`Failed to apply ${failedMigrations.length} migration(s)`);
+      throw new Error(
+        `Failed to apply ${failedMigrations.length} migration(s)`
+      );
     }
 
     console.log('✔ Database migrations have been marked as applied.\n');
@@ -875,7 +966,9 @@ const setupBetterAuth = () => {
   console.log('Setting up Better Auth...');
 
   // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) initSecrets();
+  if (Object.keys(devSecrets).length === 0) {
+    initSecrets();
+  }
 
   // Check if BETTER_AUTH_SECRET is already configured in SST secrets
   if (devSecrets.BETTER_AUTH_SECRET && prodSecrets.BETTER_AUTH_SECRET) {
@@ -890,7 +983,9 @@ const setupBetterAuth = () => {
 
   // Add secret to SST
   console.log('Adding Better Auth secret to SST...');
-  execSync(`pnpm tsx ${addSecretScript} BETTER_AUTH_SECRET "${randomString}" "${randomString}"`);
+  execSync(
+    `pnpm tsx ${addSecretScript} BETTER_AUTH_SECRET "${randomString}" "${randomString}"`
+  );
   console.log('✔ Better Auth secret has been set in SST.\n');
 
   return true;
@@ -919,7 +1014,7 @@ const setupPosthog = async (projectName: string) => {
     return;
   }
 
-  let cliToken;
+  let cliToken: string;
   while (true) {
     try {
       // Ask if they want to set up PostHog
@@ -949,14 +1044,17 @@ const setupPosthog = async (projectName: string) => {
       });
 
       // Try to retrieve organizations
-      const orgsRes = await posthogApi.get<{ results: PosthogOrg[] }>('organizations/');
+      const orgsRes = await posthogApi.get<{ results: PosthogOrg[] }>(
+        'organizations/'
+      );
       const orgsData = orgsRes.data;
 
       // Create a list of organizations to choose from
-      const orgChoices: { name: string; value: string }[] = orgsData.results.map((org) => ({
-        name: org.name,
-        value: org.id,
-      }));
+      const orgChoices: { name: string; value: string }[] =
+        orgsData.results.map((org) => ({
+          name: org.name,
+          value: org.id,
+        }));
       orgChoices.push({ name: 'Create new organization...', value: 'new' });
       const selectedOrgId = await promptSelect(
         'Select a PostHog organization:',
@@ -966,17 +1064,30 @@ const setupPosthog = async (projectName: string) => {
 
       // If the user wants to create a new organization, prompt for a name and create it
       if (orgId === 'new') {
-        const newOrgName = await promptUser('Enter a name for the new organization: ');
-        const createOrgRes = await posthogApi.post<PosthogOrg>('organizations/', {
-          name: newOrgName,
-        });
+        const newOrgName = await promptUser(
+          'Enter a name for the new organization: '
+        );
+        const createOrgRes = await posthogApi.post<PosthogOrg>(
+          'organizations/',
+          {
+            name: newOrgName,
+          }
+        );
         const newOrg = createOrgRes.data;
         orgId = newOrg.id;
         console.log(`✔ Created new organization: ${newOrgName}`);
       }
 
+      // Sanity check to narrow the types (we should never run this)
+      if (!orgId) {
+        throw new Error('Failed to create new organization');
+      }
+
       // Create projects for prod and dev
-      async function createProject(orgId: string, name: string): Promise<PosthogProject> {
+      async function createProject(
+        orgId: string,
+        name: string
+      ): Promise<PosthogProject> {
         const res = await posthogApi.post<PosthogProject>('projects/', {
           name,
           organization: orgId,
@@ -985,8 +1096,8 @@ const setupPosthog = async (projectName: string) => {
       }
 
       console.log('\nCreating projects...');
-      const prodProject = await createProject(orgId!, projectName);
-      const devProject = await createProject(orgId!, `${projectName} (dev)`);
+      const prodProject = await createProject(orgId, projectName);
+      const devProject = await createProject(orgId, `${projectName} (dev)`);
       console.log('✔ PostHog projects have been created.');
 
       // Save API key in config file
@@ -1001,10 +1112,16 @@ const setupPosthog = async (projectName: string) => {
         devProjectId: devProject.id,
         cliToken,
       };
-    } catch (error: any) {
-      console.log(
-        `\n❌ An error occurred during PostHog setup: ${error?.response?.data?.detail || error?.message}\n\nRestarting PostHog setup...`
-      );
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        console.log(
+          `\n❌ An error occurred during PostHog setup: ${error.response?.data?.detail || error.message}\n\nRestarting PostHog setup...`
+        );
+      } else {
+        console.log(
+          `\n❌ An error occurred during PostHog setup: ${error}\n\nRestarting PostHog setup...`
+        );
+      }
       // The loop will restart from the setup prompt
     }
   }
@@ -1028,12 +1145,18 @@ const setupSlack = async (repo: string) => {
   // If they do want slack, we'll guide them through the setup
   const parsedGithubUrl = repo.replace('.git', '');
   console.log('\nTo receive notifications, please:');
-  console.log('1. Install the GitHub app in your Slack workspace: https://slack.github.com/');
-  console.log('2. In the Slack channel where you want notifications, run the following command:');
+  console.log(
+    '1. Install the GitHub app in your Slack workspace: https://slack.github.com/'
+  );
+  console.log(
+    '2. In the Slack channel where you want notifications, run the following command:'
+  );
   console.log(
     `\n/github subscribe ${parsedGithubUrl} workflows:{event:"pull_request","push" branch:"main","staging","dev"}`
   );
-  await promptUser("\nPress enter to continue after you've set up Slack notifications...");
+  await promptUser(
+    "\nPress enter to continue after you've set up Slack notifications..."
+  );
   console.log('✔ Slack setup step complete.\n');
 };
 
@@ -1046,7 +1169,9 @@ const setupCrispChat = async () => {
   let configContent = fs.readFileSync(configPath, 'utf8');
 
   // Check if Crisp is already set up
-  const websiteIdMatch = configContent.match(/crisp:\s*{[^}]*websiteId:\s*['"]([^'"]*)['"]/);
+  const websiteIdMatch = configContent.match(
+    /crisp:\s*{[^}]*websiteId:\s*['"]([^'"]*)['"]/
+  );
   const websiteId = websiteIdMatch ? websiteIdMatch[1] : undefined;
   if (websiteId && websiteId !== '') {
     console.log('✔ Crisp Chat already configured.\n');
@@ -1054,7 +1179,9 @@ const setupCrispChat = async () => {
   }
 
   // Ask if they want to set up Crisp Chat
-  const doSetup = await promptYesNo('Would you like to set up Crisp live chat support? (y/n) ');
+  const doSetup = await promptYesNo(
+    'Would you like to set up Crisp live chat support? (y/n) '
+  );
   if (!doSetup) {
     console.log('Crisp Chat setup skipped.\n');
     return;
@@ -1072,7 +1199,9 @@ const setupCrispChat = async () => {
     const input = await promptUser('Enter your CRISP_WEBSITE_ID: ');
     newWebsiteId = input.trim();
     if (!/^[a-zA-Z0-9-]+$/.test(newWebsiteId)) {
-      console.log('Please enter a valid CRISP_WEBSITE_ID (alphanumeric and hyphens only).');
+      console.log(
+        'Please enter a valid CRISP_WEBSITE_ID (alphanumeric and hyphens only).'
+      );
       newWebsiteId = '';
     }
   }
@@ -1083,7 +1212,7 @@ const setupCrispChat = async () => {
     `websiteId: '${newWebsiteId}'`
   );
   fs.writeFileSync(configPath, configContent);
-  console.log(`✔ Crisp Chat websiteId saved to config.\n`);
+  console.log('✔ Crisp Chat websiteId saved to config.\n');
 };
 
 // ---------- DOCS SITE HELPER ----------
@@ -1101,7 +1230,9 @@ const setupDocsSite = async ({ domain }: { domain?: string }) => {
   }
 
   // Ask if they want to set up the docs site
-  const doSetup = await promptYesNo('Would you like to set up a website for documentation? (y/n) ');
+  const doSetup = await promptYesNo(
+    'Would you like to set up a website for documentation? (y/n) '
+  );
   if (!doSetup) {
     console.log('Docs site setup skipped.\n');
     return;
@@ -1114,7 +1245,10 @@ const setupDocsSite = async ({ domain }: { domain?: string }) => {
 
     // Replace the undefined domain line with the new template
     const domainTemplate = `$app.stage === 'prod' ? 'docs.${domain}' : \`\${$app.stage}.docs.${domain}\``;
-    docsContent = docsContent.replace(/domain\s*=\s*undefined/, `domain = ${domainTemplate}`);
+    docsContent = docsContent.replace(
+      /domain\s*=\s*undefined/,
+      `domain = ${domainTemplate}`
+    );
     fs.writeFileSync(docsPath, docsContent);
     console.log(
       `✔ Docs site domain set to docs.${domain} (prod) and <stage>.docs.${domain} (other stages).`
@@ -1138,7 +1272,9 @@ const setupAxiom = async (): Promise<boolean> => {
   console.log('Setting up Axiom observability...');
 
   // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) initSecrets();
+  if (Object.keys(devSecrets).length === 0) {
+    initSecrets();
+  }
 
   // Check if Axiom is already configured in SST secrets
   if (
@@ -1151,7 +1287,9 @@ const setupAxiom = async (): Promise<boolean> => {
     return true;
   }
 
-  console.log('Axiom provides enhanced log searching and monitoring beyond AWS CloudWatch.');
+  console.log(
+    'Axiom provides enhanced log searching and monitoring beyond AWS CloudWatch.'
+  );
   // Ask if they want to set up Axiom
   const doSetup = await promptYesNo(
     'Would you like to set up Axiom for enhanced observability? (y/n) '
@@ -1164,7 +1302,9 @@ const setupAxiom = async (): Promise<boolean> => {
   // Guide the user through the setup steps
   console.log('\nSign up or log in at: https://axiom.co/');
   console.log('1. Create a new dataset');
-  console.log('2. Create an API token at: https://app.axiom.co/settings/api-tokens');
+  console.log(
+    '2. Create an API token at: https://app.axiom.co/settings/api-tokens'
+  );
 
   // Prompt for the API token
   let token = '';
@@ -1191,7 +1331,9 @@ const setupAxiom = async (): Promise<boolean> => {
   // Add secrets to SST
   console.log('\nAdding Axiom secrets to SST...');
   execSync(`pnpm tsx ${addSecretScript} AXIOM_TOKEN "${token}" "${token}"`);
-  execSync(`pnpm tsx ${addSecretScript} AXIOM_DATASET "${dataset}" "${dataset}"`);
+  execSync(
+    `pnpm tsx ${addSecretScript} AXIOM_DATASET "${dataset}" "${dataset}"`
+  );
 
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
@@ -1215,7 +1357,9 @@ const setupLangfuse = async () => {
   console.log('Setting up Langfuse...');
 
   // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) initSecrets();
+  if (Object.keys(devSecrets).length === 0) {
+    initSecrets();
+  }
 
   // Check if Langfuse is already configured in SST secrets
   if (
@@ -1265,8 +1409,12 @@ const setupLangfuse = async () => {
 
   // Add secrets to SST
   console.log('\nAdding Langfuse secrets to SST...');
-  execSync(`pnpm tsx ${addSecretScript} LANGFUSE_SECRET_KEY "${secretKey}" "${secretKey}"`);
-  execSync(`pnpm tsx ${addSecretScript} LANGFUSE_PUBLIC_KEY "${publicKey}" "${publicKey}"`);
+  execSync(
+    `pnpm tsx ${addSecretScript} LANGFUSE_SECRET_KEY "${secretKey}" "${secretKey}"`
+  );
+  execSync(
+    `pnpm tsx ${addSecretScript} LANGFUSE_PUBLIC_KEY "${publicKey}" "${publicKey}"`
+  );
 
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
@@ -1293,11 +1441,15 @@ const setupLoops = async () => {
   // Read config
   const configPath = path.resolve('packages/config/config.ts');
   let configContent = fs.readFileSync(configPath, 'utf8');
-  const resetPasswordMatch = configContent.match(/resetPassword:\s*['"]([^'"]*)['"]/);
+  const resetPasswordMatch = configContent.match(
+    /resetPassword:\s*['"]([^'"]*)['"]/
+  );
   const resetPasswordId = resetPasswordMatch ? resetPasswordMatch[1] : '';
 
   // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) initSecrets();
+  if (Object.keys(devSecrets).length === 0) {
+    initSecrets();
+  }
 
   // Check if Loops is already configured (API key in secrets and resetPassword in config)
   if (
@@ -1352,15 +1504,23 @@ const setupLoops = async () => {
   console.log(
     '3. Clone the reset password template: https://app.loops.so/templates?templateId=clfn0wbo0000008mr1fri2516'
   );
-  console.log('   - Click the "Reset Password" button and click the "Link" option in the sidebar.');
-  console.log('   - Click the icon in the link area to add a data variable called `resetLink`.');
+  console.log(
+    '   - Click the "Reset Password" button and click the "Link" option in the sidebar.'
+  );
+  console.log(
+    '   - Click the icon in the link area to add a data variable called `resetLink`.'
+  );
   console.log('   - Publish the email.');
-  console.log('   - Click the review button in the left sidebar and copy the Transactional ID.');
+  console.log(
+    '   - Click the review button in the left sidebar and copy the Transactional ID.'
+  );
 
   // Prompt for the transactional email ID
   let transactionalId = '';
   while (!transactionalId) {
-    const input = await promptUser('Enter the Transactional ID for your reset password email: ');
+    const input = await promptUser(
+      'Enter the Transactional ID for your reset password email: '
+    );
     transactionalId = input.trim();
     if (!transactionalId) {
       console.log('Please enter a valid Transactional ID.');
@@ -1415,10 +1575,14 @@ const createStripeWebhookForBetterAuth = async (
     );
 
     return response.data.secret as string;
-  } catch (error: any) {
-    console.log(
-      `❌ Failed to create webhook at ${url}: ${error?.response?.data?.error?.message || error.message}`
-    );
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      console.log(
+        `❌ Failed to create webhook at ${url}: ${error?.response?.data?.error?.message || error.message}`
+      );
+    } else {
+      console.log(`❌ Failed to create webhook at ${url}: ${error}`);
+    }
     return null;
   }
 };
@@ -1428,7 +1592,9 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
   console.log('Setting up Stripe...');
 
   // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) initSecrets();
+  if (Object.keys(devSecrets).length === 0) {
+    initSecrets();
+  }
 
   // Read config
   const configPath = path.resolve('packages/config/config.ts');
@@ -1463,7 +1629,9 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
   }
 
   // Ask if they want to set up Stripe
-  const doSetup = await promptYesNo('Would you like to set up Stripe for payments? (y/n) ');
+  const doSetup = await promptYesNo(
+    'Would you like to set up Stripe for payments? (y/n) '
+  );
   if (!doSetup) {
     console.log('Stripe setup skipped.\n');
     return { didSetup: false, didSetupProd: false };
@@ -1483,27 +1651,37 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
   }
 
   // Set up sandbox keys
-  if (!devPublishableKey || !devSecretKey) {
-    console.log('\n1. Sign up or log in to Stripe: https://dashboard.stripe.com/register');
+  if (!(devPublishableKey && devSecretKey)) {
+    console.log(
+      '\n1. Sign up or log in to Stripe: https://dashboard.stripe.com/register'
+    );
     console.log(
       '2. In your sandbox, get the API keys (use the switcher at the top left to enter your sandbox): https://dashboard.stripe.com/test/apikeys'
     );
 
     // Prompt for sandbox keys if they're empty
     while (!devPublishableKey) {
-      const input = await promptUser('Enter your sandbox publishable key (starts with pk_test_): ');
+      const input = await promptUser(
+        'Enter your sandbox publishable key (starts with pk_test_): '
+      );
       devPublishableKey = input.trim();
       if (!devPublishableKey.startsWith('pk_test_')) {
-        console.log('Please enter a valid sandbox publishable key (should start with pk_test_).');
+        console.log(
+          'Please enter a valid sandbox publishable key (should start with pk_test_).'
+        );
         devPublishableKey = '';
       }
     }
 
     while (!devSecretKey) {
-      const input = await promptUser('Enter your sandbox secret key (starts with sk_test_): ');
+      const input = await promptUser(
+        'Enter your sandbox secret key (starts with sk_test_): '
+      );
       devSecretKey = input.trim();
       if (!devSecretKey.startsWith('sk_test_')) {
-        console.log('Please enter a valid sandbox secret key (should start with sk_test_).');
+        console.log(
+          'Please enter a valid sandbox secret key (should start with sk_test_).'
+        );
         devSecretKey = '';
       }
     }
@@ -1525,7 +1703,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
   }
 
   // Set up live keys
-  if (!prodPublishableKey || !prodSecretKey) {
+  if (!(prodPublishableKey && prodSecretKey)) {
     // Ask about live account setup
     console.log(
       "\nFor production, you need to complete Stripe's onboarding process at: https://dashboard.stripe.com/profile/account/onboarding"
@@ -1543,23 +1721,33 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
 
     // If they want to proceed with a live account, get the live keys
     if (hasLiveAccount) {
-      console.log('\nGet your live API keys: https://dashboard.stripe.com/apikeys');
+      console.log(
+        '\nGet your live API keys: https://dashboard.stripe.com/apikeys'
+      );
 
       // Prompt for production keys if they're empty
       while (!prodPublishableKey) {
-        const input = await promptUser('Enter your live publishable key (starts with pk_live_): ');
+        const input = await promptUser(
+          'Enter your live publishable key (starts with pk_live_): '
+        );
         prodPublishableKey = input.trim();
         if (!prodPublishableKey.startsWith('pk_live_')) {
-          console.log('Please enter a valid live publishable key (should start with pk_live_).');
+          console.log(
+            'Please enter a valid live publishable key (should start with pk_live_).'
+          );
           prodPublishableKey = '';
         }
       }
 
       while (!prodSecretKey) {
-        const input = await promptUser('Enter your live secret key (starts with sk_live_): ');
+        const input = await promptUser(
+          'Enter your live secret key (starts with sk_live_): '
+        );
         prodSecretKey = input.trim();
         if (!prodSecretKey.startsWith('sk_live_')) {
-          console.log('Please enter a valid live secret key (should start with sk_live_).');
+          console.log(
+            'Please enter a valid live secret key (should start with sk_live_).'
+          );
           prodSecretKey = '';
         }
       }
@@ -1574,9 +1762,15 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
 
   // Store the secret keys in SST secrets
   console.log('\nAdding Stripe secrets to SST...');
-  if (hasLiveAccount)
-    execSync(`pnpm tsx ${addSecretScript} STRIPE_SECRET_KEY "${devSecretKey}" "${prodSecretKey}"`);
-  else execSync(`pnpm sst secret set STRIPE_SECRET_KEY "${devSecretKey}" --fallback`);
+  if (hasLiveAccount) {
+    execSync(
+      `pnpm tsx ${addSecretScript} STRIPE_SECRET_KEY "${devSecretKey}" "${prodSecretKey}"`
+    );
+  } else {
+    execSync(
+      `pnpm sst secret set STRIPE_SECRET_KEY "${devSecretKey}" --fallback`
+    );
+  }
 
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
@@ -1630,9 +1824,13 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
       });
 
       fs.writeFileSync(authPath, authContent);
-      console.log('✔ Stripe plugin has been enabled in apps/backend/core/auth.ts.\n');
+      console.log(
+        '✔ Stripe plugin has been enabled in apps/backend/core/auth.ts.\n'
+      );
     } else {
-      console.log('⚠ Could not find stripe configuration block in auth.ts to uncomment.\n');
+      console.log(
+        '⚠ Could not find stripe configuration block in auth.ts to uncomment.\n'
+      );
     }
   }
 
@@ -1659,7 +1857,10 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     if (!devWebhookSecret) {
       console.log('Creating dev webhook endpoint...');
       const devWebhookUrl = `https://dev.api.${domain}/api/auth/stripe/webhook`;
-      const secret = await createStripeWebhookForBetterAuth(devWebhookUrl, devSecretKey);
+      const secret = await createStripeWebhookForBetterAuth(
+        devWebhookUrl,
+        devSecretKey
+      );
       if (secret) {
         devWebhookSecret = secret;
         console.log(`✔ Created dev webhook: ${devWebhookUrl}`);
@@ -1685,7 +1886,10 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
       if (hasLiveAccount && !prodWebhookSecret) {
         console.log('Creating prod webhook endpoint...');
         const prodWebhookUrl = `https://api.${domain}/api/auth/stripe/webhook`;
-        const secret = await createStripeWebhookForBetterAuth(prodWebhookUrl, prodSecretKey);
+        const secret = await createStripeWebhookForBetterAuth(
+          prodWebhookUrl,
+          prodSecretKey
+        );
         if (secret) {
           prodWebhookSecret = secret;
           console.log(`✔ Created prod webhook: ${prodWebhookUrl}`);
@@ -1694,16 +1898,22 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
         }
       }
     } else {
-      console.log('Skipping prod webhook setup since the live account is not configured.');
+      console.log(
+        'Skipping prod webhook setup since the live account is not configured.'
+      );
     }
 
     // Set webhook secrets if we have them
     console.log('\nAdding webhook secrets to SST...');
-    if (prodWebhookSecret)
+    if (prodWebhookSecret) {
       execSync(
         `pnpm tsx ${addSecretScript} STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" "${prodWebhookSecret}"`
       );
-    else execSync(`pnpm sst secret set STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" --fallback`);
+    } else {
+      execSync(
+        `pnpm sst secret set STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" --fallback`
+      );
+    }
 
     console.log('✔ Stripe webhook setup complete!');
   } else {
@@ -1865,5 +2075,5 @@ const init = async () => {
 const currentFile = fileURLToPath(import.meta.url).replace(/\.ts$/, '');
 const executedFile = process.argv[1].replace(/\.ts$/, '');
 if (currentFile === executedFile) {
-  void init();
+  init();
 }

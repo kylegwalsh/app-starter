@@ -10,14 +10,15 @@ const inter = Inter({
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={inter.className} suppressHydrationWarning>
+    <html className={inter.className} lang="en" suppressHydrationWarning>
       <body className="flex min-h-screen flex-col">
         <RootProvider
           search={{
             options: {
               type: 'static',
             },
-          }}>
+          }}
+        >
           {children}
         </RootProvider>
       </body>

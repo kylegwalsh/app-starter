@@ -4,6 +4,7 @@ import { config } from '@repo/config';
 import { Toaster } from '@repo/design';
 import { createMetadata } from '@repo/seo';
 import Script from 'next/script';
+import type { ReactNode } from 'react';
 
 import { ErrorBoundary, Providers, UserInitializer } from '@/components';
 
@@ -14,7 +15,7 @@ export const metadata = createMetadata();
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>

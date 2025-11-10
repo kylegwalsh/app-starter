@@ -1,4 +1,8 @@
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -12,14 +16,16 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@repo/design';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { Calendar, ChevronUp, Home, Inbox, Search, Settings, User2 } from 'lucide-react';
+import {
+  Calendar,
+  ChevronUp,
+  Home,
+  Inbox,
+  Search,
+  Settings,
+  User2,
+} from 'lucide-react';
 
 /**
  * A composable, themeable and customizable sidebar component.
@@ -50,9 +56,9 @@ const meta = {
     layout: 'fullscreen',
   },
   decorators: [
-    (Story) => (
+    (StoryComponent) => (
       <SidebarProvider>
-        <Story />
+        <StoryComponent />
         <section className="m-4">
           <SidebarTrigger />
           <div className="size-full" />
@@ -144,7 +150,10 @@ export const Footer: Story = {
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" className="w-(--radix-popper-anchor-width)">
+              <DropdownMenuContent
+                className="w-(--radix-popper-anchor-width)"
+                side="top"
+              >
                 <DropdownMenuItem>
                   <span>Account</span>
                 </DropdownMenuItem>

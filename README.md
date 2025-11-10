@@ -72,6 +72,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Better Auth:** Modern authentication library for managing users and organizations (integrates with Stripe).
 - **Next.js:** React framework for building fast, production-grade web applications.
 - **Node.js & TypeScript:** Strongly-typed backend and shared code.
+- **Ultracite/Biome:** Fast, zero-config code formatter and linter (Rust-based) for consistent code quality.
 - **GitHub Actions:** CI/CD pipelines for automated testing and deployment.
 - **Slack:** Integration for deployment and error alerts.
 - **Posthog:** Analytics and error tracking.
@@ -95,7 +96,6 @@ _All packages and apps are written in TypeScript for consistency and type safety
 │   └── docs/          # (Optional) Fumadocs-powered documentation app (deployment disabled by default)
 ├── packages/          # Shared packages and utilities
 │   ├── config/        # Shared configuration
-│   ├── eslint/        # Shared ESLint config
 │   ├── tsconfig/      # Shared TypeScript config
 │   ├── design/        # Shared design system (React)
 │   ├── schemas/       # Shared schemas (forms + validation)

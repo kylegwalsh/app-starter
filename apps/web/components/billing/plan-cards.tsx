@@ -2,7 +2,6 @@
 
 import { plans } from '@repo/constants';
 import { Label, PricingCard, Switch } from '@repo/design';
-import React from 'react';
 
 import { auth } from '@/core';
 
@@ -20,13 +19,12 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
         returnUrl: '/settings/plans',
       });
       return;
-    } else {
-      await auth.subscription.upgrade({
-        plan,
-        successUrl: '/',
-        cancelUrl: '/settings/plans',
-      });
     }
+    await auth.subscription.upgrade({
+      plan,
+      successUrl: '/',
+      cancelUrl: '/settings/plans',
+    });
   };
 
   return (
@@ -35,11 +33,11 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
       {showSwitch && (
         <div className="flex flex-col items-center justify-center gap-2">
           <div className="flex items-center">
-            <Label htmlFor="payment-schedule" className="me-3">
+            <Label className="me-3" htmlFor="payment-schedule">
               Monthly
             </Label>
             <Switch id="payment-schedule" />
-            <Label htmlFor="payment-schedule" className="ms-3">
+            <Label className="ms-3" htmlFor="payment-schedule">
               Annual
             </Label>
           </div>
@@ -49,30 +47,30 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
       {/* Pricing cards */}
       <div className="mt-12 grid gap-6 lg:grid-cols-3 lg:items-center">
         <PricingCard
-          plan={plans.free.title}
-          price={plans.free.price}
           description="Get started with the essentials"
           features={['1 user', 'Plan features', 'Product support']}
-          onClick={() => void changePlan('free')}
+          onClick={() => changePlan('free')}
+          plan={plans.free.title}
+          price={plans.free.price}
           // disabled={user?.subscription === 'free'}
         />
 
         <PricingCard
-          popular
-          plan={plans.pro.title}
-          price={plans.pro.price}
           description="Everything you need for a growing business"
           features={['5 user', 'Plan features', 'Product support']}
-          onClick={() => void changePlan('pro')}
+          onClick={() => changePlan('pro')}
+          plan={plans.pro.title}
+          popular
+          price={plans.pro.price}
           // disabled={user?.subscription === 'pro'}
         />
 
         <PricingCard
-          plan={plans.enterprise.title}
-          price={plans.enterprise.price}
           description="Advanced features for scaling your business"
           features={['10 user', 'Plan features', 'Product support']}
-          onClick={() => void changePlan('enterprise')}
+          onClick={() => changePlan('enterprise')}
+          plan={plans.enterprise.title}
+          price={plans.enterprise.price}
           // disabled={user?.subscription === 'enterprise'}
         />
       </div>
