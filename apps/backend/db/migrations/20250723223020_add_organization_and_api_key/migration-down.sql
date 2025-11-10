@@ -17,7 +17,7 @@ ALTER TABLE "apikey" DROP CONSTRAINT "apikey_userId_fkey";
 ALTER TABLE "user" DROP COLUMN "banExpires",
 DROP COLUMN "banReason",
 DROP COLUMN "banned",
-DROP COLUMN "role",
+DROP COLUMN "role";
 
 -- AlterTable
 ALTER TABLE "session" DROP COLUMN "activeOrganizationId",

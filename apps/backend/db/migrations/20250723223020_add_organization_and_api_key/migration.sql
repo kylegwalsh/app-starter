@@ -6,7 +6,7 @@ ADD COLUMN     "impersonatedBy" TEXT;
 ALTER TABLE "user" ADD COLUMN     "banExpires" TIMESTAMP(3),
 ADD COLUMN     "banReason" TEXT,
 ADD COLUMN     "banned" BOOLEAN,
-ADD COLUMN     "role" TEXT,
+ADD COLUMN     "role" TEXT;
 
 -- CreateTable
 CREATE TABLE "organization" (
