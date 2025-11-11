@@ -2,6 +2,7 @@
 // however we use the sideEffects flag in our package.json to allow
 // for tree-shaking to prevent the bundle from getting too large
 export * from './components/brand';
+export * from './components/inputs';
 export * from './components/layout';
 export * from './components/payment';
 export * from './components/providers';
