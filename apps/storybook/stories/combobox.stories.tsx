@@ -2,6 +2,7 @@ import type { ComboboxOption } from '@repo/design';
 import { Combobox } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { useState } from 'react';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 /**
  * A searchable select component that combines a text input with a dropdown list of options.
@@ -32,8 +33,9 @@ const meta = {
         'Controlled value - the currently selected option value (single) or array of values (multiple)',
     },
     defaultValue: {
-      control: 'text',
-      description: 'Default value for uncontrolled mode',
+      control: 'object',
+      description:
+        'Default value for uncontrolled mode. When multiple is false, use a string (e.g., "apple") or null. When multiple is true, use a string array (e.g., ["apple", "banana"]).',
     },
     placeholder: {
       control: 'text',
@@ -84,6 +86,11 @@ const meta = {
       control: 'boolean',
       description:
         'Whether search results are loading (shows loading indicator in results list, allows searching)',
+    },
+    searchable: {
+      control: 'boolean',
+      description:
+        'Whether the combobox is searchable. When false, hides the search input and shows all options. Defaults to true.',
     },
     open: {
       control: 'boolean',
@@ -251,6 +258,72 @@ export const Multiple: Story = {
     options: basicOptions,
     multiple: true,
   },
+  // Verify the multiple select works as expected
+  play: async ({ canvasElement }) => {
+    const body = canvasElement.ownerDocument.body;
+    const canvas = within(body);
+    // Click combobox and focus the input
+    await userEvent.click(await canvas.findByRole('combobox'));
+    // Type 'appl' to search for Apple
+    await userEvent.type(
+      await canvas.findByPlaceholderText('Select an option...', {
+        exact: true,
+      }),
+      'appl'
+    );
+    // Verify Apple option is visible
+    await waitFor(() =>
+      expect(canvas.queryByText('Apple', { exact: true })).toBeVisible()
+    );
+    // Verify Banana option is not visible
+    expect(
+      canvas.queryByText('Banana', { exact: true })
+    ).not.toBeInTheDocument();
+    // Click Apple option to select it
+    await userEvent.click(
+      (await canvas.findByText('Apple', { exact: true })) as HTMLElement
+    );
+    // Clear the search text
+    await userEvent.clear(await canvas.findByRole('textbox'));
+    // Wait for Banana option to appear and click it
+    await waitFor(() =>
+      expect(canvas.queryByText('Banana', { exact: true })).toBeVisible()
+    );
+    await userEvent.click(
+      (await canvas.findByText('Banana', { exact: true })) as HTMLElement
+    );
+    // Click outside the combobox to close it
+    await userEvent.click(body);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    // Verify both Apple and Banana badges are shown
+    await waitFor(() =>
+      expect(canvas.queryByText('Apple', { exact: true })).toBeVisible()
+    );
+    await waitFor(() =>
+      expect(canvas.queryByText('Banana', { exact: true })).toBeVisible()
+    );
+    // Click back into combobox and focus the input
+    await userEvent.click(await canvas.findByRole('combobox'));
+    // Wait for input to be focused
+    const textbox = await canvas.findByRole('textbox');
+    // Hit backspace twice to remove both badges (Banana first, then Apple)
+    await userEvent.type(textbox, '{Backspace}');
+    await userEvent.type(textbox, '{Backspace}');
+    // Click outside the combobox to close it
+    await userEvent.click(body);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    // Verify both options are removed (no badges visible) - wait for popover to close
+    await waitFor(() =>
+      expect(
+        canvas.queryByText('Apple', { exact: true })
+      ).not.toBeInTheDocument()
+    );
+    await waitFor(() =>
+      expect(
+        canvas.queryByText('Banana', { exact: true })
+      ).not.toBeInTheDocument()
+    );
+  },
 };
 
 /** Multiple select combobox with drag-and-drop reordering enabled */
@@ -261,21 +334,112 @@ export const MultipleSortable: Story = {
     multiSortable: true,
     defaultValue: ['apple', 'banana', 'orange'],
   },
+  // Verify the drag-and-drop reordering works as expected
+  play: async ({ canvasElement }) => {
+    const body = canvasElement.ownerDocument.body;
+    const canvas = within(body);
+    // Verify initial order: Apple, Banana, Orange
+    const combobox = await canvas.findByRole('combobox');
+    // Find badges by their draggable attribute
+    const badges = Array.from(
+      combobox.querySelectorAll('[draggable="true"]')
+    ) as HTMLElement[];
+    expect(badges[0]).toHaveTextContent('Apple');
+    expect(badges[1]).toHaveTextContent('Banana');
+    expect(badges[2]).toHaveTextContent('Orange');
+    // Drag Apple badge to after Orange (should result in: Banana, Orange, Apple)
+    const appleBadge = badges[0];
+    const orangeBadge = badges[2];
+    // Simulate drag using mouse events and drag events
+    // First, mouse down on Apple badge
+    await userEvent.pointer({
+      keys: '[MouseLeft>]',
+      target: appleBadge,
+    });
+    // Start drag
+    const dataTransfer = new DataTransfer();
+    const dragStartEvent = new DragEvent('dragstart', {
+      bubbles: true,
+      cancelable: true,
+      dataTransfer,
+    });
+    appleBadge.dispatchEvent(dragStartEvent);
+    // Wait for React to process dragstart
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    // Move mouse to Orange badge and trigger dragover
+    await userEvent.pointer({
+      target: orangeBadge,
+    });
+    const dragOverEvent = new DragEvent('dragover', {
+      bubbles: true,
+      cancelable: true,
+      dataTransfer,
+    });
+    // Call preventDefault before dispatching
+    Object.defineProperty(dragOverEvent, 'preventDefault', {
+      value: () => {
+        Object.defineProperty(dragOverEvent, 'defaultPrevented', {
+          value: true,
+          writable: false,
+        });
+      },
+    });
+    orangeBadge.dispatchEvent(dragOverEvent);
+    // Wait for React to process dragover
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    // Drop and end drag
+    const dropEvent = new DragEvent('drop', {
+      bubbles: true,
+      cancelable: true,
+      dataTransfer,
+    });
+    orangeBadge.dispatchEvent(dropEvent);
+    const dragEndEvent = new DragEvent('dragend', {
+      bubbles: true,
+      cancelable: true,
+      dataTransfer,
+    });
+    appleBadge.dispatchEvent(dragEndEvent);
+    // Release mouse
+    await userEvent.pointer({
+      keys: '[/MouseLeft]',
+    });
+    // Wait for reordering to complete
+    await waitFor(() => {
+      const updatedBadges = Array.from(
+        combobox.querySelectorAll('[draggable="true"]')
+      ) as HTMLElement[];
+      // Verify new order: Banana, Orange, Apple
+      expect(updatedBadges[0]).toHaveTextContent('Banana');
+      expect(updatedBadges[1]).toHaveTextContent('Orange');
+      expect(updatedBadges[2]).toHaveTextContent('Apple');
+    });
+  },
 };
 
 /** Combobox with the ability to create new options from search input */
 export const WithCreateOption: Story = {
+  render: (args) => {
+    const [options, setOptions] = useState(basicOptions);
+    return (
+      <Combobox
+        {...args}
+        createOptionLabel={(searchValue) => `Create "${searchValue}"`}
+        onCreateOption={(searchValue) => {
+          const newOption = {
+            value: searchValue.toLowerCase().replace(/\s+/g, '-'),
+            label: searchValue,
+          };
+          // Add the new option to the options list
+          setOptions((prev) => [...prev, newOption]);
+          return newOption;
+        }}
+        options={options}
+      />
+    );
+  },
   args: {
     options: basicOptions,
-    onCreateOption: async (searchValue) => {
-      // Simulate async creation
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return {
-        value: searchValue.toLowerCase().replace(/\s+/g, '-'),
-        label: searchValue,
-      };
-    },
-    createOptionLabel: (searchValue) => `Create "${searchValue}"`,
   },
 };
 
@@ -319,6 +483,23 @@ export const Disabled: Story = {
     options: basicOptions,
     disabled: true,
     defaultValue: 'banana',
+  },
+};
+
+/** Combobox with search disabled. All options are shown without a search input. */
+export const NonSearchable: Story = {
+  args: {
+    options: basicOptions,
+    searchable: false,
+  },
+};
+
+/** Non-searchable combobox with multiple selection enabled. */
+export const NonSearchableMultiple: Story = {
+  args: {
+    options: basicOptions,
+    multiple: true,
+    searchable: false,
   },
 };
 

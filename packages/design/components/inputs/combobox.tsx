@@ -88,6 +88,8 @@ type ComboboxPropsBase = {
   loading?: boolean;
   /** Whether search results are loading (shows loading indicator in results list, allows searching) */
   loadingResults?: boolean;
+  /** Whether the combobox is searchable. When false, hides the search input and shows all options. Defaults to true. */
+  searchable?: boolean;
   /** Controlled open state - whether the popover is open */
   open?: boolean;
   /** Default open state for uncontrolled mode */
@@ -199,6 +201,7 @@ export const Combobox = ({
   disabled = false,
   loading = false,
   loadingResults = false,
+  searchable = true,
   open: controlledOpen,
   defaultOpen = false,
   onOpenChange,
@@ -325,6 +328,8 @@ export const Combobox = ({
 
   // Current search query entered
   const [search, setSearch] = useState('');
+  // Track if the input is focused to conditionally render it
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   /** Handles search query changes, updating internal state and calling onSearchChange callback */
   const handleSearchChange = useCallback(
@@ -335,23 +340,49 @@ export const Combobox = ({
     [onSearchChange]
   );
 
+  /** Closes the popover and clears the search query. Called after selection or when user cancels. */
+  const closePopover = useCallback(() => {
+    handleOpenChange(false);
+    // Delay clearing search to allow popover to close first (prevents flash of unfiltered options)
+    setTimeout(() => {
+      setSearch('');
+      onSearchChange?.('');
+    }, 150);
+  }, [handleOpenChange, onSearchChange]);
+
+  // Clear search when searchable becomes false
+  useEffect(() => {
+    if (!searchable && search) {
+      setSearch('');
+      onSearchChange?.('');
+    }
+  }, [searchable, search, onSearchChange]);
+
   // Handle the open and close state of the popover
   useEffect(() => {
     // When open, focus the input and measure the trigger width
     if (open) {
       setTimeout(() => {
-        inputRef.current?.focus();
+        if (multiple && searchable && inputRef.current) {
+          inputRef.current.focus();
+          setIsInputFocused(true);
+        } else if (!multiple && searchable) {
+          // In single mode, focus the CommandInput
+          const commandInput = commandRef.current?.querySelector(
+            'input[cmdk-input]'
+          ) as HTMLInputElement;
+          commandInput?.focus();
+        }
       }, 0); // Focus the input after a small delay to ensure the popover is fully open
       if (triggerContainerRef.current) {
         setTriggerWidth(triggerContainerRef.current.offsetWidth);
       } // Measure the trigger width to match the popover width
     }
-    // When closing, clear the search state
+    // When closing, clear the search state and focus
     else {
-      setSearch('');
-      onSearchChange?.('');
+      closePopover();
     }
-  }, [open, onSearchChange]);
+  }, [open, multiple, searchable, closePopover]);
 
   /** Updates selected value(s) - handles controlled/uncontrolled modes and single/multiple types */
   const setValue = useCallback(
@@ -385,12 +416,6 @@ export const Combobox = ({
     },
     [isValueControlled, onChange, multiple]
   );
-
-  /** Closes the popover and clears the search query. Called after selection or when user cancels. */
-  const closePopover = useCallback(() => {
-    handleOpenChange(false);
-    setSearch('');
-  }, [handleOpenChange]);
 
   /** Handles selection of an option from the list. In multiple mode, toggles selection. In single mode, selects or deselects based on allowDeselect. Disabled options are ignored. */
   const handleSelect = useCallback(
@@ -610,9 +635,9 @@ export const Combobox = ({
 
   /** Icon displayed on the trigger button (custom icon, loading spinner, or default chevron) */
   const triggerIcon = loading ? (
-    <Loader2 className="ml-2 size-4 shrink-0 animate-spin opacity-50" />
+    <Loader2 className="ml-2 size-4 animate-spin opacity-50" />
   ) : (
-    (icon ?? <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />)
+    (icon ?? <ChevronsUpDownIcon className="ml-2 size-4 opacity-50" />)
   );
 
   const { className: commandClass, ...restCommandProps } = commandProps ?? {};
@@ -723,7 +748,7 @@ export const Combobox = ({
             aria-expanded={open}
             aria-haspopup="listbox"
             className={cn(
-              'flex w-full min-w-0 gap-2 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
+              'flex w-full min-w-0 gap-2 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-within:border-ring disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
               (() => {
                 if (multiple) {
                   if (maxMultiLines) {
@@ -744,8 +769,16 @@ export const Combobox = ({
               if (disabled || loading) {
                 return;
               }
-              // Always focus the input
-              inputRef.current?.focus();
+              // Focus the input - in single mode, focus CommandInput; in multiple mode, focus the Input
+              if (multiple) {
+                inputRef.current?.focus();
+              } else {
+                // In single mode, find and focus the CommandInput
+                const commandInput = commandRef.current?.querySelector(
+                  'input[cmdk-input]'
+                ) as HTMLInputElement;
+                commandInput?.focus();
+              }
               // Only open if closed - don't toggle
               if (!open) {
                 handleOpenChange(true);
@@ -753,7 +786,14 @@ export const Combobox = ({
             }}
             onKeyDown={(e) => {
               // Enter/Space opens combobox and focuses input (skips if input already focused)
-              if (document.activeElement === inputRef.current) {
+              if (multiple && document.activeElement === inputRef.current) {
+                return;
+              }
+              if (
+                !multiple &&
+                commandRef.current?.querySelector('input[cmdk-input]') ===
+                  document.activeElement
+              ) {
                 return;
               }
 
@@ -763,7 +803,14 @@ export const Combobox = ({
                 if (disabled || loading) {
                   return;
                 }
-                inputRef.current?.focus();
+                if (multiple) {
+                  inputRef.current?.focus();
+                } else {
+                  const commandInput = commandRef.current?.querySelector(
+                    'input[cmdk-input]'
+                  ) as HTMLInputElement;
+                  commandInput?.focus();
+                }
                 if (!open) {
                   handleOpenChange(true);
                 }
@@ -789,7 +836,9 @@ export const Combobox = ({
             <div
               className={cn(
                 'flex min-w-0 flex-1 flex-wrap items-center gap-2',
-                multiple && maxMultiLines && 'overflow-hidden'
+                multiple && maxMultiLines && 'overflow-hidden',
+                // We need a little padding to center this in the row
+                multiple && 'py-0.5'
               )}
               style={
                 // Constrains inner container height to enable scrolling when badges wrap
@@ -825,64 +874,79 @@ export const Combobox = ({
                         </Badge>
                       ))
                     : null}
-                  <Input
-                    className={cn(
-                      'h-auto min-w-[120px] flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0',
-                      inputClass,
-                      inputClassName
+                  {selectedOptions.length === 0 &&
+                    (!searchable || (!isInputFocused && !search && !open)) && (
+                      // Placeholder text when no badges and (not searchable OR input not rendered)
+                      <span className="self-center py-[1px] text-muted-foreground">
+                        {placeholder}
+                      </span>
                     )}
-                    disabled={disabled || loading}
-                    onBlur={(e) => {
-                      // Restores focus if clicking inside popover/trigger (keeps input focused during multi-select)
-                      const relatedTarget = e.relatedTarget as Node | null;
-                      const isInsidePopover =
-                        relatedTarget &&
-                        document
-                          .querySelector('[role="dialog"]')
-                          ?.contains(relatedTarget);
-                      const isInsideTrigger =
-                        relatedTarget &&
-                        triggerContainerRef.current?.contains(relatedTarget);
-                      if (isInsidePopover || isInsideTrigger) {
-                        // Clicking inside the popover or trigger - restore focus
-                        setTimeout(() => {
-                          inputRef.current?.focus();
-                        }, 0);
+                  {searchable && (isInputFocused || search || open) && (
+                    <Input
+                      className={cn(
+                        'h-auto min-w-[120px] flex-1 border-0 bg-transparent p-0 py-[1px] text-sm shadow-none focus-visible:ring-0',
+                        inputClass,
+                        inputClassName
+                      )}
+                      disabled={disabled || loading}
+                      onBlur={(e) => {
+                        // Restores focus if clicking inside popover/trigger (keeps input focused during multi-select)
+                        const relatedTarget = e.relatedTarget as Node | null;
+                        const isInsidePopover =
+                          relatedTarget &&
+                          document
+                            .querySelector('[role="dialog"]')
+                            ?.contains(relatedTarget);
+                        const isInsideTrigger =
+                          relatedTarget &&
+                          triggerContainerRef.current?.contains(relatedTarget);
+                        if (isInsidePopover || isInsideTrigger) {
+                          // Clicking inside the popover or trigger - restore focus
+                          setIsInputFocused(true);
+                          setTimeout(() => {
+                            inputRef.current?.focus();
+                          }, 0);
+                        } else {
+                          setIsInputFocused(false);
+                        }
+                      }}
+                      onChange={(e) => {
+                        handleSearchChange(e.target.value);
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!open) {
+                          handleOpenChange(true);
+                        }
+                      }}
+                      onFocus={() => {
+                        setIsInputFocused(true);
+                        if (!open) {
+                          handleOpenChange(true);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // Stops propagation to prevent trigger from handling space/enter
+                        e.stopPropagation();
+                        handleKeyDown(e);
+                      }}
+                      placeholder={
+                        selectedOptions.length > 0 ? '' : placeholder
                       }
-                    }}
-                    onChange={(e) => {
-                      handleSearchChange(e.target.value);
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!open) {
-                        handleOpenChange(true);
-                      }
-                    }}
-                    onFocus={() => {
-                      if (!open) {
-                        handleOpenChange(true);
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      // Stops propagation to prevent trigger from handling space/enter
-                      e.stopPropagation();
-                      handleKeyDown(e);
-                    }}
-                    placeholder={selectedOptions.length > 0 ? '' : placeholder}
-                    ref={(node) => {
-                      inputRef.current = node;
-                      if (typeof ref === 'function') {
-                        ref(node);
-                      } else if (ref) {
-                        (
-                          ref as React.MutableRefObject<HTMLInputElement | null>
-                        ).current = node;
-                      }
-                    }}
-                    value={search}
-                    {...restInputProps}
-                  />
+                      ref={(node) => {
+                        inputRef.current = node;
+                        if (typeof ref === 'function') {
+                          ref(node);
+                        } else if (ref) {
+                          (
+                            ref as React.MutableRefObject<HTMLInputElement | null>
+                          ).current = node;
+                        }
+                      }}
+                      value={search}
+                      {...restInputProps}
+                    />
+                  )}
                 </>
               ) : (
                 // The items to show in the trigger for single comboboxes
@@ -897,7 +961,7 @@ export const Combobox = ({
                 </span>
               )}
             </div>
-            {triggerIcon}
+            <div className="shrink-0 self-center">{triggerIcon}</div>
           </div>
         </PopoverTrigger>
         <PopoverContent
@@ -925,29 +989,30 @@ export const Combobox = ({
             )}
             ref={commandRef}
           >
-            {/** Hidden CommandInput in multi-select syncs search with cmdk filtering; visible in single-select */}
-            {multiple ? (
-              <div className="hidden">
+            {/** CommandInput for searching - hidden in multi-select (syncs search with cmdk filtering), visible in single-select, or hidden when searchable=false */}
+            {searchable &&
+              (multiple ? (
+                <div className="hidden">
+                  <CommandInput
+                    onValueChange={handleSearchChange}
+                    value={search}
+                  />
+                </div>
+              ) : (
                 <CommandInput
+                  className={cn('h-9', cmdInputClass, inputClassName)}
                   onValueChange={handleSearchChange}
+                  placeholder={searchPlaceholder}
                   value={search}
+                  {...restCmdInputProps}
                 />
-              </div>
-            ) : (
-              <CommandInput
-                className={cn('h-9', cmdInputClass, inputClassName)}
-                onValueChange={handleSearchChange}
-                placeholder={searchPlaceholder}
-                value={search}
-                {...restCmdInputProps}
-              />
-            )}
+              ))}
             <CommandList
               className={cn('max-h-64 overflow-y-auto', listClassName)}
             >
               {/* Only show the empty state if we're not loading */}
               {!loadingResults && (
-                <CommandEmpty className="py-3 text-center text-sm">
+                <CommandEmpty className="py-3 text-center text-muted-foreground text-sm">
                   {emptyMessage}
                 </CommandEmpty>
               )}
