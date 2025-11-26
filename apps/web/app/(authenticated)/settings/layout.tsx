@@ -21,8 +21,6 @@ const SettingsLayout: FC = ({ children }) => {
       { label: 'Plans', href: '/settings/plans' },
       { label: 'Billing', href: '/settings/billing' },
       // Only show the organization tab if the user is logged into a non-personal organization
-      // TODO: Upgrade better auth to fix this
-      // @ts-expect-error - better auth is fixing the types here
       ...(isLoading || organization?.isPersonal
         ? []
         : [{ label: 'Organization', href: '/settings/organization' }]),

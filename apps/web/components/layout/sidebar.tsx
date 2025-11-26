@@ -64,8 +64,6 @@ export const AppSidebar: FC = ({ children }) => {
                 },
               },
               content: {
-                // TODO: Upgrade better auth to fix this
-                // @ts-expect-error - better auth is fixing the types here
                 base: organization?.isPersonal ? '[&_a]:hidden' : '',
                 organization: {
                   subtitle: 'hidden',

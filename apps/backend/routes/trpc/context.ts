@@ -31,7 +31,6 @@ export const createContext = async ({
         // It needs the cookie header to get the session, but lambda removes it
         // so we need to re-add it manually here
         headers: {
-          // @ts-expect-error - it thinks cookie is not a valid header
           cookie: event.cookies?.join('; ') ?? '',
         },
       });

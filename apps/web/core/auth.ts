@@ -10,8 +10,8 @@ import { createAuthClient } from 'better-auth/react';
 
 import type { auth as backendAuth } from '../../backend/core/auth';
 
-/** Our Better Auth client */
-export const auth = createAuthClient({
+/** The config for our Better Auth client (defined separately to avoid TypeScript issues) */
+const authConfig = {
   baseURL: config.api.url,
   // The various plugins we're using
   plugins: [
@@ -22,4 +22,9 @@ export const auth = createAuthClient({
     adminClient(),
     stripeClient({ subscription: true }),
   ],
-});
+} satisfies Parameters<typeof createAuthClient>[0];
+
+/** Our Better Auth client */
+export const auth = createAuthClient(authConfig) as ReturnType<
+  typeof createAuthClient<typeof authConfig>
+>;

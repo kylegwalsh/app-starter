@@ -22,16 +22,12 @@ export default function OrganizationSettingsPage() {
 
   // If the user is not logged into an organization, redirect to the main settings page
   useEffect(() => {
-    // TODO: Upgrade better auth to fix this
-    // @ts-expect-error - better auth is fixing the types here
     if (!isLoading && organization?.isPersonal) {
       router.push('/settings');
     }
   }, [isLoading, organization, router]);
 
   // Show loading or nothing while redirecting
-  // TODO: Upgrade better auth to fix this
-  // @ts-expect-error - better auth is fixing the types here
   if (isLoading || organization?.isPersonal) {
     return <LoadingLayout />;
   }
