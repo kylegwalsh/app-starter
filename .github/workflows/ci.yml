@@ -60,11 +60,7 @@ jobs:
 
       # Install dependencies
       - name: Install dependencies
-        run: bun install --ignore-scripts
-
-      # DEBUG: Show lockfile changes
-      - name: Show lockfile diff
-        run: git diff bun.lock
+        run: bun install --frozen-lockfile --ignore-scripts
 
       # Get SST version
       - name: Get SST version
