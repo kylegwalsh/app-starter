@@ -48,19 +48,23 @@ jobs:
           node-version: '24'
 
       # Cache dependencies
-      - name: Set up cache for dependencies
-        uses: actions/cache@v4
-        id: cache-deps
-        with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            packages/*/node_modules
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+      # - name: Set up cache for dependencies
+      #   uses: actions/cache@v4
+      #   id: cache-deps
+      #   with:
+      #     path: |
+      #       node_modules
+      #       apps/*/node_modules
+      #       packages/*/node_modules
+      #     key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
 
       # Install dependencies
       - name: Install dependencies
-        run: bun install --frozen-lockfile --ignore-scripts
+        run: bun install --ignore-scripts
+
+      # DEBUG: Show lockfile changes
+      - name: Show lockfile diff
+        run: git diff bun.lock
 
       # Get SST version
       - name: Get SST version
