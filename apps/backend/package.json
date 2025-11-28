@@ -7,13 +7,13 @@
     "test": "sst shell -- vitest run",
     "test:ci": "cross-env LOG_LEVEL=silent sst shell --stage minimal -- vitest run --silent",
     "test:ui": "sst shell -- vitest --ui",
-    "auth:generate": "sst shell -- pnpm dlx @better-auth/cli generate --config ./core/auth.ts --output ./db/schema.prisma",
-    "db:start": "pnpm db:get-url \"prisma db push && prisma studio --browser none\"",
-    "db:push": "pnpm db:get-url \"prisma db push\"",
+    "auth:generate": "sst shell -- bunx @better-auth/cli generate --config ./core/auth.ts --output ./db/schema.prisma",
+    "db:start": "bun db:get-url \"prisma db push && prisma studio --browser none\"",
+    "db:push": "bun db:get-url \"prisma db push\"",
     "db:migrate": "tsx ./scripts/migrations/create-migration.ts",
-    "db:migrate:deploy": "pnpm db:get-url \"prisma migrate deploy\"",
-    "db:migrate:validate": "pnpm db:get-url \"tsx ./scripts/migrations/validate-migration.ts\"",
-    "db:studio": "pnpm db:get-url \"prisma studio\"",
+    "db:migrate:deploy": "bun db:get-url \"prisma migrate deploy\"",
+    "db:migrate:validate": "bun db:get-url \"tsx ./scripts/migrations/validate-migration.ts\"",
+    "db:studio": "bun db:get-url \"prisma studio\"",
     "db:generate": "prisma generate",
     "db:get-url": "tsx ./scripts/get-deb-url.ts",
     "add-secret": "tsx ./scripts/add-secret.ts",
@@ -22,12 +22,12 @@
     "types:check": "tsc --noEmit",
     "types:generate": "tsc --emitDeclarationOnly",
     "update-readme": "doctoc README.md",
-    "postinstall": "pnpm db:generate"
+    "postinstall": "bun db:generate"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.4",
     "@repo/tsconfig": "workspace:*",
-    "@types/node": "20.17.19",
+    "@types/node": "24.10.1",
     "sqlite3": "5.1.7"
   },
   "dependencies": {

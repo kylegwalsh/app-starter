@@ -37,14 +37,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
       - name: Setup node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: '24'
+          cache: 'bun'
 
       # Cache dependencies
       - name: Set up cache for dependencies
@@ -55,16 +57,16 @@ jobs:
             node_modules
             apps/*/node_modules
             packages/*/node_modules
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
 
       # Install dependencies
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-scripts
+        run: bun install --frozen-lockfile --ignore-scripts
 
       # Get SST version
       - name: Get SST version
         id: sst-version
-        run: echo "version=$(pnpm --silent get-package-version --package sst)" >> $GITHUB_OUTPUT
+        run: echo "version=$(bun --silent get-package-version --package sst)" >> $GITHUB_OUTPUT
 
       # Cache SST providers
       - name: Cache SST providers
@@ -78,7 +80,7 @@ jobs:
 
       # Install our SST providers
       - name: Install SST providers
-        run: pnpm exec sst install
+        run: bun sst install
 
       # Cache indicator for CI initialization (never invalidates unless manually cleared)
       - name: Cache CI initialization indicator
@@ -92,14 +94,14 @@ jobs:
       - name: Initialize minimal CI stage
         if: steps.cache-ci-initialized.outputs.cache-hit != 'true'
         run: |
-          pnpm exec sst unlock --stage minimal || true
-          SKIP_SOURCEMAPS=true pnpm exec sst deploy --stage minimal
+          bun sst unlock --stage minimal || true
+          SKIP_SOURCEMAPS=true bun sst deploy --stage minimal
           echo "initialized" > .ci-initialized
 
       # Get Playwright version
       - name: Get Playwright version
         id: playwright-version
-        run: echo "version=$(pnpm --silent get-package-version --package @playwright/test --path ./apps/web)" >> $GITHUB_OUTPUT
+        run: echo "version=$(bun --silent get-package-version --package @playwright/test --path ./apps/web)" >> $GITHUB_OUTPUT
 
       # Cache Playwright browsers
       - name: Cache Playwright browsers
@@ -133,7 +135,7 @@ jobs:
           job-name: lint
 
       - name: Run lint
-        run: pnpm lint
+        run: bun lint
 
   # Check for type errors
   typecheck:
@@ -151,7 +153,7 @@ jobs:
           job-name: typecheck
 
       - name: Run type check
-        run: pnpm types:check
+        run: bun types:check
 
   # Run our standard tests
   test:
@@ -169,7 +171,7 @@ jobs:
           job-name: test
 
       - name: Run tests
-        run: pnpm test:ci
+        run: bun test:ci
 
   # Run our standard tests
   verify-migrations:
@@ -187,7 +189,7 @@ jobs:
           job-name: verify-migrations
 
       - name: Run migration validation
-        run: pnpm backend db:migrate:validate
+        run: bun backend db:migrate:validate
 
   # Run our E2E tests (only run on releases)
   e2e:
@@ -210,9 +212,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/apps/web/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('apps/web/**/*.[jt]s?(x)') }}
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('apps/web/**/*.[jt]s?(x)') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-
 
       # Cache SST artifacts for CI environment (used for e2e tests)
       - name: Cache SST CI artifacts
@@ -226,11 +228,11 @@ jobs:
       # Deploy the "ci" environment for running E2E tests
       - name: Deploy app
         run: |
-          pnpm exec sst unlock --stage ci
-          SKIP_SOURCEMAPS=true pnpm exec sst deploy --stage ci
+          bun sst unlock --stage ci
+          SKIP_SOURCEMAPS=true bun sst deploy --stage ci
 
       - name: Run E2E tests
-        run: pnpm web test:e2e
+        run: bun web test:e2e
 
       # Upload artifacts to see results
       - name: Upload Playwright report
@@ -270,9 +272,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/apps/web/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('apps/web/**/*.[jt]s?(x)') }}
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('apps/web/**/*.[jt]s?(x)') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-
 
       # Cache SST artifacts for dev environment
       - name: Cache SST dev artifacts
@@ -297,10 +299,10 @@ jobs:
       # ------------- START DEPLOYMENT -------------
       # Run migrations
       - name: Run migrations
-        run: pnpm backend exec prisma migrate deploy
+        run: bun backend prisma migrate deploy
 
       # Deploy main apps using sst
       - name: Deploy app
         run: |
-          pnpm exec sst unlock
-          pnpm exec sst deploy
+          bun sst unlock
+          bun sst deploy

@@ -43,7 +43,7 @@ const setupMockDatabase = () => {
 
   // Generate a fresh prisma client for our tests
   execSync(
-    'pnpm exec prisma db push --schema=tests/generated/test-schema.prisma --accept-data-loss',
+    'bunx prisma db push --schema=tests/generated/test-schema.prisma --accept-data-loss',
     {
       stdio: 'inherit',
     }

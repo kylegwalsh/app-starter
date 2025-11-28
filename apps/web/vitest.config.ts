@@ -14,5 +14,5 @@ export default defineConfig({
     },
   },
   // Add support for tsconfig path aliases
-  plugins: [tsconfigPaths()],
+  plugins: [tsconfigPaths({ ignoreConfigErrors: true })],
 });

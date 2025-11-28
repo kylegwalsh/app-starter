@@ -16,7 +16,7 @@
     "test:e2e:ui": "playwright test --ui",
     "lint": "ultracite check .",
     "lint:fix": "ultracite fix .",
-    "types:check": "pnpm --filter @repo/backend types:generate && tsc --noEmit",
+    "types:check": "bun --cwd ../backend types:generate && tsc --noEmit",
     "update-readme": "doctoc README.md",
     "postinstall": "tsx scripts/install-playwright"
   },
@@ -50,7 +50,7 @@
     "@repo/backend": "workspace:*",
     "@repo/tsconfig": "workspace:*",
     "@trpc/server": "11.2.0",
-    "@types/node": "20.17.19",
+    "@types/node": "24.10.1",
     "@types/react": "19.1.4",
     "@types/react-dom": "19.1.5",
     "jsdom": "26.1.0",

@@ -6,7 +6,7 @@ import {
 
 const printFinalNotes = () => {
   console.log('--- Final Steps ---');
-  console.log('You can start the app with: pnpm dev\n');
+  console.log('You can start the app with: bun dev\n');
 
   console.log(
     '- Make sure you restart your terminal for your AWS profile changes to take effect.\n'

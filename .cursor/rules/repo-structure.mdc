@@ -5,7 +5,7 @@ alwaysApply: true
 
 <project_structure>
 
-- Monorepo managed with pnpm + SST + Turborepo; TypeScript across apps and packages
+- Monorepo managed with bun + SST + Turborepo; TypeScript across apps and packages
 - Directory Structure:
 
 ```text
@@ -33,7 +33,6 @@ alwaysApply: true
 ├── prompts/           # Prompt files for AI-assisted workflows
 ├── sst.config.ts      # SST application config
 ├── turbo.json         # Turborepo pipeline config
-├── pnpm-workspace.yaml
 └── README.md
 ```
 

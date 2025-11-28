@@ -12,9 +12,9 @@ import { promptSelect, promptUser, promptYesNo } from '../utils/input.js';
 /** The CLIs we require to run the initialization script */
 const CLI_REQUIREMENTS = [
   {
-    name: 'pnpm',
-    versionCmd: 'pnpm --version',
-    url: 'https://pnpm.io/installation',
+    name: 'bun',
+    versionCmd: 'bun --version',
+    url: 'https://bun.sh/docs/installation',
   },
   {
     name: 'gh',
@@ -385,13 +385,13 @@ export const getOrCreateStage = async () => {
 };
 
 /**
- * Parse the output from 'pnpm sst secret list' and extract all secrets
+ * Parse the output from 'bun sst secret list' and extract all secrets
  * @param output The stdout from the secret list command
  * @returns Object containing all secrets as key-value pairs
  */
 const getAllSecrets = (stage: string) => {
   const result: Record<string, string> = {};
-  const output = execSync(`pnpm sst secret list --stage ${stage}`).toString();
+  const output = execSync(`bun sst secret list --stage ${stage}`).toString();
 
   /** Extract all the lines from the output */
   const lines = output.split('\n');
@@ -877,10 +877,10 @@ const setupSupabase = async (projectName: string) => {
   console.log('\nAdding Supabase secrets to SST...');
   // For prod
   execSync(
-    `pnpm tsx ${addSecretScript} DIRECT_DATABASE_URL "${devUrls.directUrl}" "${prodUrls.directUrl}"`
+    `bun tsx ${addSecretScript} DIRECT_DATABASE_URL "${devUrls.directUrl}" "${prodUrls.directUrl}"`
   );
   execSync(
-    `pnpm tsx ${addSecretScript} DATABASE_URL "${devUrls.dbUrl}" "${prodUrls.dbUrl}"`
+    `bun tsx ${addSecretScript} DATABASE_URL "${devUrls.dbUrl}" "${prodUrls.dbUrl}"`
   );
   console.log('✔ Supabase secrets have been set in SST.\n');
 
@@ -926,7 +926,7 @@ const applyExistingMigrations = () => {
     for (const migrationDir of migrationDirs) {
       try {
         execSync(
-          `pnpm backend db:get-url "prisma migrate resolve --applied ${migrationDir}"`,
+          `bun backend db:get-url "prisma migrate resolve --applied ${migrationDir}"`,
           {
             stdio: 'ignore',
           }
@@ -984,7 +984,7 @@ const setupBetterAuth = () => {
   // Add secret to SST
   console.log('Adding Better Auth secret to SST...');
   execSync(
-    `pnpm tsx ${addSecretScript} BETTER_AUTH_SECRET "${randomString}" "${randomString}"`
+    `bun tsx ${addSecretScript} BETTER_AUTH_SECRET "${randomString}" "${randomString}"`
   );
   console.log('✔ Better Auth secret has been set in SST.\n');
 
@@ -1330,9 +1330,9 @@ const setupAxiom = async (): Promise<boolean> => {
 
   // Add secrets to SST
   console.log('\nAdding Axiom secrets to SST...');
-  execSync(`pnpm tsx ${addSecretScript} AXIOM_TOKEN "${token}" "${token}"`);
+  execSync(`bun tsx ${addSecretScript} AXIOM_TOKEN "${token}" "${token}"`);
   execSync(
-    `pnpm tsx ${addSecretScript} AXIOM_DATASET "${dataset}" "${dataset}"`
+    `bun tsx ${addSecretScript} AXIOM_DATASET "${dataset}" "${dataset}"`
   );
 
   // Uncomment secrets in infra/secrets.ts
@@ -1410,10 +1410,10 @@ const setupLangfuse = async () => {
   // Add secrets to SST
   console.log('\nAdding Langfuse secrets to SST...');
   execSync(
-    `pnpm tsx ${addSecretScript} LANGFUSE_SECRET_KEY "${secretKey}" "${secretKey}"`
+    `bun tsx ${addSecretScript} LANGFUSE_SECRET_KEY "${secretKey}" "${secretKey}"`
   );
   execSync(
-    `pnpm tsx ${addSecretScript} LANGFUSE_PUBLIC_KEY "${publicKey}" "${publicKey}"`
+    `bun tsx ${addSecretScript} LANGFUSE_PUBLIC_KEY "${publicKey}" "${publicKey}"`
   );
 
   // Uncomment secrets in infra/secrets.ts
@@ -1488,7 +1488,7 @@ const setupLoops = async () => {
   }
 
   // Store the API key as a secret for both dev and prod
-  execSync(`pnpm tsx ${addSecretScript} LOOPS_API_KEY "${apiKey}" "${apiKey}"`);
+  execSync(`bun tsx ${addSecretScript} LOOPS_API_KEY "${apiKey}" "${apiKey}"`);
 
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
@@ -1709,7 +1709,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
       "\nFor production, you need to complete Stripe's onboarding process at: https://dashboard.stripe.com/profile/account/onboarding"
     );
     console.log(
-      'This process takes time and requires verification. You can always finish this later and re-configure Stripe with `pnpm run init:stripe`.'
+      'This process takes time and requires verification. You can always finish this later and re-configure Stripe with `bun run init:stripe`.'
     );
     console.log(
       'You will still be able to test with your sandbox keys, but the live account will be required for production.'
@@ -1755,7 +1755,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     // Otherwise, skip it for now
     else {
       console.log(
-        '✔ Skipping live keys setup. You can update your live keys later with `pnpm run init:stripe`.'
+        '✔ Skipping live keys setup. You can update your live keys later with `bun run init:stripe`.'
       );
     }
   }
@@ -1764,11 +1764,11 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
   console.log('\nAdding Stripe secrets to SST...');
   if (hasLiveAccount) {
     execSync(
-      `pnpm tsx ${addSecretScript} STRIPE_SECRET_KEY "${devSecretKey}" "${prodSecretKey}"`
+      `bun tsx ${addSecretScript} STRIPE_SECRET_KEY "${devSecretKey}" "${prodSecretKey}"`
     );
   } else {
     execSync(
-      `pnpm sst secret set STRIPE_SECRET_KEY "${devSecretKey}" --fallback`
+      `bun sst secret set STRIPE_SECRET_KEY "${devSecretKey}" --fallback`
     );
   }
 
@@ -1907,11 +1907,11 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     console.log('\nAdding webhook secrets to SST...');
     if (prodWebhookSecret) {
       execSync(
-        `pnpm tsx ${addSecretScript} STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" "${prodWebhookSecret}"`
+        `bun tsx ${addSecretScript} STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" "${prodWebhookSecret}"`
       );
     } else {
       execSync(
-        `pnpm sst secret set STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" --fallback`
+        `bun sst secret set STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" --fallback`
       );
     }
 
@@ -1926,8 +1926,8 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     console.log(
       '1. Deploy your infrastructure first (dev and prod) and note the API URL from the output:'
     );
-    console.log('   - pnpm deploy');
-    console.log('   - pnpm deploy --stage prod');
+    console.log('   - bun run deploy');
+    console.log('   - bun run deploy --stage prod');
     console.log(
       '2. Go to https://dashboard.stripe.com/webhooks (do this in both test/sandbox and live accounts)'
     );
@@ -1940,7 +1940,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     console.log('   - customer.subscription.deleted');
     console.log('5. Copy the webhook signing secret and set it as a secret:');
     console.log(
-      '   pnpm backend add-secret STRIPE_WEBHOOK_SECRET "your-dev-webhook-secret" "your-prod-webhook-secret"\n'
+      '   bun backend add-secret STRIPE_WEBHOOK_SECRET "your-dev-webhook-secret" "your-prod-webhook-secret"\n'
     );
     await promptUser('Press enter to continue...');
   }
@@ -1970,13 +1970,13 @@ const printFinalNotes = ({
   stripeConfig: Awaited<ReturnType<typeof setupStripe>>;
 }) => {
   console.log('--- Final Steps ---');
-  console.log('You can start the app with: pnpm dev\n');
+  console.log('You can start the app with: bun dev\n');
 
   // Mention Stripe setup if they configured it
   if (stripeConfig.didSetup) {
     if (!stripeConfig.didSetupProd) {
       console.log(
-        '- Production Stripe is not yet configured. Finish your Stripe onboarding and re-run the stripe-specific setup with: pnpm run init:stripe'
+        '- Production Stripe is not yet configured. Finish your Stripe onboarding and re-run the stripe-specific setup with: bun run init:stripe'
       );
     }
     console.log(

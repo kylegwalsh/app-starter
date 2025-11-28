@@ -1,23 +1,25 @@
 # A composite action that sets up the CI environment for all jobs
-name: 'Set up environment'
-description: 'Common setup steps for all jobs'
+name: Set up environment
+description: Common setup steps for all jobs
 inputs:
   job-name:
-    description: 'Name of the job using this action (for cache differentiation)'
+    description: Name of the job using this action (for cache differentiation)
     required: false
-    default: 'default'
+    default: default
 runs:
-  using: 'composite'
+  using: composite
   steps:
     # Basic setup steps
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v4
+    - name: Setup bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: latest
 
     - name: Setup node
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
-        cache: 'pnpm'
+        node-version: '24'
+        cache: 'bun'
 
     - name: Configure AWS CLI
       shell: bash
@@ -34,7 +36,7 @@ runs:
           node_modules
           apps/*/node_modules
           packages/*/node_modules
-        key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
         fail-on-cache-miss: true
 
     - name: Restore Playwright browsers
@@ -64,8 +66,8 @@ runs:
     # Generate some of the types we'll need
     - name: Generate Prisma client
       shell: bash
-      run: pnpm run backend db:generate
+      run: bun backend db:generate
 
     - name: Generate docs types
       shell: bash
-      run: pnpm run docs postinstall
+      run: bun docs postinstall

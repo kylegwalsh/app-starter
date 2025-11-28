@@ -62,3 +62,4 @@ npm-debug.log*
 
 # Playwright
 .playwright-installed
+.auth

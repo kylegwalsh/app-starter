@@ -7,6 +7,6 @@
     "update-readme": "doctoc README.md"
   },
   "devDependencies": {
-    "@tsconfig/node20": "20.1.5"
+    "@tsconfig/node24": "24.0.3"
   }
 }

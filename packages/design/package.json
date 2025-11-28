@@ -16,7 +16,7 @@
     "./hooks/*": "./hooks/*.ts"
   },
   "scripts": {
-    "shadcn": "pnpm dlx shadcn@latest",
+    "shadcn": "bunx shadcn@latest",
     "lint": "ultracite check .",
     "lint:fix": "ultracite fix .",
     "types:check": "tsc --noEmit",
@@ -77,7 +77,7 @@
     "@repo/tsconfig": "workspace:*",
     "@tailwindcss/postcss": "4.1.7",
     "@turbo/gen": "2.4.2",
-    "@types/node": "20.17.19",
+    "@types/node": "24.10.1",
     "@types/react": "19.1.4",
     "@types/react-dom": "19.1.5",
     "tailwindcss": "4.1.7",

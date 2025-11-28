@@ -41,7 +41,7 @@ apps/storybook/
 From the repo root:
 
 ```sh
-pnpm storybook dev
+bun storybook dev
 ```
 
 ## Design System Usage
@@ -80,8 +80,8 @@ export const Primary: StoryObj<typeof Button> = {
 Run unit tests:
 
 ```sh
-pnpm storybook test
-pnpm storybook test:ui
+bun storybook run test
+bun storybook run test:ui
 ```
 
 ## Static Build
@@ -89,7 +89,7 @@ pnpm storybook test:ui
 Build a static Storybook for publishing or CI previews:
 
 ```sh
-pnpm storybook build
+bun storybook run build
 ```
 
 The static build is output to `apps/storybook/storybook-static/`.

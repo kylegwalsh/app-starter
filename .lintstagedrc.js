@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Our standard methods (applied to various files)
-const pretty = 'pnpm exec prettier --write';
+const pretty = 'bun prettier --write';
 const tsc = 'tsc --noEmit';
 
 /** Get all packages in workspace directories */

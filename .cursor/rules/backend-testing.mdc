@@ -8,17 +8,17 @@ alwaysApply: false
 
 <how_to_run_tests>
 
-- Use the workspace script to run backend tests.
+- Use the workspace script to run backend tests via vitest.
 - Command:
 
 ```bash
-pnpm backend test [-- <vitest-args>]
+bun backend run test [-- <vitest-args>]
 ```
 
 - Run a specific file with verbose reporter:
 
 ```bash
-pnpm backend test -- tests/api/billing.test.ts --reporter=verbose
+bun backend run test -- tests/api/billing.test.ts --reporter=verbose
 ```
 
 - Environment: Tests run under `sst shell`, so environment variables and SST bindings are available at runtime.

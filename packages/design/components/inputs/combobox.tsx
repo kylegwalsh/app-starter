@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from '@repo/design/components/ui/popover';
 import { cn } from '@repo/design/lib/utils';
-import { CheckIcon, ChevronsUpDownIcon, Loader2 } from 'lucide-react';
+import { CheckIcon, ChevronsUpDownIcon, Loader2, XIcon } from 'lucide-react';
 import {
   type ComponentProps,
   type Ref,
@@ -856,7 +856,7 @@ export const Combobox = ({
                     ? selectedOptions.map((option, index) => (
                         <Badge
                           className={cn(
-                            'shrink-0 truncate',
+                            'shrink-0 gap-0.5 truncate pr-0.5',
                             multiSortable && 'cursor-move'
                           )}
                           draggable={multiSortable}
@@ -871,6 +871,35 @@ export const Combobox = ({
                           variant="secondary"
                         >
                           {option.label}
+                          <span className="mx-0.5 h-3 w-px bg-current opacity-20" />
+                          <button
+                            aria-label={`Remove ${option.label}`}
+                            className="rounded-sm opacity-50 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const currentValues = selectedValue as string[];
+                              const nextValues = currentValues.filter(
+                                (v) => v !== option.value
+                              );
+                              const nextOptions =
+                                getOptionsByValues(nextValues);
+                              setValue(nextValues, nextOptions);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }
+                            }}
+                            onPointerDown={(e) => {
+                              // Prevent drag behavior when clicking the remove button
+                              e.stopPropagation();
+                            }}
+                            type="button"
+                          >
+                            <XIcon className="size-3" />
+                          </button>
                         </Badge>
                       ))
                     : null}

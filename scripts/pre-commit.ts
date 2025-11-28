@@ -17,7 +17,7 @@ const hasWebChanges = stagedFiles.some((file) =>
 // first because the web relies on backend routes for tRPC
 if (hasWebChanges) {
   console.log('Web files detected in commit, generating backend types...');
-  execSync('pnpm --filter backend types:generate', {
+  execSync('bun backend types:generate', {
     stdio: 'inherit',
   });
 } else {
@@ -28,11 +28,11 @@ if (hasWebChanges) {
 
 // Lint all files with ultracite (faster to run all at once)
 console.log('Linting all files with ultracite...');
-execSync('pnpm ultracite fix', {
+execSync('bun ultracite fix', {
   stdio: 'inherit',
 });
 
 // Run lint-staged (remaining type and formatting checks)
-execSync('pnpm lint-staged', {
+execSync('bun lint-staged', {
   stdio: 'inherit',
 });

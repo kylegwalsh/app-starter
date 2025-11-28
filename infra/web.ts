@@ -10,7 +10,7 @@ export const site = new sst.aws.Nextjs('web', {
   domain: domain ? `app.${domain}` : undefined,
   link: [api],
   path: 'apps/web',
-  buildCommand: 'pnpm dlx open-next build',
+  buildCommand: 'bunx open-next build',
   environment: {
     NEXT_PUBLIC_STAGE: $app.stage,
     NEXT_PUBLIC_API_URL: api.url,

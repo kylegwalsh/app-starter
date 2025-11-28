@@ -13,39 +13,39 @@ alwaysApply: false
 - Unit test command:
 
 ```bash
-pnpm web test [-- <vitest-args>]
+bun web run test [-- <vitest-args>]
 ```
 
 - Examples:
   - Watch mode UI:
 
 ```bash
-pnpm web test:ui
+bun web run test:ui
 ```
 
 - Run a specific file with verbose reporter:
 
 ```bash
-pnpm web test -- tests/e2e/render.test.ts --reporter=verbose
+bun web run test -- tests/e2e/render.test.ts --reporter=verbose
 ```
 
 - E2E test command:
 
 ```bash
-pnpm web test:e2e [-- <playwright-args>]
+bun web run test:e2e [-- <playwright-args>]
 ```
 
 - Examples:
   - Headed and UI mode:
 
 ```bash
-pnpm web test:e2e:ui
+bun web run test:e2e:ui
 ```
 
 - Filter by title:
 
 ```bash
-pnpm web test:e2e -- -g "renders dashboard"
+bun web run test:e2e -- -g "renders dashboard"
 ```
 
 - Environment: Tests run under `sst shell`, so environment variables and SST bindings are available at runtime.

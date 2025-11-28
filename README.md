@@ -64,7 +64,7 @@ This starter template comes pre-configured with a robust set of features to acce
 
 ## Tech Stack
 
-- **pnpm:** Fast, disk-efficient package manager for managing dependencies and monorepo workspaces.
+- **bun:** Fast, efficient package manager for managing dependencies and monorepo workspaces.
 - **Turborepo:** High-performance build system for orchestrating scripts and tasks across all packages.
 - **SST:** Infrastructure as code framework for deploying serverless backends and resources to **AWS**.
 - **Supabase:** Hosted Postgres database with real-time capabilities.
@@ -114,7 +114,6 @@ _All packages and apps are written in TypeScript for consistency and type safety
 ├── templates/         # Project/package templates
 ├── sst.config.ts      # SST configuration
 ├── package.json
-├── pnpm-workspace.yaml
 ├── README.md
 └── ...
 ```
@@ -138,7 +137,7 @@ _All packages and apps are written in TypeScript for consistency and type safety
 Before you start, make sure you have the following tools installed and configured:
 
 - **Node.js** (recommend using nvm) - [Install guide](https://github.com/nvm-sh/nvm#install--update-script)
-- **pnpm** (for package and monorepo management) — [Install guide](https://pnpm.io/installation)
+- **bun** (for package and monorepo management) — [Install guide](https://bun.sh/docs/installation)
 - **gh** (GitHub CLI) — [Install guide](https://github.com/cli/cli#installation)
 - **aws-cli** (AWS CLI) — [Install guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - **Docker** (for running a shadow DB for migrations) — [Install guide](https://docs.docker.com/get-docker/)
@@ -152,18 +151,18 @@ Use this section when setting up the starter template for the first time or crea
 #### 1. Install Base Dependencies
 
 ```sh
-pnpm install
+bun install
 ```
 
 #### 2. Run the Initialization Script
 
 ```sh
-pnpm run init
+bun run init
 ```
 
 This interactive script will guide you through configuring all the services and integrations:
 
-- Verifies required CLIs are installed and authenticated (pnpm, gh, aws-cli)
+- Verifies required CLIs are installed and authenticated (bun, gh, aws-cli)
 - Prompts for your project name, environment name, and domain
 - Ensures your repository is connected to GitHub
 - Initializes AWS credentials and profile for deployment
@@ -184,7 +183,7 @@ This interactive script will guide you through configuring all the services and 
 If you plan on using Stripe and didn't configure your live production environment during the initial setup (for example, if you weren't yet approved by Stripe for production access), you can run the Stripe-specific initialization script:
 
 ```sh
-pnpm run init:stripe
+bun run init:stripe
 ```
 
 ### Working with an Existing Project
@@ -194,13 +193,13 @@ Use this section when joining an existing project or working on a codebase that'
 #### 1. Install Current Dependencies
 
 ```sh
-pnpm install
+bun install
 ```
 
 #### 2. Set Up Your Environment
 
 ```sh
-pnpm run init:existing
+bun run init:existing
 ```
 
 This interactive script will guide you through the setup of your local environment.
@@ -214,7 +213,7 @@ After completing the setup, you can start developing and testing your apps local
 ### Start All Apps
 
 ```sh
-pnpm start
+bun dev
 ```
 
 This command will:
@@ -235,7 +234,7 @@ Deployments are managed using SST and AWS, with automated workflows powered by G
 ### Deploy to AWS
 
 ```sh
-pnpm run deploy
+bun run deploy
 ```
 
 This will:
@@ -293,7 +292,7 @@ _Environments: `dev`, `staging`, `prod`_
   Scaffold a new package with the following command:
 
   ```sh
-  pnpm create:package <package-name>
+  bun create:package <package-name>
   ```
 
   Or use the VSCode Tasks UI:  
@@ -324,7 +323,7 @@ This monorepo is set up for robust testing of both backend and frontend applicat
 **How to run backend tests:**
 
 ```sh
-pnpm backend test
+bun backend run test
 ```
 
 > This runs all tests for the backend app.
@@ -332,7 +331,7 @@ pnpm backend test
 You can also run the Vitest UI for interactive test running:
 
 ```sh
-pnpm backend test:ui
+bun backend run test:ui
 ```
 
 ### Web
@@ -347,7 +346,7 @@ pnpm backend test:ui
 **How to run frontend basic tests:**
 
 ```sh
-pnpm web test
+bun web run test
 ```
 
 > This runs all Vitest basic tests for the web app.
@@ -355,7 +354,7 @@ pnpm web test
 For the interactive UI:
 
 ```sh
-pnpm web test:ui
+bun web run test:ui
 ```
 
 #### E2E Tests
@@ -366,7 +365,7 @@ pnpm web test:ui
 **How to run frontend E2E tests:**
 
 ```sh
-pnpm web test:e2e
+bun web run test:e2e
 ```
 
 > This runs all Playwright E2E tests for the web app.
@@ -374,7 +373,7 @@ pnpm web test:e2e
 For the Playwright UI (to run/debug tests interactively):
 
 ```sh
-pnpm web test:e2e:ui
+bun web run test:e2e:ui
 ```
 
 ---

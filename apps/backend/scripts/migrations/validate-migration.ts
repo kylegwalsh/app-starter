@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
  * and we should kill the process. If it succeeds, then the schema and migrations are in sync.
  */
 
-const command = 'pnpm';
+const command = 'bun';
 const args = ['db:migrate', '--method', 'schema'];
 const prompt = 'Enter a name for the new migration:';
 

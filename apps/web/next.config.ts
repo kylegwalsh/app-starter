@@ -30,9 +30,11 @@ let nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
   // Override the webpack config for custom functionality
   webpack: (config: object) => {
-    // Ensure the web always grabs the .web.ts files over the normal files (so it can share directories with the backend)
+    // Ensure the web always grabs the .web files over the normal files (so it can share directories with the backend)
     // @ts-expect-error - Next doesn't type the config correctly
-    config.resolve.extensions.unshift('.web.ts');
+    config.resolve.extensions = config.resolve.extensions.flatMap(
+      (ext: string) => [`.web${ext}`, ext]
+    );
 
     return config;
   },

@@ -71,12 +71,12 @@ alwaysApply: false
 <database_and_migrations>
 
 - Prisma as the single source of truth; schema changes go through migrations in `apps/backend/db/migrations`.
-- When working locally, we make changes by just running `pnpm backend db:push`.
-- When we're ready to deploy, we generate an actual migration to sync the database state with `pnpm backend db:migrate`.
+- When working locally, we make changes by just running `bun backend db:push`.
+- When we're ready to deploy, we generate an actual migration to sync the database state with `bun backend db:migrate`.
 - Prefer Prisma query builders over raw SQL. Use raw queries only when necessary and always parameterize.
 - Transactions: When possible, group multi-step mutations in a single transaction to ensure consistency.
 - Indexes: Add indexes in migrations for frequently queried fields.
-- You should never try to run migrations yourself. If you need to update the schema, just run `pnpm backend db:generate`.
+- You should never try to run migrations yourself. If you need to update the schema, just run `bun backend db:generate`.
 
 </database_and_migrations>
 

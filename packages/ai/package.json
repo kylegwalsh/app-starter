@@ -30,7 +30,7 @@
     "@langfuse/tracing": "4.2.0",
     "@opentelemetry/sdk-trace-node": "2.1.0",
     "@repo/logs": "workspace:*",
-    "ai": "5.0.75",
+    "ai": "5.0.104",
     "zod": "3.25.49"
   }
 }

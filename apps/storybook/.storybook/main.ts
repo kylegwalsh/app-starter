@@ -17,6 +17,21 @@ const config: StorybookConfig = {
     name: '@storybook/nextjs-vite',
     options: {},
   },
+  // Prioritize .web files over their normal alternatives (browser-safe versions from shared packages)
+  viteFinal: (config) => {
+    config.resolve ??= {};
+    const exts = config.resolve.extensions ?? [
+      '.mjs',
+      '.js',
+      '.mts',
+      '.ts',
+      '.jsx',
+      '.tsx',
+      '.json',
+    ];
+    config.resolve.extensions = exts.flatMap((e) => [`.web${e}`, e]);
+    return config;
+  },
   typescript: {
     reactDocgen: 'react-docgen-typescript',
     reactDocgenTypescriptOptions: {

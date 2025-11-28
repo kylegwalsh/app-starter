@@ -61,7 +61,7 @@ apps/backend/
 From the repo root, start SST which also starts the backend:
 
 ```sh
-pnpm dev
+bun dev
 ```
 
 ## Deploying
@@ -69,7 +69,7 @@ pnpm dev
 From the repo root, you can deploy the infrastructure and apps with SST:
 
 ```sh
-pnpm run deploy
+bun run deploy
 ```
 
 ## Infrastructure
@@ -79,14 +79,12 @@ Infrastructure is managed by SST. See the root-level `sst.config.ts` and the `in
 ## API Entrypoints
 
 - `functions/api.ts`
-
   - Delegates to:
     - tRPC handler for paths starting with `/trpc`
     - REST handler (OpenAPI) for paths starting with `/api`
     - Inlined Swagger UI at `/docs` (generated from the tRPC router)
 
 - `functions/auth.ts`
-
   - Hono app that forwards all `GET`/`POST` requests to `auth.handler` (Better Auth).
 
 ## Auth
@@ -103,10 +101,10 @@ Data is persisted with Prisma and Postgres. The schema is defined in `db/schema.
 
 ### Migrations
 
-You can iterate locally and see schema changes while developing using the standard `pnpm dev` flow. Before opening a PR, ensure your schema changes are captured in a migration by running:
+You can iterate locally and see schema changes while developing using the standard `bun dev` flow. Before opening a PR, ensure your schema changes are captured in a migration by running:
 
 ```sh
-pnpm db:migrate
+bun db:migrate
 ```
 
 This command launches an interactive helper with two options:
@@ -119,14 +117,14 @@ This command launches an interactive helper with two options:
   - Requires Docker to be running.
 - Generate a migration from scratch (manual data migration)
   - Creates a migration file without applying it so you can edit complex data changes by hand.
-  - After editing, apply with `pnpm db:migrate:deploy`.
+  - After editing, apply with `bun db:migrate:deploy`.
 
 Additional commands:
 
-- `pnpm db:migrate:deploy`: Applies pending migrations to the target database.
-- `pnpm db:migrate:validate`: Used in CI to ensure schema and migrations are in sync. If migration creation prompts for input, CI fails.
+- `bun db:migrate:deploy`: Applies pending migrations to the target database.
+- `bun db:migrate:validate`: Used in CI to ensure schema and migrations are in sync. If migration creation prompts for input, CI fails.
 
-> During CI, migrations are automatically validated and applied. The pipeline runs `pnpm db:migrate:validate` to confirm your schema changes are captured and then `pnpm db:migrate:deploy` to apply migrations to the correct database/environment.
+> During CI, migrations are automatically validated and applied. The pipeline runs `bun db:migrate:validate` to confirm your schema changes are captured and then `bun db:migrate:deploy` to apply migrations to the correct database/environment.
 
 ## Testing
 
@@ -139,8 +137,8 @@ We use Vitest for testing. We focus on integration-style testing by leveraging m
 You can run tests by using one of the following commands:
 
 ```sh
-pnpm backend test
-pnpm backend test:ui
+bun backend run test
+bun backend run test:ui
 ```
 
 ## Scripts

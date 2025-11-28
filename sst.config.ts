@@ -16,7 +16,7 @@ export default $config({
     new sst.x.DevCommand('DB', {
       dev: {
         autostart: true,
-        command: 'pnpm backend db:start',
+        command: 'bun backend db:start',
       },
     });
 
@@ -70,14 +70,14 @@ export default $config({
 
                 // Inject sourcemaps with posthog metadata
                 execSync(
-                  `pnpm exec posthog-cli sourcemap inject --directory ${dir}`,
+                  `bunx posthog-cli sourcemap inject --directory ${dir}`,
                   {
                     stdio: 'inherit',
                   }
                 );
                 // Upload sourcemaps
                 execSync(
-                  `pnpm exec posthog-cli sourcemap upload --directory ${dir} --project "${process.env.GITHUB_REPO} (backend)" --version ${process.env.GITHUB_SHA}`,
+                  `bunx posthog-cli sourcemap upload --directory ${dir} --project "${process.env.GITHUB_REPO} (backend)" --version ${process.env.GITHUB_SHA}`,
                   { stdio: 'inherit' }
                 );
               }
@@ -130,7 +130,8 @@ export default $config({
       // ---------- RUNTIME ----------
       // Select the architecture and runtime
       args.architecture ??= 'arm64';
-      args.runtime ??= 'nodejs20.x';
+      // @ts-expect-error - SST doesn't recognize nodejs24.x yet
+      args.runtime ??= 'nodejs24.x';
     });
 
     // ---------- MAIN ----------

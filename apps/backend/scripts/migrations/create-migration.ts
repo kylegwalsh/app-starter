@@ -139,7 +139,7 @@ const syncLocalChangesToMigration = async () => {
     // Run Prisma migrate diff to generate up migration (if any is needed)
     console.log('\nChecking whether there were any changes to the schema...');
     const migrationUpBuffer = execSync(
-      `pnpm dlx prisma migrate diff --from-migrations ./db/migrations --to-schema-datamodel ./db/schema.prisma --shadow-database-url ${DB_URL} --script`
+      `bunx prisma migrate diff --from-migrations ./db/migrations --to-schema-datamodel ./db/schema.prisma --shadow-database-url ${DB_URL} --script`
     );
     const migrationUpContents = migrationUpBuffer.toString();
 
@@ -155,7 +155,7 @@ const syncLocalChangesToMigration = async () => {
 
     // Generate the down migration as well (for convenience)
     const migrationDownBuffer = execSync(
-      `pnpm dlx prisma migrate diff --from-schema-datamodel ./db/schema.prisma --to-migrations ./db/migrations --shadow-database-url ${DB_URL} --script`
+      `bunx prisma migrate diff --from-schema-datamodel ./db/schema.prisma --to-migrations ./db/migrations --shadow-database-url ${DB_URL} --script`
     );
     const migrationDownContents = migrationDownBuffer.toString();
 
@@ -173,7 +173,7 @@ const syncLocalChangesToMigration = async () => {
     // Make sure the migration file has been applied to the DB (keeps them in sync)
     console.log('\nApplying migration...');
     execSync(
-      `pnpm db:get-url "prisma migrate resolve --applied ${migrationDirName}"`,
+      `bun db:get-url "prisma migrate resolve --applied ${migrationDirName}"`,
       {
         stdio: 'inherit',
       }
@@ -198,7 +198,7 @@ const syncLocalChangesToMigration = async () => {
 /** Generates a migration file without running it so that we can specify the changes manually */
 const generateManualMigrationFile = () => {
   const child = spawn(
-    'pnpm',
+    'bun',
     ['db:get-url', '"prisma migrate dev --create-only"'],
     {
       stdio: 'inherit',
@@ -209,7 +209,7 @@ const generateManualMigrationFile = () => {
   child.on('exit', (code: number | null) => {
     if (code === 0) {
       console.log(
-        '\n✔ Migration file created. When you are done editing the file, run `pnpm db:migrate:deploy` to apply it to the DB.\n'
+        '\n✔ Migration file created. When you are done editing the file, run `bun db:migrate:deploy` to apply it to the DB.\n'
       );
     }
 

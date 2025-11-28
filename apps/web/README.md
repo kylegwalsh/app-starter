@@ -58,7 +58,7 @@ apps/web/
 From the repo root, start SST which also starts the web app:
 
 ```sh
-pnpm dev
+bun dev
 ```
 
 ## Deploying
@@ -66,7 +66,7 @@ pnpm dev
 From the repo root, you can deploy the infrastructure and apps with SST:
 
 ```sh
-pnpm run deploy
+bun run deploy
 ```
 
 ## Design System
@@ -112,8 +112,8 @@ Vitest is used for any unit/component tests and us to test individual elements o
 You can run vite tests from the repo root using one of the following commands:
 
 ```sh
-pnpm web test
-pnpm web test:ui
+bun web run test
+bun web run test:ui
 ```
 
 ### Playwright (e2e)
@@ -123,6 +123,6 @@ Playwright drives real browser sessions against a running app to validate critic
 You can run playwright tests from the repo root using one of the following commands:
 
 ```sh
-pnpm web test:e2e
-pnpm web test:e2e:ui
+bun web run test:e2e
+bun web run test:e2e:ui
 ```

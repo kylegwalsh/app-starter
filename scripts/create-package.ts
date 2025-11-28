@@ -6,7 +6,7 @@ import { copyAndReplace } from './utils/copy';
 const [, , packageName] = process.argv;
 
 if (!packageName) {
-  console.error('Usage: pnpm create:package <packageName>');
+  console.error('Usage: bun create:package <packageName>');
   process.exit(1);
 }
 

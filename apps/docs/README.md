@@ -6,7 +6,7 @@ This is a Next.js application generated with
 Run development server:
 
 ```bash
-pnpm dev
+bun dev
 ```
 
 Open <http://localhost:3000> with your browser to see the result.

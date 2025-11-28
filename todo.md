@@ -20,8 +20,15 @@
     - Add the DNS records in your domain host
     - TBD
 
+## POSTHOG LOGS
+
+- See if we can deprecate axiom in favor of posthog logs
+
 ## OTHER
 
+- Upgrade SST so that it recognizes node 24.x and remove the @ts-expect-error comment in sst.config.ts
+- When SST supports Supabase infra as code, add it in
+- Try to upgrade prisma and see how they handle the direct url (once better documented). The vscode extension currently complains about our prisma schema file being out of date.
 - Debug why first stripe invocation causes SST proxy to die on Windows (could be related to below issue) - https://github.com/sst/sst/issues/6051
 - When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
 
