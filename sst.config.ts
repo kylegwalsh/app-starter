@@ -130,8 +130,7 @@ export default $config({
       // ---------- RUNTIME ----------
       // Select the architecture and runtime
       args.architecture ??= 'arm64';
-      // @ts-expect-error - SST doesn't recognize nodejs24.x yet
-      args.runtime ??= 'nodejs24.x';
+      args.runtime ??= 'nodejs22.x';
     });
 
     // ---------- MAIN ----------

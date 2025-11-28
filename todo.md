@@ -26,7 +26,6 @@
 
 ## OTHER
 
-- Upgrade SST so that it recognizes node 24.x and remove the @ts-expect-error comment in sst.config.ts
 - When SST supports Supabase infra as code, add it in
 - Try to upgrade prisma and see how they handle the direct url (once better documented). The vscode extension currently complains about our prisma schema file being out of date.
 - Debug why first stripe invocation causes SST proxy to die on Windows (could be related to below issue) - https://github.com/sst/sst/issues/6051
