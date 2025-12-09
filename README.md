@@ -142,6 +142,8 @@ Before you start, make sure you have the following tools installed and configure
 - **aws-cli** (AWS CLI) — [Install guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - **Docker** (for running a shadow DB for migrations) — [Install guide](https://docs.docker.com/get-docker/)
 
+You'll also want to make sure you have an [AWS account](https://signin.aws.amazon.com/signup?request_type=register) setup.
+
 ### Initial Project Setup
 
 Use this section when setting up the starter template for the first time or creating a new project.
@@ -259,7 +261,7 @@ Optimized for small projects and quick iteration:
 
 - Create a GitHub release to deploy to production
 - Runs full test suite plus E2E tests in temporary `ci` environment
-- Deploys to `production` environment after all tests pass
+- Deploys to `prod` environment after all tests pass
 
 _Environments: `dev`, `prod`_
 
@@ -295,15 +297,15 @@ _Environments: `dev`, `staging`, `prod`_
   bun create:package <package-name>
   ```
 
-  Or use the VSCode Tasks UI:  
-  `Ctrl+Shift+P` → "Tasks: Run Task" → "Create New Package"  
+  Or use the VSCode Tasks UI:
+  `Ctrl+Shift+P` → "Tasks: Run Task" → "Create New Package"
   You can also use the templates in the `templates/` directory to quickly scaffold new apps or packages.
 
 - **Add Backend Environment Variables:**  
   To add environment variables to the backend, run:
 
   ```sh
-  pn backend add-secret
+  bun backend add-secret
   ```
 
   This will start a helper script that guides you through securely adding secrets to your backend environment.

@@ -130,6 +130,8 @@ type ComboboxPropsBase = {
   >;
   /** Ref forwarded to the search input element */
   ref?: Ref<HTMLInputElement>;
+  /** Whether to constrain the trigger and popover to match the trigger width. When true, text truncates and popover width matches trigger. When false (default), trigger and popover can expand to fit content. */
+  matchTriggerWidth?: boolean;
 };
 
 type ComboboxProps =
@@ -218,6 +220,7 @@ export const Combobox = ({
   commandProps,
   inputProps,
   ref,
+  matchTriggerWidth = false,
 }: ComboboxProps) => {
   // Normalize options into groups format for consistent processing
   const groups = useMemo<ComboboxOptionGroup[]>(() => {
@@ -609,15 +612,24 @@ export const Combobox = ({
             {option.icon}
           </span>
         ) : null}
-        <span className="flex min-w-0 flex-1 flex-col">
+        <span
+          className={cn('flex flex-1 flex-col', matchTriggerWidth && 'min-w-0')}
+        >
           <div className="flex items-center gap-2">
-            <span className="truncate">{option.label}</span>
+            <span className={cn(matchTriggerWidth && 'truncate')}>
+              {option.label}
+            </span>
             {option.badge ? (
               <span className="shrink-0">{option.badge}</span>
             ) : null}
           </div>
           {option.description ? (
-            <span className="truncate text-muted-foreground text-xs">
+            <span
+              className={cn(
+                'text-muted-foreground text-xs',
+                matchTriggerWidth && 'truncate'
+              )}
+            >
               {option.description}
             </span>
           ) : null}
@@ -630,7 +642,7 @@ export const Combobox = ({
         />
       </div>
     ),
-    []
+    [matchTriggerWidth]
   );
 
   /** Icon displayed on the trigger button (custom icon, loading spinner, or default chevron) */
@@ -649,9 +661,7 @@ export const Combobox = ({
   /** Ref for the input element to maintain focus */
   const inputRef = useRef<HTMLInputElement>(null);
   /** Width of the trigger for matching popover width */
-  const [triggerWidth, setTriggerWidth] = useState<number | undefined>(
-    undefined
-  );
+  const [triggerWidth, setTriggerWidth] = useState<number | undefined>();
 
   /** Ref for the Command component to access its internal state */
   const commandRef = useRef<HTMLDivElement>(null);
@@ -678,11 +688,11 @@ export const Combobox = ({
         }
         e.preventDefault();
         // Find all enabled CommandItems
-        const items = Array.from(
-          commandRef.current?.querySelectorAll(
+        const items = [
+          ...(commandRef.current?.querySelectorAll(
             '[cmdk-item]:not([data-disabled="true"])'
-          ) ?? []
-        ) as HTMLElement[];
+          ) ?? []),
+        ] as HTMLElement[];
         if (items.length === 0) {
           return;
         }
@@ -690,7 +700,7 @@ export const Combobox = ({
         // Find currently selected item (cmdk uses aria-selected or data-selected)
         const currentIndex = items.findIndex(
           (item) =>
-            item.getAttribute('data-selected') === 'true' ||
+            item.dataset.selected === 'true' ||
             item.getAttribute('aria-selected') === 'true'
         );
         let nextIndex: number;
@@ -708,13 +718,13 @@ export const Combobox = ({
 
         // Remove selection from all items
         for (const item of items) {
-          item.setAttribute('data-selected', 'false');
+          item.dataset.selected = 'false';
           item.setAttribute('aria-selected', 'false');
         }
         // Select the new item
         const nextItem = items[nextIndex];
         if (nextItem) {
-          nextItem.setAttribute('data-selected', 'true');
+          nextItem.dataset.selected = 'true';
           nextItem.setAttribute('aria-selected', 'true');
           nextItem.scrollIntoView({ block: 'nearest' });
         }
@@ -741,14 +751,15 @@ export const Combobox = ({
   );
 
   return (
-    <div className={cn('inline-flex', className)}>
+    <div className={cn('flex min-w-0', className)}>
       <Popover onOpenChange={handleOpenChange} open={open}>
         <PopoverTrigger asChild>
           <div
             aria-expanded={open}
             aria-haspopup="listbox"
             className={cn(
-              'flex w-full min-w-0 gap-2 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-within:border-ring disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
+              'flex w-full gap-2 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-within:border-ring disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
+              matchTriggerWidth && 'min-w-0',
               (() => {
                 if (multiple) {
                   if (maxMultiLines) {
@@ -835,7 +846,8 @@ export const Combobox = ({
           >
             <div
               className={cn(
-                'flex min-w-0 flex-1 flex-wrap items-center gap-2',
+                'flex flex-1 flex-wrap items-center gap-2',
+                matchTriggerWidth && 'min-w-0',
                 multiple && maxMultiLines && 'overflow-hidden',
                 // We need a little padding to center this in the row
                 multiple && 'py-0.5'
@@ -852,134 +864,164 @@ export const Combobox = ({
               {multiple ? (
                 // The items to show in the trigger for multi comboboxes
                 <>
-                  {selectedOptions.length > 0
-                    ? selectedOptions.map((option, index) => (
-                        <Badge
-                          className={cn(
-                            'shrink-0 gap-0.5 truncate pr-0.5',
-                            multiSortable && 'cursor-move'
-                          )}
-                          draggable={multiSortable}
-                          key={option.value}
-                          onDragEnd={handleDragEnd}
-                          onDragOver={(e) => {
-                            handleDragOver(e, index);
-                          }}
-                          onDragStart={() => {
-                            handleDragStart(index);
-                          }}
-                          variant="secondary"
-                        >
-                          {option.label}
-                          <span className="mx-0.5 h-3 w-px bg-current opacity-20" />
-                          <button
-                            aria-label={`Remove ${option.label}`}
-                            className="rounded-sm opacity-50 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              const currentValues = selectedValue as string[];
-                              const nextValues = currentValues.filter(
-                                (v) => v !== option.value
-                              );
-                              const nextOptions =
-                                getOptionsByValues(nextValues);
-                              setValue(nextValues, nextOptions);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                e.stopPropagation();
-                              }
-                            }}
-                            onPointerDown={(e) => {
-                              // Prevent drag behavior when clicking the remove button
-                              e.stopPropagation();
-                            }}
-                            type="button"
-                          >
-                            <XIcon className="size-3" />
-                          </button>
-                        </Badge>
-                      ))
-                    : null}
-                  {selectedOptions.length === 0 &&
-                    (!searchable || (!isInputFocused && !search && !open)) && (
-                      // Placeholder text when no badges and (not searchable OR input not rendered)
-                      <span className="self-center py-[1px] text-muted-foreground">
+                  {renderSelectedValue ? (
+                    // Custom render for selected values
+                    selectedOptions.length > 0 ? (
+                      <span className="truncate py-[1px]">
+                        {(
+                          renderSelectedValue as (
+                            options: ComboboxOption[]
+                          ) => ComponentProps<'div'>['children']
+                        )(selectedOptions)}
+                      </span>
+                    ) : (
+                      <span className="py-[1px] text-muted-foreground">
                         {placeholder}
                       </span>
-                    )}
-                  {searchable && (isInputFocused || search || open) && (
-                    <Input
-                      className={cn(
-                        'h-auto min-w-[120px] flex-1 border-0 bg-transparent p-0 py-[1px] text-sm shadow-none focus-visible:ring-0',
-                        inputClass,
-                        inputClassName
+                    )
+                  ) : (
+                    // Default badge rendering
+                    <>
+                      {selectedOptions.length > 0
+                        ? selectedOptions.map((option, index) => (
+                            <Badge
+                              className={cn(
+                                'shrink-0 gap-0.5 truncate pr-0.5',
+                                multiSortable && 'cursor-move'
+                              )}
+                              draggable={multiSortable}
+                              key={option.value}
+                              onDragEnd={handleDragEnd}
+                              onDragOver={(e) => {
+                                handleDragOver(e, index);
+                              }}
+                              onDragStart={() => {
+                                handleDragStart(index);
+                              }}
+                              variant="secondary"
+                            >
+                              {option.label}
+                              <span className="mx-0.5 h-3 w-px bg-current opacity-20" />
+                              <button
+                                aria-label={`Remove ${option.label}`}
+                                className="rounded-sm opacity-50 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const currentValues =
+                                    selectedValue as string[];
+                                  const nextValues = currentValues.filter(
+                                    (v) => v !== option.value
+                                  );
+                                  const nextOptions =
+                                    getOptionsByValues(nextValues);
+                                  setValue(nextValues, nextOptions);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }
+                                }}
+                                onPointerDown={(e) => {
+                                  // Prevent drag behavior when clicking the remove button
+                                  e.stopPropagation();
+                                }}
+                                type="button"
+                              >
+                                <XIcon className="size-3" />
+                              </button>
+                            </Badge>
+                          ))
+                        : null}
+                      {selectedOptions.length === 0 &&
+                        (!searchable ||
+                          (!isInputFocused && !search && !open)) && (
+                          // Placeholder text when no badges and (not searchable OR input not rendered)
+                          <span className="self-center py-[1px] text-muted-foreground">
+                            {placeholder}
+                          </span>
+                        )}
+                      {searchable && (isInputFocused || search || open) && (
+                        <Input
+                          className={cn(
+                            'h-auto min-w-[120px] flex-1 border-0 bg-transparent p-0 py-[1px] text-sm shadow-none focus-visible:ring-0',
+                            inputClass,
+                            inputClassName
+                          )}
+                          disabled={disabled || loading}
+                          onBlur={(e) => {
+                            // Restores focus if clicking inside popover/trigger (keeps input focused during multi-select)
+                            const relatedTarget =
+                              e.relatedTarget as Node | null;
+                            const isInsidePopover =
+                              relatedTarget &&
+                              document
+                                .querySelector('[data-slot="popover-content"]')
+                                ?.contains(relatedTarget);
+                            const isInsideTrigger =
+                              relatedTarget &&
+                              triggerContainerRef.current?.contains(
+                                relatedTarget
+                              );
+                            if (isInsidePopover || isInsideTrigger) {
+                              // Clicking inside the popover or trigger - restore focus
+                              setIsInputFocused(true);
+                              setTimeout(() => {
+                                inputRef.current?.focus();
+                              }, 0);
+                            } else {
+                              setIsInputFocused(false);
+                            }
+                          }}
+                          onChange={(e) => {
+                            handleSearchChange(e.target.value);
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!open) {
+                              handleOpenChange(true);
+                            }
+                          }}
+                          onFocus={() => {
+                            setIsInputFocused(true);
+                            if (!open) {
+                              handleOpenChange(true);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            // Stops propagation to prevent trigger from handling space/enter
+                            e.stopPropagation();
+                            handleKeyDown(e);
+                          }}
+                          placeholder={
+                            selectedOptions.length > 0 ? '' : placeholder
+                          }
+                          ref={(node) => {
+                            inputRef.current = node;
+                            if (typeof ref === 'function') {
+                              ref(node);
+                            } else if (ref) {
+                              (
+                                ref as React.MutableRefObject<HTMLInputElement | null>
+                              ).current = node;
+                            }
+                          }}
+                          value={search}
+                          {...restInputProps}
+                        />
                       )}
-                      disabled={disabled || loading}
-                      onBlur={(e) => {
-                        // Restores focus if clicking inside popover/trigger (keeps input focused during multi-select)
-                        const relatedTarget = e.relatedTarget as Node | null;
-                        const isInsidePopover =
-                          relatedTarget &&
-                          document
-                            .querySelector('[role="dialog"]')
-                            ?.contains(relatedTarget);
-                        const isInsideTrigger =
-                          relatedTarget &&
-                          triggerContainerRef.current?.contains(relatedTarget);
-                        if (isInsidePopover || isInsideTrigger) {
-                          // Clicking inside the popover or trigger - restore focus
-                          setIsInputFocused(true);
-                          setTimeout(() => {
-                            inputRef.current?.focus();
-                          }, 0);
-                        } else {
-                          setIsInputFocused(false);
-                        }
-                      }}
-                      onChange={(e) => {
-                        handleSearchChange(e.target.value);
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!open) {
-                          handleOpenChange(true);
-                        }
-                      }}
-                      onFocus={() => {
-                        setIsInputFocused(true);
-                        if (!open) {
-                          handleOpenChange(true);
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        // Stops propagation to prevent trigger from handling space/enter
-                        e.stopPropagation();
-                        handleKeyDown(e);
-                      }}
-                      placeholder={
-                        selectedOptions.length > 0 ? '' : placeholder
-                      }
-                      ref={(node) => {
-                        inputRef.current = node;
-                        if (typeof ref === 'function') {
-                          ref(node);
-                        } else if (ref) {
-                          (
-                            ref as React.MutableRefObject<HTMLInputElement | null>
-                          ).current = node;
-                        }
-                      }}
-                      value={search}
-                      {...restInputProps}
-                    />
+                    </>
                   )}
                 </>
               ) : (
                 // The items to show in the trigger for single comboboxes
-                <span className="block flex-1 truncate text-left">
+                <span
+                  className={cn(
+                    'block flex-1 text-left',
+                    matchTriggerWidth && 'truncate'
+                  )}
+                >
                   {renderSelectedValue
                     ? (
                         renderSelectedValue as (
@@ -995,19 +1037,25 @@ export const Combobox = ({
         </PopoverTrigger>
         <PopoverContent
           align={align}
-          className={cn('p-0', popoverContentClassName)}
+          className={cn(
+            'p-0',
+            !matchTriggerWidth && 'w-fit',
+            popoverContentClassName
+          )}
           onMouseDown={(e) => {
             // Prevents input blur when clicking inside popover
             e.preventDefault();
           }}
           side={side}
           sideOffset={sideOffset}
-          style={
-            // Matches popover width to trigger (prevents shrinking when CommandInput is hidden in multi-select)
-            triggerWidth
-              ? { width: `${triggerWidth}px`, minWidth: '200px' }
-              : { minWidth: '200px' }
-          }
+          style={(() => {
+            // When matchTriggerWidth is true, popover width matches trigger exactly
+            // When false, popover fits content but uses trigger width as minimum
+            if (matchTriggerWidth && triggerWidth) {
+              return { width: `${triggerWidth}px`, minWidth: '200px' };
+            }
+            return { minWidth: triggerWidth ? `${triggerWidth}px` : '200px' };
+          })()}
         >
           <Command
             {...restCommandProps}
@@ -1100,14 +1148,16 @@ export const Combobox = ({
               })}
               {/* If we should show the create option, show it */}
               {showCreateOption ? (
-                <CommandItem
-                  onSelect={() => handleCreate(trimmedSearch)}
-                  value={`__combobox-create__-${trimmedSearch}`}
-                >
-                  {createOptionLabel
-                    ? createOptionLabel(trimmedSearch)
-                    : `Create "${trimmedSearch}"`}
-                </CommandItem>
+                <CommandGroup>
+                  <CommandItem
+                    onSelect={() => handleCreate(trimmedSearch)}
+                    value={`__combobox-create__-${trimmedSearch}`}
+                  >
+                    {createOptionLabel
+                      ? createOptionLabel(trimmedSearch)
+                      : `Create "${trimmedSearch}"`}
+                  </CommandItem>
+                </CommandGroup>
               ) : null}
             </CommandList>
           </Command>

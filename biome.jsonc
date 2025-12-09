@@ -22,7 +22,8 @@
     "rules": {
       "complexity": {
         "noExcessiveCognitiveComplexity": "off",
-        "useSimplifiedLogicExpression": "off"
+        "useSimplifiedLogicExpression": "off",
+        "noUselessFragments": "off"
       },
       "nursery": {
         "noShadow": "off"
