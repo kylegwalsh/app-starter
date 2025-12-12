@@ -1,38 +1,31 @@
-import { api } from './api';
-import { domain } from './constants';
+import { NextjsSite, type StackContext, use } from 'sst/constructs';
 
-// const username = 'username';
-// const password = 'password';
-// const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');
+import { ApiStack } from './api';
+import { getDomainForStage } from './utils';
 
-// Our main web app
-export const site = new sst.aws.Nextjs('web', {
-  domain: domain ? `app.${domain}` : undefined,
-  link: [api],
-  path: 'apps/web',
-  buildCommand: 'bunx open-next build',
-  environment: {
-    NEXT_PUBLIC_STAGE: $app.stage,
-    NEXT_PUBLIC_API_URL: api.url,
-  },
-  // Password protect every stage but prod
-  // edge:
-  //   $app.stage === 'prod'
-  //     ? undefined
-  //     : {
-  //         viewerRequest: {
-  //           injection: $interpolate`
-  //           if (
-  //               !event.request.headers.authorization
-  //                 || event.request.headers.authorization.value !== "Basic ${basicAuth}"
-  //              ) {
-  //             return {
-  //               statusCode: 401,
-  //               headers: {
-  //                 "www-authenticate": { value: "Basic" }
-  //               }
-  //             };
-  //           }`,
-  //         },
-  //       },
-});
+export const WebStack = ({ stack }: StackContext) => {
+  const { api } = use(ApiStack);
+  const rootDomain = getDomainForStage(stack.stage);
+
+  // Our main web app
+  const site = new NextjsSite(stack, 'web', {
+    customDomain: rootDomain
+      ? {
+          domainName: `app.${rootDomain}`,
+        }
+      : undefined,
+    bind: [api],
+    path: 'apps/web',
+    buildCommand: 'bunx open-next build',
+    environment: {
+      NEXT_PUBLIC_STAGE: stack.stage,
+      NEXT_PUBLIC_API_URL: api.url,
+    },
+  });
+
+  stack.addOutputs({
+    appUrl: site.customDomainUrl ?? site.url,
+  });
+
+  return { site };
+};

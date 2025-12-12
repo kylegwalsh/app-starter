@@ -64,21 +64,12 @@
     // Ensure we recognize the global SST variables
     {
       "includes": ["sst.config.ts", "infra/**/*.ts"],
-      "javascript": {
-        "globals": [
-          "sst",
-          "$config",
-          "$app",
-          "$dev",
-          "$util",
-          "$asset",
-          "$concat",
-          "$interpolate",
-          "$jsonParse",
-          "$jsonStringify",
-          "$resolve",
-          "$transform"
-        ]
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noShadowRestrictedNames": "off"
+          }
+        }
       }
     },
     // We should recognize the global Vitest variable

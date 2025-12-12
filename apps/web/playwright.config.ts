@@ -65,7 +65,7 @@ export default defineConfig({
         // Run your local dev server before starting the tests
         cwd: '../..',
         // Run in mono mode since we don't need the multiplexer UI
-        command: 'bun sst dev --mode mono',
+        command: 'bun sst dev',
         port: 3000,
         reuseExistingServer: true,
         stdout: 'pipe',

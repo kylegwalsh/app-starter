@@ -1,29 +1,39 @@
-// All of our secret environment variables
-export const DATABASE_URL = new sst.Secret('DATABASE_URL');
-export const DIRECT_DATABASE_URL = new sst.Secret('DIRECT_DATABASE_URL');
+import { Config, type StackContext } from 'sst/constructs';
 
-// Better Auth
-export const BETTER_AUTH_SECRET = new sst.Secret('BETTER_AUTH_SECRET');
+/** Manages all of our secret environment variables */
+export const SecretsStack = ({ app, stack }: StackContext) => {
+  // Our available secrets
+  const secrets = {
+    // Database
+    DATABASE_URL: new Config.Secret(stack, 'DATABASE_URL'),
+    DIRECT_DATABASE_URL: new Config.Secret(stack, 'DIRECT_DATABASE_URL'),
 
-// Axiom
-export const AXIOM_TOKEN = new sst.Secret('AXIOM_TOKEN');
-export const AXIOM_DATASET = new sst.Secret('AXIOM_DATASET');
+    // Better Auth
+    BETTER_AUTH_SECRET: new Config.Secret(stack, 'BETTER_AUTH_SECRET'),
 
-// AI
-// export const ANTHROPIC_API_KEY = new sst.Secret('ANTHROPIC_API_KEY');
-// export const OPENAI_API_KEY = new sst.Secret('OPENAI_API_KEY');
-// export const GOOGLE_GENERATIVE_AI_API_KEY = new sst.Secret('GOOGLE_GENERATIVE_AI_API_KEY');
+    // Axiom
+    AXIOM_TOKEN: new Config.Secret(stack, 'AXIOM_TOKEN'),
+    AXIOM_DATASET: new Config.Secret(stack, 'AXIOM_DATASET'),
 
-// Langfuse
-// export const LANGFUSE_SECRET_KEY = new sst.Secret('LANGFUSE_SECRET_KEY');
-// export const LANGFUSE_PUBLIC_KEY = new sst.Secret('LANGFUSE_PUBLIC_KEY');
+    // AI
+    // ANTHROPIC_API_KEY: new Config.Secret(stack, "ANTHROPIC_API_KEY"),
+    // OPENAI_API_KEY: new Config.Secret(stack, "OPENAI_API_KEY"),
+    // GOOGLE_GENERATIVE_AI_API_KEY: new Config.Secret(stack, "GOOGLE_GENERATIVE_AI_API_KEY"),
 
-// Loops
-export const LOOPS_API_KEY = new sst.Secret('LOOPS_API_KEY');
+    // Langfuse
+    // LANGFUSE_SECRET_KEY: new Config.Secret(stack, "LANGFUSE_SECRET_KEY"),
+    // LANGFUSE_PUBLIC_KEY: new Config.Secret(stack, "LANGFUSE_PUBLIC_KEY"),
 
-// Stripe
-export const STRIPE_SECRET_KEY = new sst.Secret('STRIPE_SECRET_KEY');
-export const STRIPE_WEBHOOK_SECRET = new sst.Secret('STRIPE_WEBHOOK_SECRET');
+    // Loops
+    // LOOPS_API_KEY: new Config.Secret(stack, 'LOOPS_API_KEY'),
 
-// Set the default secrets for the stage...
-export const STAGE = new sst.Secret('STAGE', $app.stage);
+    // Stripe
+    // STRIPE_SECRET_KEY: new Config.Secret(stack, 'STRIPE_SECRET_KEY'),
+    // STRIPE_WEBHOOK_SECRET: new Config.Secret(stack, 'STRIPE_WEBHOOK_SECRET'),
+  };
+
+  // Ensure all variables are accessible in our functions
+  app.addDefaultFunctionBinding(Object.values(secrets));
+
+  return secrets;
+};
