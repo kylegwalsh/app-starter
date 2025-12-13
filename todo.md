@@ -26,7 +26,7 @@
 
 ## OTHER
 
-- When SST supports Supabase infra as code, add it in
+- Ensure CI file is properly formatted on Windows and Mac (Windows doesn't seem to replace double quotes with single quotes)
 - Try to upgrade prisma and see how they handle the direct url (once better documented). The vscode extension currently complains about our prisma schema file being out of date.
 - Ensure that SST mono mode kills NextJS ports after web e2e test (keeping port active after run)
 - Debug why first stripe invocation causes SST proxy to die on Windows (could be related to below issue) - https://github.com/sst/sst/issues/6051

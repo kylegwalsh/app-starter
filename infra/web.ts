@@ -1,5 +1,5 @@
 import { api } from './api';
-import { domain } from './constants';
+import { domain } from './utils';
 
 // const username = 'username';
 // const password = 'password';

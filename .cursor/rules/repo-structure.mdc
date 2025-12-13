@@ -79,10 +79,10 @@ alwaysApply: true
   ```text
   /infra
   ├── api           # API Gateway
-  ├── constants     # Shared constants (domain, etc.)
   ├── docs          # Documentation site (Fumadocs)
   ├── secrets       # Shared secrets (AWS Secrets Manager)
-  └── web           # Web app (Next.js)
+  ├── web           # Web app (Next.js)
+  └── utils.ts      # Shared utils (domain helpers, etc.)
   ```
 
 </infra_overview>

@@ -1,4 +1,4 @@
-import { domain } from './constants';
+import { domain } from './utils';
 
 // Our main backend API
 export const api = new sst.aws.ApiGatewayV2('api', {

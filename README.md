@@ -107,7 +107,7 @@ _All packages and apps are written in TypeScript for consistency and type safety
 │   ├── secrets.ts     # Backend environment secrets
 │   ├── docs.ts        # (Optional) Documentation site deployment infrastructure
 │   ├── ping-db.ts     # Simple function to keep free database awake
-│   ├── constants.ts   # Shared constants (domain, etc.)
+│   ├── utils.ts       # Shared utils (domain helpers, etc.)
 │   └── ...
 ├── scripts/           # Helper scripts for setup and development
 ├── .github/           # GitHub Actions workflows

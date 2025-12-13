@@ -91,7 +91,7 @@ export default $config({
       // ---------- ENVIRONMENT ----------
       // Add any environment variables
       args.environment ??= {
-        // Add this so that AWS will re-use TCP connections instead of re-connecting every time
+        // Re-use TCP connections instead of re-connecting every time
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       };
       // Copy prisma files over to our functions (not needed for local development)

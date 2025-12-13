@@ -1,4 +1,4 @@
-import { domain } from './constants';
+import { domain } from './utils';
 
 // Our documentation site
 export const site = new sst.aws.Nextjs('docs', {

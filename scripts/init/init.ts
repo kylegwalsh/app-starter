@@ -279,18 +279,18 @@ const getProjectName = async () => {
 /** Prompt for and update the website domain if still default */
 export const getDomain = async () => {
   console.log('Checking for the website domain...');
-  const constantsPath = path.resolve('infra/constants.ts');
-  let constantsContent = fs.readFileSync(constantsPath, 'utf8');
+  const utilsPath = path.resolve('infra/utils.ts');
+  let utilsContent = fs.readFileSync(utilsPath, 'utf8');
 
   // Regex to match: const baseDomain = ...;
   const baseDomainRegex =
     /const\s+baseDomain(?:\s*:\s*string)?\s*=\s*(['"])([^'"]*)\1/;
-  const match = constantsContent.match(baseDomainRegex);
+  const match = utilsContent.match(baseDomainRegex);
 
-  // If we don't find a match, we are missing something important in the constants file
+  // If we don't find a match, we are missing something important in the utils file
   if (!match) {
     console.log(
-      '❌ Could not find the baseDomain assignment in infra/constants.ts.'
+      '❌ Could not find the baseDomain assignment in infra/utils.ts.'
     );
     process.exit(1);
   }
@@ -331,11 +331,11 @@ export const getDomain = async () => {
   }
 
   // Replace only the empty string at the end of the baseDomain line
-  constantsContent = constantsContent.replace(
+  utilsContent = utilsContent.replace(
     baseDomainRegex,
-    `const baseDomain: string = '${baseDomain}'`
+    `const baseDomain = '${baseDomain}'`
   );
-  fs.writeFileSync(constantsPath, constantsContent);
+  fs.writeFileSync(utilsPath, utilsContent);
   console.log(`✔ Web base domain set to: ${baseDomain}\n`);
   return baseDomain;
 };
@@ -1238,18 +1238,8 @@ const setupDocsSite = async ({ domain }: { domain?: string }) => {
     return;
   }
 
-  // If they have a domain, update infra/docs.ts with the new domain template
+  // Let them know what the docs site domain will be
   if (domain) {
-    const docsPath = path.resolve('infra/docs.ts');
-    let docsContent = fs.readFileSync(docsPath, 'utf8');
-
-    // Replace the undefined domain line with the new template
-    const domainTemplate = `$app.stage === 'prod' ? 'docs.${domain}' : \`\${$app.stage}.docs.${domain}\``;
-    docsContent = docsContent.replace(
-      /domain\s*=\s*undefined/,
-      `domain = ${domainTemplate}`
-    );
-    fs.writeFileSync(docsPath, docsContent);
     console.log(
       `✔ Docs site domain set to docs.${domain} (prod) and <stage>.docs.${domain} (other stages).`
     );
