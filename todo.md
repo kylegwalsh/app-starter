@@ -26,11 +26,27 @@
 
 ## OTHER
 
-- When SST supports Supabase infra as code, add it in
 - Try to upgrade prisma and see how they handle the direct url (once better documented). The vscode extension currently complains about our prisma schema file being out of date.
 - Ensure that SST mono mode kills NextJS ports after web e2e test (keeping port active after run)
 - Debug why first stripe invocation causes SST proxy to die on Windows (could be related to below issue) - https://github.com/sst/sst/issues/6051
 - When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
+
+## SST V2 MIGRATION
+
+- Fix and possibly drop the cloud-resources/index file depending on how it generates the types
+- Figure out the command to install sst dependencies in CI during setup (bun sst install??)
+- See if we need CORS
+- Try adding node-version: "24" with double quotes to the ci.yml file and confirm it doesn't change to single quotes on Mac (if so, we need to fix the formatter on windows)
+- Remove sst-env.d.ts and any references to it? Possibly disable some ts-ignores that aren't needed anymore?
+- Remove fancy CI initialization logic if possible
+- See if web needs to have bind to access api url
+- See if api needs to have bind to access web url (for redirects?)
+- Verify that the e2e tests work now
+- Verify old tests work (especially in CI)
+- Verify init still works as expected (docs, uncommented, and secret setting especially)
+- See if AI works without bedrock and marketplace permissions
+- Figure out how to support basic auth on the dev / staging sites again
+- Verify source maps still work
 
 ## MINOR IMPROVEMENTS
 

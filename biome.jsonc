@@ -30,6 +30,7 @@
       },
       "correctness": {
         "noUnusedVariables": "warn",
+        "noUnusedFunctionParameters": "warn",
         "noUnusedImports": {
           "fix": "none",
           "level": "warn"
