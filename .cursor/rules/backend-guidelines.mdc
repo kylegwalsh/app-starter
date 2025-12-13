@@ -83,10 +83,27 @@ alwaysApply: false
 <auth_and_security>
 
 - Better Auth: We derive identity and org membership in request context. Enforce access via middleware/procedures.
-- Secrets: Never log secrets or PII. Use the `env` export from `@repo/config` to access env vars; fail fast if required values are missing.
+- Secrets: Never log secrets or include API keys in the frontend, utilize SST based on the secret information below.
 - Webhooks: Verify signatures (e.g., Stripe) and handle idempotency.
 
 </auth_and_security>
+
+<secrets_and_environment>
+
+- Usage: Use the `env` export from `@repo/config` to access env vars.
+- Adding Secrets: Use the `add-secret` script to add new secrets to both dev and prod environments:
+
+  ```bash
+  bun backend add-secret MY_SECRET_KEY "dev-value" "prod-value"
+  ```
+
+  After running the script, **always add the export to `infra/secrets.ts`**:
+
+  ```typescript
+  export const MY_SECRET_KEY = new sst.Secret('MY_SECRET_KEY');
+  ```
+
+</secrets_and_environment>
 
 <observability_and_operations>
 
