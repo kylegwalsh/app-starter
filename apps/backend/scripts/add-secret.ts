@@ -36,11 +36,11 @@ if (nameArg && devValueArg && prodValueArg) {
   }
 
   execSync(
-    `sst secret set ${nameArg} "${devValueArg}" --fallback`,
+    `sst secrets set ${nameArg} "${devValueArg}" --fallback`,
     baseExecConfig
   );
   execSync(
-    `sst secret set ${nameArg} "${prodValueArg}" --stage prod`,
+    `sst secrets set ${nameArg} "${prodValueArg}" --stage prod`,
     baseExecConfig
   );
   console.log(
@@ -73,12 +73,12 @@ rl.question(
 
             // Update the variable value for the dev environments
             execSync(
-              `sst secret set ${name} "${devValue}" --fallback`,
+              `sst secrets set ${name} "${devValue}" --fallback`,
               baseExecConfig
             );
             // Update the variable value for the prod environments
             execSync(
-              `sst secret set ${name} "${prodValue}" --stage prod`,
+              `sst secrets set ${name} "${prodValue}" --stage prod`,
               baseExecConfig
             );
 

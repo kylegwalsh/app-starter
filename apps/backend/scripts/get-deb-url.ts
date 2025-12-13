@@ -16,8 +16,8 @@ type Secrets = {
 /** Helper method used to retrieve secrets from sst */
 const parseSecrets = async (): Promise<Secrets> => {
   try {
-    // Run sst secret list and parse output
-    const { stdout } = await execAsync('sst secret list');
+    // Run sst secrets list and parse output
+    const { stdout } = await execAsync('sst secrets list');
     const secrets = stdout
       .trim()
       .split('\n')

@@ -333,7 +333,7 @@ export const getDomain = async () => {
   // Replace only the empty string at the end of the baseDomain line
   constantsContent = constantsContent.replace(
     baseDomainRegex,
-    `const baseDomain: string = '${baseDomain}'`
+    `const baseDomain = '${baseDomain}'`
   );
   fs.writeFileSync(constantsPath, constantsContent);
   console.log(`✔ Web base domain set to: ${baseDomain}\n`);
@@ -385,13 +385,13 @@ export const getOrCreateStage = async () => {
 };
 
 /**
- * Parse the output from 'bun sst secret list' and extract all secrets
+ * Parse the output from 'bun sst secrets list' and extract all secrets
  * @param output The stdout from the secret list command
  * @returns Object containing all secrets as key-value pairs
  */
 const getAllSecrets = (stage: string) => {
   const result: Record<string, string> = {};
-  const output = execSync(`bun sst secret list --stage ${stage}`).toString();
+  const output = execSync(`bun sst secrets list --stage ${stage}`).toString();
 
   /** Extract all the lines from the output */
   const lines = output.split('\n');
@@ -1224,7 +1224,14 @@ const setupDocsSite = async ({ domain }: { domain?: string }) => {
   let sstConfig = fs.readFileSync(sstConfigPath, 'utf8');
 
   // Check if the docs site is already enabled (uncommented in sst.config.ts)
-  if (!/\/\/\s*await import\(['"]\.\/infra\/docs['"]\);/.test(sstConfig)) {
+  const docsImportEnabledRegex =
+    /^\s*import\s+\{\s*DocsStack\s*\}\s+from\s+['"]\.\/infra\/docs['"];\s*$/m;
+  const docsStackEnabledRegex = /^\s*app\.stack\(\s*DocsStack\s*\);\s*$/m;
+
+  if (
+    docsImportEnabledRegex.test(sstConfig) &&
+    docsStackEnabledRegex.test(sstConfig)
+  ) {
     console.log('✔ Docs site already configured.\n');
     return;
   }
@@ -1238,18 +1245,8 @@ const setupDocsSite = async ({ domain }: { domain?: string }) => {
     return;
   }
 
-  // If they have a domain, update infra/docs.ts with the new domain template
+  // Let them know what the docs site domain will be
   if (domain) {
-    const docsPath = path.resolve('infra/docs.ts');
-    let docsContent = fs.readFileSync(docsPath, 'utf8');
-
-    // Replace the undefined domain line with the new template
-    const domainTemplate = `$app.stage === 'prod' ? 'docs.${domain}' : \`\${$app.stage}.docs.${domain}\``;
-    docsContent = docsContent.replace(
-      /domain\s*=\s*undefined/,
-      `domain = ${domainTemplate}`
-    );
-    fs.writeFileSync(docsPath, docsContent);
     console.log(
       `✔ Docs site domain set to docs.${domain} (prod) and <stage>.docs.${domain} (other stages).`
     );
@@ -1257,13 +1254,32 @@ const setupDocsSite = async ({ domain }: { domain?: string }) => {
     console.log('✔ Docs site will be set up without a custom domain.');
   }
 
-  // Update sst.config.ts to uncomment the docs import
-  sstConfig = sstConfig.replace(
-    /\s*\/\/\s*await import\(['"]\.\/infra\/docs['"]\);/,
-    '\n    await import("./infra/docs");'
-  );
-  fs.writeFileSync(sstConfigPath, sstConfig);
-  console.log('✔ Enabled docs site stack in sst.config.ts.\n');
+  // Update sst.config.ts to uncomment the docs import + stack call
+  const docsImportCommentRegex =
+    /^\s*\/\/\s*import\s+\{\s*DocsStack\s*\}\s+from\s+['"]\.\/infra\/docs['"];\s*$/m;
+  const docsStackCommentRegex =
+    /^\s*\/\/\s*app\.stack\(\s*DocsStack\s*\);\s*$/m;
+
+  // Test both at once and only replace if both exist
+  const hasImportComment = docsImportCommentRegex.test(sstConfig);
+  const hasStackComment = docsStackCommentRegex.test(sstConfig);
+
+  if (hasImportComment && hasStackComment) {
+    sstConfig = sstConfig.replace(
+      docsImportCommentRegex,
+      "import { DocsStack } from './infra/docs';"
+    );
+    sstConfig = sstConfig.replace(
+      docsStackCommentRegex,
+      'app.stack(DocsStack);'
+    );
+    fs.writeFileSync(sstConfigPath, sstConfig);
+    console.log('✔ Enabled docs site stack in sst.config.ts.\n');
+  } else {
+    console.log(
+      '⚠ Could not find commented DocsStack code in sst.config.ts. The stack file may have been changed and docs cannot be auto-added.\n'
+    );
+  }
 };
 
 // ---------- AXIOM HELPERS ----------
@@ -1338,13 +1354,13 @@ const setupAxiom = async (): Promise<boolean> => {
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
   let secretsContent = fs.readFileSync(secretsPath, 'utf8');
-  secretsContent = secretsContent.replaceAll(
-    '// export const AXIOM_TOKEN',
-    'export const AXIOM_TOKEN'
+  secretsContent = secretsContent.replace(
+    /^(\s*)\/\/\s*(AXIOM_TOKEN\s*:)/gm,
+    '$1$2'
   );
-  secretsContent = secretsContent.replaceAll(
-    '// export const AXIOM_DATASET',
-    'export const AXIOM_DATASET'
+  secretsContent = secretsContent.replace(
+    /^(\s*)\/\/\s*(AXIOM_DATASET\s*:)/gm,
+    '$1$2'
   );
   fs.writeFileSync(secretsPath, secretsContent);
   console.log('✔ Axiom secrets have been set in SST.\n');
@@ -1419,13 +1435,13 @@ const setupLangfuse = async () => {
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
   let secretsContent = fs.readFileSync(secretsPath, 'utf8');
-  secretsContent = secretsContent.replaceAll(
-    '// export const LANGFUSE_SECRET_KEY',
-    'export const LANGFUSE_SECRET_KEY'
+  secretsContent = secretsContent.replace(
+    /^(\s*)\/\/\s*(LANGFUSE_SECRET_KEY\s*:)/gm,
+    '$1$2'
   );
-  secretsContent = secretsContent.replaceAll(
-    '// export const LANGFUSE_PUBLIC_KEY',
-    'export const LANGFUSE_PUBLIC_KEY'
+  secretsContent = secretsContent.replace(
+    /^(\s*)\/\/\s*(LANGFUSE_PUBLIC_KEY\s*:)/gm,
+    '$1$2'
   );
   fs.writeFileSync(secretsPath, secretsContent);
   console.log('✔ Langfuse secrets have been set in SST.\n');
@@ -1493,9 +1509,9 @@ const setupLoops = async () => {
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
   let secretsContent = fs.readFileSync(secretsPath, 'utf8');
-  secretsContent = secretsContent.replaceAll(
-    '// export const LOOPS_API_KEY',
-    'export const LOOPS_API_KEY'
+  secretsContent = secretsContent.replace(
+    /^(\s*)\/\/\s*(LOOPS_API_KEY\s*:)/gm,
+    '$1$2'
   );
   fs.writeFileSync(secretsPath, secretsContent);
   console.log('✔ Loops API key has been set in SST.\n');
@@ -1768,20 +1784,20 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     );
   } else {
     execSync(
-      `bun sst secret set STRIPE_SECRET_KEY "${devSecretKey}" --fallback`
+      `bun sst secrets set STRIPE_SECRET_KEY "${devSecretKey}" --fallback`
     );
   }
 
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
   let secretsContent = fs.readFileSync(secretsPath, 'utf8');
-  secretsContent = secretsContent.replaceAll(
-    '// export const STRIPE_SECRET_KEY',
-    'export const STRIPE_SECRET_KEY'
+  secretsContent = secretsContent.replace(
+    /^(\s*)\/\/\s*(STRIPE_SECRET_KEY\s*:)/gm,
+    '$1$2'
   );
-  secretsContent = secretsContent.replaceAll(
-    '// export const STRIPE_WEBHOOK_SECRET',
-    'export const STRIPE_WEBHOOK_SECRET'
+  secretsContent = secretsContent.replace(
+    /^(\s*)\/\/\s*(STRIPE_WEBHOOK_SECRET\s*:)/gm,
+    '$1$2'
   );
   fs.writeFileSync(secretsPath, secretsContent);
   console.log('✔ Stripe secret keys have been set in SST.');
@@ -1911,7 +1927,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
       );
     } else {
       execSync(
-        `bun sst secret set STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" --fallback`
+        `bun sst secrets set STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" --fallback`
       );
     }
 

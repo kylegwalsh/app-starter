@@ -1,44 +1,66 @@
-import { domain } from './constants';
+import { Api, Function, type StackContext } from 'sst/constructs';
+import { getDomainForStage } from './utils';
 
-// Our main backend API
-export const api = new sst.aws.ApiGatewayV2('api', {
-  domain: domain ? `api.${domain}` : undefined,
-  cors: {
-    allowOrigins: ['http://*', 'https://*'],
-    allowHeaders: ['content-type', 'authorization'],
-    allowCredentials: true,
-  },
-});
+/** Deploys our main backend API */
+export const ApiStack = ({ stack }: StackContext) => {
+  const rootDomain = getDomainForStage(stack.stage);
 
-// Import the web app so that we can access it's URL in our functions
-const { site } = await import('./web');
+  // Our main backend API
+  const api = new Api(stack, 'api', {
+    customDomain: rootDomain
+      ? {
+          domainName: `api.${rootDomain}`,
+        }
+      : undefined,
+    // TODO: See if we need this
+    // cors: {
+    //   allowOrigins: ['http://*', 'https://*'],
+    //   allowHeaders: ['content-type', 'authorization'],
+    //   allowCredentials: true,
+    // },
+  });
 
-/** We use a special function for our auth routes (handled by Better Auth) */
-const authHandler = new sst.aws.Function('authHandler', {
-  handler: 'apps/backend/functions/auth.handler',
-  link: [api, site],
-});
+  /** We use a special function for our auth routes (handled by Better Auth) */
+  const authHandler = new Function(stack, 'authHandler', {
+    handler: 'apps/backend/functions/auth.handler',
+    bind: [api],
+  });
 
-/** We use one function for all of our standard routes (handled by tRPC + openapi) */
-const apiHandler = new sst.aws.Function('apiHandler', {
-  handler: 'apps/backend/functions/api.handler',
-  link: [api, site],
-});
+  /** We use one function for all of our standard routes (handled by tRPC + openapi) */
+  const apiHandler = new Function(stack, 'apiHandler', {
+    handler: 'apps/backend/functions/api.handler',
+    bind: [api],
+  });
 
-// Auth routes
-api.route('GET /api/auth/{path+}', authHandler.arn);
-api.route('POST /api/auth/{path+}', authHandler.arn);
+  api.addRoutes(stack, {
+    // Auth routes
+    'GET /api/auth/{path+}': {
+      type: 'function',
+      cdk: { function: authHandler },
+    },
+    'POST /api/auth/{path+}': {
+      type: 'function',
+      cdk: { function: authHandler },
+    },
 
-// tRPC routes
-api.route('GET /trpc/{path+}', apiHandler.arn);
-api.route('POST /trpc/{path+}', apiHandler.arn);
+    // tRPC routes
+    'GET /trpc/{path+}': { type: 'function', cdk: { function: apiHandler } },
+    'POST /trpc/{path+}': { type: 'function', cdk: { function: apiHandler } },
 
-// REST routes
-api.route('GET /api/{path+}', apiHandler.arn);
-api.route('POST /api/{path+}', apiHandler.arn);
-api.route('PUT /api/{path+}', apiHandler.arn);
-api.route('DELETE /api/{path+}', apiHandler.arn);
-api.route('PATCH /api/{path+}', apiHandler.arn);
+    // REST routes
+    'GET /api/{path+}': { type: 'function', cdk: { function: apiHandler } },
+    'POST /api/{path+}': { type: 'function', cdk: { function: apiHandler } },
+    'PUT /api/{path+}': { type: 'function', cdk: { function: apiHandler } },
+    'DELETE /api/{path+}': { type: 'function', cdk: { function: apiHandler } },
+    'PATCH /api/{path+}': { type: 'function', cdk: { function: apiHandler } },
 
-// Swagger docs (for REST routes)
-api.route('GET /docs', apiHandler.arn);
+    // Swagger docs (for REST routes)
+    'GET /docs': { type: 'function', cdk: { function: apiHandler } },
+  });
+
+  stack.addOutputs({
+    apiUrl: api.customDomainUrl ?? api.url,
+  });
+
+  return { api };
+};
