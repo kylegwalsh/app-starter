@@ -6,9 +6,9 @@
   "scripts": {
     "build": "storybook build",
     "dev": "storybook dev -p 6006",
-    "test": "sst shell -- vitest run",
-    "test:ci": "cross-env LOG_LEVEL=silent sst shell --stage minimal -- vitest run --silent",
-    "test:ui": "sst shell  -- vitest --ui",
+    "test": "vitest run",
+    "test:ci": "cross-env LOG_LEVEL=silent vitest run --silent",
+    "test:ui": "vitest --ui",
     "lint": "ultracite check .",
     "lint:fix": "ultracite fix .",
     "types:check": "tsc --noEmit",

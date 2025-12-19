@@ -1,12 +1,18 @@
 {
   "$schema": "https://turborepo.org/schema.json",
   "tasks": {
-    "test": {
-      "passThroughEnv": ["AWS_*", "SST_*"]
+    "dev": {
+      "cache": false,
+      "persistent": true
     },
-    "test:ci": {
-      "passThroughEnv": ["AWS_*", "SST_*"]
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "dist/**", ".vercel/**"]
     },
+    "deploy": {},
+    "deploy:prod": {},
+    "test": {},
+    "test:ci": {},
     "types:check": {}
   }
 }

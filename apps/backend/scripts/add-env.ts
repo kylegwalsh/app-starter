@@ -43,9 +43,7 @@ if (nameArg && devValueArg && prodValueArg) {
     `sst secret set ${nameArg} "${prodValueArg}" --stage prod`,
     baseExecConfig
   );
-  console.log(
-    "The environment variable has been created in AWS! Don't forget to add the new variable to the infra/SecretStack file as well!"
-  );
+  console.log('✔ The environment variable has been created in Vercel');
   process.exit(0);
 }
 
@@ -82,10 +80,7 @@ rl.question(
               baseExecConfig
             );
 
-            // Remind the user to also add the variable to the config file
-            rl.write(
-              "The environment variable has been created in AWS! Don't forget to add the new variable to the infra/SecretStack file as well!"
-            );
+            rl.write('✔ The environment variable has been created in Vercel');
             rl.close();
           }
         );

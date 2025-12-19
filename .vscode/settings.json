@@ -1,11 +1,4 @@
 {
-  // Controls default AWS profile to use (configured in your .aws/credentials)
-  "terminal.integrated.env.osx": {
-    "AWS_PROFILE": "odin"
-  },
-  "terminal.integrated.env.windows": {
-    "AWS_PROFILE": "odin"
-  },
   // Improves performance of search in large projects
   "search.followSymlinks": false,
   // Excludes files from being shown in the file explorer
@@ -113,6 +106,7 @@
     "typecheck",
     "ultracite",
     "unauthed",
-    "vaul"
+    "vaul",
+    "vercel"
   ]
 }

@@ -1,6 +1,5 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -22,9 +21,9 @@ const CLI_REQUIREMENTS = [
     url: 'https://github.com/cli/cli#installation',
   },
   {
-    name: 'aws',
-    versionCmd: 'aws --version',
-    url: 'https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html',
+    name: 'vercel',
+    versionCmd: 'vercel --version',
+    url: 'https://vercel.com/docs/cli',
   },
   {
     name: 'docker',
@@ -40,6 +39,18 @@ const checkGhAuth = () => {
   } catch {
     console.log(
       "❌ GitHub CLI is not authenticated. Please run 'gh auth login' and try again.\n"
+    );
+    process.exit(1);
+  }
+};
+
+/** Check if the user is authenticated with Vercel CLI */
+const checkVercelAuth = () => {
+  try {
+    execSync('vercel whoami', { stdio: 'ignore' });
+  } catch {
+    console.log(
+      "❌ Vercel CLI is not authenticated. Please run 'vercel login' and try again.\n"
     );
     process.exit(1);
   }
@@ -69,6 +80,8 @@ export const checkCLIs = () => {
 
   // Check that the user is authenticated with gh
   checkGhAuth();
+  // Check that the user is authenticated with vercel
+  checkVercelAuth();
 
   console.log('✔ All CLI tools are installed\n');
 };
@@ -139,11 +152,9 @@ const configureGithubUrl = async () => {
 
 /** Store secrets and environment variables in GitHub using the gh CLI */
 const setupGithub = async ({
-  awsConfig,
   dbConfig,
   posthogConfig,
 }: {
-  awsConfig: Awaited<ReturnType<typeof selectOrCreateAwsProfile>>;
   dbConfig: Awaited<ReturnType<typeof setupSupabase>>;
   posthogConfig: Awaited<ReturnType<typeof setupPosthog>>;
 }) => {
@@ -167,18 +178,6 @@ const setupGithub = async ({
   execSync(
     `gh api --method PUT -H "Accept: application/vnd.github+json" repos/${repo}/environments/prod`
   );
-
-  // Set AWS secrets
-  execSync(
-    `gh secret set AWS_ACCESS_KEY_ID -a actions -b "${awsConfig.ci.awsAccessKey}"`
-  );
-  execSync(
-    `gh secret set AWS_SECRET_ACCESS_KEY -a actions -b "${awsConfig.ci.awsSecretKey}"`
-  );
-
-  // Set sst stage (for each environment)
-  execSync(`gh variable set SST_STAGE -b "dev" -e dev`);
-  execSync(`gh variable set SST_STAGE -b "prod" -e prod`);
 
   // Set database secrets (for each environment)
   execSync(
@@ -340,50 +339,6 @@ export const getDomain = async () => {
   return baseDomain;
 };
 
-/** Get or create the user's personal environment stage */
-export const getOrCreateStage = async () => {
-  console.log("Checking for the user's personal environment stage...");
-
-  // Check if the user has a .sst/stage file
-  const stagePath = path.resolve('.sst/stage');
-
-  // Create .sst directory if it doesn't exist
-  const sstDir = path.dirname(stagePath);
-  if (!fs.existsSync(sstDir)) {
-    fs.mkdirSync(sstDir, { recursive: true });
-  }
-
-  if (fs.existsSync(stagePath)) {
-    const stage = fs.readFileSync(stagePath, 'utf8').trim();
-
-    // If we locate the stage value, we'll use that and skip this step
-    if (stage) {
-      console.log(`✔ Using existing stage '${stage}'!\n`);
-      return stage;
-    }
-  }
-
-  // If we don't find a stage, we'll prompt the user to enter one
-  let stage = '';
-  while (!stage) {
-    const input = await promptUser(
-      "Enter a name for your personal environment (e.g. 'kwalsh'): "
-    );
-    stage = input.trim();
-    if (!/^[a-zA-Z0-9_-]+$/.test(stage)) {
-      console.log(
-        'Please use only letters, numbers, dashes, or underscores for the environment name.'
-      );
-      stage = '';
-    }
-  }
-
-  // Write the final result to the .sst/stage file
-  fs.writeFileSync(stagePath, `${stage}\n`);
-  console.log(`✔ Created .sst/stage with value '${stage}'!\n`);
-  return stage;
-};
-
 /**
  * Parse the output from 'bun sst secret list' and extract all secrets
  * @param output The stdout from the secret list command
@@ -434,7 +389,7 @@ const getAllSecrets = (stage: string) => {
 };
 
 /** Script for adding secrets to SST */
-const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
+const addSecretScript = path.resolve('apps/backend/scripts/env:add.ts');
 /** SST secrets for dev environment */
 let devSecrets: Record<string, string> = {};
 /** SST secrets for prod environment */
@@ -446,309 +401,33 @@ const initSecrets = () => {
   prodSecrets = getAllSecrets('prod');
 };
 
-// ---------- AWS HELPERS ----------
-/**
- * Prompt the user to select an AWS profile or create a new one.
- * Updates ~/.aws/credentials, ~/.aws/config, and .vscode/settings.json as needed.
- * Returns the selected profile name and credentials for personal and CI.
- */
-export const selectOrCreateAwsProfile = async ({
-  existing,
-}: {
-  existing?: boolean;
-} = {}) => {
-  console.log('Setting up AWS profile...');
+// ---------- VERCEL HELPERS ----------
+/** Link the project to Vercel using the Vercel CLI */
+const linkVercel = async () => {
+  console.log('Linking project to Vercel...');
 
-  const homedir = os.homedir();
-  const credPath = path.join(homedir, '.aws/credentials');
-  const configPath = path.join(homedir, '.aws/config');
-  const vscodeSettingsPath = path.resolve('.vscode/settings.json');
+  try {
+    // Check if already linked
+    const vercelDir = path.resolve('.vercel');
+    if (fs.existsSync(vercelDir)) {
+      const shouldRelink = await promptYesNo(
+        'This project appears to be already linked to Vercel. Would you like to re-link it? (y/n) '
+      );
+      if (!shouldRelink) {
+        console.log('✔ Using existing Vercel project link\n');
+        return;
+      }
+    }
 
-  let profile = '';
-  let accessKey = '';
-  let secretKey = '';
-
-  // If existing, read profile from vscode settings
-  if (existing && fs.existsSync(vscodeSettingsPath)) {
-    const settingsContent = fs.readFileSync(vscodeSettingsPath, 'utf8');
-    const profileMatch = settingsContent.match(
-      /"terminal\.integrated\.env\.osx"[^}]*"AWS_PROFILE"\s*:\s*"([^"]+)"/
+    // Run vercel link
+    execSync('vercel link', { stdio: 'inherit' });
+    console.log('✔ Successfully linked to Vercel\n');
+  } catch (error) {
+    console.log(
+      '❌ Failed to link to Vercel. Please try running "vercel link" manually.\n'
     );
-    profile = profileMatch ? profileMatch[1] : '';
+    throw error;
   }
-
-  // ---------- PERSONAL CREDENTIALS ----------
-  // Read existing profiles
-  let profiles: string[] = [];
-  if (fs.existsSync(credPath)) {
-    const credContent = fs.readFileSync(credPath, 'utf8');
-    profiles = [...credContent.matchAll(/^\[([^\]]+)\]/gm)].map((m) => m[1]);
-  }
-
-  // Helper function to read credentials from a profile
-  const readProfileCredentials = (profileName: string) => {
-    if (fs.existsSync(credPath)) {
-      const credContent = fs.readFileSync(credPath, 'utf8');
-      const profileRegex = new RegExp(
-        `\\[${profileName}\\]([\\s\\S]*?)(?=\\n\\[|$)`,
-        'g'
-      );
-      const match = profileRegex.exec(credContent);
-      if (match?.[1]) {
-        const sectionContent = match[1];
-        const keyMatch = sectionContent.match(
-          /aws_access_key_id\s*=\s*([^\n]+)/
-        );
-        const secretMatch = sectionContent.match(
-          /aws_secret_access_key\s*=\s*([^\n]+)/
-        );
-        const regionMatch = sectionContent.match(/region\s*=\s*([^\n]+)/);
-        return {
-          accessKey: keyMatch ? keyMatch[1].trim() : '',
-          secretKey: secretMatch ? secretMatch[1].trim() : '',
-          region: regionMatch ? regionMatch[1].trim() : '',
-        };
-      }
-    }
-    return { accessKey: '', secretKey: '', region: '' };
-  };
-
-  // Helper function to prompt for AWS credentials and generate config entries
-  const promptAndGenerateAwsConfig = async ({
-    profileName,
-    existingAccessKey,
-    existingSecretKey,
-    existingRegion,
-  }: {
-    profileName: string;
-    existingAccessKey?: string;
-    existingSecretKey?: string;
-    existingRegion?: string;
-  }) => {
-    let accessKey = existingAccessKey;
-    let secretKey = existingSecretKey;
-    let region = existingRegion;
-
-    // Prompt for access key if not provided
-    if (!accessKey) {
-      while (!accessKey) {
-        const accessKeyInput = await promptUser('Enter AWS Access Key ID: ');
-        accessKey = accessKeyInput.trim();
-        if (!accessKey) {
-          console.log('AWS Access Key ID cannot be empty.');
-        }
-      }
-    }
-
-    // Prompt for secret key if not provided
-    if (!secretKey) {
-      while (!secretKey) {
-        const secretKeyInput = await promptUser(
-          'Enter AWS Secret Access Key: '
-        );
-        secretKey = secretKeyInput.trim();
-        if (!secretKey) {
-          console.log('AWS Secret Access Key cannot be empty.');
-        }
-      }
-    }
-
-    // Prompt for region if not provided
-    if (!region) {
-      const regionInput = await promptUser(
-        'Enter AWS Region (press enter for default of us-east-1): '
-      );
-      region = regionInput.trim() || 'us-east-1';
-    }
-
-    // Generate config entries
-    const credEntry = `\n[${profileName}]\naws_access_key_id=${accessKey}\naws_secret_access_key=${secretKey}\nregion=${region}\n`;
-    const configEntry = `\n[profile ${profileName}]\nregion = ${region}\n`;
-
-    // Update AWS files
-    fs.appendFileSync(credPath, credEntry);
-    fs.appendFileSync(configPath, configEntry);
-
-    return { accessKey, secretKey, region };
-  };
-
-  // If we're initializing an existing project, our flow is slightly different
-  // because we want to use the same profile specified in the .vscode/settings.json
-  if (existing && profile) {
-    // Check if profile already exists if we're initializing for an existing project
-    const locatedProfile = profiles.includes(profile);
-
-    // If the profile exists, just read the credentials
-    if (locatedProfile) {
-      const credentials = readProfileCredentials(profile);
-      accessKey = credentials.accessKey;
-      secretKey = credentials.secretKey;
-      console.log(`✔ Using existing AWS profile: ${profile}\n`);
-    }
-    // If the profile from settings doesn't exist in credentials, we need to create it
-    else if (!locatedProfile) {
-      const choices = [
-        ...profiles.map((p) => `Use existing profile: ${p}`),
-        'Create new profile...',
-      ];
-      const selected = await promptSelect(
-        `Profile "${profile}" not found in AWS credentials. What would you like to do?`,
-        choices
-      );
-
-      // If the user wants to create a new profile, prompt for the credentials
-      if (selected === 'Create new profile...') {
-        const config = await promptAndGenerateAwsConfig({
-          profileName: profile,
-        });
-        accessKey = config.accessKey;
-        secretKey = config.secretKey;
-
-        console.log(`✔ Created new AWS profile: ${profile}\n`);
-      }
-      // If they want to use an existing profile, read the credentials from the selected profile
-      else {
-        const sourceProfile = selected.replace('Use existing profile: ', '');
-        const credentials = readProfileCredentials(sourceProfile);
-
-        if (!(credentials.accessKey && credentials.secretKey)) {
-          console.log(
-            `❌ Failed to read credentials from profile: ${sourceProfile}`
-          );
-          process.exit(1);
-        }
-
-        // Copy credentials to new profile with the name from settings
-        const config = await promptAndGenerateAwsConfig({
-          profileName: profile,
-          existingAccessKey: credentials.accessKey,
-          existingSecretKey: credentials.secretKey,
-          existingRegion: credentials.region,
-        });
-        accessKey = config.accessKey;
-        secretKey = config.secretKey;
-
-        console.log(
-          `✔ Created AWS profile "${profile}" using credentials from "${sourceProfile}"`
-        );
-      }
-    }
-  }
-  // Otherwise, we're initializing a new project and need to prompt the user for a profile
-  else {
-    const choices = [...profiles, 'Create new profile...'];
-    const selected = await promptSelect(
-      'Which AWS profile would you like to use?',
-      choices
-    );
-
-    if (selected === 'Create new profile...') {
-      // Prompt for new profile details
-      while (true) {
-        const profileInput = await promptUser(
-          'Enter a name for the new AWS profile: '
-        );
-        profile = profileInput.trim();
-        if (!profile) {
-          console.log('Profile name cannot be empty.');
-          continue;
-        }
-        if (profiles.includes(profile)) {
-          console.log(
-            'Profile already exists. Please choose a different name.'
-          );
-          continue;
-        }
-        break;
-      }
-
-      // Get the user's AWS details
-      const config = await promptAndGenerateAwsConfig({ profileName: profile });
-      accessKey = config.accessKey;
-      secretKey = config.secretKey;
-
-      console.log(`✔ Created new AWS profile: ${profile}`);
-    }
-    // If they want to use an existing profile, just read the credentials
-    else {
-      profile = selected;
-      const credentials = readProfileCredentials(profile);
-      accessKey = credentials.accessKey;
-      secretKey = credentials.secretKey;
-    }
-  }
-
-  // If we don't have any keys at this point, we'll just fail out
-  if (!(accessKey && secretKey)) {
-    process.exit(1);
-  }
-
-  // Set the AWS_PROFILE environment variable for the rest of this script execution
-  process.env.AWS_PROFILE = profile;
-
-  // ---------- CI CREDENTIALS ----------
-  let ciAccessKey = '';
-  let ciSecretKey = '';
-
-  // If we're initializing for the first time, need to do a few things
-  if (!existing) {
-    // Make sure we update our .vscode/settings.json so it defaults to this AWS profile in the future
-    if (fs.existsSync(vscodeSettingsPath)) {
-      let settings = fs.readFileSync(vscodeSettingsPath, 'utf8');
-      settings = settings.replaceAll(
-        /(['"]AWS_PROFILE['"]\s*:\s*['"])[^'"]*(['"])/g,
-        `$1${profile}$2`
-      );
-      fs.writeFileSync(vscodeSettingsPath, settings);
-      console.log(
-        `✔ Updated .vscode/settings.json to use AWS profile: ${profile}\n`
-      );
-    }
-
-    // Ask if they want to use the same credentials for Github Actions CI
-    const useSameForCI = await promptYesNo(
-      'Would you like to use the same AWS credentials for your Github Actions CI deployments? (y/n) '
-    );
-    if (useSameForCI) {
-      ciAccessKey = accessKey;
-      ciSecretKey = secretKey;
-    } else {
-      // Prompt for CI credentials
-      while (!ciAccessKey) {
-        const ciAccessKeyInput = await promptUser(
-          'Enter AWS Access Key ID for CI: '
-        );
-        ciAccessKey = ciAccessKeyInput.trim();
-        if (!ciAccessKey) {
-          console.log('AWS Access Key ID for CI cannot be empty.');
-        }
-      }
-      while (!ciSecretKey) {
-        const ciSecretKeyInput = await promptUser(
-          'Enter AWS Secret Access Key for CI: '
-        );
-        ciSecretKey = ciSecretKeyInput.trim();
-        if (!ciSecretKey) {
-          console.log('AWS Secret Access Key for CI cannot be empty.');
-        }
-      }
-    }
-
-    console.log('✔ Configured AWS credentials for CI.\n');
-  }
-
-  return {
-    personal: {
-      awsProfile: profile,
-      awsAccessKey: accessKey,
-      awsSecretKey: secretKey,
-    },
-    ci: {
-      awsProfile: 'ci',
-      awsAccessKey: ciAccessKey,
-      awsSecretKey: ciSecretKey,
-    },
-  };
 };
 
 // ---------- SUPABASE HELPERS ----------
@@ -785,8 +464,8 @@ const promptValidSupabaseUrl = async (promptMsg: string): Promise<string> => {
 };
 
 /**
- * Guides the user through setting up Supabase, generates DATABASE_URL and DIRECT_DATABASE_URL for dev and prod,
- * and calls the add-secret script to store them.
+ * Guides the user through setting up Supabase, generates DATABASE_URL and DIRECT_DATABASE_URL
+ * for dev and prod, and calls the env:add script to store them.
  */
 const setupSupabase = async (projectName: string) => {
   console.log('Setting up Supabase...');
@@ -873,7 +552,7 @@ const setupSupabase = async (projectName: string) => {
   const prodUrls = generateSupabaseUrls(prodBaseUrl, prodPassword);
   const devUrls = generateSupabaseUrls(devBaseUrl, devPassword);
 
-  // --- Call add-secret script for each secret ---
+  // --- Call env:add script for each secret ---
   console.log('\nAdding Supabase secrets to SST...');
   // For prod
   execSync(
@@ -1278,7 +957,7 @@ const setupAxiom = async (): Promise<boolean> => {
   }
 
   console.log(
-    'Axiom provides enhanced log searching and monitoring beyond AWS CloudWatch.'
+    'Axiom provides enhanced log searching and monitoring beyond Vercel logs.'
   );
   // Ask if they want to set up Axiom
   const doSetup = await promptYesNo(
@@ -1790,8 +1469,9 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     let authContent = fs.readFileSync(authPath, 'utf8');
 
     // Find and uncomment the entire stripe block using regex
-    // This regex matches the entire stripe block from "// stripe({" to "// }),"
-    const stripeBlockRegex = /^(\s*)\/\/ stripe\(\{[\s\S]*?^(\s*)\/\/ \}\),$/gm;
+    // This regex matches the entire stripe block from "// stripePlugin({" to "// }),"
+    const stripeBlockRegex =
+      /^(\s*)\/\/ stripePlugin\(\{[\s\S]*?^(\s*)\/\/ \}\),$/gm;
 
     const hasStripeBlock = stripeBlockRegex.test(authContent);
 
@@ -1930,7 +1610,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     console.log('   - customer.subscription.deleted');
     console.log('5. Copy the webhook signing secret and set it as a secret:');
     console.log(
-      '   bun backend add-secret STRIPE_WEBHOOK_SECRET "your-dev-webhook-secret" "your-prod-webhook-secret"\n'
+      '   bun backend env:add STRIPE_WEBHOOK_SECRET "your-dev-webhook-secret" "your-prod-webhook-secret"\n'
     );
     await promptUser('Press enter to continue...');
   }
@@ -1940,15 +1620,6 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
 };
 
 // ---------- NOTES HELPERs ----------
-/** Prints tips and disclosures for the user. */
-const printTips = async () => {
-  console.log('--- Tips and Disclosures ---');
-  console.log(
-    '- This script works best if you already have a domain purchased and managed by AWS Route 53.\n'
-  );
-  await promptUser('Press enter to continue...\n');
-};
-
 /** Prints final setup instructions and tips for the user. */
 const printFinalNotes = ({
   posthogSetup,
@@ -1959,7 +1630,7 @@ const printFinalNotes = ({
   loopsSetup: boolean;
   stripeConfig: Awaited<ReturnType<typeof setupStripe>>;
 }) => {
-  console.log('--- Final Steps ---');
+  console.log('--- Final Notes ---');
   console.log('You can start the app with: bun dev\n');
 
   // Mention Stripe setup if they configured it
@@ -1988,9 +1659,6 @@ const printFinalNotes = ({
     }
   }
 
-  console.log(
-    '- Make sure you restart your terminal for your AWS profile changes to take effect.\n'
-  );
   console.log('✔ Setup complete! Happy coding!\n');
 };
 
@@ -2002,20 +1670,14 @@ const init = async () => {
   // Check that all CLI tools are setup
   checkCLIs();
 
-  // Mention some tips and disclosures
-  await printTips();
-
   // Get and possibly update the project name
   const projectName = await getProjectName();
 
   // Get and possibly update the web url
   const domain = await getDomain();
 
-  // Get or create the user's personal environment stage
-  await getOrCreateStage();
-
-  // Select or create an AWS profile
-  const awsConfig = await selectOrCreateAwsProfile();
+  // Link to Vercel
+  await linkVercel();
 
   // Setup Supabase
   const dbConfig = await setupSupabase(projectName);
@@ -2031,7 +1693,6 @@ const init = async () => {
 
   // Configure github url and secrets
   const githubUrl = await setupGithub({
-    awsConfig,
     dbConfig,
     posthogConfig,
   });

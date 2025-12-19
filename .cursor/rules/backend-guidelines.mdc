@@ -19,7 +19,7 @@ alwaysApply: false
 <backend_stack_defaults>
 
 - Runtime: Node.js + TypeScript
-- Framework/Infra: SST (AWS) for infra, Lambda handlers for runtime
+- Infra: Vercel for hosting, Vercel Functions for serverless runtime
 - API: tRPC
 - Database: Prisma (Postgres in prod; SQLite in tests)
 - Auth: Better Auth (user/org), passed through request context
@@ -28,9 +28,9 @@ alwaysApply: false
 - Directory Structure:
 
   ```text
+  /api         # Vercel Function entrypoints (api routes, crons, etc)
   /core        # Core services (auth, stripe, etc)
   /db          # Prisma schema, migrations, connection utilities
-  /functions   # Lambda entrypoints (api, auth, crons)
   /routes      # tRPC routers, context, procedures, middleware
   /tests       # Vitest setup, factories, mocks
   ```
@@ -39,7 +39,7 @@ alwaysApply: false
 
 <architecture_and_directories>
 
-- Entrypoints live under `apps/backend/functions`. You should be able to just use tRPC routes for most changes.
+- Entrypoints live under `apps/backend/api` as Vercel Functions.
 - Route logic belongs in `apps/backend/routes` (transport concerns separate from domain logic).
 - Core integrations and helpers (auth clients, stripe helpers, etc) live in `apps/backend/core`.
 - Database schemas live in `apps/backend/db` and go through Prisma.
@@ -68,6 +68,13 @@ alwaysApply: false
 
 </api_and_routing>
 
+<cron_jobs>
+
+- Location: Cron jobs live in `apps/backend/api/crons` as individual Vercel Functions.
+- Configuration: Cron schedules are defined in `apps/backend/vercel.json` using the `crons` array.
+
+</cron_jobs>
+
 <database_and_migrations>
 
 - Prisma as the single source of truth; schema changes go through migrations in `apps/backend/db/migrations`.
@@ -83,24 +90,18 @@ alwaysApply: false
 <auth_and_security>
 
 - Better Auth: We derive identity and org membership in request context. Enforce access via middleware/procedures.
-- Secrets: Never log secrets or include API keys in the frontend, utilize SST based on the secret information below.
+- Secrets: Never log secrets or include API keys in the frontend. Use Vercel environment variables for all sensitive data.
 - Webhooks: Verify signatures (e.g., Stripe) and handle idempotency.
 
 </auth_and_security>
 
 <secrets_and_environment>
 
-- Usage: Use the `env` export from `@repo/config` to access env vars.
-- Adding Secrets: Use the `add-secret` script to add new secrets to both dev and prod environments:
+- Usage: Env vars are fully typed and available under `process.env`.
+- Adding Secrets: Use the `env:add` script to add new secrets to both dev and prod environments:
 
   ```bash
-  bun backend add-secret MY_SECRET_KEY "dev-value" "prod-value"
-  ```
-
-  After running the script, **always add the export to `infra/secrets.ts`**:
-
-  ```typescript
-  export const MY_SECRET_KEY = new sst.Secret('MY_SECRET_KEY');
+  bun backend env:add MY_SECRET_KEY "dev-value" "prod-value"
   ```
 
 </secrets_and_environment>

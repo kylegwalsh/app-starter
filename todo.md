@@ -26,6 +26,8 @@
 
 ## OTHER
 
+- Experiment with Sherif as replacement to manypkg and add linting step to CI
+- Collocate tests next to the files they test
 - Ensure CI file is properly formatted on Windows and Mac (Windows doesn't seem to replace double quotes with single quotes)
 - Try to upgrade prisma and see how they handle the direct url (once better documented). The vscode extension currently complains about our prisma schema file being out of date.
 - Ensure that SST mono mode kills NextJS ports after web e2e test (keeping port active after run)

@@ -17,7 +17,7 @@ export const QueryProvider = ({ children }: { children: ReactNode }) => {
         // Adds pretty logs to your console in development and logs errors in production
         loggerLink({
           enabled: (opts) =>
-            config.stage !== 'prod' ||
+            !config.isProd ||
             (opts.direction === 'down' && opts.result instanceof Error),
         }),
         // Connect to our backend

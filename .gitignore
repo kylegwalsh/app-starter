@@ -46,9 +46,6 @@ npm-debug.log*
 .DS_Store
 *.pem
 
-# sst
-**/.sst
-
 # Cache
 **/.cache
 

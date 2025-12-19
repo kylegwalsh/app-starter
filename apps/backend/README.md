@@ -1,11 +1,11 @@
 # Backend
 
-This app provides the serverless backend for the monorepo. It is built with SST (AWS), Hono, tRPC (with OpenAPI generation), Prisma/Postgres, and Better Auth. It exposes:
+This app provides the serverless backend for the monorepo. It is built with Vercel Functions, Hono, tRPC (with OpenAPI generation), Prisma/Postgres, and Better Auth. It exposes:
 
 - tRPC endpoints under `/trpc`
 - REST endpoints (generated from tRPC via OpenAPI metadata) under `/api`
 - Swagger UI for the generated OpenAPI spec at `/docs`
-- Auth routes handled by Better Auth under a dedicated Lambda entry `/api/auth`
+- Auth routes handled by Better Auth under a dedicated Vercel Function `/api/auth`
 
 ## Table of Contents
 
@@ -28,7 +28,7 @@ This app provides the serverless backend for the monorepo. It is built with SST 
 
 ## Overview
 
-- **Runtime/Infra**: SST deploys AWS Lambda + API Gateway. Common Lambda concerns (logging, analytics, AI tracing) are wrapped via `withLambdaContext`.
+- **Runtime/Infra**: Vercel Functions for serverless deployment. Common function concerns (logging, analytics, AI tracing) are wrapped via `withVercelContext`.
 - **API**: A central `router` composes feature routers (e.g., `billing`) using tRPC. We also expose REST via `better-trpc-openapi` and serve Swagger.
 - **Auth**: [Better Auth](https://better-auth.com/) with Prisma adapter. Organizations are first-class; each user maintains a default/active organization. Optional personal organizations are supported and auto-provisioned.
 - **DB**: Prisma client against Postgres. Schema lives in `db/schema.prisma`.
@@ -37,55 +37,73 @@ This app provides the serverless backend for the monorepo. It is built with SST 
 
 ```text
 apps/backend/
-├── core/              # Any core logic shared across the backend (stripe, auth, etc)
-├── db/                # Prisma schema and client wiring
-│   ├── schema.prisma  # Our database schema
-│   └── connect.ts     # PrismaClient init using env.DATABASE_URL
-├── routes/            # tRPC routers and wiring
-│   ├── index.ts       # Root tRPC router composition
-│   └── trpc/          # tRPC init, context, middleware, procedures
-│       ├── context.ts     # Builds Context { user, organization, etc }
-│       ├── middleware.ts  # tRPC middleware (timing, auth enforcement, etc)
-│       ├── procedures.ts  # tRPC procedures (public, protected, etc)
-│       └── error.ts       # tRPC error handling and reporting
-├── functions/         # Lambda entrypoints
-│   ├── api.ts         # Multi-router handler for /trpc, /api, /docs
-│   └── auth.ts        # Hono-based Better Auth handler for /api/auth
-├── scripts/           # Local scripts (secrets, migrations, helpers)
-├── tests/             # Vitest setup, mocks, and API/core tests
+├── api/                       # Vercel Function entrypoints
+│   ├── [[...slugs]].ts        # Multi-router handler for /trpc, /api, /docs
+│   ├── auth/[[...slugs]].ts   # Hono-based Better Auth handler
+│   └── crons/                 # Scheduled cron jobs
+├── core/                      # Any core logic shared across the backend (stripe, auth, etc)
+├── db/                        # Prisma schema and client wiring
+│   ├── schema.prisma          # Our database schema
+│   └── connect.ts             # PrismaClient init
+├── routes/                    # tRPC routers and wiring
+│   ├── index.ts               # Root tRPC router composition
+│   └── trpc/                  # tRPC init, context, middleware, procedures
+│       ├── context.ts         # Builds Context { user, organization, etc }
+│       ├── middleware.ts      # tRPC middleware (timing, auth enforcement, etc)
+│       ├── procedures.ts      # tRPC procedures (public, protected, etc)
+│       └── error.ts           # tRPC error handling and reporting
+├── scripts/                   # Local scripts (migrations, helpers)
+├── tests/                     # Vitest setup, mocks, and API/core tests
 └── package.json
 ```
 
 ## Running Locally
 
-From the repo root, start SST which also starts the backend:
+From the repo root, start the backend with Vercel's development server:
 
 ```sh
 bun dev
 ```
 
-## Deploying
+This starts both the web and backend apps locally.
 
-From the repo root, you can deploy the infrastructure and apps with SST:
+### Deploying
+
+**Preview Deployment:**
 
 ```sh
 bun run deploy
 ```
 
+Deploys your apps to a unique Vercel preview URL, perfect for testing and sharing changes before releasing to production.
+
+**Production Deployment:**
+
+```sh
+bun run deploy:prod
+```
+
+Deploys the latest production build of your apps to Vercel, making it live for all users.
+
 ## Infrastructure
 
-Infrastructure is managed by SST. See the root-level `sst.config.ts` and the `infra/` directory for stacks and deployment configuration (API, web, secrets, etc.).
+Infrastructure is managed by Vercel. Each app has a `vercel.json` for deployment configuration.
 
 ## API Entrypoints
 
-- `functions/api.ts`
+- `api/[[...slugs]].ts`
+
   - Delegates to:
     - tRPC handler for paths starting with `/trpc`
     - REST handler (OpenAPI) for paths starting with `/api`
     - Inlined Swagger UI at `/docs` (generated from the tRPC router)
 
-- `functions/auth.ts`
+- `api/auth/[[...slugs]].ts`
   - Hono app that forwards all `GET`/`POST` requests to `auth.handler` (Better Auth).
+
+## Crons
+
+Scheduled jobs (cron functions) are deployed as individual Vercel Functions and configured in `vercel.json`.
 
 ## Auth
 
@@ -93,7 +111,7 @@ Authentication is managed by Better Auth.
 
 - `core/auth.ts`: Central config for Better Auth (Prisma adapter, secrets, cookie settings) plus auth-event webhooks (e.g., user/org lifecycle, password reset email hooks, analytics).
 - Routes: Auth HTTP routes are exposed under `/api/auth` (handled via Hono and forwarded to `auth.handler`).
-- Context: `routes/trpc/context.ts` parses the Better Auth cookie from the Lambda event to populate `user` and the active `organization` for requests.
+- Context: `routes/trpc/context.ts` parses the Better Auth cookie from the incoming Request to populate `user` and the active `organization` for requests.
 
 ## Database
 
@@ -147,4 +165,4 @@ Key `package.json` scripts:
 
 - `auth:generate`: Regenerates `db/schema.prisma` fields from Better Auth config.
 - `db:*`: Helpers for Prisma (push, migrate, studio, generate).
-- `add-secret`: Interactive helper to add new backend secrets.
+- `env:add`: Interactive helper to add new backend environment variables.

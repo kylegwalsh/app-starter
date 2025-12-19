@@ -20,13 +20,6 @@ runs:
       with:
         node-version: '24'
 
-    - name: Configure AWS CLI
-      shell: bash
-      run: |
-        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID --profile default
-        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY --profile default
-        aws configure set default.region us-east-1
-
     # Restore some of the cached dependencies we generated during the setup job
     - name: Restore dependencies
       uses: actions/cache/restore@v4

@@ -1,6 +1,6 @@
 # @repo/config
 
-Shared runtime configuration and environment accessors for apps and packages.
+Shared runtime configuration for apps and packages.
 
 ## Table of Contents
 
@@ -16,14 +16,10 @@ Shared runtime configuration and environment accessors for apps and packages.
 ## Overview
 
 - `config`: Globally accessible runtime configuration (safe to import in web and backend)
-- `env`: Backend-only secrets sourced from SST (fully typed)
 
 ## Structure
 
-- `config.ts`: Builds and exports `config` and `env` helpers
-- `env/`: Environment helper modules (separated for web/backend as needed)
-- `cloud-resources/`: Helpers that read values from SST outputs when available
-- `index.ts`: Barrel exports
+- `config.ts`: Our app configuration
 
 ## Usage
 
@@ -33,12 +29,4 @@ When accessing general config:
 import { config } from '@repo/config';
 
 console.log(config.app.url);
-```
-
-When accessing secrets (only available on the backend):
-
-```ts
-import { env } from '@repo/config';
-
-console.log(env.DATABASE_URL);
 ```

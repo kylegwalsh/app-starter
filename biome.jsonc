@@ -1,12 +1,6 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "extends": ["ultracite/core", "ultracite/react", "ultracite/next"],
-  "files": {
-    "includes": [
-      // Ignore auto-generated files
-      "!**/sst-env.d.ts"
-    ]
-  },
   // Formatting configuration
   "javascript": {
     "formatter": {
@@ -60,26 +54,6 @@
             "noConsole": "warn"
           }
         }
-      }
-    },
-    // Ensure we recognize the global SST variables
-    {
-      "includes": ["sst.config.ts", "infra/**/*.ts"],
-      "javascript": {
-        "globals": [
-          "sst",
-          "$config",
-          "$app",
-          "$dev",
-          "$util",
-          "$asset",
-          "$concat",
-          "$interpolate",
-          "$jsonParse",
-          "$jsonStringify",
-          "$resolve",
-          "$transform"
-        ]
       }
     },
     // We should recognize the global Vitest variable

@@ -5,14 +5,14 @@ alwaysApply: true
 
 <project_structure>
 
-- Monorepo managed with bun + SST + Turborepo; TypeScript across apps and packages
+- Monorepo managed with bun + Vercel + Turborepo; TypeScript across apps and packages
 - Directory Structure:
 
 ```text
 /
 ├── apps/
 │   ├── web/           # Next.js frontend app
-│   ├── backend/       # Serverless backend (SST)
+│   ├── backend/       # Serverless backend (Vercel)
 │   ├── storybook/     # Storybook for UI components
 │   └── docs/          # (Optional) Fumadocs-powered docs app
 ├── packages/
@@ -27,11 +27,9 @@ alwaysApply: true
 │   ├── utils/         # General utilities (formatting, time, etc.)
 │   ├── email/         # Email helpers
 │   └── tsconfig/      # Shared TypeScript config
-├── infra/             # SST/AWS infrastructure
 ├── scripts/           # Project init, Stripe setup, migrations, etc.
 ├── templates/         # Scaffolding templates for new packages/apps
 ├── prompts/           # Prompt files for AI-assisted workflows
-├── sst.config.ts      # SST application config
 ├── turbo.json         # Turborepo pipeline config
 └── README.md
 ```
@@ -44,14 +42,17 @@ alwaysApply: true
   - Next.js (TypeScript), Tailwind CSS v4, `@repo/design` components
   - tRPC React client + TanStack Query; Jotai for global state
   - Better Auth client integration; PostHog analytics and sourcemaps
+  - Deployed to Vercel
 - `apps/backend`:
-  - SST (AWS), Hono, tRPC server with SuperJSON
+  - tRPC server
   - Prisma with Postgres, Stripe integration, Better Auth server
   - Vitest for backend tests; migrations and DB helpers under `scripts/`
+  - Deployed to Vercel as serverless functions
 - `apps/storybook`:
   - Storybook configuration and stories for UI components
 - `apps/docs` (optional):
   - Next.js + Fumadocs for documentation
+  - Deployed to Vercel
 
 </apps_overview>
 
@@ -72,18 +73,9 @@ alwaysApply: true
 
 <infra_overview>
 
-- SST stacks and deployment configuration in `infra/`
-- Primary configuration is in `sst.config.ts`
-- Directory structure:
-
-  ```text
-  /infra
-  ├── api           # API Gateway
-  ├── docs          # Documentation site (Fumadocs)
-  ├── secrets       # Shared secrets (AWS Secrets Manager)
-  ├── web           # Web app (Next.js)
-  └── utils.ts      # Shared utils (domain helpers, etc.)
-  ```
+- Deployment configuration managed through Vercel
+- Each app has its own `vercel.json` for Vercel-specific configuration
+- Environment variables are managed via Vercel's dashboard or CLI
 
 </infra_overview>
 

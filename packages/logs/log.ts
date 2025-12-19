@@ -1,49 +1,56 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { Axiom } from '@axiomhq/js';
-import { config, env } from '@repo/config';
+import { config } from '@repo/config';
 import pino from 'pino';
-import {
-  GlobalContextStorageProvider,
-  lambdaRequestTracker,
-  pinoLambdaDestination,
-} from 'pino-lambda';
 import pretty from 'pino-pretty';
+
+// ---------- CONTEXT STORAGE ----------
+/** AsyncLocalStorage for request-scoped context */
+const contextStorage = new AsyncLocalStorage<Record<string, unknown>>();
 
 // ---------- DESTINATIONS ----------
 /** Our axiom client */
-const axiom = (env as Record<string, string>).AXIOM_TOKEN
+const axiom = process.env.AXIOM_TOKEN
   ? new Axiom({
-      token: (env as Record<string, string>).AXIOM_TOKEN,
+      token: process.env.AXIOM_TOKEN,
     })
   : undefined;
-/** Our lambda destination (ensures things are formatted for cloudwatch) */
-const lambdaDest = pinoLambdaDestination();
+
 /** Our pretty destination (ensures things are formatted for the console) */
 const prettyDest = pretty({
   colorize: true,
   translateTime: 'SYS:HH:mm:ss',
   // Ignore some params that we don't care about locally
-  ignore:
-    'env,userId,request,langfuseTraceId,awsRequestId,apiRequestId,x-correlation-id,x-correlation-trace-id',
+  ignore: 'env,userId,request,langfuseTraceId,requestId',
 });
 
 // ---------- HELPERS ----------
-/** Adds lambda request context to the current request context */
-export const addLambdaRequestContext = lambdaRequestTracker();
+/**
+ * Wraps a function to provide access to a logging context that allows you to include
+ * various metadata in all of your logs (like sharing a requestId on logs).
+ */
+export const withLoggingContext = <T>(
+  metadata: Record<string, unknown>,
+  fn: () => T
+): T => contextStorage.run({ ...metadata }, fn);
 
 type LogMetadata = {
   langfuseTraceId?: string;
   userId?: string;
-  awsRequestId?: string;
+  requestId?: string;
   request?: { method?: string; path?: string };
 };
 
 /** Gets the current request context */
-export const getLogMetadata = () =>
-  ({ ...GlobalContextStorageProvider.getContext() }) as LogMetadata;
+export const getLogMetadata = (): LogMetadata =>
+  (contextStorage.getStore() ?? {}) as LogMetadata;
 
 /** Adds metadata to the current request context */
 export const addLogMetadata = (metadata: Record<string, unknown>) => {
-  GlobalContextStorageProvider.updateContext(metadata);
+  const store = contextStorage.getStore();
+  if (store) {
+    Object.assign(store, metadata);
+  }
 };
 
 /** Ensures all logs are flushed */
@@ -69,26 +76,22 @@ type PinoLog = {
 const customDestination = {
   write: (payload: string) => {
     try {
-      // When we're running in AWS, we need to do a few things
-      if (config.isAWS) {
-        // We should structure the logs for cloudwatch
-        lambdaDest.write(payload);
+      // If we're running locally, show the pretty output
+      if (config.isLocal) {
+        prettyDest.write(payload);
+      }
+      // If we're running in a deployed environment, we need to do a few things
+      else {
+        // Write to stdout for Vercel's log streaming
+        process.stdout.write(`${payload}\n`);
 
-        // Since we can't see the logs easily, we should also send logs to Axiom (if it's configured)
+        // Also send logs to Axiom for better log management (if configured)
         if (axiom) {
           // Format the payload to be the way axiom expects it
-          const {
-            time,
-            level,
-            msg,
-            // biome-ignore lint/correctness/noUnusedVariables: We need to extract this to avoid passing it
-            'x-correlation-id': correlationId,
-            // biome-ignore lint/correctness/noUnusedVariables: We need to extract this to avoid passing it
-            'x-correlation-trace-id': traceId,
-            // Grab the rest of the context
-            ...context
-          } = JSON.parse(payload) as PinoLog;
-          axiom.ingest(env.AXIOM_DATASET, [
+          const { time, level, msg, ...context } = JSON.parse(
+            payload
+          ) as PinoLog;
+          axiom.ingest(process.env.AXIOM_DATASET ?? '', [
             {
               // Axiom-specific fields (we have to include level twice or it doesn't work right)
               _time: time,
@@ -100,10 +103,6 @@ const customDestination = {
             },
           ]);
         }
-      }
-      // If we're running locally, show the pretty output
-      else {
-        prettyDest.write(payload);
       }
     } catch (error) {
       console.error('[log] Failed to handle log:', error);
@@ -120,7 +119,7 @@ export const log = pino(
     },
     // Attach any global context variables
     base: {
-      env: config.stage,
+      env: config.env,
     },
     // Add any additional global context into our logs
     mixin: () => getLogMetadata(),
