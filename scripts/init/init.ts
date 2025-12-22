@@ -3,8 +3,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import axios, { AxiosError } from 'axios';
-
+import axios, { AxiosError, type AxiosInstance } from 'axios';
+import { addEnvVar } from '../../apps/backend/scripts/env/add-env.js';
+import { pullEnvVars } from '../../apps/backend/scripts/env/pull-env.js';
 import { promptSelect, promptUser, promptYesNo } from '../utils/input.js';
 
 // ---------- CLI HELPERS ----------
@@ -109,6 +110,8 @@ const configureGithubUrl = async () => {
         console.log("No GitHub remote 'origin' is set.");
       }
 
+      let urlToUse: string | undefined;
+
       // Ask if they want to use a different repo
       const useDifferentRepo = await promptYesNo(
         'Would you like to use a different GitHub repo? (y/n) '
@@ -138,10 +141,35 @@ const configureGithubUrl = async () => {
         execSync(`git ls-remote ${newUrl}`);
 
         console.log('✔ Updated repo\n');
-        return newUrl;
+        urlToUse = newUrl;
+      } else {
+        if (!currentUrl) {
+          console.log(
+            '❌ No GitHub URL available. Please provide a GitHub repo URL.\n'
+          );
+          continue;
+        }
+        console.log('✔ Using current repo\n');
+        urlToUse = currentUrl;
       }
-      console.log('✔ Using current repo\n');
-      return currentUrl;
+
+      // Validate that we can parse the repo from the URL
+      if (!urlToUse) {
+        console.log('❌ Unable to configure GitHub URL. Please try again.\n');
+        continue;
+      }
+
+      // Parse the repo from the URL
+      const match = urlToUse.match(/[:/]([^/]+\/[^/.]+)(?:\.git)?$/);
+      const repo = match ? match[1] : '';
+      if (!repo) {
+        console.log(
+          '❌ Unable to parse GitHub repo from remote URL. Please verify the URL format.\n'
+        );
+        continue;
+      }
+
+      return { url: urlToUse, repo };
     } catch {
       console.log(
         '❌ Unable to connect to the provided GitHub URL. Please verify the URL and try again.\n'
@@ -151,33 +179,29 @@ const configureGithubUrl = async () => {
 };
 
 /** Store secrets and environment variables in GitHub using the gh CLI */
-const setupGithub = async ({
+const setupGithubSecrets = ({
+  githubConfig,
+  vercelConfig,
   dbConfig,
   posthogConfig,
 }: {
+  githubConfig: Awaited<ReturnType<typeof configureGithubUrl>>;
+  vercelConfig: Awaited<ReturnType<typeof setupVercel>>;
   dbConfig: Awaited<ReturnType<typeof setupSupabase>>;
   posthogConfig: Awaited<ReturnType<typeof setupPosthog>>;
 }) => {
-  console.log('Setting up GitHub...');
-
-  // Configure the GitHub URL and extract the repo path
-  const githubUrl = await configureGithubUrl();
-  if (!githubUrl) {
-    console.log('❌ Unable to configure GitHub URL. Please try again.');
-    throw new Error('Failed to configure GitHub URL');
-  }
-  const match = githubUrl.match(/[:/]([^/]+\/[^/.]+)(?:\.git)?$/);
-  const repo = match ? match[1] : '';
-
   console.log('Setting up GitHub environments and secrets...');
 
   // Create environments (idempotent)
   execSync(
-    `gh api --method PUT -H "Accept: application/vnd.github+json" repos/${repo}/environments/dev`
+    `gh api --method PUT -H "Accept: application/vnd.github+json" repos/${githubConfig.repo}/environments/dev`
   );
   execSync(
-    `gh api --method PUT -H "Accept: application/vnd.github+json" repos/${repo}/environments/prod`
+    `gh api --method PUT -H "Accept: application/vnd.github+json" repos/${githubConfig.repo}/environments/prod`
   );
+
+  // Vercel token for CI deploys (repo-wide secret)
+  execSync(`gh secret set VERCEL_TOKEN -a actions -b "${vercelConfig.token}"`);
 
   // Set database secrets (for each environment)
   execSync(
@@ -209,8 +233,6 @@ const setupGithub = async ({
   }
 
   console.log('✔ GitHub environments and secrets have been set up.\n');
-
-  return githubUrl;
 };
 
 // ---------- PROJECT DETAIL HELPERS ----------
@@ -221,7 +243,7 @@ const getProjectName = async () => {
   const configPath = path.resolve('packages/config/config.ts');
   let configContent = fs.readFileSync(configPath, 'utf8');
   const appNameMatch = configContent.match(
-    /app:\s*{[^}]*name:\s*['"][^'"]*['"]/s
+    /app:\s*{[^}]*name:\s*['"]([^'"]*)['"]/s
   );
   let appName = appNameMatch ? appNameMatch[1] : undefined;
 
@@ -252,15 +274,6 @@ const getProjectName = async () => {
     // Convert to kebab-case for other config files
     const kebabName = newName.replaceAll(' ', '-').toLowerCase();
 
-    // Update sst.config.ts, always use single quotes
-    const sstConfigPath = path.resolve('sst.config.ts');
-    let sstConfig = fs.readFileSync(sstConfigPath, 'utf8');
-    sstConfig = sstConfig.replace(
-      /name:\s*['"][^'"]*['"]/,
-      `name: '${kebabName}'`
-    );
-    fs.writeFileSync(sstConfigPath, sstConfig);
-
     // Update package.json
     const pkgPath = path.resolve('package.json');
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
@@ -277,42 +290,31 @@ const getProjectName = async () => {
 
 /** Prompt for and update the website domain if still default */
 export const getDomain = async () => {
-  console.log('Checking for the website domain...');
-  const utilsPath = path.resolve('infra/utils.ts');
-  let utilsContent = fs.readFileSync(utilsPath, 'utf8');
+  console.log('Checking for the project domain...');
+  // Check for the domain in the config file
+  const configPath = path.resolve('packages/config/config.ts');
+  let configContent = fs.readFileSync(configPath, 'utf8');
+  const domainMatch = configContent.match(
+    /app:\s*{[^}]*domain:\s*['"]([^'"]*)['"]/s
+  );
+  const existingDomain = domainMatch ? domainMatch[1] : undefined;
 
-  // Regex to match: const baseDomain = ...;
-  const baseDomainRegex =
-    /const\s+baseDomain(?:\s*:\s*string)?\s*=\s*(['"])([^'"]*)\1/;
-  const match = utilsContent.match(baseDomainRegex);
-
-  // If we don't find a match, we are missing something important in the utils file
-  if (!match) {
-    console.log(
-      '❌ Could not find the baseDomain assignment in infra/utils.ts.'
-    );
-    process.exit(1);
+  // If the domain exists and is not empty, we'll use it
+  if (existingDomain && existingDomain !== '') {
+    console.log(`✔ Domain already configured: ${existingDomain}\n`);
+    return existingDomain;
   }
 
-  // Extract the value from the match
-  const currentValue = match[2];
-
-  // If baseDomain is set, we'll use that
-  if (currentValue) {
-    console.log(`✔ Web domain already configured: ${currentValue}\n`);
-    return currentValue;
-  }
-  // If we don't find a value, we'll prompt the user for a custom domain
-
+  // If we didn't find a value, we'll prompt the user for a custom domain
   const wantsCustomDomain = await promptYesNo(
     'Would you like to use a custom domain for your app? (y/n) '
   );
-
   if (!wantsCustomDomain) {
     console.log('Custom domain setup skipped.\n');
     return;
   }
 
+  // Get a new domain
   let baseDomain = '';
   while (!baseDomain) {
     const input = await promptUser(
@@ -329,105 +331,465 @@ export const getDomain = async () => {
     baseDomain = trimmed;
   }
 
-  // Replace only the empty string at the end of the baseDomain line
-  utilsContent = utilsContent.replace(
-    baseDomainRegex,
-    `const baseDomain = '${baseDomain}'`
+  // Write domain to config.ts
+  configContent = configContent.replace(
+    /app:\s*{([^}]*)domain:\s*['"][^'"]*['"]/s,
+    (_m, g1) => `app: {${g1}domain: '${baseDomain}'`
   );
-  fs.writeFileSync(utilsPath, utilsContent);
-  console.log(`✔ Web base domain set to: ${baseDomain}\n`);
+  fs.writeFileSync(configPath, configContent);
+  console.log(`✔ Domain set to: ${baseDomain}\n`);
+
   return baseDomain;
 };
 
-/**
- * Parse the output from 'bun sst secret list' and extract all secrets
- * @param output The stdout from the secret list command
- * @returns Object containing all secrets as key-value pairs
- */
-const getAllSecrets = (stage: string) => {
-  const result: Record<string, string> = {};
-  const output = execSync(`bun sst secret list --stage ${stage}`).toString();
-
-  /** Extract all the lines from the output */
-  const lines = output.split('\n');
-
-  /** Track whether we're reading the fallback section's variables */
-  let inFallbackSection = false;
-  /** Whether we're in the dev stage */
-  const isDevStage = stage === 'dev';
-
-  for (const line of lines) {
-    // Check for section headers
-    if (line.startsWith('#')) {
-      inFallbackSection = line.trim() === '# fallback';
-      continue;
-    }
-
-    // Skip empty lines
-    if (!line.trim()) {
-      continue;
-    }
-    // For dev stage: only use fallback values
-    if (isDevStage && !inFallbackSection) {
-      continue;
-    }
-    // For other stages: skip fallback values and use stage-specific values
-    if (!isDevStage && inFallbackSection) {
-      continue;
-    }
-
-    // Look for lines that contain secret key-value pairs
-    // Based on the format: "SECRET_NAME=secret_value"
-    const match = line.match(/^([A-Z_]+)=(.+)$/);
-    if (match) {
-      const [, key, value] = match;
-      result[key] = value.trim();
-    }
-  }
-
-  return result;
-};
-
-/** Script for adding secrets to SST */
-const addSecretScript = path.resolve('apps/backend/scripts/env:add.ts');
-/** SST secrets for dev environment */
-let devSecrets: Record<string, string> = {};
-/** SST secrets for prod environment */
-let prodSecrets: Record<string, string> = {};
-
-/** Initialize both our global secret variables */
-const initSecrets = () => {
-  devSecrets = getAllSecrets('dev');
-  prodSecrets = getAllSecrets('prod');
+/** The environment variables from our dev environment */
+let devEnv: Record<string, string> = {};
+/** The environment variables from our prod environment */
+let prodEnv: Record<string, string> = {};
+/** Initialize the environment variables */
+const initEnv = () => {
+  devEnv = pullEnvVars({
+    env: 'development',
+  });
+  prodEnv = pullEnvVars({
+    env: 'production',
+  });
 };
 
 // ---------- VERCEL HELPERS ----------
-/** Link the project to Vercel using the Vercel CLI */
-const linkVercel = async () => {
-  console.log('Linking project to Vercel...');
+/** Vercel team information */
+type VercelTeam = {
+  id: string;
+  slug: string;
+  name: string;
+};
 
+/** Vercel project information */
+type VercelProject = {
+  id: string;
+  name: string;
+};
+
+/** User's selection for Vercel team/account */
+type VercelSelection =
+  | { type: 'personal' }
+  | { type: 'team'; team: VercelTeam };
+
+/** Top-level Vercel API instance (initialized after token/team selection) */
+let vercelApi: AxiosInstance;
+
+/** Initialize the Vercel API instance */
+const initVercelApi = ({
+  token,
+  teamId,
+}: {
+  token: string;
+  teamId?: string;
+}): void => {
+  vercelApi = axios.create({
+    baseURL: 'https://api.vercel.com',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    params: teamId ? { teamId } : undefined,
+  });
+};
+
+/** List all teams the user has access to */
+const listTeams = async (): Promise<VercelTeam[]> => {
+  const res = await vercelApi.get<{ teams: VercelTeam[] }>('/v2/teams');
+  return res.data.teams ?? [];
+};
+
+/** Create a new Vercel team */
+const createTeam = async ({ name }: { name: string }): Promise<VercelTeam> => {
+  const res = await vercelApi.post<VercelTeam>('/v1/teams', { name });
+  return res.data;
+};
+
+/** Get a Vercel project by ID or name (returns null if not found) */
+const getProject = async ({
+  idOrName,
+}: {
+  idOrName: string;
+}): Promise<VercelProject | null> => {
   try {
-    // Check if already linked
-    const vercelDir = path.resolve('.vercel');
-    if (fs.existsSync(vercelDir)) {
-      const shouldRelink = await promptYesNo(
-        'This project appears to be already linked to Vercel. Would you like to re-link it? (y/n) '
-      );
-      if (!shouldRelink) {
-        console.log('✔ Using existing Vercel project link\n');
+    const res = await vercelApi.get<VercelProject>(`/v9/projects/${idOrName}`);
+    return res.data;
+  } catch (error) {
+    if (error instanceof AxiosError && error.response?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+};
+
+/** Create a new Vercel project (or return existing if already exists) */
+const createProject = async ({
+  name,
+  rootDirectory,
+  gitRepository,
+}: {
+  name: string;
+  rootDirectory: string;
+  gitRepository?: {
+    type: 'github';
+    repo: string; // "owner/repo"
+  };
+}): Promise<VercelProject> => {
+  try {
+    const res = await vercelApi.post<VercelProject>('/v11/projects', {
+      name,
+      rootDirectory,
+      gitRepository,
+    });
+    return res.data;
+  } catch (error) {
+    // If it already exists, retrieve it.
+    if (error instanceof AxiosError && error.response?.status === 409) {
+      const existing = await getProject({ idOrName: name });
+      if (existing) {
+        return existing;
+      }
+    }
+    throw error;
+  }
+};
+
+/** Add a custom domain to a Vercel project */
+const addDomainToProject = async ({
+  projectIdOrName,
+  domain,
+  gitBranch,
+}: {
+  projectIdOrName: string;
+  domain: string;
+  gitBranch?: string;
+}): Promise<void> => {
+  try {
+    // Add the domain
+    await vercelApi.post(`/v10/projects/${projectIdOrName}/domains`, {
+      name: domain,
+    });
+
+    // If gitBranch is specified, assign the domain to that branch
+    if (gitBranch) {
+      try {
+        await vercelApi.patch(
+          `/v9/projects/${projectIdOrName}/domains/${domain}`,
+          {
+            gitBranch,
+          }
+        );
+      } catch (branchError) {
+        // If branch assignment fails, log but don't fail the whole operation
+        // (domain is still added, just not branch-assigned)
+        if (branchError instanceof AxiosError) {
+          console.warn(
+            `⚠️  Could not assign ${domain} to branch ${gitBranch}: ${branchError.response?.statusText || branchError.message}`
+          );
+        }
+      }
+    }
+  } catch (error) {
+    // Ignore "already exists" style errors.
+    if (error instanceof AxiosError) {
+      const code = error.response?.status;
+      if (code === 409 || code === 400) {
         return;
       }
     }
-
-    // Run vercel link
-    execSync('vercel link', { stdio: 'inherit' });
-    console.log('✔ Successfully linked to Vercel\n');
-  } catch (error) {
-    console.log(
-      '❌ Failed to link to Vercel. Please try running "vercel link" manually.\n'
-    );
     throw error;
   }
+};
+
+const checkExistingVercelConfig = async () => {
+  const webVercel = fs.existsSync(path.resolve('apps/web/.vercel'));
+  const backendVercel = fs.existsSync(path.resolve('apps/backend/.vercel'));
+  const docsVercel = fs.existsSync(path.resolve('apps/docs/.vercel'));
+
+  if (webVercel || backendVercel || docsVercel) {
+    const skipSetup = await promptYesNo(
+      'Vercel projects appear to be already configured. Skip project setup? (y/n) '
+    );
+    if (skipSetup) {
+      const relink = await promptYesNo(
+        'Would you like to re-link local folders to Vercel projects? (y/n) '
+      );
+      return { skip: true, relink };
+    }
+  }
+
+  return { skip: false, relink: true }; // Always link when creating projects
+};
+
+const setupVercel = async ({
+  projectName,
+  githubRepo,
+  domain,
+}: {
+  projectName: string;
+  githubRepo: string;
+  domain?: string;
+}): Promise<{
+  token: string;
+  selection: VercelSelection;
+  projects: {
+    web: VercelProject;
+    backend: VercelProject;
+    docs?: VercelProject;
+  };
+}> => {
+  // Transform project name (Title Case) to kebab-case for use as prefix
+  const projectPrefix = projectName.replaceAll(' ', '-').toLowerCase();
+
+  // Prompt for optional deployments
+  const enableOptionalDeployments = async () => {
+    const docs = await promptYesNo(
+      'Would you like to set up a website for documentation? (y/n) '
+    );
+    if (!docs) {
+      console.log('Docs site setup skipped.\n');
+    }
+    return { docs };
+  };
+
+  const optionalDeployments = await enableOptionalDeployments();
+
+  const { skip, relink } = await checkExistingVercelConfig();
+
+  // Prompt for Vercel token
+  let token = '';
+  while (!token) {
+    token = (
+      await promptUser('Enter your Vercel token (for API + CI): ')
+    ).trim();
+    if (!token) {
+      console.log('Please enter a valid Vercel token.');
+    }
+  }
+
+  console.log('Setting up Vercel projects...');
+
+  const selection = await selectOrCreateTeam({ token });
+  const teamId = selection.type === 'team' ? selection.team.id : undefined;
+  const teamSlug = selection.type === 'team' ? selection.team.slug : undefined;
+
+  // Re-initialize API with token + team ID
+  initVercelApi({ token, teamId });
+
+  if (skip) {
+    // If the user wants to skip project setup, optionally re-link projects
+    if (relink) {
+      linkVercelProject({
+        cwd: 'apps/web',
+        projectName: `${projectPrefix}-web`,
+        scope: teamSlug,
+      });
+      linkVercelProject({
+        cwd: 'apps/backend',
+        projectName: `${projectPrefix}-api`,
+        scope: teamSlug,
+      });
+      if (optionalDeployments.docs) {
+        linkVercelProject({
+          cwd: 'apps/docs',
+          projectName: `${projectPrefix}-docs`,
+          scope: teamSlug,
+        });
+      }
+    }
+
+    // We can't reliably know IDs if we skipped; return placeholder names as IDs.
+    return {
+      token,
+      selection,
+      projects: {
+        web: { id: `${projectPrefix}-web`, name: `${projectPrefix}-web` },
+        backend: { id: `${projectPrefix}-api`, name: `${projectPrefix}-api` },
+        docs: optionalDeployments.docs
+          ? { id: `${projectPrefix}-docs`, name: `${projectPrefix}-docs` }
+          : undefined,
+      },
+    };
+  }
+
+  const gitRepository = { type: 'github' as const, repo: githubRepo };
+
+  const webProject = await createProject({
+    name: `${projectPrefix}-web`,
+    rootDirectory: 'apps/web',
+    gitRepository,
+  });
+
+  const backendProject = await createProject({
+    name: `${projectPrefix}-api`,
+    rootDirectory: 'apps/backend',
+    gitRepository,
+  });
+
+  const docsProject = optionalDeployments.docs
+    ? await createProject({
+        name: `${projectPrefix}-docs`,
+        rootDirectory: 'apps/docs',
+        gitRepository,
+      })
+    : undefined;
+
+  // Link local folders to created projects (vercel link is idempotent)
+  linkVercelProject({
+    cwd: 'apps/web',
+    projectName: webProject.name,
+    scope: teamSlug,
+  });
+  linkVercelProject({
+    cwd: 'apps/backend',
+    projectName: backendProject.name,
+    scope: teamSlug,
+  });
+  if (docsProject) {
+    linkVercelProject({
+      cwd: 'apps/docs',
+      projectName: docsProject.name,
+      scope: teamSlug,
+    });
+  }
+
+  if (domain) {
+    // Optional: domain + URL env vars.
+    const appProd = `app.${domain}`;
+    const appDev = `dev.app.${domain}`;
+    const apiProd = `api.${domain}`;
+    const apiDev = `dev.api.${domain}`;
+
+    // Production domains (assigned to production branch automatically by Vercel)
+    await addDomainToProject({
+      projectIdOrName: webProject.id,
+      domain: appProd,
+    });
+    await addDomainToProject({
+      projectIdOrName: backendProject.id,
+      domain: apiProd,
+    });
+
+    // Dev domains (assigned to main branch for automatic preview deployments)
+    await addDomainToProject({
+      projectIdOrName: webProject.id,
+      domain: appDev,
+      gitBranch: 'main',
+    });
+    await addDomainToProject({
+      projectIdOrName: backendProject.id,
+      domain: apiDev,
+      gitBranch: 'main',
+    });
+
+    if (docsProject) {
+      // Production docs domain
+      await addDomainToProject({
+        projectIdOrName: docsProject.id,
+        domain: `docs.${domain}`,
+      });
+      // Dev docs domain (assigned to main branch)
+      await addDomainToProject({
+        projectIdOrName: docsProject.id,
+        domain: `dev.docs.${domain}`,
+        gitBranch: 'main',
+      });
+    }
+
+    console.log(
+      '\n⚠️  Note: You may need to manually set NEXT_PUBLIC_APP_URL and NEXT_PUBLIC_API_URL\n' +
+        '   for the web project in Vercel dashboard or via CLI.\n'
+    );
+
+    // Output DNS instructions
+    console.log('\n--- DNS Configuration Required ---');
+    console.log('Add these DNS records to your domain provider:\n');
+    console.log('CNAME  app      → cname.vercel-dns.com');
+    console.log('CNAME  dev.app  → cname.vercel-dns.com');
+    console.log('CNAME  api      → cname.vercel-dns.com');
+    console.log('CNAME  dev.api  → cname.vercel-dns.com');
+    if (docsProject) {
+      console.log('CNAME  docs     → cname.vercel-dns.com');
+      console.log('CNAME  dev.docs → cname.vercel-dns.com');
+    }
+    console.log('\nNote: DNS propagation can take up to 48 hours.');
+    await promptUser('\nPress enter once you have added the DNS records...');
+    console.log('✔ DNS setup acknowledged.\n');
+  }
+
+  return {
+    token,
+    selection,
+    projects: { web: webProject, backend: backendProject, docs: docsProject },
+  };
+};
+
+const selectOrCreateTeam = async ({
+  token,
+}: {
+  token: string;
+}): Promise<VercelSelection> => {
+  // Initialize API with token (no team yet)
+  initVercelApi({ token });
+  const teams = await listTeams();
+
+  const choices = [
+    'Use personal account (no team)',
+    ...teams.map((t) => t.name),
+    'Create new team...',
+  ];
+
+  const selected = await promptSelect('Select a Vercel team:', choices);
+  if (selected === 'Use personal account (no team)') {
+    return { type: 'personal' };
+  }
+
+  if (selected === 'Create new team...') {
+    let teamName = '';
+    while (!teamName) {
+      teamName = (await promptUser('Enter a name for the new team: ')).trim();
+      if (!teamName) {
+        console.log('Please enter a valid team name.');
+      }
+    }
+    const newTeam = await createTeam({ name: teamName });
+    return { type: 'team', team: newTeam };
+  }
+
+  const existing = teams.find((t) => t.name === selected);
+  if (!existing) {
+    throw new Error('Failed to resolve selected Vercel team');
+  }
+  return { type: 'team', team: existing };
+};
+
+const linkVercelProject = ({
+  cwd,
+  projectName,
+  scope,
+}: {
+  cwd: string;
+  projectName: string;
+  scope?: string;
+}) => {
+  // vercel link is idempotent - safe to run even if already linked
+  const args = [
+    'vercel',
+    'link',
+    '--yes',
+    `--project ${projectName}`,
+    scope ? `--scope ${scope}` : undefined,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  execSync(args, {
+    stdio: 'inherit',
+    cwd: path.resolve(cwd),
+  });
 };
 
 // ---------- SUPABASE HELPERS ----------
@@ -467,7 +829,7 @@ const promptValidSupabaseUrl = async (promptMsg: string): Promise<string> => {
  * Guides the user through setting up Supabase, generates DATABASE_URL and DIRECT_DATABASE_URL
  * for dev and prod, and calls the env:add script to store them.
  */
-const setupSupabase = async (projectName: string) => {
+const setupSupabase = async ({ projectName }: { projectName: string }) => {
   console.log('Setting up Supabase...');
 
   const databaseConfig = {
@@ -482,20 +844,20 @@ const setupSupabase = async (projectName: string) => {
   };
 
   // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) {
-    initSecrets();
+  if (Object.keys(devEnv).length === 0) {
+    initEnv();
   }
 
   // Check if Supabase is already configured
   let alreadyConfigured = false;
   // Extract database URLs from the parsed secrets
   databaseConfig.dev = {
-    dbUrl: devSecrets.DATABASE_URL || '',
-    directUrl: devSecrets.DIRECT_DATABASE_URL || '',
+    dbUrl: devEnv.DATABASE_URL || '',
+    directUrl: devEnv.DIRECT_DATABASE_URL || '',
   };
   databaseConfig.prod = {
-    dbUrl: prodSecrets.DATABASE_URL || '',
-    directUrl: prodSecrets.DIRECT_DATABASE_URL || '',
+    dbUrl: prodEnv.DATABASE_URL || '',
+    directUrl: prodEnv.DIRECT_DATABASE_URL || '',
   };
 
   // Check if both dev and prod have all their secrets configured
@@ -552,16 +914,19 @@ const setupSupabase = async (projectName: string) => {
   const prodUrls = generateSupabaseUrls(prodBaseUrl, prodPassword);
   const devUrls = generateSupabaseUrls(devBaseUrl, devPassword);
 
-  // --- Call env:add script for each secret ---
-  console.log('\nAdding Supabase secrets to SST...');
-  // For prod
-  execSync(
-    `bun tsx ${addSecretScript} DIRECT_DATABASE_URL "${devUrls.directUrl}" "${prodUrls.directUrl}"`
-  );
-  execSync(
-    `bun tsx ${addSecretScript} DATABASE_URL "${devUrls.dbUrl}" "${prodUrls.dbUrl}"`
-  );
-  console.log('✔ Supabase secrets have been set in SST.\n');
+  // Save environment variables
+  console.log('\nAdding Supabase environment variables to Vercel...');
+  await addEnvVar({
+    name: 'DIRECT_DATABASE_URL',
+    devValue: devUrls.directUrl,
+    prodValue: prodUrls.directUrl,
+  });
+  await addEnvVar({
+    name: 'DATABASE_URL',
+    devValue: devUrls.dbUrl,
+    prodValue: prodUrls.dbUrl,
+  });
+  console.log('✔ Supabase environment variables have been set.\n');
 
   // Update the config object with the new values
   databaseConfig.prod = prodUrls;
@@ -641,16 +1006,16 @@ const applyExistingMigrations = () => {
 
 // ---------- BETTER AUTH HELPERS ----------
 /** Guides the user through setting up Better Auth */
-const setupBetterAuth = () => {
+const setupBetterAuth = async () => {
   console.log('Setting up Better Auth...');
 
   // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) {
-    initSecrets();
+  if (Object.keys(devEnv).length === 0) {
+    initEnv();
   }
 
   // Check if BETTER_AUTH_SECRET is already configured in SST secrets
-  if (devSecrets.BETTER_AUTH_SECRET && prodSecrets.BETTER_AUTH_SECRET) {
+  if (devEnv.BETTER_AUTH_SECRET && prodEnv.BETTER_AUTH_SECRET) {
     console.log('✔ Better Auth secret already configured.\n');
     return true;
   }
@@ -660,12 +1025,14 @@ const setupBetterAuth = () => {
     Math.floor(Math.random() * 36).toString(36)
   ).join('');
 
-  // Add secret to SST
-  console.log('Adding Better Auth secret to SST...');
-  execSync(
-    `bun tsx ${addSecretScript} BETTER_AUTH_SECRET "${randomString}" "${randomString}"`
-  );
-  console.log('✔ Better Auth secret has been set in SST.\n');
+  // Save environment variables
+  console.log('Adding Better Auth environment variables to Vercel...');
+  await addEnvVar({
+    name: 'BETTER_AUTH_SECRET',
+    devValue: randomString,
+    prodValue: randomString,
+  });
+  console.log('✔ Better Auth environment variables have been set.\n');
 
   return true;
 };
@@ -676,7 +1043,7 @@ type PosthogOrg = { id: string; name: string };
 type PosthogProject = { id: string; api_token: string };
 
 /** Guides the user through setting up PostHog, including API key, org/project selection/creation, and saves config */
-const setupPosthog = async (projectName: string) => {
+const setupPosthog = async ({ projectName }: { projectName: string }) => {
   console.log('Setting up PostHog...');
 
   const configPath = path.resolve('packages/config/config.ts');
@@ -811,7 +1178,7 @@ const setupPosthog = async (projectName: string) => {
  * Guides the user through setting up Slack notifications for CI.
  * If the user opts in, instructs them to install the GitHub app and run the subscribe command.
  */
-const setupSlack = async (repo: string) => {
+const setupSlack = async ({ githubUrl }: { githubUrl: string }) => {
   const wantsSlack = await promptYesNo(
     'Would you like to receive notifications for CI in Slack? (y/n) '
   );
@@ -822,7 +1189,7 @@ const setupSlack = async (repo: string) => {
   }
 
   // If they do want slack, we'll guide them through the setup
-  const parsedGithubUrl = repo.replace('.git', '');
+  const parsedGithubUrl = githubUrl.replace('.git', '');
   console.log('\nTo receive notifications, please:');
   console.log(
     '1. Install the GitHub app in your Slack workspace: https://slack.github.com/'
@@ -894,63 +1261,22 @@ const setupCrispChat = async () => {
   console.log('✔ Crisp Chat websiteId saved to config.\n');
 };
 
-// ---------- DOCS SITE HELPER ----------
-/** Sets up the docs site if the user wants it */
-const setupDocsSite = async ({ domain }: { domain?: string }) => {
-  console.log('Setting up docs site...');
-
-  const sstConfigPath = path.resolve('sst.config.ts');
-  let sstConfig = fs.readFileSync(sstConfigPath, 'utf8');
-
-  // Check if the docs site is already enabled (uncommented in sst.config.ts)
-  if (!/\/\/\s*await import\(['"]\.\/infra\/docs['"]\);/.test(sstConfig)) {
-    console.log('✔ Docs site already configured.\n');
-    return;
-  }
-
-  // Ask if they want to set up the docs site
-  const doSetup = await promptYesNo(
-    'Would you like to set up a website for documentation? (y/n) '
-  );
-  if (!doSetup) {
-    console.log('Docs site setup skipped.\n');
-    return;
-  }
-
-  // Let them know what the docs site domain will be
-  if (domain) {
-    console.log(
-      `✔ Docs site domain set to docs.${domain} (prod) and <stage>.docs.${domain} (other stages).`
-    );
-  } else {
-    console.log('✔ Docs site will be set up without a custom domain.');
-  }
-
-  // Update sst.config.ts to uncomment the docs import
-  sstConfig = sstConfig.replace(
-    /\s*\/\/\s*await import\(['"]\.\/infra\/docs['"]\);/,
-    '\n    await import("./infra/docs");'
-  );
-  fs.writeFileSync(sstConfigPath, sstConfig);
-  console.log('✔ Enabled docs site stack in sst.config.ts.\n');
-};
-
 // ---------- AXIOM HELPERS ----------
 /** Guides the user through setting up Axiom observability */
 const setupAxiom = async (): Promise<boolean> => {
   console.log('Setting up Axiom observability...');
 
   // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) {
-    initSecrets();
+  if (Object.keys(devEnv).length === 0) {
+    initEnv();
   }
 
   // Check if Axiom is already configured in SST secrets
   if (
-    devSecrets.AXIOM_TOKEN &&
-    prodSecrets.AXIOM_TOKEN &&
-    devSecrets.AXIOM_DATASET &&
-    prodSecrets.AXIOM_DATASET
+    devEnv.AXIOM_TOKEN &&
+    prodEnv.AXIOM_TOKEN &&
+    devEnv.AXIOM_DATASET &&
+    prodEnv.AXIOM_DATASET
   ) {
     console.log('✔ Axiom already configured.\n');
     return true;
@@ -997,26 +1323,19 @@ const setupAxiom = async (): Promise<boolean> => {
     }
   }
 
-  // Add secrets to SST
-  console.log('\nAdding Axiom secrets to SST...');
-  execSync(`bun tsx ${addSecretScript} AXIOM_TOKEN "${token}" "${token}"`);
-  execSync(
-    `bun tsx ${addSecretScript} AXIOM_DATASET "${dataset}" "${dataset}"`
-  );
-
-  // Uncomment secrets in infra/secrets.ts
-  const secretsPath = path.resolve('infra/secrets.ts');
-  let secretsContent = fs.readFileSync(secretsPath, 'utf8');
-  secretsContent = secretsContent.replaceAll(
-    '// export const AXIOM_TOKEN',
-    'export const AXIOM_TOKEN'
-  );
-  secretsContent = secretsContent.replaceAll(
-    '// export const AXIOM_DATASET',
-    'export const AXIOM_DATASET'
-  );
-  fs.writeFileSync(secretsPath, secretsContent);
-  console.log('✔ Axiom secrets have been set in SST.\n');
+  // Save environment variables
+  console.log('\nAdding Axiom environment variables to Vercel...');
+  await addEnvVar({
+    name: 'AXIOM_TOKEN',
+    devValue: token,
+    prodValue: token,
+  });
+  await addEnvVar({
+    name: 'AXIOM_DATASET',
+    devValue: dataset,
+    prodValue: dataset,
+  });
+  console.log('✔ Axiom environment variables have been set.\n');
 
   return true;
 };
@@ -1026,16 +1345,16 @@ const setupLangfuse = async () => {
   console.log('Setting up Langfuse...');
 
   // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) {
-    initSecrets();
+  if (Object.keys(devEnv).length === 0) {
+    initEnv();
   }
 
   // Check if Langfuse is already configured in SST secrets
   if (
-    devSecrets.LANGFUSE_SECRET_KEY &&
-    prodSecrets.LANGFUSE_SECRET_KEY &&
-    devSecrets.LANGFUSE_PUBLIC_KEY &&
-    prodSecrets.LANGFUSE_PUBLIC_KEY
+    devEnv.LANGFUSE_SECRET_KEY &&
+    prodEnv.LANGFUSE_SECRET_KEY &&
+    devEnv.LANGFUSE_PUBLIC_KEY &&
+    prodEnv.LANGFUSE_PUBLIC_KEY
   ) {
     console.log('✔ Langfuse already configured.\n');
     return true;
@@ -1076,28 +1395,19 @@ const setupLangfuse = async () => {
     }
   }
 
-  // Add secrets to SST
-  console.log('\nAdding Langfuse secrets to SST...');
-  execSync(
-    `bun tsx ${addSecretScript} LANGFUSE_SECRET_KEY "${secretKey}" "${secretKey}"`
-  );
-  execSync(
-    `bun tsx ${addSecretScript} LANGFUSE_PUBLIC_KEY "${publicKey}" "${publicKey}"`
-  );
-
-  // Uncomment secrets in infra/secrets.ts
-  const secretsPath = path.resolve('infra/secrets.ts');
-  let secretsContent = fs.readFileSync(secretsPath, 'utf8');
-  secretsContent = secretsContent.replaceAll(
-    '// export const LANGFUSE_SECRET_KEY',
-    'export const LANGFUSE_SECRET_KEY'
-  );
-  secretsContent = secretsContent.replaceAll(
-    '// export const LANGFUSE_PUBLIC_KEY',
-    'export const LANGFUSE_PUBLIC_KEY'
-  );
-  fs.writeFileSync(secretsPath, secretsContent);
-  console.log('✔ Langfuse secrets have been set in SST.\n');
+  // Save environment variables
+  console.log('\nAdding Langfuse environment variables to Vercel...');
+  await addEnvVar({
+    name: 'LANGFUSE_SECRET_KEY',
+    devValue: secretKey,
+    prodValue: secretKey,
+  });
+  await addEnvVar({
+    name: 'LANGFUSE_PUBLIC_KEY',
+    devValue: publicKey,
+    prodValue: publicKey,
+  });
+  console.log('✔ Langfuse environment variables have been set.\n');
 
   return true;
 };
@@ -1116,14 +1426,14 @@ const setupLoops = async () => {
   const resetPasswordId = resetPasswordMatch ? resetPasswordMatch[1] : '';
 
   // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) {
-    initSecrets();
+  if (Object.keys(devEnv).length === 0) {
+    initEnv();
   }
 
   // Check if Loops is already configured (API key in secrets and resetPassword in config)
   if (
-    devSecrets.LOOPS_API_KEY &&
-    prodSecrets.LOOPS_API_KEY &&
+    devEnv.LOOPS_API_KEY &&
+    prodEnv.LOOPS_API_KEY &&
     resetPasswordId &&
     resetPasswordId !== ''
   ) {
@@ -1156,18 +1466,14 @@ const setupLoops = async () => {
     }
   }
 
-  // Store the API key as a secret for both dev and prod
-  execSync(`bun tsx ${addSecretScript} LOOPS_API_KEY "${apiKey}" "${apiKey}"`);
-
-  // Uncomment secrets in infra/secrets.ts
-  const secretsPath = path.resolve('infra/secrets.ts');
-  let secretsContent = fs.readFileSync(secretsPath, 'utf8');
-  secretsContent = secretsContent.replaceAll(
-    '// export const LOOPS_API_KEY',
-    'export const LOOPS_API_KEY'
-  );
-  fs.writeFileSync(secretsPath, secretsContent);
-  console.log('✔ Loops API key has been set in SST.\n');
+  // Save environment variables
+  console.log('\nAdding Loops environment variables to Vercel...');
+  await addEnvVar({
+    name: 'LOOPS_API_KEY',
+    devValue: apiKey,
+    prodValue: apiKey,
+  });
+  console.log('✔ Loops environment variables have been set.\n');
 
   // Guide to creating the transactional email
   console.log(
@@ -1261,8 +1567,8 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
   console.log('Setting up Stripe...');
 
   // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) {
-    initSecrets();
+  if (Object.keys(devEnv).length === 0) {
+    initEnv();
   }
 
   // Read config
@@ -1277,17 +1583,17 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
   // Initialize all the required variables
   let prodPublishableKey = publishableKeyMatch?.[1] || '';
   let devPublishableKey = publishableKeyMatch?.[2] || '';
-  let prodSecretKey = prodSecrets.STRIPE_SECRET_KEY || '';
-  let devSecretKey = devSecrets.STRIPE_SECRET_KEY || '';
-  let prodWebhookSecret = prodSecrets.STRIPE_WEBHOOK_SECRET || '';
-  let devWebhookSecret = devSecrets.STRIPE_WEBHOOK_SECRET || '';
+  let prodSecretKey = prodEnv.STRIPE_SECRET_KEY || '';
+  let devSecretKey = devEnv.STRIPE_SECRET_KEY || '';
+  let prodWebhookSecret = prodEnv.STRIPE_WEBHOOK_SECRET || '';
+  let devWebhookSecret = devEnv.STRIPE_WEBHOOK_SECRET || '';
 
   // Check if Stripe is already configured (secret key in secrets and publishable key in config)
   if (
-    devSecrets.STRIPE_SECRET_KEY &&
-    prodSecrets.STRIPE_SECRET_KEY &&
-    devSecrets.STRIPE_WEBHOOK_SECRET &&
-    prodSecrets.STRIPE_WEBHOOK_SECRET &&
+    devEnv.STRIPE_SECRET_KEY &&
+    prodEnv.STRIPE_SECRET_KEY &&
+    devEnv.STRIPE_WEBHOOK_SECRET &&
+    prodEnv.STRIPE_WEBHOOK_SECRET &&
     devPublishableKey &&
     devPublishableKey !== '' &&
     prodPublishableKey &&
@@ -1429,31 +1735,14 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     }
   }
 
-  // Store the secret keys in SST secrets
-  console.log('\nAdding Stripe secrets to SST...');
-  if (hasLiveAccount) {
-    execSync(
-      `bun tsx ${addSecretScript} STRIPE_SECRET_KEY "${devSecretKey}" "${prodSecretKey}"`
-    );
-  } else {
-    execSync(
-      `bun sst secret set STRIPE_SECRET_KEY "${devSecretKey}" --fallback`
-    );
-  }
-
-  // Uncomment secrets in infra/secrets.ts
-  const secretsPath = path.resolve('infra/secrets.ts');
-  let secretsContent = fs.readFileSync(secretsPath, 'utf8');
-  secretsContent = secretsContent.replaceAll(
-    '// export const STRIPE_SECRET_KEY',
-    'export const STRIPE_SECRET_KEY'
-  );
-  secretsContent = secretsContent.replaceAll(
-    '// export const STRIPE_WEBHOOK_SECRET',
-    'export const STRIPE_WEBHOOK_SECRET'
-  );
-  fs.writeFileSync(secretsPath, secretsContent);
-  console.log('✔ Stripe secret keys have been set in SST.');
+  // Save environment variables
+  console.log('\nAdding Stripe environment variables to Vercel...');
+  await addEnvVar({
+    name: 'STRIPE_SECRET_KEY',
+    devValue: devSecretKey,
+    prodValue: hasLiveAccount ? prodSecretKey : undefined,
+  });
+  console.log('✔ Stripe environment variables have been set.\n');
 
   // Update config with publishable keys
   configContent = configContent.replace(
@@ -1574,16 +1863,12 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     }
 
     // Set webhook secrets if we have them
-    console.log('\nAdding webhook secrets to SST...');
-    if (prodWebhookSecret) {
-      execSync(
-        `bun tsx ${addSecretScript} STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" "${prodWebhookSecret}"`
-      );
-    } else {
-      execSync(
-        `bun sst secret set STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" --fallback`
-      );
-    }
+    console.log('\nAdding Stripe webhook secret to Vercel...');
+    await addEnvVar({
+      name: 'STRIPE_WEBHOOK_SECRET',
+      devValue: devWebhookSecret,
+      prodValue: prodWebhookSecret,
+    });
 
     console.log('✔ Stripe webhook setup complete!');
   } else {
@@ -1594,15 +1879,15 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     );
     console.log('To set up Stripe webhooks manually:');
     console.log(
-      '1. Deploy your infrastructure first (dev and prod) and note the API URL from the output:'
+      '1. Deploy your backend first (preview and production) and note the API URL from the output:'
     );
-    console.log('   - bun run deploy');
-    console.log('   - bun run deploy --stage prod');
+    console.log('   - bun backend deploy');
+    console.log('   - bun backend deploy:prod');
     console.log(
       '2. Go to https://dashboard.stripe.com/webhooks (do this in both test/sandbox and live accounts)'
     );
     console.log(
-      '3. Create a new webhook endpoint with URL: https://your-sst-api-url.com/api/auth/stripe/webhook'
+      '3. Create a new webhook endpoint with URL: https://<your-api-url>/api/auth/stripe/webhook'
     );
     console.log('4. Select the following events:');
     console.log('   - checkout.session.completed');
@@ -1670,41 +1955,50 @@ const init = async () => {
   // Check that all CLI tools are setup
   checkCLIs();
 
+  // Select the GitHub repo we'll be pushing to
+  const githubConfig = await configureGithubUrl();
+
   // Get and possibly update the project name
   const projectName = await getProjectName();
 
   // Get and possibly update the web url
   const domain = await getDomain();
 
-  // Link to Vercel
-  await linkVercel();
+  // Setup Vercel
+  const vercelConfig = await setupVercel({
+    projectName,
+    githubRepo: githubConfig.repo,
+    domain,
+  });
+
+  // Pull existing environment variables to check what's already configured
+  initEnv();
 
   // Setup Supabase
-  const dbConfig = await setupSupabase(projectName);
+  const dbConfig = await setupSupabase({ projectName });
 
   // Mark existing migrations as applied (to avoid prisma being out of sync)
   applyExistingMigrations();
 
   // Setup Better Auth
-  setupBetterAuth();
+  await setupBetterAuth();
 
   // Setup PostHog
-  const posthogConfig = await setupPosthog(projectName);
+  const posthogConfig = await setupPosthog({ projectName });
 
-  // Configure github url and secrets
-  const githubUrl = await setupGithub({
+  // Setup GitHub secrets
+  setupGithubSecrets({
+    githubConfig,
+    vercelConfig,
     dbConfig,
     posthogConfig,
   });
 
   // Setup Slack
-  await setupSlack(githubUrl);
+  await setupSlack({ githubUrl: githubConfig.url });
 
   // Setup Crisp Chat
   await setupCrispChat();
-
-  // Setup docs site
-  await setupDocsSite({ domain });
 
   // Setup Axiom observability
   await setupAxiom();

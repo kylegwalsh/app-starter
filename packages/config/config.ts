@@ -30,6 +30,8 @@ export const config = {
   app: {
     /** The name of the project */
     name: 'My App',
+    /** The primary domain for the project */
+    domain: '',
     /** The url of the project (found differently for frontend and backend) */
     url: 'TODO:',
   },
