@@ -2014,6 +2014,9 @@ const init = async () => {
 
   // Print final notes
   printFinalNotes({ posthogSetup: !!posthogConfig, loopsSetup, stripeConfig });
+
+  // End the script
+  process.exit(0);
 };
 
 // Only run init if this file is executed directly (not imported)

@@ -1,7 +1,11 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+// This script is used to pull environment variables from Vercel and generate TypeScript types.
+
+// ---------- HELPERS ----------
 /**
  * Pulls environment variables from Vercel and generates TypeScript types.
  * Returns all env vars as an object for programmatic use.
@@ -13,7 +17,8 @@ export const pullEnvVars = ({
   env: 'production' | 'preview' | 'development';
   shouldUpdateTypes?: boolean;
 }): Record<string, string> => {
-  const backendDir = resolve('apps/backend');
+  const currentFileDir = dirname(fileURLToPath(import.meta.url));
+  const backendDir = resolve(currentFileDir, '../..');
   const envPath = join(backendDir, '.env');
   const envDtsPath = join(backendDir, 'env.d.ts');
 
@@ -21,12 +26,10 @@ export const pullEnvVars = ({
 
   try {
     // Pull env vars from Vercel (creates/updates .env file)
-    execSync(
-      `vercel env pull .env --yes --environment=${env} --cwd apps/backend`,
-      {
-        stdio: 'inherit',
-      }
-    );
+    execSync(`vercel env pull .env --yes --environment=${env}`, {
+      stdio: 'inherit',
+      cwd: backendDir,
+    });
   } catch (error) {
     console.error('❌ Failed to pull environment variables from Vercel');
     throw error;
@@ -93,13 +96,11 @@ ${interfaceProperties}
 `;
 };
 
-// If run directly, execute the pull with defaults (development environment, update types)
-const scriptPath = process.argv[1];
-const isMainModule =
-  import.meta.url === `file://${scriptPath}` ||
-  (scriptPath !== undefined && import.meta.url.endsWith(scriptPath));
-
-if (isMainModule) {
+// ---------- DIRECT INVOCATION ----------
+// If we are running the script directly, we should run the logic below (this check avoids running it on simple imports)
+const currentFile = fileURLToPath(import.meta.url).replace(/\.ts$/, '');
+const executedFile = process.argv[1].replace(/\.ts$/, '');
+if (currentFile === executedFile) {
   try {
     // CI invocation - update types
     pullEnvVars({ env: 'development', shouldUpdateTypes: true });

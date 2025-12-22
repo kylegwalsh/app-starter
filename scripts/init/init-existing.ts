@@ -16,6 +16,9 @@ const initExisting = () => {
 
   // Print final notes
   printFinalNotes();
+
+  // End the script
+  process.exit(0);
 };
 
 initExisting();
