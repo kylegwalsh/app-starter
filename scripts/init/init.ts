@@ -45,6 +45,18 @@ const checkGhAuth = () => {
   }
 };
 
+/** Check if the user is authenticated with GitHub CLI */
+const installSstProviders = () => {
+  try {
+    execSync('bun sst install', { stdio: 'inherit' });
+  } catch {
+    console.log(
+      "❌ Failed to install SST providers. Please run 'bun sst install' and try again.\n"
+    );
+    process.exit(1);
+  }
+};
+
 /** Check if required CLIs are installed */
 export const checkCLIs = () => {
   console.log('Checking CLI tools...');
@@ -69,6 +81,8 @@ export const checkCLIs = () => {
 
   // Check that the user is authenticated with gh
   checkGhAuth();
+
+  installSstProviders();
 
   console.log('✔ All CLI tools are installed\n');
 };
@@ -95,6 +109,8 @@ const configureGithubUrl = async () => {
       } else {
         console.log("No GitHub remote 'origin' is set.");
       }
+
+      let urlToUse: string | undefined;
 
       // Ask if they want to use a different repo
       const useDifferentRepo = await promptYesNo(
@@ -125,10 +141,35 @@ const configureGithubUrl = async () => {
         execSync(`git ls-remote ${newUrl}`);
 
         console.log('✔ Updated repo\n');
-        return newUrl;
+        urlToUse = newUrl;
+      } else {
+        if (!currentUrl) {
+          console.log(
+            '❌ No GitHub URL available. Please provide a GitHub repo URL.\n'
+          );
+          continue;
+        }
+        console.log('✔ Using current repo\n');
+        urlToUse = currentUrl;
       }
-      console.log('✔ Using current repo\n');
-      return currentUrl;
+
+      // Validate that we can parse the repo from the URL
+      if (!urlToUse) {
+        console.log('❌ Unable to configure GitHub URL. Please try again.\n');
+        continue;
+      }
+
+      // Parse the repo from the URL
+      const match = urlToUse.match(/[:/]([^/]+\/[^/.]+)(?:\.git)?$/);
+      const repo = match ? match[1] : '';
+      if (!repo) {
+        console.log(
+          '❌ Unable to parse GitHub repo from remote URL. Please verify the URL format.\n'
+        );
+        continue;
+      }
+
+      return { url: urlToUse, repo };
     } catch {
       console.log(
         '❌ Unable to connect to the provided GitHub URL. Please verify the URL and try again.\n'
@@ -150,13 +191,8 @@ const setupGithub = async ({
   console.log('Setting up GitHub...');
 
   // Configure the GitHub URL and extract the repo path
-  const githubUrl = await configureGithubUrl();
-  if (!githubUrl) {
-    console.log('❌ Unable to configure GitHub URL. Please try again.');
-    throw new Error('Failed to configure GitHub URL');
-  }
-  const match = githubUrl.match(/[:/]([^/]+\/[^/.]+)(?:\.git)?$/);
-  const repo = match ? match[1] : '';
+  const githubConfig = await configureGithubUrl();
+  const { repo } = githubConfig;
 
   console.log('Setting up GitHub environments and secrets...');
 
@@ -211,7 +247,7 @@ const setupGithub = async ({
 
   console.log('✔ GitHub environments and secrets have been set up.\n');
 
-  return githubUrl;
+  return githubConfig;
 };
 
 // ---------- PROJECT DETAIL HELPERS ----------
@@ -222,7 +258,7 @@ const getProjectName = async () => {
   const configPath = path.resolve('packages/config/config.ts');
   let configContent = fs.readFileSync(configPath, 'utf8');
   const appNameMatch = configContent.match(
-    /app:\s*{[^}]*name:\s*['"][^'"]*['"]/s
+    /app:\s*{[^}]*name:\s*['"]([^'"]*)['"]/s
   );
   let appName = appNameMatch ? appNameMatch[1] : undefined;
 
@@ -434,7 +470,7 @@ const getAllSecrets = (stage: string) => {
 };
 
 /** Script for adding secrets to SST */
-const addSecretScript = path.resolve('apps/backend/scripts/add-secret.ts');
+const addEnvScript = path.resolve('apps/backend/scripts/env:add.ts');
 /** SST secrets for dev environment */
 let devSecrets: Record<string, string> = {};
 /** SST secrets for prod environment */
@@ -591,10 +627,10 @@ export const selectOrCreateAwsProfile = async ({
         ...profiles.map((p) => `Use existing profile: ${p}`),
         'Create new profile...',
       ];
-      const selected = await promptSelect(
-        `Profile "${profile}" not found in AWS credentials. What would you like to do?`,
-        choices
-      );
+      const selected = await promptSelect({
+        message: `Profile "${profile}" not found in AWS credentials. What would you like to do?`,
+        choices,
+      });
 
       // If the user wants to create a new profile, prompt for the credentials
       if (selected === 'Create new profile...') {
@@ -637,10 +673,10 @@ export const selectOrCreateAwsProfile = async ({
   // Otherwise, we're initializing a new project and need to prompt the user for a profile
   else {
     const choices = [...profiles, 'Create new profile...'];
-    const selected = await promptSelect(
-      'Which AWS profile would you like to use?',
-      choices
-    );
+    const selected = await promptSelect({
+      message: 'Which AWS profile would you like to use?',
+      choices,
+    });
 
     if (selected === 'Create new profile...') {
       // Prompt for new profile details
@@ -785,10 +821,10 @@ const promptValidSupabaseUrl = async (promptMsg: string): Promise<string> => {
 };
 
 /**
- * Guides the user through setting up Supabase, generates DATABASE_URL and DIRECT_DATABASE_URL for dev and prod,
- * and calls the add-secret script to store them.
+ * Guides the user through setting up Supabase, generates DATABASE_URL and DIRECT_DATABASE_URL
+ * for dev and prod, and calls the env:add script to store them.
  */
-const setupSupabase = async (projectName: string) => {
+const setupSupabase = async ({ projectName }: { projectName: string }) => {
   console.log('Setting up Supabase...');
 
   const databaseConfig = {
@@ -873,14 +909,14 @@ const setupSupabase = async (projectName: string) => {
   const prodUrls = generateSupabaseUrls(prodBaseUrl, prodPassword);
   const devUrls = generateSupabaseUrls(devBaseUrl, devPassword);
 
-  // --- Call add-secret script for each secret ---
+  // --- Call env:add script for each secret ---
   console.log('\nAdding Supabase secrets to SST...');
   // For prod
   execSync(
-    `bun tsx ${addSecretScript} DIRECT_DATABASE_URL "${devUrls.directUrl}" "${prodUrls.directUrl}"`
+    `bun tsx ${addEnvScript} DIRECT_DATABASE_URL "${devUrls.directUrl}" "${prodUrls.directUrl}"`
   );
   execSync(
-    `bun tsx ${addSecretScript} DATABASE_URL "${devUrls.dbUrl}" "${prodUrls.dbUrl}"`
+    `bun tsx ${addEnvScript} DATABASE_URL "${devUrls.dbUrl}" "${prodUrls.dbUrl}"`
   );
   console.log('✔ Supabase secrets have been set in SST.\n');
 
@@ -984,7 +1020,7 @@ const setupBetterAuth = () => {
   // Add secret to SST
   console.log('Adding Better Auth secret to SST...');
   execSync(
-    `bun tsx ${addSecretScript} BETTER_AUTH_SECRET "${randomString}" "${randomString}"`
+    `bun tsx ${addEnvScript} BETTER_AUTH_SECRET "${randomString}" "${randomString}"`
   );
   console.log('✔ Better Auth secret has been set in SST.\n');
 
@@ -997,7 +1033,7 @@ type PosthogOrg = { id: string; name: string };
 type PosthogProject = { id: string; api_token: string };
 
 /** Guides the user through setting up PostHog, including API key, org/project selection/creation, and saves config */
-const setupPosthog = async (projectName: string) => {
+const setupPosthog = async ({ projectName }: { projectName: string }) => {
   console.log('Setting up PostHog...');
 
   const configPath = path.resolve('packages/config/config.ts');
@@ -1056,10 +1092,10 @@ const setupPosthog = async (projectName: string) => {
           value: org.id,
         }));
       orgChoices.push({ name: 'Create new organization...', value: 'new' });
-      const selectedOrgId = await promptSelect(
-        'Select a PostHog organization:',
-        orgChoices.map((o) => o.name)
-      );
+      const selectedOrgId = await promptSelect({
+        message: 'Select a PostHog organization:',
+        choices: orgChoices.map((o) => o.name),
+      });
       let orgId = orgChoices.find((o) => o.name === selectedOrgId)?.value;
 
       // If the user wants to create a new organization, prompt for a name and create it
@@ -1132,7 +1168,7 @@ const setupPosthog = async (projectName: string) => {
  * Guides the user through setting up Slack notifications for CI.
  * If the user opts in, instructs them to install the GitHub app and run the subscribe command.
  */
-const setupSlack = async (repo: string) => {
+const setupSlack = async ({ githubUrl }: { githubUrl: string }) => {
   const wantsSlack = await promptYesNo(
     'Would you like to receive notifications for CI in Slack? (y/n) '
   );
@@ -1143,7 +1179,7 @@ const setupSlack = async (repo: string) => {
   }
 
   // If they do want slack, we'll guide them through the setup
-  const parsedGithubUrl = repo.replace('.git', '');
+  const parsedGithubUrl = githubUrl.replace('.git', '');
   console.log('\nTo receive notifications, please:');
   console.log(
     '1. Install the GitHub app in your Slack workspace: https://slack.github.com/'
@@ -1320,10 +1356,8 @@ const setupAxiom = async (): Promise<boolean> => {
 
   // Add secrets to SST
   console.log('\nAdding Axiom secrets to SST...');
-  execSync(`bun tsx ${addSecretScript} AXIOM_TOKEN "${token}" "${token}"`);
-  execSync(
-    `bun tsx ${addSecretScript} AXIOM_DATASET "${dataset}" "${dataset}"`
-  );
+  execSync(`bun tsx ${addEnvScript} AXIOM_TOKEN "${token}" "${token}"`);
+  execSync(`bun tsx ${addEnvScript} AXIOM_DATASET "${dataset}" "${dataset}"`);
 
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
@@ -1400,10 +1434,10 @@ const setupLangfuse = async () => {
   // Add secrets to SST
   console.log('\nAdding Langfuse secrets to SST...');
   execSync(
-    `bun tsx ${addSecretScript} LANGFUSE_SECRET_KEY "${secretKey}" "${secretKey}"`
+    `bun tsx ${addEnvScript} LANGFUSE_SECRET_KEY "${secretKey}" "${secretKey}"`
   );
   execSync(
-    `bun tsx ${addSecretScript} LANGFUSE_PUBLIC_KEY "${publicKey}" "${publicKey}"`
+    `bun tsx ${addEnvScript} LANGFUSE_PUBLIC_KEY "${publicKey}" "${publicKey}"`
   );
 
   // Uncomment secrets in infra/secrets.ts
@@ -1478,7 +1512,7 @@ const setupLoops = async () => {
   }
 
   // Store the API key as a secret for both dev and prod
-  execSync(`bun tsx ${addSecretScript} LOOPS_API_KEY "${apiKey}" "${apiKey}"`);
+  execSync(`bun tsx ${addEnvScript} LOOPS_API_KEY "${apiKey}" "${apiKey}"`);
 
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
@@ -1524,9 +1558,9 @@ const setupLoops = async () => {
     `resetPassword: '${transactionalId}'`
   );
   fs.writeFileSync(configPath, configContent);
-  console.log('✔ Loops reset password transactional ID saved to config.\n');
+  console.log('✔ Loops reset password transactional ID saved to config.');
+  console.log('✔ Loops setup complete!\n');
 
-  console.log('Loops setup complete!');
   return true;
 };
 
@@ -1754,7 +1788,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
   console.log('\nAdding Stripe secrets to SST...');
   if (hasLiveAccount) {
     execSync(
-      `bun tsx ${addSecretScript} STRIPE_SECRET_KEY "${devSecretKey}" "${prodSecretKey}"`
+      `bun tsx ${addEnvScript} STRIPE_SECRET_KEY "${devSecretKey}" "${prodSecretKey}"`
     );
   } else {
     execSync(
@@ -1790,8 +1824,9 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     let authContent = fs.readFileSync(authPath, 'utf8');
 
     // Find and uncomment the entire stripe block using regex
-    // This regex matches the entire stripe block from "// stripe({" to "// }),"
-    const stripeBlockRegex = /^(\s*)\/\/ stripe\(\{[\s\S]*?^(\s*)\/\/ \}\),$/gm;
+    // This regex matches the entire stripe block from "// stripePlugin({" to "// }),"
+    const stripeBlockRegex =
+      /^(\s*)\/\/ stripePlugin\(\{[\s\S]*?^(\s*)\/\/ \}\),$/gm;
 
     const hasStripeBlock = stripeBlockRegex.test(authContent);
 
@@ -1897,7 +1932,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     console.log('\nAdding webhook secrets to SST...');
     if (prodWebhookSecret) {
       execSync(
-        `bun tsx ${addSecretScript} STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" "${prodWebhookSecret}"`
+        `bun tsx ${addEnvScript} STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" "${prodWebhookSecret}"`
       );
     } else {
       execSync(
@@ -1930,7 +1965,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     console.log('   - customer.subscription.deleted');
     console.log('5. Copy the webhook signing secret and set it as a secret:');
     console.log(
-      '   bun backend add-secret STRIPE_WEBHOOK_SECRET "your-dev-webhook-secret" "your-prod-webhook-secret"\n'
+      '   bun backend env:add STRIPE_WEBHOOK_SECRET "your-dev-webhook-secret" "your-prod-webhook-secret"\n'
     );
     await promptUser('Press enter to continue...');
   }
@@ -1959,7 +1994,7 @@ const printFinalNotes = ({
   loopsSetup: boolean;
   stripeConfig: Awaited<ReturnType<typeof setupStripe>>;
 }) => {
-  console.log('--- Final Steps ---');
+  console.log('--- Final Notes ---');
   console.log('You can start the app with: bun dev\n');
 
   // Mention Stripe setup if they configured it
@@ -2018,7 +2053,7 @@ const init = async () => {
   const awsConfig = await selectOrCreateAwsProfile();
 
   // Setup Supabase
-  const dbConfig = await setupSupabase(projectName);
+  const dbConfig = await setupSupabase({ projectName });
 
   // Mark existing migrations as applied (to avoid prisma being out of sync)
   applyExistingMigrations();
@@ -2027,17 +2062,17 @@ const init = async () => {
   setupBetterAuth();
 
   // Setup PostHog
-  const posthogConfig = await setupPosthog(projectName);
+  const posthogConfig = await setupPosthog({ projectName });
 
   // Configure github url and secrets
-  const githubUrl = await setupGithub({
+  const githubConfig = await setupGithub({
     awsConfig,
     dbConfig,
     posthogConfig,
   });
 
   // Setup Slack
-  await setupSlack(githubUrl);
+  await setupSlack({ githubUrl: githubConfig.url });
 
   // Setup Crisp Chat
   await setupCrispChat();
@@ -2059,6 +2094,9 @@ const init = async () => {
 
   // Print final notes
   printFinalNotes({ posthogSetup: !!posthogConfig, loopsSetup, stripeConfig });
+
+  // End the script
+  process.exit(0);
 };
 
 // Only run init if this file is executed directly (not imported)

@@ -91,10 +91,10 @@ alwaysApply: false
 <secrets_and_environment>
 
 - Usage: Use the `env` export from `@repo/config` to access env vars.
-- Adding Secrets: Use the `add-secret` script to add new secrets to both dev and prod environments:
+- Adding Secrets: Use the `env:add` script to add new secrets to both dev and prod environments:
 
   ```bash
-  bun backend add-secret MY_SECRET_KEY "dev-value" "prod-value"
+  bun backend env:add MY_SECRET_KEY "dev-value" "prod-value"
   ```
 
   After running the script, **always add the export to `infra/secrets.ts`**:

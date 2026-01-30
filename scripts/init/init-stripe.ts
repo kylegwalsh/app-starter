@@ -9,6 +9,9 @@ const initStripe = async () => {
 
   // Setup Stripe
   await setupStripe({ domain });
+
+  // End the script
+  process.exit(0);
 };
 
 initStripe();

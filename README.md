@@ -305,7 +305,7 @@ _Environments: `dev`, `staging`, `prod`_
   To add environment variables to the backend, run:
 
   ```sh
-  bun backend add-secret
+  bun backend env:add
   ```
 
   This will start a helper script that guides you through securely adding secrets to your backend environment.

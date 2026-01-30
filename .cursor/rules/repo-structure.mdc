@@ -45,7 +45,7 @@ alwaysApply: true
   - tRPC React client + TanStack Query; Jotai for global state
   - Better Auth client integration; PostHog analytics and sourcemaps
 - `apps/backend`:
-  - SST (AWS), Hono, tRPC server with SuperJSON
+  - SST (AWS), tRPC for primary API
   - Prisma with Postgres, Stripe integration, Better Auth server
   - Vitest for backend tests; migrations and DB helpers under `scripts/`
 - `apps/storybook`:

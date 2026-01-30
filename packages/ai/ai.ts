@@ -168,6 +168,8 @@ export const models = {
   //   'gemini-2.5-flash': google('gemini-2.5-flash'),
   // },
 };
+/** The default model to use for AI generation */
+const defaultModel = models.bedrock['claude-4-5-haiku'];
 
 // ---------- METHODS ----------
 /** It's pretty painful to match and extend the type of the generateObject method, but this gets close */
@@ -270,7 +272,7 @@ export const ai = {
   /** Generate text using an LLM */
   generateText: traceGeneration(
     async ({
-      model = models.bedrock['claude-4-5-haiku'],
+      model = defaultModel,
       name,
       parentTraceId,
       ...rest
@@ -293,7 +295,7 @@ export const ai = {
   /** Generate an object using an LLM */
   generateObject: traceGeneration(
     async <SCHEMA extends z.ZodType<any, any, any>>({
-      model = models.bedrock['claude-4-5-haiku'],
+      model = defaultModel,
       name,
       parentTraceId,
       ...rest

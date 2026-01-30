@@ -1,6 +1,6 @@
 # Backend
 
-This app provides the serverless backend for the monorepo. It is built with SST (AWS), Hono, tRPC (with OpenAPI generation), Prisma/Postgres, and Better Auth. It exposes:
+This app provides the serverless backend for the monorepo. It is built with SST (AWS), tRPC (with OpenAPI generation), Hono (for auth endpoints), Prisma/Postgres, and Better Auth. It exposes:
 
 - tRPC endpoints under `/trpc`
 - REST endpoints (generated from tRPC via OpenAPI metadata) under `/api`
@@ -79,6 +79,7 @@ Infrastructure is managed by SST. See the root-level `sst.config.ts` and the `in
 ## API Entrypoints
 
 - `functions/api.ts`
+
   - Delegates to:
     - tRPC handler for paths starting with `/trpc`
     - REST handler (OpenAPI) for paths starting with `/api`
@@ -147,4 +148,4 @@ Key `package.json` scripts:
 
 - `auth:generate`: Regenerates `db/schema.prisma` fields from Better Auth config.
 - `db:*`: Helpers for Prisma (push, migrate, studio, generate).
-- `add-secret`: Interactive helper to add new backend secrets.
+- `env:add`: Interactive helper to add new backend secrets.

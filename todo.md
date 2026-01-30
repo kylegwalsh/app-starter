@@ -23,9 +23,31 @@
 ## POSTHOG LOGS
 
 - See if we can deprecate axiom in favor of posthog logs
+- Remove weird log level thing we added for axiom (remove axiom as well)
+
+## POSTHOG MESSAGING
+
+- They are rolling out a new messaging system that will replace crisp
+
+## ORPC
+
+- Move oRPC deps out of root package.json
+- Remove all tRPC packages
+- Try to get it working instead of tRPC
 
 ## OTHER
 
+- Tell AI to use react-hook-form for all forms
+- Tell AI that we use bun as the workspace manager
+- Replace cursor rules with AGENTS.md / skills and test in cursor + claude
+- Ensure starter supports sending invites
+- Experiment with ox as a biome replacement
+- Add route outputs to tRPC file for types
+- Add new cursor rules to app starter
+- Update button with loading state
+- Login wrote password to url params???
+- Experiment with Sherif as replacement to manypkg and add linting step to CI
+- Collocate tests next to the files they test
 - Ensure CI file is properly formatted on Windows and Mac (Windows doesn't seem to replace double quotes with single quotes)
 - Try to upgrade prisma and see how they handle the direct url (once better documented). The vscode extension currently complains about our prisma schema file being out of date.
 - Ensure that SST mono mode kills NextJS ports after web e2e test (keeping port active after run)
@@ -34,6 +56,7 @@
 
 ## MINOR IMPROVEMENTS
 
+- Remove ts-node override after vercel CLI is updated to newer TS: https://github.com/vercel/vercel/issues/8680
 - Disable autoplay of storybook stories when supported: https://github.com/storybookjs/storybook/discussions/25011
 - Remove the patch we applied to the AI SDK after this PR is addressed: https://github.com/vercel/ai/issues/9593
 - Upgrade SST to see if it improves windows support (like hot reloading backend when modifying packages outside the backend)

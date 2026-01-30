@@ -5,7 +5,7 @@ import {
 } from './init.js';
 
 const printFinalNotes = () => {
-  console.log('--- Final Steps ---');
+  console.log('--- Final Notes ---');
   console.log('You can start the app with: bun dev\n');
 
   console.log(
@@ -29,6 +29,9 @@ const initExisting = async () => {
 
   // Print final notes
   printFinalNotes();
+
+  // End the script
+  process.exit(0);
 };
 
 initExisting();
