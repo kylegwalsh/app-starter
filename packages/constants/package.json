@@ -16,6 +16,6 @@
     "@better-auth/stripe": "1.4.2",
     "@biomejs/biome": "2.3.4",
     "@repo/tsconfig": "workspace:*",
-    "typescript": "5.8.3"
+    "typescript": "5.7.2"
   }
 }

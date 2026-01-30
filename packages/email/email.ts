@@ -1,9 +1,9 @@
-import { config, env } from '@repo/config';
+import { config } from '@repo/config';
 import { LoopsClient } from 'loops';
 
 /** The Loops client */
-const loops = (env as Record<string, string>).LOOPS_API_KEY
-  ? new LoopsClient((env as Record<string, string>).LOOPS_API_KEY)
+const loops = process.env.LOOPS_API_KEY
+  ? new LoopsClient(process.env.LOOPS_API_KEY)
   : undefined;
 
 /** Methods related to email */

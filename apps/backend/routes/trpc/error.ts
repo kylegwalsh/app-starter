@@ -1,6 +1,5 @@
 import { analytics } from '@repo/analytics';
 import type { TRPCError, TRPCProcedureType } from '@trpc/server';
-import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 
 import type { createContext } from './context';
 
@@ -10,7 +9,7 @@ export const onError = ({
 }: {
   error: TRPCError;
   ctx?: Awaited<ReturnType<typeof createContext>>;
-  req: APIGatewayProxyEventV2;
+  req: Request;
   type: TRPCProcedureType | 'unknown';
   path: string | undefined;
   input: unknown;

@@ -2,7 +2,7 @@
 
 This monorepo serves as a starter template for building new applications using a modern, scalable tech stack. It provides a unified structure for managing multiple services and packages, streamlining development, testing, and deployment workflows.
 
-The template is designed for rapid internal development and seamless deployment to AWS, making it easy to bootstrap new projects with best practices and essential integrations out of the box.
+The template is designed for rapid internal development and seamless deployment to Vercel, making it easy to bootstrap new projects with best practices and essential integrations out of the box.
 
 ---
 
@@ -26,7 +26,7 @@ The template is designed for rapid internal development and seamless deployment 
 - [Running Locally](#running-locally)
   - [Start All Apps](#start-all-apps)
 - [Deployment](#deployment)
-  - [Deploy to AWS](#deploy-to-aws)
+  - [Deploy to Vercel](#deploy-to-vercel)
   - [Continuous Integration & Delivery](#continuous-integration--delivery)
     - [Current Workflow (Rapid Development)](#current-workflow-rapid-development)
     - [Proposed Workflow (Larger Projects)](#proposed-workflow-larger-projects)
@@ -50,7 +50,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Authentication:** Built-in authentication powered by Better Auth.
 - **Payments:** Stripe integration for subscriptions and one-time payments.
 - **Database:** Supabase for scalable, hosted Postgres and real-time data.
-- **Backend:** Serverless backend managed with SST, deployed to AWS.
+- **Backend:** Serverless backend deployed to Vercel.
 - **Web Frontend:** Next.js for fast, modern web applications.
 - **Documentation:** [Fumadocs](https://fumadocs.org/) for building a documentation site (optional, see below).
 - **Continuous Integration:** Automated testing and deployment via GitHub Actions.
@@ -66,7 +66,7 @@ This starter template comes pre-configured with a robust set of features to acce
 
 - **bun:** Fast, efficient package manager for managing dependencies and monorepo workspaces.
 - **Turborepo:** High-performance build system for orchestrating scripts and tasks across all packages.
-- **SST:** Infrastructure as code framework for deploying serverless backends and resources to **AWS**.
+- **Vercel:** Platform for deploying serverless backends and frontend applications.
 - **Supabase:** Hosted Postgres database with real-time capabilities.
 - **Prisma:** Type-safe ORM for database access and migrations.
 - **Better Auth:** Modern authentication library for managing users and organizations (integrates with Stripe).
@@ -91,7 +91,7 @@ _All packages and apps are written in TypeScript for consistency and type safety
 /
 ├── apps/              # Deployable applications (frontend, backend, documentation)
 │   ├── web/           # Next.js frontend app
-│   ├── backend/       # Serverless backend (SST)
+│   ├── backend/       # Serverless backend (Vercel)
 │   ├── storybook/     # Storybook documentation and testing for components
 │   └── docs/          # (Optional) Fumadocs-powered documentation app (deployment disabled by default)
 ├── packages/          # Shared packages and utilities
@@ -101,18 +101,9 @@ _All packages and apps are written in TypeScript for consistency and type safety
 │   ├── schemas/       # Shared schemas (forms + validation)
 │   ├── logs/          # Shared logging package (uses pino)
 │   └── ...
-├── infra/             # Infrastructure code (SST, AWS)
-│   ├── api.ts         # Backend API infrastructure
-│   ├── web.ts         # Web-app deployment infrastructure
-│   ├── secrets.ts     # Backend environment secrets
-│   ├── docs.ts        # (Optional) Documentation site deployment infrastructure
-│   ├── ping-db.ts     # Simple function to keep free database awake
-│   ├── utils.ts       # Shared utils (domain helpers, etc.)
-│   └── ...
 ├── scripts/           # Helper scripts for setup and development
 ├── .github/           # GitHub Actions workflows
 ├── templates/         # Project/package templates
-├── sst.config.ts      # SST configuration
 ├── package.json
 ├── README.md
 └── ...
@@ -120,7 +111,6 @@ _All packages and apps are written in TypeScript for consistency and type safety
 
 - **apps/**: Deployable applications (frontend, backend, documentation).
 - **packages/**: Shared libraries, configs, and utilities (expandable).
-- **infra/**: Infrastructure configuration and deployment scripts (SST, AWS).
 - **scripts/**: Helper scripts for setup and development.
 - **.github/**: CI/CD workflows and automation.
 - **templates/**: Templates for scaffolding new projects or packages.
@@ -139,16 +129,13 @@ Before you start, make sure you have the following tools installed and configure
 - **Node.js** (recommend using nvm) - [Install guide](https://github.com/nvm-sh/nvm#install--update-script)
 - **bun** (for package and monorepo management) — [Install guide](https://bun.sh/docs/installation)
 - **gh** (GitHub CLI) — [Install guide](https://github.com/cli/cli#installation)
-- **aws-cli** (AWS CLI) — [Install guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - **Docker** (for running a shadow DB for migrations) — [Install guide](https://docs.docker.com/get-docker/)
 
-You'll also want to make sure you have an [AWS account](https://signin.aws.amazon.com/signup?request_type=register) setup.
+You'll also want to make sure you have a [Vercel account](https://vercel.com/signup) setup.
 
 ### Initial Project Setup
 
 Use this section when setting up the starter template for the first time or creating a new project.
-
-> **Note:** The setup script works best if you already have a domain purchased and managed by AWS Route 53
 
 #### 1. Install Base Dependencies
 
@@ -164,10 +151,10 @@ bun run init
 
 This interactive script will guide you through configuring all the services and integrations:
 
-- Verifies required CLIs are installed and authenticated (bun, gh, aws-cli)
+- Verifies required CLIs are installed and authenticated (bun, gh, vercel)
 - Prompts for your project name, environment name, and domain
 - Ensures your repository is connected to GitHub
-- Initializes AWS credentials and profile for deployment
+- Initializes Vercel project and environment variables
 - Guides you through setting up Supabase projects (production and development)
 - Configures Better Auth for authentication
 - Configures Loops for email (e.g., password reset, onboarding, user campaigns)
@@ -221,7 +208,7 @@ bun dev
 This command will:
 
 - Launch the Next.js frontend (`apps/web`)
-- Start the backend using SST locally (`apps/backend`)
+- Start the backend serverless functions locally using Vercel (`apps/backend`)
 - Connect to your Supabase database
 - Generate any required types and assets
 
@@ -231,18 +218,25 @@ This command will:
 
 ## Deployment
 
-Deployments are managed using SST and AWS, with automated workflows powered by GitHub Actions.
+Deployments are managed using Vercel, with automated workflows powered by GitHub Actions.
 
-### Deploy to AWS
+### Deploy to Vercel
+
+**Preview Deployment:**
 
 ```sh
 bun run deploy
 ```
 
-This will:
+Deploys your apps to a unique Vercel preview URL, perfect for testing and sharing changes before releasing to production.
 
-- Deploy your serverless backend and infrastructure using SST
-- Sync environment variables and secrets as configured during setup
+**Production Deployment:**
+
+```sh
+bun run deploy:prod
+```
+
+Deploys the latest production build of your apps to Vercel, making it live for all users.
 
 ### Continuous Integration & Delivery
 
@@ -305,7 +299,7 @@ _Environments: `dev`, `staging`, `prod`_
   To add environment variables to the backend, run:
 
   ```sh
-  bun backend add-secret
+  bun backend env:add
   ```
 
   This will start a helper script that guides you through securely adding secrets to your backend environment.

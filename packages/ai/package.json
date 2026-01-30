@@ -16,7 +16,7 @@
     "@biomejs/biome": "2.3.4",
     "@repo/config": "workspace:*",
     "@repo/tsconfig": "workspace:*",
-    "typescript": "5.8.3"
+    "typescript": "5.7.2"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "3.0.43",
@@ -24,7 +24,6 @@
     "@ai-sdk/google": "2.0.23",
     "@ai-sdk/openai": "2.0.52",
     "@ai-sdk/provider": "2.0.0",
-    "@aws-sdk/credential-providers": "3.908.0",
     "@langfuse/client": "4.2.0",
     "@langfuse/otel": "4.2.0",
     "@langfuse/tracing": "4.2.0",

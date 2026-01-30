@@ -1,7 +1,7 @@
 import { stripe as stripePlugin } from '@better-auth/stripe';
 import type { Organization } from '@prisma/client';
 import { analytics } from '@repo/analytics';
-import { config, env } from '@repo/config';
+import { config } from '@repo/config';
 import { plans } from '@repo/constants';
 import { email } from '@repo/email';
 import { type BetterAuthOptions, betterAuth } from 'better-auth';
@@ -122,7 +122,7 @@ const getActiveOrganization = async ({
 // ---------- CONFIG ----------
 /** The config for our Better Auth instance (defined separately to avoid TypeScript issues) */
 const authConfig = {
-  secret: env.BETTER_AUTH_SECRET,
+  secret: process.env.BETTER_AUTH_SECRET,
   baseURL: config.api.url,
   appName: config.app.name,
   trustedOrigins: [config.app.url as string],
@@ -293,8 +293,7 @@ const authConfig = {
     apiKeyPlugin(),
     stripePlugin({
       stripeClient,
-      stripeWebhookSecret: (env as Record<string, string>)
-        .STRIPE_WEBHOOK_SECRET,
+      stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
       createCustomerOnSignUp: true,
       // Configure stripe plans
       subscription: {

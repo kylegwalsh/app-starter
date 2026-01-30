@@ -97,6 +97,5 @@ await ai.scoreTrace({ traceId, score: true, comment: 'This is a good summary!' }
 
 Notes:
 
-- Langfuse is activated when the required env vars are present and running in AWS. Telemetry is attached automatically to generations.
-- The default provider is Amazon Bedrock (using AWS credentials from the Lambda environment). Other providers are scaffolded and can be enabled with API keys.
+- Langfuse is activated when the required env vars are present. Telemetry is attached automatically to generations.
 - Use `startActiveObservation` to create logical groupings of AI operations in your traces, making it easier to analyze and debug complex workflows in Langfuse.

@@ -1,10 +1,8 @@
 /* biome-ignore-all lint/suspicious/noExplicitAny: We need a few explicit any's here */
-import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
-// import { createAnthropic } from '@ai-sdk/anthropic';
-// import { createGoogleGenerativeAI } from '@ai-sdk/google';
-// import { createOpenAI } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createOpenAI } from '@ai-sdk/openai';
 import type { LanguageModelV2 } from '@ai-sdk/provider';
-import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
 import { LangfuseClient } from '@langfuse/client';
 import { LangfuseSpanProcessor } from '@langfuse/otel';
 import {
@@ -15,7 +13,7 @@ import {
   updateActiveTrace,
 } from '@langfuse/tracing';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { config, env } from '@repo/config';
+import { config } from '@repo/config';
 import { addLogMetadata, getLogMetadata } from '@repo/logs';
 import {
   type GenerateObjectResult,
@@ -33,15 +31,14 @@ let langfuseSpanProcessor: LangfuseSpanProcessor | undefined;
 
 /** Check if Langfuse is enabled */
 const langfuseEnabled =
-  (env as Record<string, string>).LANGFUSE_SECRET_KEY &&
-  (env as Record<string, string>).LANGFUSE_PUBLIC_KEY;
+  process.env.LANGFUSE_SECRET_KEY && process.env.LANGFUSE_PUBLIC_KEY;
 
 // Only initialize Langfuse if it's setup
 if (langfuseEnabled) {
   /** Config for Langfuse */
   const langfuseConfig: ConstructorParameters<typeof LangfuseClient>[0] = {
-    secretKey: (env as Record<string, string>).LANGFUSE_SECRET_KEY,
-    publicKey: (env as Record<string, string>).LANGFUSE_PUBLIC_KEY,
+    secretKey: process.env.LANGFUSE_SECRET_KEY,
+    publicKey: process.env.LANGFUSE_PUBLIC_KEY,
     baseUrl: 'https://us.cloud.langfuse.com',
   };
 
@@ -49,7 +46,7 @@ if (langfuseEnabled) {
   langfuse = new LangfuseClient(langfuseConfig);
   langfuseSpanProcessor = new LangfuseSpanProcessor({
     ...langfuseConfig,
-    environment: config.stage,
+    environment: config.env,
     exportMode: 'immediate',
   });
   const tracerProvider = new NodeTracerProvider({
@@ -69,7 +66,7 @@ const traceGeneration = <TArgs extends unknown[], TReturn>(
     }
 
     // Get our log data (indicates if we have a top-level request trace)
-    const { langfuseTraceId, userId, awsRequestId, request } = getLogMetadata();
+    const { langfuseTraceId, userId, requestId, request } = getLogMetadata();
     // See if we have an active trace wrapping this invocation (indicates we're inside another observation)
     const activeTraceId = getActiveTraceId();
     const activeSpanId = getActiveSpanId();
@@ -87,7 +84,7 @@ const traceGeneration = <TArgs extends unknown[], TReturn>(
     // If we haven't created a parent trace yet, we'll create one and make note of it
     let createdTrace = false;
     if (!traceId) {
-      traceId = await createTraceId(awsRequestId);
+      traceId = await createTraceId(requestId);
       createdTrace = true;
     }
 
@@ -107,7 +104,7 @@ const traceGeneration = <TArgs extends unknown[], TReturn>(
             name: topLevelObservationName,
             userId,
             metadata: {
-              awsRequestId,
+              requestId,
             },
           });
 
@@ -133,41 +130,31 @@ const traceGeneration = <TArgs extends unknown[], TReturn>(
 };
 
 // ---------- MODELS ----------
-const bedrock = createAmazonBedrock({
-  // We can inherit our AWS function permissions using this method
-  credentialProvider: fromNodeProviderChain(),
-  region: 'us-east-1',
+const anthropic = createAnthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
 });
-// const anthropic = createAnthropic({
-//   apiKey: env.ANTHROPIC_API_KEY,
-// });
-// const openai = createOpenAI({
-//   apiKey: env.OPENAI_API_KEY,
-// });
-// const google = createGoogleGenerativeAI({
-//   apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
-// });
+const openai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+});
 
 /** Our available AI models */
 export const models = {
-  bedrock: {
-    'claude-4-5-haiku': bedrock('us.anthropic.claude-haiku-4-5-20251001-v1:0'),
-    'claude-4-5-sonnet': bedrock(
-      'us.anthropic.claude-sonnet-4-5-20250929-v1:0'
-    ),
+  anthropic: {
+    'claude-haiku-4-5': anthropic('claude-haiku-4-5'),
+    'claude-sonnet-4-5': anthropic('claude-sonnet-4-5'),
   },
-  // anthropic: {
-  //   'claude-haiku-4-5': anthropic('claude-haiku-4-5'),
-  //   'claude-sonnet-4-5': anthropic('claude-sonnet-4-5'),
-  // },
-  // openai: {
-  //   'gpt-5': openai('gpt-5'),
-  //   'gpt-5-mini': openai('gpt-5-mini'),
-  // },
-  // google: {
-  //   'gemini-2.5-flash': google('gemini-2.5-flash'),
-  // },
+  openai: {
+    'gpt-5': openai('gpt-5'),
+    'gpt-5-mini': openai('gpt-5-mini'),
+  },
+  google: {
+    'gemini-2.5-flash': google('gemini-2.5-flash'),
+  },
 };
+const defaultModel = models.openai['gpt-5'];
 
 // ---------- METHODS ----------
 /** It's pretty painful to match and extend the type of the generateObject method, but this gets close */
@@ -270,7 +257,7 @@ export const ai = {
   /** Generate text using an LLM */
   generateText: traceGeneration(
     async ({
-      model = models.bedrock['claude-4-5-haiku'],
+      model = defaultModel,
       name,
       parentTraceId,
       ...rest
@@ -293,7 +280,7 @@ export const ai = {
   /** Generate an object using an LLM */
   generateObject: traceGeneration(
     async <SCHEMA extends z.ZodType<any, any, any>>({
-      model = models.bedrock['claude-4-5-haiku'],
+      model = defaultModel,
       name,
       parentTraceId,
       ...rest

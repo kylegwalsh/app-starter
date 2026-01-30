@@ -402,10 +402,10 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
       await safeInvoke(() => {
         // Track the error differently based on platform
         if (platform === 'backend') {
-          const { awsRequestId, userId, langfuseTraceId, request } =
+          const { requestId, userId, langfuseTraceId, request } =
             getLogMetadata?.() ?? {};
           platformAnalytics.captureException(error, userId as string, {
-            awsRequestId,
+            requestId,
             langfuseTraceId,
             path: request?.path,
             method: request?.method,

@@ -1,16 +1,5 @@
-import { readFileSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
 import { config } from '@repo/config';
-
-// Read AWS_PROFILE from VSCode settings (ensures we use the correct profile if it's defined there)
-let AWS_PROFILE = '';
-try {
-  const content = readFileSync('../../.vscode/settings.json', 'utf-8');
-  const match = content.match(/"AWS_PROFILE"\s*:\s*"([^"]+)"/);
-  AWS_PROFILE = match?.[1] ?? '';
-} catch {
-  // Do nothing
-}
 
 // Sets up our playwright test environment
 // https://playwright.dev/docs/test-configuration
@@ -64,14 +53,12 @@ export default defineConfig({
     : {
         // Run your local dev server before starting the tests
         cwd: '../..',
-        // Run in mono mode since we don't need the multiplexer UI
-        command: 'bun sst dev --mode mono',
+        // Start the dev apps
+        command: 'bun dev',
         port: 3000,
         reuseExistingServer: true,
         stdout: 'pipe',
         stderr: 'pipe',
         timeout: 180_000, // 3 minutes
-        // When working with multiple projects, this ensures we use the repo specific profile
-        env: { ...process.env, ...(AWS_PROFILE && { AWS_PROFILE }) },
       },
 });

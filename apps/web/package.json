@@ -4,15 +4,16 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "sst shell -- next dev",
-    "start": "sst shell -- next start",
+    "dev": "next dev",
+    "start": "next start",
     "build": "next build",
-    "build:analyze": "cross-env ANALYZE=true NEXT_PUBLIC_STAGE=dev sst shell -- next build",
-    "test": "sst shell -- vitest run",
-    "test:ci": "cross-env LOG_LEVEL=silent sst shell --stage minimal -- vitest run --silent",
-    "test:ui": "sst shell -- vitest --ui",
-    "test:e2e": "sst shell -- playwright test",
-    "test:e2e:ci": "sst shell --stage minimal -- playwright test",
+    "build:analyze": "cross-env ANALYZE=true NEXT_PUBLIC_STAGE=dev next build",
+    "deploy": "vercel deploy",
+    "deploy:prod": "vercel deploy --prod",
+    "test": "vitest run",
+    "test:ci": "cross-env LOG_LEVEL=silent vitest run --silent",
+    "test:ui": "vitest --ui",
+    "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "lint": "ultracite check .",
     "lint:fix": "ultracite fix .",
@@ -22,6 +23,7 @@
   },
   "dependencies": {
     "@daveyplate/better-auth-ui": "3.0.2",
+    "@orpc/client": "1.12.3",
     "@posthog/nextjs-config": "1.0.0",
     "@repo/analytics": "workspace:*",
     "@repo/config": "workspace:*",
@@ -55,6 +57,6 @@
     "@types/react-dom": "19.1.5",
     "jsdom": "26.1.0",
     "tailwindcss": "4.1.7",
-    "typescript": "5.8.3"
+    "typescript": "5.7.2"
   }
 }

@@ -1,8 +1,8 @@
 import { analytics } from '@repo/analytics';
 import { Hono } from 'hono';
-import { handle } from 'hono/aws-lambda';
+import { handle } from 'hono/vercel';
 
-import { auth, withLambdaContext } from '@/core';
+import { auth, withVercelContext } from '@/core';
 
 /** Create a hono instance to handle routing for our auth routes */
 const app = new Hono();
@@ -18,5 +18,4 @@ app.on(['POST', 'GET'], '/**', async (c) => {
 });
 
 /** The main entry point for the auth API */
-// @ts-expect-error - The event type for the handler is slightly different from the true AWS event type
-export const handler = withLambdaContext<'api'>(handle(app));
+export default withVercelContext(handle(app));

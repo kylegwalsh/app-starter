@@ -12,15 +12,15 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "sst dev",
+    "dev:vercel": "concurrently \"vercel dev apps/backend --yes\" \"vercel dev apps/web --yes\" --kill-others-on-fail",
     "backend": "cd apps/backend && bun",
     "web": "cd apps/web && bun",
     "docs": "cd apps/docs && bun",
     "storybook": "cd apps/storybook && bun",
     "design": "cd packages/design && bun",
-    "build": "sst build",
-    "deploy": "bun backend db:generate && sst deploy",
-    "unlock": "sst unlock",
+    "build": "turbo build",
+    "deploy": "turbo deploy",
+    "deploy:prod": "turbo deploy:prod",
     "test": "turbo test --continue",
     "test:ci": "turbo test:ci --continue",
     "lint": "ultracite check .",
@@ -39,9 +39,13 @@
   "devDependencies": {
     "@biomejs/biome": "2.3.4",
     "@manypkg/cli": "0.24.0",
+    "@orpc/client": "1.12.3",
+    "@orpc/openapi": "1.12.3",
+    "@orpc/server": "1.12.3",
+    "@orpc/tanstack-query": "1.12.3",
+    "@orpc/zod": "1.12.3",
     "@posthog/cli": "0.3.3",
     "@repo/tsconfig": "workspace:*",
-    "@types/aws-lambda": "8.10.149",
     "@types/inquirer": "9.0.9",
     "@vitest/ui": "3.1.4",
     "axios": "1.9.0",
@@ -53,16 +57,21 @@
     "jsdom": "26.1.0",
     "lint-staged": "15.2.2",
     "prettier": "3.4.2",
-    "sst": "3.17.10",
+    "ts-node": "10.9.2",
     "tsx": "4.19.4",
     "turbo": "2.5.3",
-    "typescript": "5.8.3",
+    "typescript": "5.7.2",
     "ultracite": "6.3.2",
+    "vercel": "50.1.6",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "3.1.4",
     "zod": "3.25.49"
   },
   "patchedDependencies": {
     "ai@5.0.104": "patches/ai@5.0.104.patch"
+  },
+  "resolutions": {
+    "ts-node": "10.9.2",
+    "typescript": "5.7.2"
   }
 }
