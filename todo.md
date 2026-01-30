@@ -37,11 +37,13 @@
 
 ## OTHER
 
-- Tell AI to use react-hook-form for all forms
-- Tell AI that we use bun as the workspace manager
+- Changing active organization should invalidate all requests
 - Replace cursor rules with AGENTS.md / skills and test in cursor + claude
+  - Tell AI to use react-hook-form for all forms
+  - Tell AI that we use bun as the workspace manager
 - Ensure starter supports sending invites
 - Experiment with ox as a biome replacement
+  - See if ox can replace type checking as well
 - Add route outputs to tRPC file for types
 - Add new cursor rules to app starter
 - Update button with loading state
