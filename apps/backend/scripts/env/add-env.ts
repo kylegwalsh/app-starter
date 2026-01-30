@@ -12,11 +12,6 @@ import { pullEnvVars } from './pull-env.js';
 // This script is used to add environment variables to our prod and dev environments in the cloud
 
 // ---------- HELPERS ----------
-/** Create an interface to get user input */
-const rl = createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
 /** Ensure our commands can run in parallel */
 const execAsync = promisify(exec);
 
@@ -34,7 +29,7 @@ const addEnvVarToSingleEnvironment = async (
 ): Promise<void> => {
   // Escape the value for shell safety
   const escapedValue = value.replace(/'/g, "'\"'\"'");
-  const command = `echo '${escapedValue}' | vercel env add ${name} ${environment} --yes`;
+  const command = `echo '${escapedValue}' | vercel env add ${name} ${environment}`;
   await execAsync(command, {
     stdio: 'inherit',
     cwd: backendDir,
@@ -107,6 +102,11 @@ if (currentFile === executedFile) {
 
     process.exit(0);
   }
+
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
 
   // Otherwise, we'll collect all the necessary information to create the variable
   rl.question(

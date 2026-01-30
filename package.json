@@ -12,7 +12,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "turbo dev",
+    "dev:vercel": "concurrently \"vercel dev apps/backend --yes\" \"vercel dev apps/web --yes\" --kill-others-on-fail",
     "backend": "cd apps/backend && bun",
     "web": "cd apps/web && bun",
     "docs": "cd apps/docs && bun",
@@ -57,15 +57,21 @@
     "jsdom": "26.1.0",
     "lint-staged": "15.2.2",
     "prettier": "3.4.2",
+    "ts-node": "10.9.2",
     "tsx": "4.19.4",
     "turbo": "2.5.3",
-    "typescript": "5.8.3",
+    "typescript": "5.7.2",
     "ultracite": "6.3.2",
+    "vercel": "50.1.6",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "3.1.4",
     "zod": "3.25.49"
   },
   "patchedDependencies": {
     "ai@5.0.104": "patches/ai@5.0.104.patch"
+  },
+  "resolutions": {
+    "ts-node": "10.9.2",
+    "typescript": "5.7.2"
   }
 }

@@ -32,25 +32,39 @@ export const promptYesNo = async (question: string): Promise<boolean> => {
   }
 };
 
-/**
- * Prompt the user to select from a list of choices using arrow keys.
- * @param message The message to display
- * @param choices The list of choices (array of strings)
- * @returns The selected choice (string)
- */
-export const promptSelect = async (
-  message: string,
-  choices: string[]
-): Promise<string> => {
+/** Prompt the user to select from a list of choices  */
+export const promptSelect = async <T extends 'list' | 'checkbox' = 'list'>({
+  message,
+  choices,
+  type = 'list' as T,
+}: {
+  /** The message to display */
+  message: string;
+  /** The choices to display (array of strings or object mapping values to labels) */
+  choices: string[] | Record<string, string>;
+  /**
+   * The type of select (list for single select or checkbox for multi-select)
+   * @default 'list'
+   */
+  type?: T;
+}): Promise<T extends 'list' ? string : string[]> => {
+  const isObject = !Array.isArray(choices);
+  const choiceList = isObject
+    ? Object.keys(choices).map((value) => ({
+        name: choices[value],
+        value,
+      }))
+    : choices;
+
   const response = await inquirer.prompt<{
-    selected: string;
+    selected: T extends 'list' ? string : string[];
   }>([
     {
-      type: 'list',
+      type,
       name: 'selected',
       message,
-      choices,
+      choices: choiceList,
     },
   ]);
-  return response.selected;
+  return response.selected as T extends 'list' ? string : string[];
 };

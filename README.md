@@ -129,7 +129,6 @@ Before you start, make sure you have the following tools installed and configure
 - **Node.js** (recommend using nvm) - [Install guide](https://github.com/nvm-sh/nvm#install--update-script)
 - **bun** (for package and monorepo management) — [Install guide](https://bun.sh/docs/installation)
 - **gh** (GitHub CLI) — [Install guide](https://github.com/cli/cli#installation)
-- **vercel** (Vercel CLI) — [Install guide](https://vercel.com/docs/cli)
 - **Docker** (for running a shadow DB for migrations) — [Install guide](https://docs.docker.com/get-docker/)
 
 You'll also want to make sure you have a [Vercel account](https://vercel.com/signup) setup.

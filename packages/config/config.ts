@@ -31,14 +31,16 @@ export const config = {
     /** The name of the project */
     name: 'My App',
     /** The primary domain for the project */
-    domain: '',
+    domain: 'linkfactoryai.com',
     /** The url of the project (found differently for frontend and backend) */
-    url: 'TODO:',
+    // TODO: Change to actual url
+    url: 'http://localhost:3000',
   },
   /** Details for our backend API */
   api: {
     /** The URL of our own API (found differently for frontend and backend) */
-    url: 'TODO:',
+    // TODO: Change to actual url
+    url: 'http://localhost:5000',
   },
   /** The configuration for PostHog (our analytics system) */
   posthog: {

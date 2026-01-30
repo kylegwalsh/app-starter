@@ -27,7 +27,7 @@ export const pullEnvVars = ({
   try {
     // Pull env vars from Vercel (creates/updates .env file)
     execSync(`vercel env pull .env --yes --environment=${env}`, {
-      stdio: 'inherit',
+      stdio: 'ignore',
       cwd: backendDir,
     });
   } catch (error) {
@@ -79,8 +79,12 @@ export const pullEnvVars = ({
  * Generates TypeScript type definitions for environment variables
  */
 const generateTypeDefinitions = (envVars: Record<string, string>): string => {
-  const keys = Object.keys(envVars).sort();
-  const interfaceProperties = keys.map((key) => `  ${key}: string;`).join('\n');
+  const keys = Object.keys(envVars)
+    .filter((key) => key !== 'VERCEL_OIDC_TOKEN') // Ignore VERCEL_OIDC_TOKEN
+    .sort();
+  const interfaceProperties = keys
+    .map((key) => `    ${key}: string;`)
+    .join('\n');
 
   return `/**
  * Environment variables pulled from Vercel

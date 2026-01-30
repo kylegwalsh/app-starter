@@ -16,7 +16,7 @@
     "@biomejs/biome": "2.3.4",
     "@repo/tsconfig": "workspace:*",
     "@types/lodash-es": "4.17.12",
-    "typescript": "5.8.3"
+    "typescript": "5.7.2"
   },
   "dependencies": {
     "change-case": "5.4.4",

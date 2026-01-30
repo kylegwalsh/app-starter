@@ -22,11 +22,6 @@ const CLI_REQUIREMENTS = [
     url: 'https://github.com/cli/cli#installation',
   },
   {
-    name: 'vercel',
-    versionCmd: 'vercel --version',
-    url: 'https://vercel.com/docs/cli',
-  },
-  {
     name: 'docker',
     versionCmd: 'docker --version',
     url: 'https://docs.docker.com/get-docker/',
@@ -48,7 +43,7 @@ const checkGhAuth = () => {
 /** Check if the user is authenticated with Vercel CLI */
 const checkVercelAuth = () => {
   try {
-    execSync('vercel whoami', { stdio: 'ignore' });
+    execSync('bunx vercel whoami', { stdio: 'ignore' });
   } catch {
     console.log(
       "❌ Vercel CLI is not authenticated. Please run 'vercel login' and try again.\n"
@@ -201,7 +196,11 @@ const setupGithubSecrets = ({
   );
 
   // Vercel token for CI deploys (repo-wide secret)
-  execSync(`gh secret set VERCEL_TOKEN -a actions -b "${vercelConfig.token}"`);
+  if (vercelConfig) {
+    execSync(
+      `gh secret set VERCEL_TOKEN -a actions -b "${vercelConfig.token}"`
+    );
+  }
 
   // Set database secrets (for each environment)
   execSync(
@@ -356,6 +355,15 @@ const initEnv = () => {
   });
 };
 
+/** Update the environment variable types */
+const updateEnvTypes = () => {
+  console.log('Updating environment variable types...');
+  pullEnvVars({
+    env: 'development',
+    shouldUpdateTypes: true,
+  });
+};
+
 // ---------- VERCEL HELPERS ----------
 /** Vercel team information */
 type VercelTeam = {
@@ -369,11 +377,6 @@ type VercelProject = {
   id: string;
   name: string;
 };
-
-/** User's selection for Vercel team/account */
-type VercelSelection =
-  | { type: 'personal' }
-  | { type: 'team'; team: VercelTeam };
 
 /** Top-level Vercel API instance (initialized after token/team selection) */
 let vercelApi: AxiosInstance;
@@ -397,19 +400,13 @@ const initVercelApi = ({
 };
 
 /** List all teams the user has access to */
-const listTeams = async (): Promise<VercelTeam[]> => {
+const listVercelTeams = async (): Promise<VercelTeam[]> => {
   const res = await vercelApi.get<{ teams: VercelTeam[] }>('/v2/teams');
   return res.data.teams ?? [];
 };
 
-/** Create a new Vercel team */
-const createTeam = async ({ name }: { name: string }): Promise<VercelTeam> => {
-  const res = await vercelApi.post<VercelTeam>('/v1/teams', { name });
-  return res.data;
-};
-
 /** Get a Vercel project by ID or name (returns null if not found) */
-const getProject = async ({
+const getVercelProject = async ({
   idOrName,
 }: {
   idOrName: string;
@@ -426,72 +423,77 @@ const getProject = async ({
 };
 
 /** Create a new Vercel project (or return existing if already exists) */
-const createProject = async ({
+const createVercelProject = async ({
   name,
   rootDirectory,
-  gitRepository,
+  githubRepo,
 }: {
   name: string;
   rootDirectory: string;
-  gitRepository?: {
-    type: 'github';
-    repo: string; // "owner/repo"
-  };
+  githubRepo: string;
 }): Promise<VercelProject> => {
   try {
     const res = await vercelApi.post<VercelProject>('/v11/projects', {
       name,
       rootDirectory,
-      gitRepository,
+      gitRepository: { type: 'github', repo: githubRepo },
     });
     return res.data;
   } catch (error) {
     // If it already exists, retrieve it.
     if (error instanceof AxiosError && error.response?.status === 409) {
-      const existing = await getProject({ idOrName: name });
+      const existing = await getVercelProject({ idOrName: name });
       if (existing) {
         return existing;
       }
     }
+
+    // Check if it's a GitHub connection error
+    if (error instanceof AxiosError && error.response?.data?.error?.message) {
+      const errorMessage: string = error.response.data.error.message;
+
+      if (errorMessage.includes('GitHub')) {
+        console.log(
+          'In order to automatically create your vercel projects, you need to link your GitHub account to Vercel.\n'
+        );
+
+        console.log('First, add the connection within Vercel:');
+        console.log(
+          '1. Go to: https://vercel.com/account/settings/authentication'
+        );
+        console.log('2. Click "Connect" next to GitHub\n');
+
+        console.log('Then, enable the GitHub App in your GitHub repository:');
+        console.log('3. Go to: https://github.com/apps/vercel');
+        console.log(
+          '4. Select "Configure" and ensure it can access your repository\n'
+        );
+
+        await promptUser('Press Enter to continue...');
+        console.log('');
+
+        // Retry the creation after user confirms
+        return createVercelProject({ name, rootDirectory, githubRepo });
+      }
+    }
+
     throw error;
   }
 };
 
 /** Add a custom domain to a Vercel project */
-const addDomainToProject = async ({
+const addDomainToVercelProject = async ({
   projectIdOrName,
   domain,
-  gitBranch,
 }: {
   projectIdOrName: string;
   domain: string;
-  gitBranch?: string;
 }): Promise<void> => {
   try {
     // Add the domain
     await vercelApi.post(`/v10/projects/${projectIdOrName}/domains`, {
       name: domain,
     });
-
-    // If gitBranch is specified, assign the domain to that branch
-    if (gitBranch) {
-      try {
-        await vercelApi.patch(
-          `/v9/projects/${projectIdOrName}/domains/${domain}`,
-          {
-            gitBranch,
-          }
-        );
-      } catch (branchError) {
-        // If branch assignment fails, log but don't fail the whole operation
-        // (domain is still added, just not branch-assigned)
-        if (branchError instanceof AxiosError) {
-          console.warn(
-            `⚠️  Could not assign ${domain} to branch ${gitBranch}: ${branchError.response?.statusText || branchError.message}`
-          );
-        }
-      }
-    }
   } catch (error) {
     // Ignore "already exists" style errors.
     if (error instanceof AxiosError) {
@@ -504,26 +506,108 @@ const addDomainToProject = async ({
   }
 };
 
-const checkExistingVercelConfig = async () => {
-  const webVercel = fs.existsSync(path.resolve('apps/web/.vercel'));
-  const backendVercel = fs.existsSync(path.resolve('apps/backend/.vercel'));
-  const docsVercel = fs.existsSync(path.resolve('apps/docs/.vercel'));
+/** Check if Vercel is already configured by checking GitHub secrets and local .vercel directories */
+const checkShouldSkipVercelSetup = async ({
+  githubRepo,
+}: {
+  githubRepo: string;
+}) => {
+  /** Whether the vercel app was previously fully configured */
+  let alreadyConfigured = false;
+  try {
+    // Check if VERCEL_TOKEN secret exists in GitHub (implies we fully set things up once)
+    execSync(`gh api repos/${githubRepo}/actions/secrets/VERCEL_TOKEN`, {
+      stdio: 'ignore',
+    });
+    alreadyConfigured = true;
 
-  if (webVercel || backendVercel || docsVercel) {
-    const skipSetup = await promptYesNo(
-      'Vercel projects appear to be already configured. Skip project setup? (y/n) '
-    );
-    if (skipSetup) {
-      const relink = await promptYesNo(
-        'Would you like to re-link local folders to Vercel projects? (y/n) '
+    if (alreadyConfigured) {
+      const shouldRedeploy = await promptYesNo(
+        'It looks like Vercel is already configured. Would you like to re-deploy your projects? (y/n) '
       );
-      return { skip: true, relink };
+      return !shouldRedeploy;
     }
+  } catch {
+    // Secret doesn't exist
   }
 
-  return { skip: false, relink: true }; // Always link when creating projects
+  return false;
 };
 
+const selectVercelTeam = async ({
+  token,
+}: {
+  token: string;
+}): Promise<VercelTeam> => {
+  // Initialize API with token (no team yet)
+  initVercelApi({ token });
+
+  // Loop to allow them to refresh the teams list
+  while (true) {
+    const teams = await listVercelTeams();
+
+    const REFRESH_OPTION = 'Refresh teams...';
+    const choices = [...teams.map((t) => t.name), REFRESH_OPTION];
+
+    const selected = await promptSelect({
+      message: 'Select a Vercel team:',
+      choices,
+    });
+    console.log('');
+
+    // If user selected refresh, loop again to requery
+    if (selected === REFRESH_OPTION) {
+      continue;
+    }
+
+    const existing = teams.find((t) => t.name === selected);
+    if (!existing) {
+      throw new Error('Failed to resolve selected Vercel team');
+    }
+    return existing;
+  }
+};
+
+const linkVercelProject = ({
+  cwd,
+  projectName,
+  scope,
+}: {
+  cwd: string;
+  projectName: string;
+  scope?: string;
+}) => {
+  // vercel link is idempotent - safe to run even if already linked
+  const args = [
+    'bunx',
+    'vercel',
+    'link',
+    '--yes',
+    `--project ${projectName}`,
+    scope ? `--scope ${scope}` : undefined,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  execSync(args, {
+    stdio: 'inherit',
+    cwd: path.resolve(cwd),
+  });
+
+  // Delete the nested .gitignore files that vercel link creates (won't need them)
+  const cwdPath = path.resolve(cwd);
+  const gitignorePath = path.join(cwdPath, '.gitignore');
+
+  try {
+    if (fs.existsSync(gitignorePath)) {
+      fs.unlinkSync(gitignorePath);
+    }
+  } catch {
+    // Ignore errors if file doesn't exist or can't be deleted
+  }
+};
+
+/** Sets up our entire Vercel deployment and ensures everything is created / linked */
 const setupVercel = async ({
   projectName,
   githubRepo,
@@ -532,108 +616,79 @@ const setupVercel = async ({
   projectName: string;
   githubRepo: string;
   domain?: string;
-}): Promise<{
-  token: string;
-  selection: VercelSelection;
-  projects: {
-    web: VercelProject;
-    backend: VercelProject;
-    docs?: VercelProject;
-  };
-}> => {
-  // Transform project name (Title Case) to kebab-case for use as prefix
-  const projectPrefix = projectName.replaceAll(' ', '-').toLowerCase();
+}) => {
+  console.log('Setting up Vercel...');
 
-  // Prompt for optional deployments
-  const enableOptionalDeployments = async () => {
-    const docs = await promptYesNo(
-      'Would you like to set up a website for documentation? (y/n) '
-    );
-    if (!docs) {
-      console.log('Docs site setup skipped.\n');
-    }
-    return { docs };
-  };
-
-  const optionalDeployments = await enableOptionalDeployments();
-
-  const { skip, relink } = await checkExistingVercelConfig();
+  // Check whether vercel is already configured and whether the user wants to skip setup
+  const shouldSkip = await checkShouldSkipVercelSetup({
+    githubRepo,
+  });
+  if (shouldSkip) {
+    console.log('Vercel setup skipped.\n');
+    return;
+  }
 
   // Prompt for Vercel token
   let token = '';
   while (!token) {
-    token = (
-      await promptUser('Enter your Vercel token (for API + CI): ')
-    ).trim();
+    token = (await promptUser('Enter your Vercel token: ')).trim();
     if (!token) {
       console.log('Please enter a valid Vercel token.');
     }
   }
+  console.log('');
 
-  console.log('Setting up Vercel projects...');
+  // Transform project name (Title Case) to kebab-case for use as prefix
+  const projectPrefix = projectName.replaceAll(' ', '-').toLowerCase();
 
-  const selection = await selectOrCreateTeam({ token });
-  const teamId = selection.type === 'team' ? selection.team.id : undefined;
-  const teamSlug = selection.type === 'team' ? selection.team.slug : undefined;
+  // Prompt for optional apps
+  const choices = {
+    docs: 'Documentation site',
+  } as const;
+  const selectedApps = (await promptSelect({
+    message: 'Would you like to include any optional apps in your deployment?',
+    choices,
+    type: 'checkbox',
+  })) as Array<keyof typeof choices>;
+  const optionalApps = selectedApps.reduce(
+    (acc, app) => {
+      acc[app] = true;
+      return acc;
+    },
+    {} as Record<keyof typeof choices, boolean>
+  );
+
+  // Display what will be created
+  console.log('\nCreating Vercel projects for:');
+  console.log('  • Web App (required)');
+  console.log('  • Backend (required)');
+  if (optionalApps.docs) {
+    console.log('  • Documentation site (optional)');
+  }
+  console.log('');
+
+  const teamSelection = await selectVercelTeam({ token });
 
   // Re-initialize API with token + team ID
-  initVercelApi({ token, teamId });
+  initVercelApi({ token, teamId: teamSelection.id });
 
-  if (skip) {
-    // If the user wants to skip project setup, optionally re-link projects
-    if (relink) {
-      linkVercelProject({
-        cwd: 'apps/web',
-        projectName: `${projectPrefix}-web`,
-        scope: teamSlug,
-      });
-      linkVercelProject({
-        cwd: 'apps/backend',
-        projectName: `${projectPrefix}-api`,
-        scope: teamSlug,
-      });
-      if (optionalDeployments.docs) {
-        linkVercelProject({
-          cwd: 'apps/docs',
-          projectName: `${projectPrefix}-docs`,
-          scope: teamSlug,
-        });
-      }
-    }
-
-    // We can't reliably know IDs if we skipped; return placeholder names as IDs.
-    return {
-      token,
-      selection,
-      projects: {
-        web: { id: `${projectPrefix}-web`, name: `${projectPrefix}-web` },
-        backend: { id: `${projectPrefix}-api`, name: `${projectPrefix}-api` },
-        docs: optionalDeployments.docs
-          ? { id: `${projectPrefix}-docs`, name: `${projectPrefix}-docs` }
-          : undefined,
-      },
-    };
-  }
-
-  const gitRepository = { type: 'github' as const, repo: githubRepo };
-
-  const webProject = await createProject({
+  const webProject = await createVercelProject({
     name: `${projectPrefix}-web`,
     rootDirectory: 'apps/web',
-    gitRepository,
+    githubRepo,
   });
 
-  const backendProject = await createProject({
+  const backendProject = await createVercelProject({
     name: `${projectPrefix}-api`,
     rootDirectory: 'apps/backend',
-    gitRepository,
+    githubRepo,
   });
 
-  const docsProject = optionalDeployments.docs
-    ? await createProject({
+  const docsProject = optionalApps.docs
+    ? await createVercelProject({
         name: `${projectPrefix}-docs`,
         rootDirectory: 'apps/docs',
-        gitRepository,
+        githubRepo,
       })
     : undefined;
 
@@ -641,68 +696,56 @@ const setupVercel = async ({
   linkVercelProject({
     cwd: 'apps/web',
     projectName: webProject.name,
-    scope: teamSlug,
+    scope: teamSelection.slug,
   });
   linkVercelProject({
     cwd: 'apps/backend',
     projectName: backendProject.name,
-    scope: teamSlug,
+    scope: teamSelection.slug,
   });
   if (docsProject) {
     linkVercelProject({
       cwd: 'apps/docs',
       projectName: docsProject.name,
-      scope: teamSlug,
+      scope: teamSelection.slug,
     });
   }
 
+  // If we're using a custom domain, attach it to each project
   if (domain) {
-    // Optional: domain + URL env vars.
-    const appProd = `app.${domain}`;
-    const appDev = `dev.app.${domain}`;
-    const apiProd = `api.${domain}`;
-    const apiDev = `dev.api.${domain}`;
-
-    // Production domains (assigned to production branch automatically by Vercel)
-    await addDomainToProject({
+    // Web domains
+    await addDomainToVercelProject({
       projectIdOrName: webProject.id,
-      domain: appProd,
+      domain: `app.${domain}`,
     });
-    await addDomainToProject({
-      projectIdOrName: backendProject.id,
-      domain: apiProd,
-    });
-
-    // Dev domains (assigned to main branch for automatic preview deployments)
-    await addDomainToProject({
+    await addDomainToVercelProject({
       projectIdOrName: webProject.id,
-      domain: appDev,
-      gitBranch: 'main',
-    });
-    await addDomainToProject({
-      projectIdOrName: backendProject.id,
-      domain: apiDev,
-      gitBranch: 'main',
+      domain: `dev.app.${domain}`,
     });
 
+    // API domains
+    await addDomainToVercelProject({
+      projectIdOrName: backendProject.id,
+      domain: `api.${domain}`,
+    });
+    await addDomainToVercelProject({
+      projectIdOrName: backendProject.id,
+      domain: `dev.api.${domain}`,
+    });
+
+    // Docs domains (if enabled)
     if (docsProject) {
       // Production docs domain
-      await addDomainToProject({
+      await addDomainToVercelProject({
         projectIdOrName: docsProject.id,
         domain: `docs.${domain}`,
       });
       // Dev docs domain (assigned to main branch)
-      await addDomainToProject({
+      await addDomainToVercelProject({
         projectIdOrName: docsProject.id,
         domain: `dev.docs.${domain}`,
-        gitBranch: 'main',
       });
     }
-
-    console.log(
-      '\n⚠️  Note: You may need to manually set NEXT_PUBLIC_APP_URL and NEXT_PUBLIC_API_URL\n' +
-        '   for the web project in Vercel dashboard or via CLI.\n'
-    );
 
     // Output DNS instructions
     console.log('\n--- DNS Configuration Required ---');
@@ -722,74 +765,7 @@ const setupVercel = async ({
 
   return {
     token,
-    selection,
-    projects: { web: webProject, backend: backendProject, docs: docsProject },
   };
-};
-
-const selectOrCreateTeam = async ({
-  token,
-}: {
-  token: string;
-}): Promise<VercelSelection> => {
-  // Initialize API with token (no team yet)
-  initVercelApi({ token });
-  const teams = await listTeams();
-
-  const choices = [
-    'Use personal account (no team)',
-    ...teams.map((t) => t.name),
-    'Create new team...',
-  ];
-
-  const selected = await promptSelect('Select a Vercel team:', choices);
-  if (selected === 'Use personal account (no team)') {
-    return { type: 'personal' };
-  }
-
-  if (selected === 'Create new team...') {
-    let teamName = '';
-    while (!teamName) {
-      teamName = (await promptUser('Enter a name for the new team: ')).trim();
-      if (!teamName) {
-        console.log('Please enter a valid team name.');
-      }
-    }
-    const newTeam = await createTeam({ name: teamName });
-    return { type: 'team', team: newTeam };
-  }
-
-  const existing = teams.find((t) => t.name === selected);
-  if (!existing) {
-    throw new Error('Failed to resolve selected Vercel team');
-  }
-  return { type: 'team', team: existing };
-};
-
-const linkVercelProject = ({
-  cwd,
-  projectName,
-  scope,
-}: {
-  cwd: string;
-  projectName: string;
-  scope?: string;
-}) => {
-  // vercel link is idempotent - safe to run even if already linked
-  const args = [
-    'vercel',
-    'link',
-    '--yes',
-    `--project ${projectName}`,
-    scope ? `--scope ${scope}` : undefined,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
-  execSync(args, {
-    stdio: 'inherit',
-    cwd: path.resolve(cwd),
-  });
 };
 
 // ---------- SUPABASE HELPERS ----------
@@ -1102,10 +1078,10 @@ const setupPosthog = async ({ projectName }: { projectName: string }) => {
           value: org.id,
         }));
       orgChoices.push({ name: 'Create new organization...', value: 'new' });
-      const selectedOrgId = await promptSelect(
-        'Select a PostHog organization:',
-        orgChoices.map((o) => o.name)
-      );
+      const selectedOrgId = await promptSelect({
+        message: 'Select a PostHog organization:',
+        choices: orgChoices.map((o) => o.name),
+      });
       let orgId = orgChoices.find((o) => o.name === selectedOrgId)?.value;
 
       // If the user wants to create a new organization, prompt for a name and create it
@@ -1130,7 +1106,7 @@ const setupPosthog = async ({ projectName }: { projectName: string }) => {
       }
 
       // Create projects for prod and dev
-      async function createProject(
+      async function createPosthogProject(
         orgId: string,
         name: string
       ): Promise<PosthogProject> {
@@ -1142,8 +1118,11 @@ const setupPosthog = async ({ projectName }: { projectName: string }) => {
       }
 
       console.log('\nCreating projects...');
-      const prodProject = await createProject(orgId, projectName);
-      const devProject = await createProject(orgId, `${projectName} (dev)`);
+      const prodProject = await createPosthogProject(orgId, projectName);
+      const devProject = await createPosthogProject(
+        orgId,
+        `${projectName} (dev)`
+      );
       console.log('✔ PostHog projects have been created.');
 
       // Save API key in config file
@@ -1407,7 +1386,8 @@ const setupLangfuse = async () => {
     devValue: publicKey,
     prodValue: publicKey,
   });
-  console.log('✔ Langfuse environment variables have been set.\n');
+  console.log('✔ Langfuse environment variables have been set.');
+  console.log('✔ Langfuse setup complete!\n');
 
   return true;
 };
@@ -1509,9 +1489,8 @@ const setupLoops = async () => {
     `resetPassword: '${transactionalId}'`
   );
   fs.writeFileSync(configPath, configContent);
-  console.log('✔ Loops reset password transactional ID saved to config.\n');
-
-  console.log('Loops setup complete!');
+  console.log('✔ Loops reset password transactional ID saved to config.');
+  console.log('✔ Loops setup complete!\n');
   return true;
 };
 
@@ -2011,6 +1990,9 @@ const init = async () => {
 
   // Setup Stripe
   const stripeConfig = await setupStripe({ domain });
+
+  // Update the environment variable types
+  updateEnvTypes();
 
   // Print final notes
   printFinalNotes({ posthogSetup: !!posthogConfig, loopsSetup, stripeConfig });
