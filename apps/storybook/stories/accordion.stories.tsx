@@ -1,9 +1,4 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@repo/design';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
 /**
@@ -21,15 +16,12 @@ const meta = {
     <Accordion {...args}>
       <AccordionItem value="item-1">
         <AccordionTrigger>Is it accessible?</AccordionTrigger>
-        <AccordionContent>
-          Yes. It adheres to the WAI-ARIA design pattern.
-        </AccordionContent>
+        <AccordionContent>Yes. It adheres to the WAI-ARIA design pattern.</AccordionContent>
       </AccordionItem>
       <AccordionItem value="item-2">
         <AccordionTrigger>Is it styled?</AccordionTrigger>
         <AccordionContent>
-          Yes. It comes with default styles that matches the other components'
-          aesthetic.
+          Yes. It comes with default styles that matches the other components' aesthetic.
         </AccordionContent>
       </AccordionItem>
       <AccordionItem value="item-3">

@@ -1,20 +1,20 @@
 {
   "name": "@repo/constants",
   "version": "0.0.1",
-  "type": "module",
   "private": true,
+  "type": "module",
   "exports": {
     ".": "./index.ts"
   },
   "scripts": {
-    "lint": "ultracite check .",
-    "lint:fix": "ultracite fix .",
+    "lint": "oxlint check .",
+    "lint:fix": "oxlint --fix .",
+    "format": "oxfmt .",
     "types:check": "tsc --noEmit",
     "update-readme": "doctoc README.md"
   },
   "devDependencies": {
     "@better-auth/stripe": "1.4.2",
-    "@biomejs/biome": "2.3.4",
     "@repo/tsconfig": "workspace:*",
     "typescript": "5.8.3"
   }

@@ -14,9 +14,7 @@ const child = spawn(command, args, { shell: true });
 
 // Set a timeout to kill the process after 60 seconds
 const timeout = setTimeout(() => {
-  console.error(
-    '❌ Migration command timed out after 60 seconds. Exiting with error.\n'
-  );
+  console.error('❌ Migration command timed out after 60 seconds. Exiting with error.\n');
   child.kill();
   process.exit(1);
 }, 60_000);
@@ -27,9 +25,7 @@ child.stdout.on('data', (data: Buffer) => {
 
   // If the command is prompting for input, then the schema and migrations are out of sync
   if (text.includes(prompt)) {
-    console.error(
-      '❌ Migration command is prompting for input. Exiting with error.\n'
-    );
+    console.error('❌ Migration command is prompting for input. Exiting with error.\n');
     // Kill the process gracefully
     child.stdin.write('\u0003');
     process.exit(1);

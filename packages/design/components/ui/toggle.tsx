@@ -23,7 +23,7 @@ const toggleVariants = cva(
       variant: 'default',
       size: 'default',
     },
-  }
+  },
 );
 
 function Toggle({
@@ -31,8 +31,7 @@ function Toggle({
   variant,
   size,
   ...props
-}: ComponentProps<typeof TogglePrimitive.Root> &
-  VariantProps<typeof toggleVariants>) {
+}: ComponentProps<typeof TogglePrimitive.Root> & VariantProps<typeof toggleVariants>) {
   return (
     <TogglePrimitive.Root
       className={cn(toggleVariants({ variant, size, className }))}

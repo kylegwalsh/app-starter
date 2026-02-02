@@ -58,17 +58,12 @@ const ProfileForm = (args: Story['args']) => {
                   {...field}
                 />
               </FormControl>
-              <FormDescription>
-                This is your public display name.
-              </FormDescription>
+              <FormDescription>This is your public display name.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        <button
-          className="rounded bg-primary px-4 py-2 text-primary-foreground"
-          type="submit"
-        >
+        <button className="rounded bg-primary px-4 py-2 text-primary-foreground" type="submit">
           Submit
         </button>
       </form>

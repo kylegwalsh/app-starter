@@ -19,9 +19,7 @@ const meta = {
     <NavigationMenu {...args}>
       <NavigationMenuList>
         <NavigationMenuItem>
-          <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-            Overview
-          </NavigationMenuLink>
+          <NavigationMenuLink className={navigationMenuTriggerStyle()}>Overview</NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuList>
           <NavigationMenuItem>

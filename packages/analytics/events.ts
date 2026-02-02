@@ -148,13 +148,13 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
     event: string,
     properties: T extends 'web'
       ? Record<string, unknown>
-      : BackendEventProps & Record<string, unknown>
+      : BackendEventProps & Record<string, unknown>,
   ) => {
     // Track the event differently based on platform
     switch (platform) {
       case 'backend': {
-        const { userId, organizationId, ...restProperties } =
-          properties as BackendEventProps & Record<string, unknown>;
+        const { userId, organizationId, ...restProperties } = properties as BackendEventProps &
+          Record<string, unknown>;
 
         platformAnalytics.capture({
           distinctId: userId,
@@ -172,9 +172,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         break;
       }
       default: {
-        throw new Error(
-          'You forgot to define platform in when initializing analytics'
-        );
+        throw new Error('You forgot to define platform in when initializing analytics');
       }
     }
   };
@@ -239,9 +237,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
             break;
           }
           default: {
-            throw new Error(
-              'You forgot to define platform in when initializing analytics'
-            );
+            throw new Error('You forgot to define platform in when initializing analytics');
           }
         }
 
@@ -261,7 +257,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
           /** Whether the session expired or not (they could have logged out manually) */
           sessionExpired?: boolean;
         }
-      >
+      >,
     ) => {
       log.info('[analytics] Event: User Signed Out', {
         category: 'User',
@@ -298,7 +294,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         track('User Signed In', {
           ...properties,
           category: 'User',
-        })
+        }),
       );
     },
     /** Track when the user signs up */
@@ -311,7 +307,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
           /** The user's name */
           name: string;
         }
-      >
+      >,
     ) => {
       log.info('[analytics] Event: User Signed Up', {
         category: 'User',
@@ -334,7 +330,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
           /** The organization's name */
           name: string;
         }
-      >
+      >,
     ) => {
       log.info('[analytics] Event: Organization Created', {
         ...properties,
@@ -348,15 +344,8 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
       });
     },
     /** Identifies and creates the organization (if it doesn't exist) */
-    organizationIdentify: async ({
-      organizationId,
-      traits,
-    }: OrganizationIdentifyEvent) => {
-      log.info(
-        '[analytics] Event: Organization Identify',
-        organizationId,
-        traits
-      );
+    organizationIdentify: async ({ organizationId, traits }: OrganizationIdentifyEvent) => {
+      log.info('[analytics] Event: Organization Identify', organizationId, traits);
       await safeInvoke(() => {
         // Track the event differently based on platform
         switch (platform) {
@@ -375,9 +364,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
             break;
           }
           default: {
-            throw new Error(
-              'You forgot to define platform in when initializing analytics'
-            );
+            throw new Error('You forgot to define platform in when initializing analytics');
           }
         }
       });
@@ -395,15 +382,14 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
     captureException: async (
       error: unknown,
       /** Any additional properties to attach to the error */
-      properties?: Record<string, unknown>
+      properties?: Record<string, unknown>,
     ) => {
       log.error(error);
 
       await safeInvoke(() => {
         // Track the error differently based on platform
         if (platform === 'backend') {
-          const { awsRequestId, userId, langfuseTraceId, request } =
-            getLogMetadata?.() ?? {};
+          const { awsRequestId, userId, langfuseTraceId, request } = getLogMetadata?.() ?? {};
           platformAnalytics.captureException(error, userId as string, {
             awsRequestId,
             langfuseTraceId,

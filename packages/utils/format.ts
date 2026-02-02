@@ -1,5 +1,3 @@
-// biome-ignore-all lint/performance/noDynamicNamespaceImportAccess: We need to dynamically use the change-case imports
-// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
 import * as changeCase from 'change-case';
 import dayjs from 'dayjs';
 import { isArray, isObject, transform } from 'lodash-es';
@@ -32,24 +30,14 @@ export const format = {
     // Otherwise, format the keys of the object recursively
     return transform(
       obj,
-      (
-        acc: Record<string, unknown>,
-        value: unknown,
-        key: string,
-        target: unknown
-      ) => {
+      (acc: Record<string, unknown>, value: unknown, key: string, target: unknown) => {
         const camelKey = isArray(target) ? key : changeCase[casing](key);
-        acc[camelKey] = isObject(value)
-          ? format.caseKeys(value, casing)
-          : value;
-      }
+        acc[camelKey] = isObject(value) ? format.caseKeys(value, casing) : value;
+      },
     );
   },
   /** Formats a date in a shorthand fashion */
-  shorthandDate: (
-    date: string | Date,
-    dateFormat: 'monthDay' | 'monthYear'
-  ) => {
+  shorthandDate: (date: string | Date, dateFormat: 'monthDay' | 'monthYear') => {
     const baseDate = dayjs(date);
 
     switch (dateFormat) {
@@ -87,8 +75,7 @@ export const format = {
       currency: 'USD',
     }).format(number),
   /** Formats date as "Oct 31, 2018" default case (can provide override format) */
-  date: (date: Date, dateFormat = 'MMM D, YYYY') =>
-    dayjs(date).format(dateFormat),
+  date: (date: Date, dateFormat = 'MMM D, YYYY') => dayjs(date).format(dateFormat),
   /** Formats time as "12:30 PM" */
   time: (date: Date) => dayjs(date).format('h:mm A'),
 };

@@ -17,12 +17,7 @@ import {
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { config, env } from '@repo/config';
 import { addLogMetadata, getLogMetadata } from '@repo/logs';
-import {
-  type GenerateObjectResult,
-  generateObject,
-  generateText,
-  type Prompt,
-} from 'ai';
+import { type GenerateObjectResult, generateObject, generateText, type Prompt } from 'ai';
 import type { z } from 'zod';
 
 // ---------- LANGFUSE ----------
@@ -60,7 +55,7 @@ if (langfuseEnabled) {
 
 /** Automatically trace a generation in Langfuse by wrapping the generation function */
 const traceGeneration = <TArgs extends unknown[], TReturn>(
-  fn: (...args: TArgs) => Promise<TReturn>
+  fn: (...args: TArgs) => Promise<TReturn>,
 ): ((...args: TArgs) => Promise<TReturn>) => {
   return async (...args: TArgs): Promise<TReturn> => {
     // If Langfuse is not enabled, just skip the tracing
@@ -74,10 +69,8 @@ const traceGeneration = <TArgs extends unknown[], TReturn>(
     const activeTraceId = getActiveTraceId();
     const activeSpanId = getActiveSpanId();
     // See if our current observation has any specific settings
-    const observationName =
-      (args[0] as { name?: string })?.name ?? 'generation';
-    const parentTraceId = (args[0] as { parentTraceId?: string })
-      ?.parentTraceId;
+    const observationName = (args[0] as { name?: string })?.name ?? 'generation';
+    const parentTraceId = (args[0] as { parentTraceId?: string })?.parentTraceId;
 
     // Our active trace will be one of the following (in order):
     // 1. Manually provided as a parent trace id (parentTraceId)
@@ -125,7 +118,7 @@ const traceGeneration = <TArgs extends unknown[], TReturn>(
           spanId: activeSpanId ?? '0123456789abcdef',
           traceFlags: 1,
         },
-      }
+      },
     );
 
     return result;
@@ -152,9 +145,7 @@ const bedrock = createAmazonBedrock({
 export const models = {
   bedrock: {
     'claude-4-5-haiku': bedrock('us.anthropic.claude-haiku-4-5-20251001-v1:0'),
-    'claude-4-5-sonnet': bedrock(
-      'us.anthropic.claude-sonnet-4-5-20250929-v1:0'
-    ),
+    'claude-4-5-sonnet': bedrock('us.anthropic.claude-sonnet-4-5-20250929-v1:0'),
   },
   // anthropic: {
   //   'claude-haiku-4-5': anthropic('claude-haiku-4-5'),
@@ -173,21 +164,20 @@ const defaultModel = models.bedrock['claude-4-5-haiku'];
 
 // ---------- METHODS ----------
 /** It's pretty painful to match and extend the type of the generateObject method, but this gets close */
-type GenerateObjectWithTelemetryInput<SCHEMA extends z.ZodType<any, any, any>> =
-  Omit<
-    Parameters<typeof generateObject<SCHEMA>>[0],
-    'experimental_telemetry' | 'model'
-  > &
-    Prompt & {
-      /** The schema to use for the generation */
-      schema: SCHEMA;
-      /** The model to use for the generation */
-      model?: LanguageModelV2;
-      /** The name of the method to show in Langfuse */
-      name?: string;
-      /** The parent trace ID to attach this generation to in Langfuse (defaults to trace for entire route) */
-      parentTraceId?: string;
-    };
+type GenerateObjectWithTelemetryInput<SCHEMA extends z.ZodType<any, any, any>> = Omit<
+  Parameters<typeof generateObject<SCHEMA>>[0],
+  'experimental_telemetry' | 'model'
+> &
+  Prompt & {
+    /** The schema to use for the generation */
+    schema: SCHEMA;
+    /** The model to use for the generation */
+    model?: LanguageModelV2;
+    /** The name of the method to show in Langfuse */
+    name?: string;
+    /** The parent trace ID to attach this generation to in Langfuse (defaults to trace for entire route) */
+    parentTraceId?: string;
+  };
 
 /** Export methods related to AI */
 export const ai = {
@@ -218,7 +208,7 @@ export const ai = {
           spanId: '0123456789abcdef',
           traceFlags: 1,
         },
-      }
+      },
     );
   },
   /** Scores a trace */
@@ -238,9 +228,7 @@ export const ai = {
     comment?: string;
   }) => {
     // Determine the data type based on the score type
-    let dataType: Parameters<
-      NonNullable<typeof langfuse>['score']['create']
-    >[0]['dataType'];
+    let dataType: Parameters<NonNullable<typeof langfuse>['score']['create']>[0]['dataType'];
     switch (typeof score) {
       case 'boolean': {
         dataType = 'BOOLEAN';
@@ -290,7 +278,7 @@ export const ai = {
         maxRetries: 3,
         ...rest,
         experimental_telemetry: { isEnabled: true },
-      } satisfies Parameters<typeof generateText>[0])
+      } satisfies Parameters<typeof generateText>[0]),
   ),
   /** Generate an object using an LLM */
   generateObject: traceGeneration(
@@ -299,14 +287,12 @@ export const ai = {
       name,
       parentTraceId,
       ...rest
-    }: GenerateObjectWithTelemetryInput<SCHEMA>): Promise<
-      GenerateObjectResult<z.infer<SCHEMA>>
-    > =>
+    }: GenerateObjectWithTelemetryInput<SCHEMA>): Promise<GenerateObjectResult<z.infer<SCHEMA>>> =>
       await generateObject({
         model,
         maxRetries: 3,
         ...rest,
         experimental_telemetry: { isEnabled: true },
-      })
+      }),
   ),
 };

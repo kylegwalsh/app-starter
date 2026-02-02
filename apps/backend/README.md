@@ -79,7 +79,6 @@ Infrastructure is managed by SST. See the root-level `sst.config.ts` and the `in
 ## API Entrypoints
 
 - `functions/api.ts`
-
   - Delegates to:
     - tRPC handler for paths starting with `/trpc`
     - REST handler (OpenAPI) for paths starting with `/api`

@@ -63,10 +63,8 @@ const generateWorkspaceTypeChecks = () => {
 
 // Note: These match in the order they're defined (so we won't run more than one block)
 export default {
-  // Note: We run ultracite outside of lint-staged in our pre-commit script because it's faster to check everything at once
-  // ['ultracite fix'],
-  // Pretty format files that biome doesn't support
-  '*.{md,yml,yaml}': [pretty],
+  // Note: We run linting and formatting outside of lint-staged in our pre-commit script because it's faster to check everything at once
+  // ['bun lint:fix', 'bun format'],
   // We'll run our root type checker once to ensure we check files outside our workspace
   '**/*.{ts,tsx}': [() => tsc],
   // Type check all files in the workspace dynamically (we need to do this since they all need different tsconfig paths)

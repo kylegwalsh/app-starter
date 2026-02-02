@@ -1,9 +1,6 @@
 import { config } from '@repo/config';
 import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
-import {
-  createOpenApiAwsLambdaHandler,
-  generateOpenApiDocument,
-} from 'better-trpc-openapi';
+import { createOpenApiAwsLambdaHandler, generateOpenApiDocument } from 'better-trpc-openapi';
 
 import { withLambdaContext } from '@/core';
 import { router } from '@/routes';

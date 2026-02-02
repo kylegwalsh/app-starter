@@ -17,15 +17,7 @@ import {
   SidebarTrigger,
 } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import {
-  Calendar,
-  ChevronUp,
-  Home,
-  Inbox,
-  Search,
-  Settings,
-  User2,
-} from 'lucide-react';
+import { Calendar, ChevronUp, Home, Inbox, Search, Settings, User2 } from 'lucide-react';
 
 /**
  * A composable, themeable and customizable sidebar component.
@@ -150,10 +142,7 @@ export const Footer: Story = {
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-(--radix-popper-anchor-width)"
-                side="top"
-              >
+              <DropdownMenuContent className="w-(--radix-popper-anchor-width)" side="top">
                 <DropdownMenuItem>
                   <span>Account</span>
                 </DropdownMenuItem>

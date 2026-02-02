@@ -1,14 +1,15 @@
 {
   "name": "@repo/{{packageName}}",
   "version": "0.0.1",
-  "type": "module",
   "private": true,
+  "type": "module",
   "exports": {
     ".": "./index.ts"
   },
   "scripts": {
-    "lint": "ultracite check .",
-    "lint:fix": "ultracite fix .",
+    "lint": "oxlint check .",
+    "lint:fix": "oxlint --fix .",
+    "format": "oxfmt .",
     "types:check": "tsc --noEmit",
     "update-readme": "doctoc README.md"
   },

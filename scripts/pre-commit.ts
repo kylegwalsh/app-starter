@@ -9,9 +9,7 @@ const stagedFiles = execSync('git diff --cached --name-only', {
 
 // Check if any web files are being committed
 const webPatterns = [/^apps\/web\//];
-const hasWebChanges = stagedFiles.some((file) =>
-  webPatterns.some((pattern) => pattern.test(file))
-);
+const hasWebChanges = stagedFiles.some((file) => webPatterns.some((pattern) => pattern.test(file)));
 
 // If we are committing web files, we need to generate the backend types
 // first because the web relies on backend routes for tRPC
@@ -21,14 +19,16 @@ if (hasWebChanges) {
     stdio: 'inherit',
   });
 } else {
-  console.log(
-    'No frontend files in commit, skipping backend types generation...'
-  );
+  console.log('No frontend files in commit, skipping backend types generation...');
 }
 
-// Lint all files with ultracite (faster to run all at once)
-console.log('Linting all files with ultracite...');
-execSync('bun ultracite fix', {
+// Lint and format all files with ox (faster to run all at once)
+console.log('Linting all files with ox...');
+execSync('bun lint:fix', {
+  stdio: 'inherit',
+});
+console.log('Formatting all files with ox...');
+execSync('bun format', {
   stdio: 'inherit',
 });
 

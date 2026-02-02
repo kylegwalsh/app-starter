@@ -32,9 +32,10 @@ let nextConfig: NextConfig = {
   webpack: (config: object) => {
     // Ensure the web always grabs the .web files over the normal files (so it can share directories with the backend)
     // @ts-expect-error - Next doesn't type the config correctly
-    config.resolve.extensions = config.resolve.extensions.flatMap(
-      (ext: string) => [`.web${ext}`, ext]
-    );
+    config.resolve.extensions = config.resolve.extensions.flatMap((ext: string) => [
+      `.web${ext}`,
+      ext,
+    ]);
 
     return config;
   },

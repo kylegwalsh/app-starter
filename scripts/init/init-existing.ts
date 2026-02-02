@@ -1,15 +1,11 @@
-import {
-  checkCLIs,
-  getOrCreateStage,
-  selectOrCreateAwsProfile,
-} from './init.js';
+import { checkCLIs, getOrCreateStage, selectOrCreateAwsProfile } from './init.js';
 
 const printFinalNotes = () => {
   console.log('--- Final Notes ---');
   console.log('You can start the app with: bun dev\n');
 
   console.log(
-    '- Make sure you restart your terminal for your AWS profile changes to take effect.\n'
+    '- Make sure you restart your terminal for your AWS profile changes to take effect.\n',
   );
   console.log('✔ Setup complete! Happy coding!\n');
 };

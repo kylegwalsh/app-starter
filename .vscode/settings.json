@@ -37,40 +37,18 @@
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
   "emmet.showExpandedAbbreviation": "never",
+  "prettier.enable": false,
+  "eslint.enable": false,
+  "biome.enabled": false,
   "editor.codeActionsOnSave": {
-    "source.fixAll.biome": "explicit",
-    "source.organizeImports.biome": "explicit"
+    "source.fixAll.oxc": "always"
   },
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "[javascript]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[javascriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[json]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[css]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[graphql]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
+  "editor.defaultFormatter": "oxc.oxc-vscode",
   "[html]": {
     "editor.defaultFormatter": "vscode.html-language-features"
   },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
   "[prisma]": {
     "editor.defaultFormatter": "Prisma.prisma"
-  },
-  "[jsonc]": {
-    "editor.defaultFormatter": "biomejs.biome"
   },
   // Tailwind settings
   "tailwindCSS.experimental.configFile": "packages/design/styles/globals.css",
@@ -102,6 +80,8 @@
     "nextjs",
     "ohash",
     "openai",
+    "oxfmt",
+    "oxlint",
     "postbuild",
     "posthog",
     "serviceworker",
@@ -111,7 +91,6 @@
     "superjson",
     "trpc",
     "typecheck",
-    "ultracite",
     "unauthed",
     "vaul"
   ]

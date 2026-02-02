@@ -6,10 +6,7 @@ export default function HomePage() {
       <h1 className="mb-4 font-bold text-2xl">Hello World</h1>
       <p className="text-fd-muted-foreground">
         You can open{' '}
-        <Link
-          className="font-semibold text-fd-foreground underline"
-          href="/docs"
-        >
+        <Link className="font-semibold text-fd-foreground underline" href="/docs">
           /docs
         </Link>{' '}
         and see the documentation.

@@ -24,11 +24,7 @@ import { stripe as stripeClient } from './stripe';
 const SUPPORT_PERSONAL_ORGANIZATIONS = true;
 
 /** Get or create a personal organization for a user */
-const getOrCreatePersonalOrganization = async ({
-  userId,
-}: {
-  userId: string;
-}) => {
+const getOrCreatePersonalOrganization = async ({ userId }: { userId: string }) => {
   // First, try to find existing personal organization for this user
   const existingPersonalOrg = await db.organization.findFirst({
     where: {
@@ -293,8 +289,7 @@ const authConfig = {
     apiKeyPlugin(),
     stripePlugin({
       stripeClient,
-      stripeWebhookSecret: (env as Record<string, string>)
-        .STRIPE_WEBHOOK_SECRET,
+      stripeWebhookSecret: (env as Record<string, string>).STRIPE_WEBHOOK_SECRET,
       createCustomerOnSignUp: true,
       // Configure stripe plans
       subscription: {
@@ -317,9 +312,7 @@ const authConfig = {
 } satisfies BetterAuthOptions;
 
 /** Our Better Auth instance */
-export const auth = betterAuth(authConfig) as ReturnType<
-  typeof betterAuth<typeof authConfig>
->;
+export const auth = betterAuth(authConfig) as ReturnType<typeof betterAuth<typeof authConfig>>;
 
 /** The type of the auth session object */
 export type AuthSession = typeof auth.$Infer.Session.session;

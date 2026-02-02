@@ -3,17 +3,10 @@ import * as ProgressPrimitive from '@radix-ui/react-progress';
 import { cn } from '@repo/design/lib/utils';
 import type { ComponentProps } from 'react';
 
-function Progress({
-  className,
-  value,
-  ...props
-}: ComponentProps<typeof ProgressPrimitive.Root>) {
+function Progress({ className, value, ...props }: ComponentProps<typeof ProgressPrimitive.Root>) {
   return (
     <ProgressPrimitive.Root
-      className={cn(
-        'relative h-2 w-full overflow-hidden rounded-full bg-primary/20',
-        className
-      )}
+      className={cn('relative h-2 w-full overflow-hidden rounded-full bg-primary/20', className)}
       data-slot="progress"
       {...props}
     >

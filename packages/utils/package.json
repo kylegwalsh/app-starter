@@ -1,26 +1,26 @@
 {
   "name": "@repo/utils",
   "version": "0.0.1",
-  "type": "module",
   "private": true,
+  "type": "module",
   "exports": {
     ".": "./index.ts"
   },
   "scripts": {
-    "lint": "ultracite check .",
-    "lint:fix": "ultracite fix .",
+    "lint": "oxlint check .",
+    "lint:fix": "oxlint --fix .",
+    "format": "oxfmt .",
     "types:check": "tsc --noEmit",
     "update-readme": "doctoc README.md"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.3.4",
-    "@repo/tsconfig": "workspace:*",
-    "@types/lodash-es": "4.17.12",
-    "typescript": "5.8.3"
   },
   "dependencies": {
     "change-case": "5.4.4",
     "dayjs": "1.11.13",
     "lodash-es": "4.17.21"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "workspace:*",
+    "@types/lodash-es": "4.17.12",
+    "typescript": "5.8.3"
   }
 }

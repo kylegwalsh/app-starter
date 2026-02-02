@@ -160,7 +160,7 @@ export default function DashboardPage() {
         startDate.setDate(startDate.getDate() - daysToSubtract);
         return date >= startDate;
       }),
-    [timeRange]
+    [timeRange],
   );
 
   return (
@@ -187,9 +187,7 @@ export default function DashboardPage() {
                   <div className="line-clamp-1 flex gap-2 font-medium">
                     Trending up this month <TrendingUp className="size-4" />
                   </div>
-                  <div className="text-muted-foreground">
-                    Visitors for the last 6 months
-                  </div>
+                  <div className="text-muted-foreground">Visitors for the last 6 months</div>
                 </CardFooter>
               </Card>
               <Card className="@container/card">
@@ -209,9 +207,7 @@ export default function DashboardPage() {
                   <div className="line-clamp-1 flex gap-2 font-medium">
                     Down 20% this period <TrendingDown className="size-4" />
                   </div>
-                  <div className="text-muted-foreground">
-                    Acquisition needs attention
-                  </div>
+                  <div className="text-muted-foreground">Acquisition needs attention</div>
                 </CardFooter>
               </Card>
               <Card className="@container/card">
@@ -231,9 +227,7 @@ export default function DashboardPage() {
                   <div className="line-clamp-1 flex gap-2 font-medium">
                     Strong user retention <TrendingUp className="size-4" />
                   </div>
-                  <div className="text-muted-foreground">
-                    Engagement exceed targets
-                  </div>
+                  <div className="text-muted-foreground">Engagement exceed targets</div>
                 </CardFooter>
               </Card>
               <Card className="@container/card">
@@ -251,12 +245,9 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardFooter className="flex-col items-start gap-1.5 text-sm">
                   <div className="line-clamp-1 flex gap-2 font-medium">
-                    Steady performance increase{' '}
-                    <TrendingUp className="size-4" />
+                    Steady performance increase <TrendingUp className="size-4" />
                   </div>
-                  <div className="text-muted-foreground">
-                    Meets growth projections
-                  </div>
+                  <div className="text-muted-foreground">Meets growth projections</div>
                 </CardFooter>
               </Card>
             </div>
@@ -265,9 +256,7 @@ export default function DashboardPage() {
                 <CardHeader>
                   <CardTitle>Total Visitors</CardTitle>
                   <CardDescription>
-                    <span className="@[540px]/card:block hidden">
-                      Total for the last 3 months
-                    </span>
+                    <span className="@[540px]/card:block hidden">Total for the last 3 months</span>
                     <span className="@[540px]/card:hidden">Last 3 months</span>
                   </CardDescription>
                   <CardAction>
@@ -278,12 +267,8 @@ export default function DashboardPage() {
                       value={timeRange}
                       variant="outline"
                     >
-                      <ToggleGroupItem value="90d">
-                        Last 3 months
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="30d">
-                        Last 30 days
-                      </ToggleGroupItem>
+                      <ToggleGroupItem value="90d">Last 3 months</ToggleGroupItem>
+                      <ToggleGroupItem value="30d">Last 30 days</ToggleGroupItem>
                       <ToggleGroupItem value="7d">Last 7 days</ToggleGroupItem>
                     </ToggleGroup>
                     <Select onValueChange={setTimeRange} value={timeRange}>
@@ -309,47 +294,16 @@ export default function DashboardPage() {
                   </CardAction>
                 </CardHeader>
                 <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-                  <ChartContainer
-                    className="aspect-auto h-[500px] w-full"
-                    config={chartConfig}
-                  >
+                  <ChartContainer className="aspect-auto h-[500px] w-full" config={chartConfig}>
                     <AreaChart data={filteredData}>
                       <defs>
-                        <linearGradient
-                          id="fillDesktop"
-                          x1="0"
-                          x2="0"
-                          y1="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="5%"
-                            stopColor="var(--color-desktop)"
-                            stopOpacity={1}
-                          />
-                          <stop
-                            offset="95%"
-                            stopColor="var(--color-desktop)"
-                            stopOpacity={0.1}
-                          />
+                        <linearGradient id="fillDesktop" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="5%" stopColor="var(--color-desktop)" stopOpacity={1} />
+                          <stop offset="95%" stopColor="var(--color-desktop)" stopOpacity={0.1} />
                         </linearGradient>
-                        <linearGradient
-                          id="fillMobile"
-                          x1="0"
-                          x2="0"
-                          y1="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="5%"
-                            stopColor="var(--color-mobile)"
-                            stopOpacity={0.8}
-                          />
-                          <stop
-                            offset="95%"
-                            stopColor="var(--color-mobile)"
-                            stopOpacity={0.1}
-                          />
+                        <linearGradient id="fillMobile" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="5%" stopColor="var(--color-mobile)" stopOpacity={0.8} />
+                          <stop offset="95%" stopColor="var(--color-mobile)" stopOpacity={0.1} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid vertical={false} />

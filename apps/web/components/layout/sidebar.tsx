@@ -131,13 +131,7 @@ export const AppSidebar: FC = ({ children }) => {
 };
 
 /** Renders a group of navigation items in the sidebar */
-const AppSidebarGroup = ({
-  navItems,
-  label,
-}: {
-  navItems: NavItem[];
-  label?: string;
-}) => {
+const AppSidebarGroup = ({ navItems, label }: { navItems: NavItem[]; label?: string }) => {
   const pathname = usePathname();
 
   return (
@@ -155,10 +149,7 @@ const AppSidebarGroup = ({
             >
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
-                  <SidebarMenuButton
-                    isActive={pathname === item.url}
-                    tooltip={item.title}
-                  >
+                  <SidebarMenuButton isActive={pathname === item.url} tooltip={item.title}>
                     {Icon ? <Icon /> : null}
                     <span>{item.title}</span>
                     <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -168,10 +159,7 @@ const AppSidebarGroup = ({
                   <SidebarMenuSub>
                     {item.items?.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={pathname === subItem.url}
-                        >
+                        <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
                           <Link href={subItem.url}>
                             <span>{subItem.title}</span>
                           </Link>
@@ -184,11 +172,7 @@ const AppSidebarGroup = ({
             </Collapsible>
           ) : (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.url}
-                tooltip={item.title}
-              >
+              <SidebarMenuButton asChild isActive={pathname === item.url} tooltip={item.title}>
                 <Link href={item.url}>
                   {Icon ? <Icon /> : null}
                   <span>{item.title}</span>

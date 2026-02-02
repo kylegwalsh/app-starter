@@ -27,7 +27,7 @@ for (let i = 2; i < process.argv.length; i++) {
 // Print usage and exit if --package is missing
 if (!pkgName) {
   console.error(
-    'Usage: tsx scripts/get-package-version.ts --package <package-name> [--path <package.json path or directory>]'
+    'Usage: tsx scripts/get-package-version.ts --package <package-name> [--path <package.json path or directory>]',
   );
   process.exit(1);
 }
@@ -48,8 +48,7 @@ if (!fs.existsSync(absPath)) {
 // Read and parse package.json
 const pkgJson = JSON.parse(fs.readFileSync(absPath, 'utf8'));
 // Try to find the version in dependencies or devDependencies
-const version =
-  pkgJson.dependencies?.[pkgName] || pkgJson.devDependencies?.[pkgName];
+const version = pkgJson.dependencies?.[pkgName] || pkgJson.devDependencies?.[pkgName];
 
 // Print error if the package is not found
 if (!version) {

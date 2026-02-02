@@ -125,5 +125,5 @@ export const log = pino(
     // Add any additional global context into our logs
     mixin: () => getLogMetadata(),
   },
-  customDestination
+  customDestination,
 );

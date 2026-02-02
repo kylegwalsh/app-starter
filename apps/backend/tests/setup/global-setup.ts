@@ -42,12 +42,9 @@ const setupMockDatabase = () => {
   fs.writeFileSync(destSchemaPath, schema);
 
   // Generate a fresh prisma client for our tests
-  execSync(
-    'bunx prisma db push --schema=tests/generated/test-schema.prisma --accept-data-loss',
-    {
-      stdio: 'inherit',
-    }
-  );
+  execSync('bunx prisma db push --schema=tests/generated/test-schema.prisma --accept-data-loss', {
+    stdio: 'inherit',
+  });
 };
 
 /** Sets up our test environment (runs only once before all tests) */

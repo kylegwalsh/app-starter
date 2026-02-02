@@ -37,15 +37,18 @@
 
 ## OTHER
 
+- Experiment with ox as a biome replacement
+  - See if ox can replace type checking as well
+  - Remove all biome disables
+  - Ensure all our ox rules are working
+  - Ensure vitest works fine and that we don't need the old biome global overrides for sst
 - Changing active organization should invalidate all requests
 - Replace cursor rules with AGENTS.md / skills and test in cursor + claude
+  - Add new rules to app starter
   - Tell AI to use react-hook-form for all forms
   - Tell AI that we use bun as the workspace manager
 - Ensure starter supports sending invites
-- Experiment with ox as a biome replacement
-  - See if ox can replace type checking as well
 - Add route outputs to tRPC file for types
-- Add new cursor rules to app starter
 - Update button with loading state
 - Login wrote password to url params???
 - Experiment with Sherif as replacement to manypkg and add linting step to CI
@@ -63,5 +66,3 @@
 - Upgrade SST to see if it improves windows support (like hot reloading backend when modifying packages outside the backend)
 - Potentially remove separate authConfig after issue is resolved - https://github.com/better-auth/better-auth/issues/3408
 - Try pglite with backend tests whenever the prisma adapter works better
-- If biome enables global detection through .d.ts files, we can remove our overrides
-- Expand biome ruleset as it evolves

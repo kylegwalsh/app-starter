@@ -73,13 +73,13 @@ if (currentFile === executedFile) {
 
               addEnvVar({ name: name.trim(), devValue, prodValue });
               rl.write(
-                "✔ The environment variable has been created in AWS. Don't forget to add the new variable to the infra/secrets.ts file as well!"
+                "✔ The environment variable has been created in AWS. Don't forget to add the new variable to the infra/secrets.ts file as well!",
               );
               rl.close();
-            }
+            },
           );
-        }
+        },
       );
-    }
+    },
   );
 }

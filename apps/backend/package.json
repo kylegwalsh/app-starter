@@ -17,18 +17,13 @@
     "db:generate": "prisma generate",
     "db:get-url": "tsx ./scripts/get-deb-url.ts",
     "env:add": "tsx ./scripts/add-env.ts",
-    "lint": "ultracite check .",
-    "lint:fix": "ultracite fix .",
+    "lint": "oxlint check .",
+    "lint:fix": "oxlint --fix .",
+    "format": "oxfmt .",
     "types:check": "tsc --noEmit",
     "types:generate": "tsc --emitDeclarationOnly",
     "update-readme": "doctoc README.md",
     "postinstall": "bun db:generate"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.3.4",
-    "@repo/tsconfig": "workspace:*",
-    "@types/node": "24.10.1",
-    "sqlite3": "5.1.7"
   },
   "dependencies": {
     "@better-auth/stripe": "1.4.2",
@@ -49,6 +44,11 @@
     "stripe": "18.4.0",
     "superjson": "2.2.2",
     "zod": "3.25.49"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "workspace:*",
+    "@types/node": "24.10.1",
+    "sqlite3": "5.1.7"
   },
   "prisma": {
     "schema": "db/schema.prisma"

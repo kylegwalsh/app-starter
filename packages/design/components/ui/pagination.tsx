@@ -1,10 +1,6 @@
 import { type Button, buttonVariants } from '@repo/design/components/ui/button';
 import { cn } from '@repo/design/lib/utils';
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  MoreHorizontalIcon,
-} from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
 
 function Pagination({ className, ...props }: ComponentProps<'nav'>) {
@@ -37,12 +33,7 @@ type PaginationLinkProps = {
 } & Pick<ComponentProps<typeof Button>, 'size'> &
   ComponentProps<'a'>;
 
-function PaginationLink({
-  className,
-  isActive,
-  size = 'icon',
-  ...props
-}: PaginationLinkProps) {
+function PaginationLink({ className, isActive, size = 'icon', ...props }: PaginationLinkProps) {
   return (
     // eslint-disable-next-line jsx-a11y/anchor-has-content
     <a
@@ -52,7 +43,7 @@ function PaginationLink({
           variant: isActive ? 'outline' : 'ghost',
           size,
         }),
-        className
+        className,
       )}
       data-active={isActive}
       data-slot="pagination-link"
@@ -61,10 +52,7 @@ function PaginationLink({
   );
 }
 
-function PaginationPrevious({
-  className,
-  ...props
-}: ComponentProps<typeof PaginationLink>) {
+function PaginationPrevious({ className, ...props }: ComponentProps<typeof PaginationLink>) {
   return (
     <PaginationLink
       aria-label="Go to previous page"
@@ -78,10 +66,7 @@ function PaginationPrevious({
   );
 }
 
-function PaginationNext({
-  className,
-  ...props
-}: ComponentProps<typeof PaginationLink>) {
+function PaginationNext({ className, ...props }: ComponentProps<typeof PaginationLink>) {
   return (
     <PaginationLink
       aria-label="Go to next page"

@@ -37,10 +37,7 @@ export const BillingHistory: FC = () => {
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
   }, []);
-  const mobileVisibleItems = useMemo(
-    () => history.slice(0, visibleCount),
-    [history, visibleCount]
-  );
+  const mobileVisibleItems = useMemo(() => history.slice(0, visibleCount), [history, visibleCount]);
   const hasMoreMobile = visibleCount < history.length;
 
   // Desktop pagination state
@@ -137,12 +134,8 @@ export const BillingHistory: FC = () => {
               key={item.id ?? `${item.type}-${item.date.toString()}`}
             >
               <div className="flex items-center justify-between gap-2">
-                <div className="font-medium">
-                  {format.case(item.type, 'sentenceCase')}
-                </div>
-                <div className="text-muted-foreground text-sm">
-                  {format.date(item.date)}
-                </div>
+                <div className="font-medium">{format.case(item.type, 'sentenceCase')}</div>
+                <div className="text-muted-foreground text-sm">{format.date(item.date)}</div>
               </div>
               <div className="mt-1 flex items-center justify-between gap-2">
                 <div className="text-sm">{format.currency(item.amount)}</div>
@@ -159,11 +152,7 @@ export const BillingHistory: FC = () => {
                     size="sm"
                     variant="outline"
                   >
-                    <Link
-                      href={item.receiptUrl ?? ''}
-                      rel="noreferrer noopener"
-                      target="_blank"
-                    >
+                    <Link href={item.receiptUrl ?? ''} rel="noreferrer noopener" target="_blank">
                       Download <Download />
                     </Link>
                   </Button>
@@ -175,9 +164,7 @@ export const BillingHistory: FC = () => {
           {hasMoreMobile && (
             <Button
               className="w-full"
-              onClick={() =>
-                setVisibleCount((c) => Math.min(c + PAGE_SIZE, history.length))
-              }
+              onClick={() => setVisibleCount((c) => Math.min(c + PAGE_SIZE, history.length))}
               variant="outline"
             >
               Show more

@@ -9,13 +9,7 @@ const loops = (env as Record<string, string>).LOOPS_API_KEY
 /** Methods related to email */
 export const email = {
   /** Sends a reset password email */
-  sendResetPasswordEmail: async ({
-    email,
-    resetLink,
-  }: {
-    email: string;
-    resetLink: string;
-  }) => {
+  sendResetPasswordEmail: async ({ email, resetLink }: { email: string; resetLink: string }) => {
     const transactionalId = config.loops.transactional.resetPassword;
     if (!transactionalId) {
       throw new Error('Reset password template not configured');
