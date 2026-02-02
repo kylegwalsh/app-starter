@@ -58,7 +58,6 @@
 
 ## MINOR IMPROVEMENTS
 
-- Remove ts-node override after vercel CLI is updated to newer TS: https://github.com/vercel/vercel/issues/8680
 - Disable autoplay of storybook stories when supported: https://github.com/storybookjs/storybook/discussions/25011
 - Remove the patch we applied to the AI SDK after this PR is addressed: https://github.com/vercel/ai/issues/9593
 - Upgrade SST to see if it improves windows support (like hot reloading backend when modifying packages outside the backend)
