@@ -38,9 +38,9 @@
 ## OTHER
 
 - Experiment with ox as a biome replacement
-  - See if ox can replace type checking as well
   - Remove all biome disables
   - Ensure all our ox rules are working
+  - Fix the random type errors from oxlint
   - Ensure vitest works fine and that we don't need the old biome global overrides for sst
 - Changing active organization should invalidate all requests
 - Replace cursor rules with AGENTS.md / skills and test in cursor + claude

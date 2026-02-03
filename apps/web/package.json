@@ -14,10 +14,9 @@
     "test:e2e": "sst shell -- playwright test",
     "test:e2e:ci": "sst shell --stage minimal -- playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "lint": "oxlint check .",
-    "lint:fix": "oxlint --fix .",
+    "lint": "bun --cwd ../backend types:generate && oxlint --type-aware --type-check .",
+    "lint:fix": "oxlint --type-aware --type-check --fix .",
     "format": "oxfmt .",
-    "types:check": "bun --cwd ../backend types:generate && tsc --noEmit",
     "update-readme": "doctoc README.md",
     "postinstall": "tsx scripts/install-playwright"
   },

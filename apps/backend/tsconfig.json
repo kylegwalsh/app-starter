@@ -6,7 +6,6 @@
     "declarationDir": "dist",
     "outDir": "dist",
     "emitDeclarationOnly": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
     },

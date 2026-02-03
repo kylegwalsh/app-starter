@@ -17,10 +17,9 @@
   },
   "scripts": {
     "shadcn": "bunx shadcn@latest",
-    "lint": "oxlint check .",
-    "lint:fix": "oxlint --fix .",
+    "lint": "oxlint --type-aware --type-check .",
+    "lint:fix": "oxlint --type-aware --type-check --fix .",
     "format": "oxfmt .",
-    "types:check": "tsc --noEmit",
     "update-readme": "doctoc README.md"
   },
   "dependencies": {

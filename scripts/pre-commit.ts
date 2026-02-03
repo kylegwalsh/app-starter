@@ -22,17 +22,7 @@ if (hasWebChanges) {
   console.log('No frontend files in commit, skipping backend types generation...');
 }
 
-// Lint and format all files with ox (faster to run all at once)
-console.log('Linting all files with ox...');
-execSync('bun lint:fix', {
-  stdio: 'inherit',
-});
-console.log('Formatting all files with ox...');
-execSync('bun format', {
-  stdio: 'inherit',
-});
-
-// Run lint-staged (remaining type and formatting checks)
+// Run lint-staged (lint and format)
 execSync('bun lint-staged', {
   stdio: 'inherit',
 });
