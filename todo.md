@@ -38,8 +38,10 @@
 ## OTHER
 
 - Experiment with ox as a biome replacement
-  - Remove all biome disables
+  - Consider upgrading typescript
+  - Ensure oxlint autofixes things like import sort order
   - Ensure all our ox rules are working
+  - Remove all biome disables
   - Fix the random type errors from oxlint
   - Ensure vitest works fine and that we don't need the old biome global overrides for sst
 - Changing active organization should invalidate all requests
@@ -47,6 +49,7 @@
   - Add new rules to app starter
   - Tell AI to use react-hook-form for all forms
   - Tell AI that we use bun as the workspace manager
+  - Add approved commands list, like linting, etc
 - Ensure starter supports sending invites
 - Add route outputs to tRPC file for types
 - Update button with loading state
@@ -66,3 +69,4 @@
 - Upgrade SST to see if it improves windows support (like hot reloading backend when modifying packages outside the backend)
 - Potentially remove separate authConfig after issue is resolved - https://github.com/better-auth/better-auth/issues/3408
 - Try pglite with backend tests whenever the prisma adapter works better
+- Once oxlint/tsgolint is updated, see if we can remove the oxlint ts-ignore rules we added

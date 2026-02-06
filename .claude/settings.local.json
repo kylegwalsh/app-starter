@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun lint:*)",
+      "WebSearch",
+      "WebFetch(domain:oxc.rs)",
+      "Bash(bunx oxlint --help:*)",
+      "Bash(bunx oxlint:*)"
+    ]
+  }
+}

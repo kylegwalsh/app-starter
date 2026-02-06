@@ -1,4 +1,85 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["unicorn", "typescript", "react", "react-perf", "vitest", "jsx-a11y", "nextjs", "oxc"]
+  "plugins": [
+    "unicorn",
+    "typescript",
+    "react",
+    "react-perf",
+    "vitest",
+    "jsx-a11y",
+    "nextjs",
+    "oxc"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "style": "error",
+    "perf": "error",
+    "restriction": "error"
+  },
+  "overrides": [
+    // Disable console logs in main backend files (should use logging package)
+    {
+      "files": ["apps/backend/**/*"],
+      "rules": {
+        "no-console": "warn"
+      }
+    },
+    {
+      "files": ["apps/backend/scripts/**/*"],
+      "rules": {
+        "no-console": "off"
+      }
+    }
+  ],
+  "ignorePatterns": ["**/sst-env.d.ts"],
+  "rules": {
+    "no-console": "off",
+    "sort-keys": "off",
+    "no-ternary": "off",
+    "max-statements": "off",
+    "no-optional-chaining": "off",
+    "no-async-await": "off"
+    // Old eslint rules
+    // '@typescript-eslint/no-unused-vars': 'warn',
+    // '@typescript-eslint/no-unsafe-assignment': 'warn',
+    // '@typescript-eslint/no-unsafe-member-access': 'warn',
+    // '@typescript-eslint/no-explicit-any': 'warn',
+    // '@typescript-eslint/no-floating-promises': 'off',
+    // '@typescript-eslint/no-misused-promises': 'off',
+    // 'unicorn/prefer-ternary': 'warn',
+    // 'unicorn/no-array-for-each': 'warn',
+    // 'unicorn/no-negated-condition': 'off',
+    // 'react-hooks/exhaustive-deps': 'warn',
+    // 'unicorn/no-abusive-eslint-disable': 'off',
+    // 'unicorn/prevent-abbreviations': 'off',
+    // '@typescript-eslint/triple-slash-reference': 'off',
+    // 'unicorn/no-array-reduce': 'off',
+    // 'unicorn/prefer-export-from': 'off',
+    // 'unicorn/no-process-exit': 'off',
+    // 'unicorn/prefer-global-this': 'off',
+    // 'unicorn/explicit-length-check': 'off',
+    // 'unicorn/no-null': 'off',
+    // 'react/no-unescaped-entities': 'off',
+    // 'storybook/use-storybook-expect': 'off',
+    // 'unicorn/no-typeof-undefined': 'off',
+    // 'unicorn/consistent-function-scoping': 'off',
+  }
+  // Old eslint next config
+  //  {
+  //   plugins: {
+  //     '@next/next': next,
+  //   },
+  //   // Restrict this to next.js apps only
+  //   files: ['apps/web/**/*.{ts,tsx}'],
+  //   settings: {
+  //     next: {
+  //       rootDir: [path.resolve(import.meta.dirname, '../../apps/web')],
+  //     },
+  //   },
+  //   rules: {
+  //     ...next.configs.recommended.rules,
+  //     ...next.configs['core-web-vitals'].rules,
+  //   },
+  // },
 }
