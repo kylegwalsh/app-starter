@@ -270,6 +270,8 @@ const authConfig = {
       },
       // Whenever we create a new organization, we'll track it
       organizationCreation: {
+        // oxlint-disable-next-line prefer-ts-expect-error, ban-ts-comment
+        // @ts-ignore - Oxlint does not seem to understand the types of this particular method
         afterCreate: async ({ organization, user }) => {
           await analytics.organizationIdentify({
             organizationId: organization.id,

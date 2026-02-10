@@ -40,16 +40,19 @@
 - Experiment with ox as a biome replacement
   - Consider upgrading typescript
   - Ensure oxlint autofixes things like import sort order
-  - Ensure all our ox rules are working
+  - Modify oxlint rules so that the important ones are treated as errors
   - Remove all biome disables
-  - Fix the random type errors from oxlint
+  - Fix remaining oxlint rule failures
   - Ensure vitest works fine and that we don't need the old biome global overrides for sst
+  - Remove TestPage.ts file
+- Ensure our tests can run in parallel without issues against the DB
 - Changing active organization should invalidate all requests
 - Replace cursor rules with AGENTS.md / skills and test in cursor + claude
   - Add new rules to app starter
   - Tell AI to use react-hook-form for all forms
   - Tell AI that we use bun as the workspace manager
   - Add approved commands list, like linting, etc
+  - Remove settings.local file from git history
 - Ensure starter supports sending invites
 - Add route outputs to tRPC file for types
 - Update button with loading state

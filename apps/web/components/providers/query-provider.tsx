@@ -28,7 +28,7 @@ export const QueryProvider = ({ children }: { children: ReactNode }) => {
             return fetch(_url, {
               ...options,
               credentials: 'include',
-            });
+            } as RequestInit);
           },
         }),
       ],
