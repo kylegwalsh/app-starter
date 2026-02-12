@@ -1,4 +1,4 @@
-// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
+// oxlint-disable no-namespace-import: This won't impact performance
 import * as ProgressPrimitive from '@radix-ui/react-progress';
 import { cn } from '@repo/design/lib/utils';
 import type { ComponentProps } from 'react';
@@ -11,7 +11,7 @@ function Progress({ className, value, ...props }: ComponentProps<typeof Progress
       {...props}
     >
       <ProgressPrimitive.Indicator
-        className="h-full w-full flex-1 bg-primary transition-all"
+        className="bg-primary h-full w-full flex-1 transition-all"
         data-slot="progress-indicator"
         style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
       />

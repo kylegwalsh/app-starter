@@ -20,6 +20,7 @@ export const promptUser = (question: string): Promise<string> => {
 /** Prompt the user for a yes/no answer */
 export const promptYesNo = async (question: string): Promise<boolean> => {
   while (true) {
+    // oxlint-disable no-await-in-loop: We need to await here
     const rawAnswer = await promptUser(question);
     const answer = rawAnswer.trim().toLowerCase();
     if (['y', 'yes'].includes(answer)) {

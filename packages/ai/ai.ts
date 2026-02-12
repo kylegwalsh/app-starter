@@ -1,4 +1,3 @@
-/* biome-ignore-all lint/suspicious/noExplicitAny: We need a few explicit any's here */
 import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 // import { createAnthropic } from '@ai-sdk/anthropic';
 // import { createGoogleGenerativeAI } from '@ai-sdk/google';
@@ -164,6 +163,7 @@ const defaultModel = models.bedrock['claude-4-5-haiku'];
 
 // ---------- METHODS ----------
 /** It's pretty painful to match and extend the type of the generateObject method, but this gets close */
+// oxlint-disable no-explicit-any: We need type any to allow for flexible extensions
 type GenerateObjectWithTelemetryInput<SCHEMA extends z.ZodType<any, any, any>> = Omit<
   Parameters<typeof generateObject<SCHEMA>>[0],
   'experimental_telemetry' | 'model'
@@ -248,7 +248,7 @@ export const ai = {
     langfuse?.score.create({
       traceId,
       name,
-      value: typeof score === 'boolean' ? (score ? 1 : 0) : score,
+      value: typeof score === 'boolean' ? Number(score) : score,
       dataType,
       comment,
     });
@@ -282,6 +282,7 @@ export const ai = {
   ),
   /** Generate an object using an LLM */
   generateObject: traceGeneration(
+    // oxlint-disable no-explicit-any: We need type any to allow for flexible extensions
     async <SCHEMA extends z.ZodType<any, any, any>>({
       model = defaultModel,
       name,

@@ -226,7 +226,7 @@ export const DoughnutChart: Story = {
                       y={viewBox.cy}
                     >
                       <tspan
-                        className="fill-foreground font-bold text-3xl"
+                        className="fill-foreground text-3xl font-bold"
                         x={viewBox.cx}
                         y={viewBox.cy}
                       >

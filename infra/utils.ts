@@ -1,6 +1,6 @@
 // ---------- DOMAIN ----------
 /** The base domain for all deployed resources (example.com => app.example.com, etc) */
-const baseDomain = '';
+const baseDomain: string = '';
 
 /** The list of stages that we will apply a custom domain to (not local stages) */
 const stagesWithCustomDomains = ['prod', 'staging', 'dev'];

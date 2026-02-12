@@ -1,4 +1,4 @@
-// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
+// oxlint-disable no-namespace-import: This won't impact performance
 import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { cn } from '@repo/design/lib/utils';
 import { XIcon } from 'lucide-react';
@@ -61,7 +61,7 @@ function SheetContent({
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+        <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
           <XIcon className="size-4" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>

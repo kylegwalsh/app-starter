@@ -15,7 +15,7 @@ const meta: Meta<typeof Checkbox> = {
     <div className="flex space-x-2">
       <Checkbox {...args} />
       <label
-        className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+        className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
         htmlFor={args.id}
       >
         Accept terms and conditions

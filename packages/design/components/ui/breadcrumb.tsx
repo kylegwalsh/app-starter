@@ -48,7 +48,7 @@ function BreadcrumbLink({
   );
 }
 
-function BreadcrumbPage({ className, ...props }: ComponentProps<'a'>) {
+function BreadcrumbPage({ className, children, ...props }: ComponentProps<'a'>) {
   return (
     <a
       aria-current="page"
@@ -56,7 +56,9 @@ function BreadcrumbPage({ className, ...props }: ComponentProps<'a'>) {
       className={cn('font-normal text-foreground', className)}
       data-slot="breadcrumb-page"
       {...props}
-    />
+    >
+      {children}
+    </a>
   );
 }
 

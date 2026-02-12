@@ -1,4 +1,4 @@
-// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
+// oxlint-disable no-namespace-import: This won't impact performance
 import * as AccordionPrimitive from '@radix-ui/react-accordion';
 import { cn } from '@repo/design/lib/utils';
 import { ChevronDownIcon } from 'lucide-react';
@@ -34,7 +34,7 @@ function AccordionTrigger({
         {...props}
       >
         {children}
-        <ChevronDownIcon className="pointer-events-none size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200" />
+        <ChevronDownIcon className="text-muted-foreground pointer-events-none size-4 shrink-0 translate-y-0.5 transition-transform duration-200" />
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
   );
@@ -47,7 +47,7 @@ function AccordionContent({
 }: ComponentProps<typeof AccordionPrimitive.Content>) {
   return (
     <AccordionPrimitive.Content
-      className="overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+      className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden text-sm"
       data-slot="accordion-content"
       {...props}
     >

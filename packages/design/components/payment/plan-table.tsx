@@ -73,7 +73,7 @@ export const PlanTable = <T extends readonly Plan[]>({
             </TableHead>
             {plans.map((plan) => (
               <TableHead
-                className={`text-center font-medium text-lg text-primary w-${planColumnWidth}/12`}
+                className={`text-primary text-center text-lg font-medium w-${planColumnWidth}/12`}
                 key={plan.key}
               >
                 {plan.name}
@@ -118,7 +118,7 @@ export const PlanTable = <T extends readonly Plan[]>({
           {plans.map((plan) => (
             <section key={plan.key}>
               <div className="mb-4">
-                <h4 className="font-medium text-xl">{plan.name}</h4>
+                <h4 className="text-xl font-medium">{plan.name}</h4>
               </div>
               <Table>
                 <TableBody>
@@ -126,7 +126,7 @@ export const PlanTable = <T extends readonly Plan[]>({
                     <Fragment key={featureGroup.type}>
                       {/* Feature Group Header */}
                       <TableRow className="bg-muted hover:bg-muted">
-                        <TableCell className="w-10/12 font-bold text-primary" colSpan={2}>
+                        <TableCell className="text-primary w-10/12 font-bold" colSpan={2}>
                           {featureGroup.type}
                         </TableCell>
                       </TableRow>

@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 
 import { config } from '@repo/config';
-import posthog from 'posthog-js';
+import { posthog } from 'posthog-js';
 
 import { createAnalyticsEvents } from './events';
 

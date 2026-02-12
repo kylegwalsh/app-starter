@@ -1,3 +1,4 @@
+// oxlint-disable no-await-in-loop, no-unsafe-member-access, no-unsafe-assignment: We allow certain patterns in this script
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -875,7 +876,7 @@ const applyExistingMigrations = () => {
     const migrationDirs = entries
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
-      .sort();
+      .toSorted();
 
     if (migrationDirs.length === 0) {
       console.log('✔ No existing migrations to apply.\n');
@@ -1063,7 +1064,7 @@ const setupPosthog = async ({ projectName }: { projectName: string }) => {
         );
       } else {
         console.log(
-          `\n❌ An error occurred during PostHog setup: ${error}\n\nRestarting PostHog setup...`,
+          `\n❌ An error occurred during PostHog setup: ${String(error)}\n\nRestarting PostHog setup...`,
         );
       }
       // The loop will restart from the setup prompt
@@ -1481,7 +1482,7 @@ const createStripeWebhookForBetterAuth = async (
         `❌ Failed to create webhook at ${url}: ${error?.response?.data?.error?.message || error.message}`,
       );
     } else {
-      console.log(`❌ Failed to create webhook at ${url}: ${error}`);
+      console.log(`❌ Failed to create webhook at ${url}: ${String(error)}`);
     }
     return null;
   }
@@ -1938,5 +1939,5 @@ const init = async () => {
 const currentFile = fileURLToPath(import.meta.url).replace(/\.ts$/, '');
 const executedFile = process.argv[1].replace(/\.ts$/, '');
 if (currentFile === executedFile) {
-  init();
+  await init();
 }

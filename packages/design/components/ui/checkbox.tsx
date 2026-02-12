@@ -1,6 +1,6 @@
 'use client';
 
-// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
+// oxlint-disable no-namespace-import: This won't impact performance
 import * as CheckboxPrimitive from '@radix-ui/react-checkbox';
 import { cn } from '@repo/design/lib/utils';
 import { CheckIcon } from 'lucide-react';

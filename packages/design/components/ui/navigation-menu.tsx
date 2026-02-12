@@ -1,4 +1,4 @@
-// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
+// oxlint-disable no-namespace-import: This won't impact performance
 import * as NavigationMenuPrimitive from '@radix-ui/react-navigation-menu';
 import { cn } from '@repo/design/lib/utils';
 import { cva } from 'class-variance-authority';
@@ -143,7 +143,7 @@ function NavigationMenuIndicator({
       data-slot="navigation-menu-indicator"
       {...props}
     >
-      <div className="relative top-[60%] h-2 w-2 rotate-45 rounded-tl-sm bg-border shadow-md" />
+      <div className="bg-border relative top-[60%] h-2 w-2 rotate-45 rounded-tl-sm shadow-md" />
     </NavigationMenuPrimitive.Indicator>
   );
 }

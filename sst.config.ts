@@ -1,4 +1,4 @@
-// oxlint-disable-next-line
+// oxlint-disable-next-line triple-slash-reference: This is how SST expects the types
 /// <reference path="./.sst/platform/config.d.ts" />
 
 // The config that manages our SST application / deployments

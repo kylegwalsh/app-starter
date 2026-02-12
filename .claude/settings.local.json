@@ -11,7 +11,8 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:typescript-eslint.io)",
       "Bash(npm ls:*)",
-      "Bash(npx oxlint:*)"
+      "Bash(npx oxlint:*)",
+      "Bash(node -e:*)"
     ]
   }
 }

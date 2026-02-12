@@ -46,7 +46,10 @@ if (!fs.existsSync(absPath)) {
 }
 
 // Read and parse package.json
-const pkgJson = JSON.parse(fs.readFileSync(absPath, 'utf8'));
+const pkgJson = JSON.parse(fs.readFileSync(absPath, 'utf8')) as {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+};
 // Try to find the version in dependencies or devDependencies
 const version = pkgJson.dependencies?.[pkgName] || pkgJson.devDependencies?.[pkgName];
 

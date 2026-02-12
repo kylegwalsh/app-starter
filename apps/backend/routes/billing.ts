@@ -67,7 +67,7 @@ export const billingRouter = t.router({
           receiptUrl: charge.receipt_url,
           type: 'payment',
         })),
-      ].sort((a, b) => b.date.getTime() - a.date.getTime());
+      ].toSorted((a, b) => b.date.getTime() - a.date.getTime());
 
       return { history };
     } catch (error) {

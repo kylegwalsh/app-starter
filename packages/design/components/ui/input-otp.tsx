@@ -51,7 +51,7 @@ function InputOTPSlot({
       {char}
       {hasFakeCaret && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
+          <div className="animate-caret-blink bg-foreground h-4 w-px duration-1000" />
         </div>
       )}
     </div>
@@ -60,7 +60,6 @@ function InputOTPSlot({
 
 function InputOTPSeparator({ ...props }: ComponentProps<'div'>) {
   return (
-    // biome-ignore lint: This is how shadcn defined it
     <div data-slot="input-otp-separator" role="separator" {...props}>
       <MinusIcon />
     </div>

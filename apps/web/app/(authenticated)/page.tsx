@@ -23,8 +23,10 @@ import {
   useIsMobile,
 } from '@repo/design';
 import { TrendingDown, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
+
 import { Header } from '@/components';
 
 const chartData = [
@@ -165,15 +167,16 @@ export default function DashboardPage() {
 
   return (
     <>
+      <Link href="/asdb">Test</Link>
       <Header breadcrumbs={[{ label: 'Overview' }]} />
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
           <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-            <div className="grid @5xl/main:grid-cols-4 @xl/main:grid-cols-2 grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs lg:px-6 dark:*:data-[slot=card]:bg-card">
+            <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
               <Card className="@container/card">
                 <CardHeader>
                   <CardDescription>Total Revenue</CardDescription>
-                  <CardTitle className="font-semibold @[250px]/card:text-3xl text-2xl tabular-nums">
+                  <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
                     $1,250.00
                   </CardTitle>
                   <CardAction>
@@ -193,7 +196,7 @@ export default function DashboardPage() {
               <Card className="@container/card">
                 <CardHeader>
                   <CardDescription>New Customers</CardDescription>
-                  <CardTitle className="font-semibold @[250px]/card:text-3xl text-2xl tabular-nums">
+                  <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
                     1,234
                   </CardTitle>
                   <CardAction>
@@ -213,7 +216,7 @@ export default function DashboardPage() {
               <Card className="@container/card">
                 <CardHeader>
                   <CardDescription>Active Accounts</CardDescription>
-                  <CardTitle className="font-semibold @[250px]/card:text-3xl text-2xl tabular-nums">
+                  <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
                     45,678
                   </CardTitle>
                   <CardAction>
@@ -233,7 +236,7 @@ export default function DashboardPage() {
               <Card className="@container/card">
                 <CardHeader>
                   <CardDescription>Growth Rate</CardDescription>
-                  <CardTitle className="font-semibold @[250px]/card:text-3xl text-2xl tabular-nums">
+                  <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
                     4.5%
                   </CardTitle>
                   <CardAction>
@@ -256,12 +259,12 @@ export default function DashboardPage() {
                 <CardHeader>
                   <CardTitle>Total Visitors</CardTitle>
                   <CardDescription>
-                    <span className="@[540px]/card:block hidden">Total for the last 3 months</span>
+                    <span className="hidden @[540px]/card:block">Total for the last 3 months</span>
                     <span className="@[540px]/card:hidden">Last 3 months</span>
                   </CardDescription>
                   <CardAction>
                     <ToggleGroup
-                      className="*:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex hidden"
+                      className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
                       onValueChange={setTimeRange}
                       type="single"
                       value={timeRange}
@@ -274,7 +277,7 @@ export default function DashboardPage() {
                     <Select onValueChange={setTimeRange} value={timeRange}>
                       <SelectTrigger
                         aria-label="Select a value"
-                        className="flex @[767px]/card:hidden w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
+                        className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
                         size="sm"
                       >
                         <SelectValue placeholder="Last 3 months" />

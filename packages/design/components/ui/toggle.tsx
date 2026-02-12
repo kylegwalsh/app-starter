@@ -1,4 +1,4 @@
-// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
+// oxlint-disable no-namespace-import: This won't impact performance
 import * as TogglePrimitive from '@radix-ui/react-toggle';
 import { cn } from '@repo/design/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';

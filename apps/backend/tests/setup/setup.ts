@@ -10,7 +10,7 @@ const modelNames = Object.keys(db).filter(
 beforeEach(async () => {
   // Clear prisma database between tests
   const deleteOperations = modelNames.map((modelName) =>
-    // biome-ignore lint/suspicious/noExplicitAny: We can't explicitly type the db models here
+    // oxlint-disable no-explicit-any, no-unsafe-member-access: We can't explicitly type the db models here
     (db[modelName as keyof typeof db] as any).deleteMany(),
   );
   await db.$transaction(deleteOperations);

@@ -1,6 +1,6 @@
 'use client';
 
-// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
+// oxlint-disable no-namespace-import: This won't impact performance
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { cn } from '@repo/design/lib/utils';
 import type { ComponentProps } from 'react';

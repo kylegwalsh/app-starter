@@ -1,3 +1,4 @@
+// oxlint-disable no-namespace, namespace: We use the entire changeCase object dynamically
 import * as changeCase from 'change-case';
 import dayjs from 'dayjs';
 import { isArray, isObject, transform } from 'lodash-es';

@@ -53,6 +53,7 @@ const startShadowDB = async () => {
       });
       return;
     } catch {
+      // oxlint-disable-next-line no-await-in-loop: We need to await here
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
@@ -71,6 +72,7 @@ const getMigrationDirName = async (): Promise<string> => {
       input: process.stdin,
       output: process.stdout,
     });
+    // oxlint-disable-next-line no-await-in-loop: We need to await here
     name = await new Promise<string>((resolve) => {
       rl.question('Enter a name for the new migration: ', (answer) => {
         rl.close();
@@ -242,9 +244,9 @@ const createMigration = async () => {
       break;
     }
     default: {
-      throw new Error(`Invalid migration type: ${migrationType}`);
+      throw new Error('Invalid migration type');
     }
   }
 };
 
-createMigration();
+await createMigration();

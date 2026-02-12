@@ -99,11 +99,9 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        // biome-ignore lint/correctness/noNestedComponentDefinitions: It's easier to access types like this
         Root: ({ className: rootClassName, rootRef, ...rootProps }) => (
           <div className={cn(rootClassName)} data-slot="calendar" ref={rootRef} {...rootProps} />
         ),
-        // biome-ignore lint/correctness/noNestedComponentDefinitions: It's easier to access types like this
         Chevron: ({ className: chevronClassName, orientation, ...chevronProps }) => {
           if (orientation === 'left') {
             return <ChevronLeftIcon className={cn('size-4', chevronClassName)} {...chevronProps} />;
@@ -116,7 +114,6 @@ function Calendar({
           return <ChevronDownIcon className={cn('size-4', chevronClassName)} {...chevronProps} />;
         },
         DayButton: CalendarDayButton,
-        // biome-ignore lint/correctness/noNestedComponentDefinitions: It's easier to access types like this
         WeekNumber: ({ children, ...weekNumberProps }) => (
           <td {...weekNumberProps}>
             <div className="flex size-(--cell-size) items-center justify-center text-center">

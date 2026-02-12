@@ -69,7 +69,7 @@ export const PricingCard: FC<Props> = ({
         )}
         <CardTitle className={cn('mb-7', displayBanner && '!mb-7')}>{plan}</CardTitle>
         <div className="flex items-end justify-center gap-2">
-          <span className="font-bold text-5xl">{priceDisplay}</span>
+          <span className="text-5xl font-bold">{priceDisplay}</span>
           <span className="text-muted-foreground">/mo</span>
         </div>
       </CardHeader>

@@ -6,8 +6,8 @@
     "build": "next build",
     "dev": "next dev --turbo --port 3001",
     "start": "next start",
-    "lint": "oxlint --type-aware --type-check .",
-    "lint:fix": "oxlint --type-aware --type-check --fix .",
+    "lint": "oxlint --type-aware --type-check",
+    "lint:fix": "oxlint --type-aware --type-check --fix",
     "format": "oxfmt .",
     "update-readme": "doctoc README.md",
     "postinstall": "fumadocs-mdx"

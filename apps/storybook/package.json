@@ -9,8 +9,8 @@
     "test": "sst shell -- vitest run",
     "test:ci": "cross-env LOG_LEVEL=silent sst shell --stage minimal -- vitest run --silent",
     "test:ui": "sst shell  -- vitest --ui",
-    "lint": "oxlint --type-aware --type-check .",
-    "lint:fix": "oxlint --type-aware --type-check --fix .",
+    "lint": "oxlint --type-aware --type-check",
+    "lint:fix": "oxlint --type-aware --type-check --fix",
     "format": "oxfmt .",
     "update-readme": "doctoc README.md"
   },

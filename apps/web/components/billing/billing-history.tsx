@@ -59,7 +59,7 @@ export const BillingHistory: FC = () => {
         <div className="sm:hidden">
           <div className="flex flex-col gap-4">
             {Array.from({ length: 3 }).map((_, index) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: The only unique info here is the index
+              // oxlint-disable-next-line no-array-index-key: The only unique info here is the index
               <div className="rounded-md border p-3" key={index}>
                 <div className="flex items-center justify-between gap-2">
                   <Skeleton className="h-4 w-24" />
@@ -88,7 +88,7 @@ export const BillingHistory: FC = () => {
             </TableHeader>
             <TableBody>
               {Array.from({ length: 3 }).map((_, index) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: The only unique info here is the index
+                // oxlint-disable-next-line no-array-index-key: The only unique info here is the index
                 <TableRow key={index}>
                   <TableCell>
                     <Skeleton className="h-4 max-w-18 flex-1" />
@@ -117,7 +117,7 @@ export const BillingHistory: FC = () => {
   // If there is no history, show a message
   if (history.length === 0) {
     return (
-      <div className="flex items-center justify-center py-6 text-center text-muted-foreground">
+      <div className="text-muted-foreground flex items-center justify-center py-6 text-center">
         No billing history yet
       </div>
     );

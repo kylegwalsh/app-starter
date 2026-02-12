@@ -9,6 +9,7 @@ type SecretKeys = {
 type SecretResources = Pick<Resource, SecretKeys>;
 
 /** Defines environment variables from SST secrets */
+// oxlint-disable no-unsafe-member-access: The Resource type doesn't get narrowed using fromEntries()
 export const env = Object.fromEntries(
   Object.entries(Resource)
     .filter(([, value]) => value.type === 'sst:sst:Secret' || value.type === 'sst.sst.Secret')

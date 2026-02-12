@@ -1,6 +1,6 @@
 'use client';
 
-// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
+// oxlint-disable no-namespace-import: This won't impact performance
 import * as ToggleGroupPrimitive from '@radix-ui/react-toggle-group';
 import { toggleVariants } from '@repo/design/components/ui/toggle';
 import { cn } from '@repo/design/lib/utils';

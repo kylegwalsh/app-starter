@@ -18,6 +18,7 @@ import {
   type Ref,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -158,6 +159,22 @@ const isOptionGroupArray = (
 
 export type { ComboboxOption, ComboboxOptionGroup, ComboboxProps };
 
+/** Renders selected values in multi-select mode with a custom render function */
+const MultiCustomRender = ({
+  selectedOptions,
+  renderSelectedValue,
+  placeholder,
+}: {
+  selectedOptions: ComboboxOption[];
+  renderSelectedValue: (options: ComboboxOption[]) => ComponentProps<'div'>['children'];
+  placeholder: string;
+}) => {
+  if (selectedOptions.length > 0) {
+    return <span className="truncate py-[1px]">{renderSelectedValue(selectedOptions)}</span>;
+  }
+  return <span className="text-muted-foreground py-[1px]">{placeholder}</span>;
+};
+
 /**
  * A searchable combobox component that allows users to select from a list of options
  * or create new options dynamically. Supports both controlled and uncontrolled modes,
@@ -205,6 +222,8 @@ export const Combobox = ({
   ref,
   matchTriggerWidth = false,
 }: ComboboxProps) => {
+  const listboxId = useId();
+
   // Normalize options into groups format for consistent processing
   const groups = useMemo<ComboboxOptionGroup[]>(() => {
     if (isOptionGroupArray(options)) {
@@ -513,18 +532,14 @@ export const Combobox = ({
 
   /** Handles creation of a new option from the search query. Calls onCreateOption (which may be async), then selects the created option. Closes the popover after creation completes (success or failure). */
   const handleCreate = useCallback(
-    (searchValue: string) => {
+    async (searchValue: string) => {
       if (!onCreateOption) {
         return;
       }
 
-      // Call the onCreateOption function and handle the result
-      const result = onCreateOption(searchValue);
-      Promise.resolve(result)
-        .then((created) => {
-          if (!created) {
-            return;
-          }
+      try {
+        const created = await onCreateOption(searchValue);
+        if (created) {
           if (multiple) {
             const currentValues = selectedValue as string[];
             const nextValues = [...currentValues, created.value];
@@ -533,12 +548,12 @@ export const Combobox = ({
           } else {
             setValue(created.value, created);
           }
-        })
-        .finally(() => {
-          if (!multiple) {
-            closePopover();
-          }
-        });
+        }
+      } finally {
+        if (!multiple) {
+          closePopover();
+        }
+      }
     },
     [closePopover, onCreateOption, setValue, multiple, selectedValue, getOptionsByValues],
   );
@@ -552,7 +567,7 @@ export const Combobox = ({
     (option: ComboboxOption, selected: boolean) => (
       <div className="flex w-full items-center gap-2">
         {option.icon ? (
-          <span className="flex size-4 items-center justify-center text-muted-foreground">
+          <span className="text-muted-foreground flex size-4 items-center justify-center">
             {option.icon}
           </span>
         ) : null}
@@ -587,10 +602,11 @@ export const Combobox = ({
 
   const { className: commandClass, ...restCommandProps } = commandProps ?? {};
   const { className: inputClass, ...restInputProps } = inputProps ?? {};
-  const { className: cmdInputClass, ...restCmdInputProps } = inputProps ?? {};
 
   /** Ref for the trigger container */
   const triggerContainerRef = useRef<HTMLDivElement>(null);
+  /** Ref for the popover content to scope blur checks */
+  const popoverContentRef = useRef<HTMLDivElement>(null);
   /** Ref for the input element to maintain focus */
   const inputRef = useRef<HTMLInputElement>(null);
   /** Width of the trigger for matching popover width */
@@ -686,8 +702,8 @@ export const Combobox = ({
       <Popover onOpenChange={handleOpenChange} open={open}>
         <PopoverTrigger asChild>
           <div
+            aria-controls={open ? listboxId : undefined}
             aria-expanded={open}
-            aria-haspopup="listbox"
             className={cn(
               'flex w-full gap-2 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-within:border-ring disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
               matchTriggerWidth && 'min-w-0',
@@ -796,17 +812,15 @@ export const Combobox = ({
                 <>
                   {renderSelectedValue ? (
                     // Custom render for selected values
-                    selectedOptions.length > 0 ? (
-                      <span className="truncate py-[1px]">
-                        {(
-                          renderSelectedValue as (
-                            options: ComboboxOption[],
-                          ) => ComponentProps<'div'>['children']
-                        )(selectedOptions)}
-                      </span>
-                    ) : (
-                      <span className="py-[1px] text-muted-foreground">{placeholder}</span>
-                    )
+                    <MultiCustomRender
+                      placeholder={placeholder}
+                      renderSelectedValue={
+                        renderSelectedValue as (
+                          options: ComboboxOption[],
+                        ) => ComponentProps<'div'>['children']
+                      }
+                      selectedOptions={selectedOptions}
+                    />
                   ) : (
                     // Default badge rendering
                     <>
@@ -832,7 +846,7 @@ export const Combobox = ({
                               <span className="mx-0.5 h-3 w-px bg-current opacity-20" />
                               <button
                                 aria-label={`Remove ${option.label}`}
-                                className="rounded-sm opacity-50 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                className="focus-visible:ring-ring rounded-sm opacity-50 transition-opacity hover:opacity-100 focus-visible:ring-1 focus-visible:outline-none"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -863,7 +877,7 @@ export const Combobox = ({
                       {selectedOptions.length === 0 &&
                         (!searchable || (!isInputFocused && !search && !open)) && (
                           // Placeholder text when no badges and (not searchable OR input not rendered)
-                          <span className="self-center py-[1px] text-muted-foreground">
+                          <span className="text-muted-foreground self-center py-[1px]">
                             {placeholder}
                           </span>
                         )}
@@ -879,10 +893,7 @@ export const Combobox = ({
                             // Restores focus if clicking inside popover/trigger (keeps input focused during multi-select)
                             const relatedTarget = e.relatedTarget as Node | null;
                             const isInsidePopover =
-                              relatedTarget &&
-                              document
-                                .querySelector('[data-slot="popover-content"]')
-                                ?.contains(relatedTarget);
+                              relatedTarget && popoverContentRef.current?.contains(relatedTarget);
                             const isInsideTrigger =
                               relatedTarget && triggerContainerRef.current?.contains(relatedTarget);
                             if (isInsidePopover || isInsideTrigger) {
@@ -955,6 +966,7 @@ export const Combobox = ({
             // Prevents input blur when clicking inside popover
             e.preventDefault();
           }}
+          ref={popoverContentRef}
           side={side}
           sideOffset={sideOffset}
           style={(() => {
@@ -979,17 +991,16 @@ export const Combobox = ({
                 </div>
               ) : (
                 <CommandInput
-                  className={cn('h-9', cmdInputClass, inputClassName)}
+                  className={cn('h-9', inputClassName)}
                   onValueChange={handleSearchChange}
                   placeholder={searchPlaceholder}
                   value={search}
-                  {...restCmdInputProps}
                 />
               ))}
-            <CommandList className={cn('max-h-64 overflow-y-auto', listClassName)}>
-              {/* Only show the empty state if we're not loading */}
-              {!loadingResults && (
-                <CommandEmpty className="py-3 text-center text-muted-foreground text-sm">
+            <CommandList className={cn('max-h-64 overflow-y-auto', listClassName)} id={listboxId}>
+              {/* Only show the empty state if we're not loading and create mode is not enabled */}
+              {!loadingResults && !onCreateOption && (
+                <CommandEmpty className="text-muted-foreground py-3 text-center text-sm">
                   {emptyMessage}
                 </CommandEmpty>
               )}
@@ -997,7 +1008,7 @@ export const Combobox = ({
               {loadingResults && groups.some((group) => group.options.length > 0) && (
                 <div
                   aria-live="polite"
-                  className="flex items-center gap-2 px-3 py-2 text-muted-foreground text-sm"
+                  className="text-muted-foreground flex items-center gap-2 px-3 py-2 text-sm"
                 >
                   <Loader2 aria-hidden className="size-4 animate-spin" />
                   Loading results…
@@ -1010,12 +1021,15 @@ export const Combobox = ({
                 </CommandItem>
               )}
               {/* If we have groups, show the groups */}
-              {groups.map((group, index) => {
+              {groups.map((group) => {
                 if (!group.options.length) {
                   return null;
                 }
                 return (
-                  <CommandGroup heading={group.label} key={group.label ?? index}>
+                  <CommandGroup
+                    heading={group.label}
+                    key={group.label ?? `group-${group.options[0]?.value}`}
+                  >
                     {group.options.map((option) => {
                       const selected = multiple
                         ? (selectedValue as string[]).includes(option.value)
@@ -1037,7 +1051,7 @@ export const Combobox = ({
               })}
               {/* If we should show the create option, show it */}
               {showCreateOption ? (
-                <CommandGroup>
+                <CommandGroup forceMount>
                   <CommandItem
                     onSelect={() => handleCreate(trimmedSearch)}
                     value={`__combobox-create__-${trimmedSearch}`}

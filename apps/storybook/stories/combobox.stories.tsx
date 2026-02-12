@@ -404,7 +404,7 @@ export const WithCreateOption: Story = {
         createOptionLabel={(searchValue) => `Create "${searchValue}"`}
         onCreateOption={(searchValue) => {
           const newOption = {
-            value: searchValue.toLowerCase().replace(/\s+/g, '-'),
+            value: searchValue.toLowerCase().replaceAll(' ', '-'),
             label: searchValue,
           };
           // Add the new option to the options list
@@ -432,7 +432,7 @@ export const Loading: Story = {
 export const LoadingResults: Story = {
   render: (args) => {
     const [loadingResults, setLoadingResults] = useState(false);
-    const [search, setSearch] = useState('');
+    const [, setSearch] = useState('');
 
     return (
       <Combobox
@@ -523,7 +523,7 @@ export const CustomRender: Story = {
     defaultValue: 'banana',
     renderSelectedValue: (option: ComboboxOption | null) =>
       option ? (
-        <span className="font-semibold text-primary">{option.label.toUpperCase()}</span>
+        <span className="text-primary font-semibold">{option.label.toUpperCase()}</span>
       ) : null,
     renderOption: (option, selected) => (
       <div className="flex items-center gap-2">

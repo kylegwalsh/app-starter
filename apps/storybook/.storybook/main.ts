@@ -36,9 +36,9 @@ const config: StorybookConfig = {
       shouldRemoveUndefinedFromOptional: true,
       // Filter out props that are not relevant to the component
       propFilter: (prop) => {
-        // For props that come from node_modules, we commonly see a lot of repeat props
-        // so we'll filter them out here
-        if (prop.parent && /node_modules/.test(prop.parent.fileName)) {
+        // For props that come from node_modules, we commonly see a lot of
+        // repeat props so we'll filter them out here
+        if (prop.parent && prop.parent.fileName.includes('node_modules')) {
           // Filter out aria-* props
           if (prop?.name?.startsWith('aria-')) {
             return false;

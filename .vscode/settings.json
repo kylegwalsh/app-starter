@@ -29,6 +29,7 @@
   "editor.suggest.showReferences": false,
   "editor.suggest.showCustomcolors": false,
   "editor.suggest.shareSuggestSelections": false,
+  "emmet.showExpandedAbbreviation": "never",
   // Prevent auto-accepting suggestions on commit characters like comma
   "editor.acceptSuggestionOnCommitCharacter": false,
   "editor.acceptSuggestionOnEnter": "on",
@@ -36,10 +37,10 @@
   // Saving and formatting settings
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
-  "emmet.showExpandedAbbreviation": "never",
   "prettier.enable": false,
   "eslint.enable": false,
   "biome.enabled": false,
+  "oxc.typeAware": true,
   "editor.codeActionsOnSave": {
     "source.fixAll.oxc": "explicit"
   },
@@ -57,10 +58,13 @@
   "typescript.enablePromptUseWorkspaceTsdk": true,
   // Spell checker settings
   "cSpell.words": [
+    "activedescendant",
     "authed",
     "autocapture",
     "autodocs",
+    "autofocus",
     "bunx",
+    "classlist",
     "cmdk",
     "codegen",
     "daveyplate",
@@ -76,12 +80,15 @@
     "lintstagedrc",
     "logtail",
     "manypkg",
+    "misrefactored",
     "networkidle",
     "nextjs",
+    "noninteractive",
     "ohash",
     "openai",
     "oxfmt",
     "oxlint",
+    "polyfillio",
     "postbuild",
     "posthog",
     "serviceworker",
@@ -89,10 +96,14 @@
     "sonner",
     "supabase",
     "superjson",
+    "tabindex",
+    "textnodes",
     "trpc",
+    "trunc",
     "tsgolint",
     "typecheck",
     "unauthed",
+    "uninvoked",
     "vaul"
   ]
 }

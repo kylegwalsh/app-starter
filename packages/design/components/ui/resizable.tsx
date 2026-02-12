@@ -1,7 +1,7 @@
 import { cn } from '@repo/design/lib/utils';
 import { GripVerticalIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
-// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
+// oxlint-disable no-namespace-import: This won't impact performance
 import * as ResizablePrimitive from 'react-resizable-panels';
 
 function ResizablePanelGroup({
@@ -38,7 +38,7 @@ function ResizableHandle({
       {...props}
     >
       {withHandle && (
-        <div className="z-10 flex h-4 w-3 items-center justify-center rounded-xs border bg-border">
+        <div className="bg-border z-10 flex h-4 w-3 items-center justify-center rounded-xs border">
           <GripVerticalIcon className="size-2.5" />
         </div>
       )}

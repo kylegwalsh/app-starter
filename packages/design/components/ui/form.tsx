@@ -1,3 +1,4 @@
+// oxlint-disable no-namespace: This won't impact performance
 'use client';
 
 import type * as LabelPrimitive from '@radix-ui/react-label';

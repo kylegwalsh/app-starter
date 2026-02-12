@@ -1,4 +1,4 @@
-// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
+// oxlint-disable no-namespace-import: This won't impact performance
 import * as HoverCardPrimitive from '@radix-ui/react-hover-card';
 import { cn } from '@repo/design/lib/utils';
 import type { ComponentProps } from 'react';

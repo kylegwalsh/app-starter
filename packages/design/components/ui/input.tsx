@@ -26,6 +26,7 @@ function Input({ className, type, value, onChange, ...props }: React.ComponentPr
           // Create a synthetic event with the normalized value
           const syntheticEvent = {
             ...e,
+            // oxlint-disable no-misused-spread: The underlying input component simply does this
             target: { ...e.target, value: normalized },
           } as React.ChangeEvent<HTMLInputElement>;
           onChange(syntheticEvent);

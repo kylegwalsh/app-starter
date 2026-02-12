@@ -30,4 +30,4 @@ const initExisting = async () => {
   process.exit(0);
 };
 
-initExisting();
+await initExisting();

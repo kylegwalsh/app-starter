@@ -14,4 +14,4 @@ const initStripe = async () => {
   process.exit(0);
 };
 
-initStripe();
+await initStripe();

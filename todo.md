@@ -39,12 +39,10 @@
 
 - Experiment with ox as a biome replacement
   - Consider upgrading typescript
-  - Ensure oxlint autofixes things like import sort order
-  - Modify oxlint rules so that the important ones are treated as errors
-  - Remove all biome disables
   - Fix remaining oxlint rule failures
+  - See if we need to configure NextJS rules in oxlint config
   - Ensure vitest works fine and that we don't need the old biome global overrides for sst
-  - Remove TestPage.ts file
+- Update combobox with latest version with section headers
 - Ensure our tests can run in parallel without issues against the DB
 - Changing active organization should invalidate all requests
 - Replace cursor rules with AGENTS.md / skills and test in cursor + claude
@@ -72,4 +70,4 @@
 - Upgrade SST to see if it improves windows support (like hot reloading backend when modifying packages outside the backend)
 - Potentially remove separate authConfig after issue is resolved - https://github.com/better-auth/better-auth/issues/3408
 - Try pglite with backend tests whenever the prisma adapter works better
-- Once oxlint/tsgolint is updated, see if we can remove the oxlint ts-ignore rules we added
+- Once oxlint/tsgolint is updated, see if we can remove the oxlint ts-ignore rules we added to the backend auth file

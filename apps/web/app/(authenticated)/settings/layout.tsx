@@ -44,7 +44,7 @@ const SettingsLayout: FC = ({ children }) => {
           {settingsTabs.map((tab) => (
             <Link className="flex-1 md:flex-none" href={tab.href} key={tab.label}>
               <TabsTrigger
-                className="!bg-transparent !shadow-none w-full rounded-none border-0 px-2 text-muted-foreground data-[state=active]:border-primary data-[state=active]:border-b-2 data-[state=active]:text-foreground sm:px-4 md:px-6 lg:px-10"
+                className="text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-foreground w-full rounded-none border-0 !bg-transparent px-2 !shadow-none data-[state=active]:border-b-2 sm:px-4 md:px-6 lg:px-10"
                 value={tab.label}
               >
                 {tab.label}

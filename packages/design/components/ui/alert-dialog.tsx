@@ -1,6 +1,6 @@
 'use client';
 
-// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
+// oxlint-disable no-namespace-import: This won't impact performance
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 import { buttonVariants } from '@repo/design/components/ui/button';
 import { cn } from '@repo/design/lib/utils';

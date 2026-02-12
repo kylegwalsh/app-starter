@@ -1,8 +1,7 @@
+import type { createContext } from './context';
 import { analytics } from '@repo/analytics';
 import type { TRPCError, TRPCProcedureType } from '@trpc/server';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
-
-import type { createContext } from './context';
 
 /** Handles errors that occur in our API */
 export const onError = ({

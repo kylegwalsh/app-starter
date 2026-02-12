@@ -84,7 +84,6 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
   return (
     <style
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: This is a style tag, not user-generated content.
       dangerouslySetInnerHTML={{
         __html: Object.entries(THEMES)
           .map(
@@ -173,6 +172,7 @@ function ChartTooltipContent({
         {payload.map((item, index) => {
           const key = `${nameKey || item.name || item.dataKey || 'value'}`;
           const itemConfig = getPayloadConfigFromPayload(config, item, key);
+          // oxlint-disable no-unsafe-member-access: The payload can contain fill
           const indicatorColor = (color || item.payload.fill || item.color) as string;
 
           return (
@@ -224,7 +224,7 @@ function ChartTooltipContent({
                       </span>
                     </div>
                     {item.value && (
-                      <span className="font-medium font-mono text-foreground tabular-nums">
+                      <span className="text-foreground font-mono font-medium tabular-nums">
                         {item.value.toLocaleString()}
                       </span>
                     )}
@@ -267,6 +267,7 @@ function ChartLegendContent({
       )}
     >
       {payload.map((item) => {
+        // oxlint-disable restrict-template-expressions: The dataKey is a valid string
         const key = `${nameKey || item.dataKey || 'value'}`;
         const itemConfig = getPayloadConfigFromPayload(config, item, key);
 

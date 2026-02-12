@@ -1,6 +1,6 @@
 'use client';
 
-// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
+// oxlint-disable no-namespace-import: This won't impact performance
 import * as RadioGroupPrimitive from '@radix-ui/react-radio-group';
 import { cn } from '@repo/design/lib/utils';
 import { CircleIcon } from 'lucide-react';
@@ -30,7 +30,7 @@ function RadioGroupItem({ className, ...props }: ComponentProps<typeof RadioGrou
         className="relative flex items-center justify-center"
         data-slot="radio-group-indicator"
       >
-        <CircleIcon className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 size-2 fill-primary" />
+        <CircleIcon className="fill-primary absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2" />
       </RadioGroupPrimitive.Indicator>
     </RadioGroupPrimitive.Item>
   );

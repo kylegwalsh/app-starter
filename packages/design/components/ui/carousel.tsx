@@ -1,4 +1,3 @@
-// biome-ignore-all lint/a11y/useSemanticElements: This is how shadcn defined it
 'use client';
 
 import { Button } from '@repo/design/components/ui/button';
