@@ -16,7 +16,7 @@
     "test:e2e:ui": "playwright test --ui",
     "lint": "bun --cwd ../backend types:generate && oxlint --type-aware --type-check",
     "lint:fix": "oxlint --type-aware --type-check --fix",
-    "format": "oxfmt .",
+    "format": "oxfmt",
     "update-readme": "doctoc README.md",
     "postinstall": "tsx scripts/install-playwright"
   },

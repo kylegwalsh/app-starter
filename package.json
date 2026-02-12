@@ -21,7 +21,7 @@
     "test:ci": "turbo test:ci --continue",
     "lint": "oxlint --type-aware --type-check",
     "lint:fix": "oxlint --type-aware --type-check --fix",
-    "format": "oxfmt .",
+    "format": "oxfmt",
     "init": "tsx scripts/init/init",
     "init:stripe": "tsx scripts/init/init-stripe",
     "init:existing": "tsx scripts/init/init-existing",

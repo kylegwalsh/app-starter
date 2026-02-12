@@ -19,7 +19,7 @@
     "shadcn": "bunx shadcn@latest",
     "lint": "oxlint --type-aware --type-check",
     "lint:fix": "oxlint --type-aware --type-check --fix",
-    "format": "oxfmt .",
+    "format": "oxfmt",
     "update-readme": "doctoc README.md"
   },
   "dependencies": {
