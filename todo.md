@@ -37,12 +37,7 @@
 
 ## OTHER
 
-- Experiment with ox as a biome replacement
-  - Consider upgrading typescript
-  - Fix remaining oxlint rule failures
-  - See if we need to configure NextJS rules in oxlint config
-  - Ensure vitest works fine and that we don't need the old biome global overrides for sst
-- Update combobox with latest version with section headers
+- Consider upgrading typescript
 - Ensure our tests can run in parallel without issues against the DB
 - Changing active organization should invalidate all requests
 - Replace cursor rules with AGENTS.md / skills and test in cursor + claude
