@@ -3,7 +3,7 @@
   "hooks": {
     "afterFileEdit": [
       {
-        "command": "bunx oxlint --fix"
+        "command": "bunx oxlint --type-aware --type-check --fix"
       },
       {
         "command": "bunx oxfmt"
