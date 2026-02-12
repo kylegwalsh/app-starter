@@ -37,7 +37,6 @@
 
 ## OTHER
 
-- Consider upgrading typescript
 - Ensure our tests can run in parallel without issues against the DB
 - Changing active organization should invalidate all requests
 - Replace cursor rules with AGENTS.md / skills and test in cursor + claude

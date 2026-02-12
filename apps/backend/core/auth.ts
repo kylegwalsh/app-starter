@@ -270,6 +270,7 @@ const authConfig = {
       },
       // Whenever we create a new organization, we'll track it
       organizationCreation: {
+        // TODO: Upgrade oxlint and tsgolint to see if it can understand these types better
         // oxlint-disable-next-line prefer-ts-expect-error, ban-ts-comment: We need to ignore this for oxlint's type checking
         // @ts-ignore - Oxlint does not seem to understand the types of this particular method
         afterCreate: async ({ organization, user }) => {
