@@ -48,17 +48,6 @@ jobs:
         with:
           node-version: 24
 
-      # Cache dependencies
-      # - name: Set up cache for dependencies
-      #   uses: actions/cache@v4
-      #   id: cache-deps
-      #   with:
-      #     path: |
-      #       node_modules
-      #       apps/*/node_modules
-      #       packages/*/node_modules
-      #     key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-
       # Install dependencies (no --frozen-lockfile due to bun platform detection quirks)
       - name: Install dependencies
         run: bun install --ignore-scripts
