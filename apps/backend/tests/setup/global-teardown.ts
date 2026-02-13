@@ -1,11 +1,13 @@
-/** Tears down our test environment (runs only once after all tests) */
-export const teardown = async () => {
-  // We do a lazy import because this module isn't ready until the global setup runs
-  // and this file will prevent it from running if it crashes
-  const { db } = await import('../mocks/db');
+import { readdirSync, unlinkSync } from 'node:fs';
+import path from 'node:path';
 
-  // Note: This type is only defined after running the tests once
-  if (db) {
-    await db.$disconnect();
+/** Tears down our test environment (runs only once after all tests) */
+export const teardown = () => {
+  // Clean up any leftover test database files (safety net)
+  const generatedDir = path.resolve('tests/generated');
+  for (const file of readdirSync(generatedDir)) {
+    if (file.startsWith('test-') && file.endsWith('.db')) {
+      unlinkSync(path.join(generatedDir, file));
+    }
   }
 };
