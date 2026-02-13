@@ -5,13 +5,12 @@ concurrency:
   # Disable cancelling in-progress runs because sst will lock a deploy, preventing the subsequent deploy from succeeding
   cancel-in-progress: false
 on:
-  # Temporarily disabled
-  # # Run on push to main (dev deployment)
-  # push:
-  #   branches: [main]
-  # # Run on release (prod deployment)
-  # release:
-  #   types: [published]
+  # Run on push to main (dev deployment)
+  push:
+    branches: [main]
+  # Run on release (prod deployment)
+  release:
+    types: [published]
   workflow_dispatch: # Allow manual triggering
 
 # Global environment variables
