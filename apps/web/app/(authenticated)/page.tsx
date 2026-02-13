@@ -23,7 +23,6 @@ import {
   useIsMobile,
 } from '@repo/design';
 import { TrendingDown, TrendingUp } from 'lucide-react';
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 
@@ -167,7 +166,6 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Link href="/asdb">Test</Link>
       <Header breadcrumbs={[{ label: 'Overview' }]} />
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">

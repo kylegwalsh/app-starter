@@ -9,8 +9,8 @@ import { useUser } from '@/hooks';
 
 /** Watches user changes and performs tasks */
 export const UserInitializer = () => {
-  const { user, organization, isLoading, isLoggedIn } = useUser();
   const queryClient = useQueryClient();
+  const { user, organization, isLoading, isLoggedIn } = useUser();
   const [previouslyIdentified, setPreviouslyIdentified] = useState(false);
   const [previousOrganizationId, setPreviousOrganizationId] = useState<string>();
 
@@ -50,8 +50,13 @@ export const UserInitializer = () => {
           createdAt: organization.createdAt?.toISOString() ?? undefined,
         },
       });
+
+      // Invalidate all queries when switching organizations to ensure fresh data
+      if (previousOrganizationId) {
+        queryClient.invalidateQueries();
+      }
     }
-  }, [isLoggedIn, organization, previousOrganizationId]);
+  }, [isLoggedIn, organization, previousOrganizationId, queryClient]);
 
   // Once the user logs in, store something indicating that they had a session at some point (used to detect session expiration)
   useEffect(() => {
