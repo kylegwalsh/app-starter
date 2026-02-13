@@ -52,6 +52,11 @@ runs:
           ${{ runner.os }}-turbo-${{ inputs.job-name }}-
           ${{ runner.os }}-turbo-
 
+    # Install dependencies (no --frozen-lockfile due to bun platform detection quirks)
+    - name: Install dependencies
+      shell: bash
+      run: bun install --ignore-scripts
+
     # Generate some of the types we'll need
     - name: Generate Prisma client
       shell: bash
