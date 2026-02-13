@@ -63,3 +63,6 @@ npm-debug.log*
 # Playwright
 .playwright-installed
 .auth
+
+# Agents
+.claude/settings.local.json

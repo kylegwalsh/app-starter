@@ -1,8 +1,8 @@
 {
   "name": "@repo/web",
   "version": "0.0.1",
-  "type": "module",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "sst shell -- next dev",
     "start": "sst shell -- next start",
@@ -14,9 +14,9 @@
     "test:e2e": "sst shell -- playwright test",
     "test:e2e:ci": "sst shell --stage minimal -- playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "lint": "ultracite check .",
-    "lint:fix": "ultracite fix .",
-    "types:check": "bun --cwd ../backend types:generate && tsc --noEmit",
+    "lint": "bun --cwd ../backend types:generate && oxlint --type-aware --type-check",
+    "lint:fix": "oxlint --type-aware --type-check --fix",
+    "format": "oxfmt",
     "update-readme": "doctoc README.md",
     "postinstall": "tsx scripts/install-playwright"
   },
@@ -44,7 +44,6 @@
     "superjson": "2.2.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.4",
     "@next/bundle-analyzer": "15.3.2",
     "@playwright/test": "1.52.0",
     "@repo/backend": "workspace:*",
@@ -55,6 +54,6 @@
     "@types/react-dom": "19.1.5",
     "jsdom": "26.1.0",
     "tailwindcss": "4.1.7",
-    "typescript": "5.8.3"
+    "typescript": "5.9.3"
   }
 }

@@ -10,11 +10,7 @@ export function generateStaticParams() {
 }
 
 /** Handles all of our authentication routes */
-export default async function AuthPage({
-  params,
-}: {
-  params: Promise<{ path: string }>;
-}) {
+export default async function AuthPage({ params }: { params: Promise<{ path: string }> }) {
   const { path } = await params;
   if (!Object.values(authViewPaths).includes(path)) {
     notFound();

@@ -18,9 +18,10 @@ if (stage === 'prod' || stage === 'staging') {
 
 /** The URL of our web app */
 let appUrl: string | undefined;
-// biome-ignore lint/suspicious/noExplicitAny: We need a few explicit any's here
+// oxlint-disable no-explicit-any: We need the backend to build and ignore the window
 declare const window: any;
 if (typeof window !== 'undefined') {
+  // oxlint-disable no-unsafe-assignment, no-unsafe-member-access: The window is not typed here
   appUrl = window.location.origin;
 }
 if (!appUrl) {

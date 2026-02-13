@@ -42,20 +42,18 @@ const startShadowDB = async () => {
   console.log('\nStarting shadow DB container...');
   execSync(
     `docker run -d --rm --name ${DOCKER_NAME} -e POSTGRES_PASSWORD=shadow -e POSTGRES_DB=shadowdb -p ${DB_PORT}:5432 ${POSTGRES_IMAGE}`,
-    { stdio: 'ignore' }
+    { stdio: 'ignore' },
   );
 
   // Wait for database to be ready
   for (let i = 0; i < 30; i++) {
     try {
-      execSync(
-        `docker exec ${DOCKER_NAME} pg_isready -U postgres -d shadowdb`,
-        {
-          stdio: 'ignore',
-        }
-      );
+      execSync(`docker exec ${DOCKER_NAME} pg_isready -U postgres -d shadowdb`, {
+        stdio: 'ignore',
+      });
       return;
     } catch {
+      // oxlint-disable-next-line no-await-in-loop: We need to await here
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
@@ -74,6 +72,7 @@ const getMigrationDirName = async (): Promise<string> => {
       input: process.stdin,
       output: process.stdout,
     });
+    // oxlint-disable-next-line no-await-in-loop: We need to await here
     name = await new Promise<string>((resolve) => {
       rl.question('Enter a name for the new migration: ', (answer) => {
         rl.close();
@@ -117,9 +116,7 @@ const parseCliArgs = (): { method?: 'schema' | 'manual' } => {
   }
 
   if (method && method !== 'schema' && method !== 'manual') {
-    console.error(
-      '❌ Invalid value for --method. Expected "schema" or "manual".'
-    );
+    console.error('❌ Invalid value for --method. Expected "schema" or "manual".');
     process.exit(1);
   }
 
@@ -139,7 +136,7 @@ const syncLocalChangesToMigration = async () => {
     // Run Prisma migrate diff to generate up migration (if any is needed)
     console.log('\nChecking whether there were any changes to the schema...');
     const migrationUpBuffer = execSync(
-      `bunx prisma migrate diff --from-migrations ./db/migrations --to-schema-datamodel ./db/schema.prisma --shadow-database-url ${DB_URL} --script`
+      `bunx prisma migrate diff --from-migrations ./db/migrations --to-schema-datamodel ./db/schema.prisma --shadow-database-url ${DB_URL} --script`,
     );
     const migrationUpContents = migrationUpBuffer.toString();
 
@@ -155,29 +152,21 @@ const syncLocalChangesToMigration = async () => {
 
     // Generate the down migration as well (for convenience)
     const migrationDownBuffer = execSync(
-      `bunx prisma migrate diff --from-schema-datamodel ./db/schema.prisma --to-migrations ./db/migrations --shadow-database-url ${DB_URL} --script`
+      `bunx prisma migrate diff --from-schema-datamodel ./db/schema.prisma --to-migrations ./db/migrations --shadow-database-url ${DB_URL} --script`,
     );
     const migrationDownContents = migrationDownBuffer.toString();
 
     // Write the migration to a file
     fs.mkdirSync(migrationPath, { recursive: true });
     fs.writeFileSync(`${migrationPath}/migration.sql`, migrationUpContents);
-    fs.writeFileSync(
-      `${migrationPath}/migration-down.sql`,
-      migrationDownContents
-    );
-    console.log(
-      `✔ Migration created: apps/backend/${migrationPath}/migration.sql\n`
-    );
+    fs.writeFileSync(`${migrationPath}/migration-down.sql`, migrationDownContents);
+    console.log(`✔ Migration created: apps/backend/${migrationPath}/migration.sql\n`);
 
     // Make sure the migration file has been applied to the DB (keeps them in sync)
     console.log('\nApplying migration...');
-    execSync(
-      `bun db:get-url "prisma migrate resolve --applied ${migrationDirName}"`,
-      {
-        stdio: 'inherit',
-      }
-    );
+    execSync(`bun db:get-url "prisma migrate resolve --applied ${migrationDirName}"`, {
+      stdio: 'inherit',
+    });
     console.log('✔ Migration applied.\n');
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -185,7 +174,7 @@ const syncLocalChangesToMigration = async () => {
 
     if (errorMsg.includes('error during connect')) {
       console.error(
-        '❗ There was a problem connecting to your shadow DB. Make sure you have Docker installed and running in the background.\n'
+        '❗ There was a problem connecting to your shadow DB. Make sure you have Docker installed and running in the background.\n',
       );
     }
 
@@ -197,19 +186,15 @@ const syncLocalChangesToMigration = async () => {
 
 /** Generates a migration file without running it so that we can specify the changes manually */
 const generateManualMigrationFile = () => {
-  const child = spawn(
-    'bun',
-    ['db:get-url', '"prisma migrate dev --create-only"'],
-    {
-      stdio: 'inherit',
-      shell: true,
-    }
-  );
+  const child = spawn('bun', ['db:get-url', '"prisma migrate dev --create-only"'], {
+    stdio: 'inherit',
+    shell: true,
+  });
 
   child.on('exit', (code: number | null) => {
     if (code === 0) {
       console.log(
-        '\n✔ Migration file created. When you are done editing the file, run `bun db:migrate:deploy` to apply it to the DB.\n'
+        '\n✔ Migration file created. When you are done editing the file, run `bun db:migrate:deploy` to apply it to the DB.\n',
       );
     }
 
@@ -259,9 +244,9 @@ const createMigration = async () => {
       break;
     }
     default: {
-      throw new Error(`Invalid migration type: ${migrationType}`);
+      throw new Error('Invalid migration type');
     }
   }
 };
 
-createMigration();
+await createMigration();

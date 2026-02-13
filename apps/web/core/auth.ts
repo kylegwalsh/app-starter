@@ -1,3 +1,4 @@
+import type { auth as backendAuth } from '../../backend/core/auth';
 import { stripeClient } from '@better-auth/stripe/client';
 import { config } from '@repo/config';
 import {
@@ -7,8 +8,6 @@ import {
   organizationClient,
 } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
-
-import type { auth as backendAuth } from '../../backend/core/auth';
 
 /** The config for our Better Auth client (defined separately to avoid TypeScript issues) */
 const authConfig = {

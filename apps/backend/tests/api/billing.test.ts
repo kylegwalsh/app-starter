@@ -37,7 +37,7 @@ describe('Billing Router', () => {
       });
 
       await expect(noStripeTrpc.billing.getPortalUrl()).rejects.toThrow(
-        'Organization does not have a Stripe customer ID'
+        'Organization does not have a Stripe customer ID',
       );
     });
 

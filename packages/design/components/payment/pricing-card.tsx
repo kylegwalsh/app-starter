@@ -23,13 +23,7 @@ type Props = {
   features: string[];
   onClick: (...args: unknown[]) => void;
   buttonText?: string;
-  buttonVariant?:
-    | 'default'
-    | 'outline'
-    | 'secondary'
-    | 'destructive'
-    | 'ghost'
-    | 'link';
+  buttonVariant?: 'default' | 'outline' | 'secondary' | 'destructive' | 'ghost' | 'link';
   banner?: {
     text: string;
     variant?: 'default' | 'secondary' | 'destructive' | 'outline';
@@ -55,8 +49,7 @@ export const PricingCard: FC<Props> = ({
   className,
 }) => {
   const displayBanner =
-    banner ||
-    (popular && { text: 'Most popular', variant: 'default' as const });
+    banner || (popular && { text: 'Most popular', variant: 'default' as const });
 
   // Format price display
   const priceDisplay = `${currency}${price}`;
@@ -67,20 +60,16 @@ export const PricingCard: FC<Props> = ({
         'flex flex-col',
         popular && 'border-primary',
         disabled && 'opacity-60',
-        className
+        className,
       )}
     >
       <CardHeader className="pb-2 text-center">
         {displayBanner && (
-          <Badge className="mb-3 w-max self-center uppercase">
-            {displayBanner.text}
-          </Badge>
+          <Badge className="mb-3 w-max self-center uppercase">{displayBanner.text}</Badge>
         )}
-        <CardTitle className={cn('mb-7', displayBanner && '!mb-7')}>
-          {plan}
-        </CardTitle>
+        <CardTitle className={cn('mb-7', displayBanner && '!mb-7')}>{plan}</CardTitle>
         <div className="flex items-end justify-center gap-2">
-          <span className="font-bold text-5xl">{priceDisplay}</span>
+          <span className="text-5xl font-bold">{priceDisplay}</span>
           <span className="text-muted-foreground">/mo</span>
         </div>
       </CardHeader>
@@ -90,7 +79,7 @@ export const PricingCard: FC<Props> = ({
           className={cn(
             'text-center',
             // Responsive width matching the existing design
-            'mx-auto w-11/12'
+            'mx-auto w-11/12',
           )}
         >
           {description}

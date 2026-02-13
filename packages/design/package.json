@@ -1,8 +1,8 @@
 {
   "name": "@repo/design",
   "version": "0.0.1",
-  "type": "module",
   "private": true,
+  "type": "module",
   "sideEffects": false,
   "exports": {
     ".": "./index.ts",
@@ -17,9 +17,9 @@
   },
   "scripts": {
     "shadcn": "bunx shadcn@latest",
-    "lint": "ultracite check .",
-    "lint:fix": "ultracite fix .",
-    "types:check": "tsc --noEmit",
+    "lint": "oxlint --type-aware --type-check",
+    "lint:fix": "oxlint --type-aware --type-check --fix",
+    "format": "oxfmt",
     "update-readme": "doctoc README.md"
   },
   "dependencies": {
@@ -73,7 +73,6 @@
     "zod": "3.25.49"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.4",
     "@repo/tsconfig": "workspace:*",
     "@tailwindcss/postcss": "4.1.7",
     "@turbo/gen": "2.4.2",
@@ -81,6 +80,6 @@
     "@types/react": "19.1.4",
     "@types/react-dom": "19.1.5",
     "tailwindcss": "4.1.7",
-    "typescript": "5.8.3"
+    "typescript": "5.9.3"
   }
 }

@@ -12,7 +12,7 @@ function BreadcrumbList({ className, ...props }: ComponentProps<'ol'>) {
     <ol
       className={cn(
         'flex flex-wrap items-center gap-1.5 break-words text-muted-foreground text-sm sm:gap-2.5',
-        className
+        className,
       )}
       data-slot="breadcrumb-list"
       {...props}
@@ -48,7 +48,7 @@ function BreadcrumbLink({
   );
 }
 
-function BreadcrumbPage({ className, ...props }: ComponentProps<'a'>) {
+function BreadcrumbPage({ className, children, ...props }: ComponentProps<'a'>) {
   return (
     <a
       aria-current="page"
@@ -56,15 +56,13 @@ function BreadcrumbPage({ className, ...props }: ComponentProps<'a'>) {
       className={cn('font-normal text-foreground', className)}
       data-slot="breadcrumb-page"
       {...props}
-    />
+    >
+      {children}
+    </a>
   );
 }
 
-function BreadcrumbSeparator({
-  children,
-  className,
-  ...props
-}: ComponentProps<'li'>) {
+function BreadcrumbSeparator({ children, className, ...props }: ComponentProps<'li'>) {
   return (
     <li
       aria-hidden="true"

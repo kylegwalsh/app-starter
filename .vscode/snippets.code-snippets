@@ -16,9 +16,9 @@
       "\treturn (",
       "\t\t",
       "\t);",
-      "};"
+      "};",
     ],
-    "description": "Inserts our standardized react component template"
+    "description": "Inserts our standardized react component template",
   },
   "Create NextJS Screen": {
     "scope": "typescript,typescriptreact,javascript,react",
@@ -33,15 +33,15 @@
       "\treturn (",
       "\t\t",
       "\t);",
-      "};"
+      "};",
     ],
-    "description": "Inserts our standardized react component template"
+    "description": "Inserts our standardized react component template",
   },
   "Create Generic Function Type": {
     "scope": "typescript,typescriptreact,javascript,react",
     "prefix": "function-type",
     "body": ["(...args: unknown[]) => void"],
-    "description": "Inserts a generic function type"
+    "description": "Inserts a generic function type",
   },
   "Create React Hook": {
     "scope": "typescript,typescriptreact,javascript,react",
@@ -54,14 +54,14 @@
       "/** ${2:DESCRIPTION} */",
       "export const ${1:NAME} = ({} : Props) => {",
       "\t",
-      "};"
+      "};",
     ],
-    "description": "Inserts our standard react hook template"
+    "description": "Inserts our standard react hook template",
   },
   "Create Mini Comment Section": {
     "scope": "typescript,typescriptreact,javascript,react",
     "prefix": "mini-comment-section",
     "body": ["// ---------- ${1:NAME_OF_SECTION} ----------"],
-    "description": "Inserts a miniature comment section to easily distinguish code"
-  }
+    "description": "Inserts a miniature comment section to easily distinguish code",
+  },
 }

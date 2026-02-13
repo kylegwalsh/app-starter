@@ -37,10 +37,7 @@ export const BillingHistory: FC = () => {
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
   }, []);
-  const mobileVisibleItems = useMemo(
-    () => history.slice(0, visibleCount),
-    [history, visibleCount]
-  );
+  const mobileVisibleItems = useMemo(() => history.slice(0, visibleCount), [history, visibleCount]);
   const hasMoreMobile = visibleCount < history.length;
 
   // Desktop pagination state
@@ -62,7 +59,7 @@ export const BillingHistory: FC = () => {
         <div className="sm:hidden">
           <div className="flex flex-col gap-4">
             {Array.from({ length: 3 }).map((_, index) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: The only unique info here is the index
+              // oxlint-disable-next-line no-array-index-key: The only unique info here is the index
               <div className="rounded-md border p-3" key={index}>
                 <div className="flex items-center justify-between gap-2">
                   <Skeleton className="h-4 w-24" />
@@ -91,7 +88,7 @@ export const BillingHistory: FC = () => {
             </TableHeader>
             <TableBody>
               {Array.from({ length: 3 }).map((_, index) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: The only unique info here is the index
+                // oxlint-disable-next-line no-array-index-key: The only unique info here is the index
                 <TableRow key={index}>
                   <TableCell>
                     <Skeleton className="h-4 max-w-18 flex-1" />
@@ -120,7 +117,7 @@ export const BillingHistory: FC = () => {
   // If there is no history, show a message
   if (history.length === 0) {
     return (
-      <div className="flex items-center justify-center py-6 text-center text-muted-foreground">
+      <div className="text-muted-foreground flex items-center justify-center py-6 text-center">
         No billing history yet
       </div>
     );
@@ -137,12 +134,8 @@ export const BillingHistory: FC = () => {
               key={item.id ?? `${item.type}-${item.date.toString()}`}
             >
               <div className="flex items-center justify-between gap-2">
-                <div className="font-medium">
-                  {format.case(item.type, 'sentenceCase')}
-                </div>
-                <div className="text-muted-foreground text-sm">
-                  {format.date(item.date)}
-                </div>
+                <div className="font-medium">{format.case(item.type, 'sentenceCase')}</div>
+                <div className="text-muted-foreground text-sm">{format.date(item.date)}</div>
               </div>
               <div className="mt-1 flex items-center justify-between gap-2">
                 <div className="text-sm">{format.currency(item.amount)}</div>
@@ -159,11 +152,7 @@ export const BillingHistory: FC = () => {
                     size="sm"
                     variant="outline"
                   >
-                    <Link
-                      href={item.receiptUrl ?? ''}
-                      rel="noreferrer noopener"
-                      target="_blank"
-                    >
+                    <Link href={item.receiptUrl ?? ''} rel="noreferrer noopener" target="_blank">
                       Download <Download />
                     </Link>
                   </Button>
@@ -175,9 +164,7 @@ export const BillingHistory: FC = () => {
           {hasMoreMobile && (
             <Button
               className="w-full"
-              onClick={() =>
-                setVisibleCount((c) => Math.min(c + PAGE_SIZE, history.length))
-              }
+              onClick={() => setVisibleCount((c) => Math.min(c + PAGE_SIZE, history.length))}
               variant="outline"
             >
               Show more

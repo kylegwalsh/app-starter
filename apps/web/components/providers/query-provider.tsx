@@ -17,8 +17,7 @@ export const QueryProvider = ({ children }: { children: ReactNode }) => {
         // Adds pretty logs to your console in development and logs errors in production
         loggerLink({
           enabled: (opts) =>
-            config.stage !== 'prod' ||
-            (opts.direction === 'down' && opts.result instanceof Error),
+            config.stage !== 'prod' || (opts.direction === 'down' && opts.result instanceof Error),
         }),
         // Connect to our backend
         httpBatchLink({
@@ -29,11 +28,11 @@ export const QueryProvider = ({ children }: { children: ReactNode }) => {
             return fetch(_url, {
               ...options,
               credentials: 'include',
-            });
+            } as RequestInit);
           },
         }),
       ],
-    })
+    }),
   );
 
   return (

@@ -28,7 +28,7 @@ try {
   // Log the error and exit with failure code if installation fails
   console.error(
     '[postinstall] Playwright install failed:',
-    error instanceof Error ? error.message : error
+    error instanceof Error ? error.message : error,
   );
   process.exit(1);
 }

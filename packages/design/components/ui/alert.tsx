@@ -15,7 +15,7 @@ const alertVariants = cva(
     defaultVariants: {
       variant: 'default',
     },
-  }
+  },
 );
 
 function Alert({
@@ -36,10 +36,7 @@ function Alert({
 function AlertTitle({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
-      className={cn(
-        'col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight',
-        className
-      )}
+      className={cn('col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight', className)}
       data-slot="alert-title"
       {...props}
     />
@@ -51,7 +48,7 @@ function AlertDescription({ className, ...props }: ComponentProps<'div'>) {
     <div
       className={cn(
         'col-start-2 grid justify-items-start gap-1 text-muted-foreground text-sm [&_p]:leading-relaxed',
-        className
+        className,
       )}
       data-slot="alert-description"
       {...props}

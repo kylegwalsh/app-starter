@@ -81,9 +81,7 @@ const customDestination = {
             time,
             level,
             msg,
-            // biome-ignore lint/correctness/noUnusedVariables: We need to extract this to avoid passing it
             'x-correlation-id': correlationId,
-            // biome-ignore lint/correctness/noUnusedVariables: We need to extract this to avoid passing it
             'x-correlation-trace-id': traceId,
             // Grab the rest of the context
             ...context
@@ -125,5 +123,5 @@ export const log = pino(
     // Add any additional global context into our logs
     mixin: () => getLogMetadata(),
   },
-  customDestination
+  customDestination,
 );

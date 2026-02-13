@@ -64,15 +64,9 @@ const meta = {
     })();
 
     // We need to track the state for each mode since the mode can change on the fly here
-    const [selectedSingle, setSelectedSingle] = useState<Date | undefined>(
-      initialSingle
-    );
-    const [selectedMultiple, setSelectedMultiple] = useState<
-      Date[] | undefined
-    >(initialMultiple);
-    const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(
-      initialRange
-    );
+    const [selectedSingle, setSelectedSingle] = useState<Date | undefined>(initialSingle);
+    const [selectedMultiple, setSelectedMultiple] = useState<Date[] | undefined>(initialMultiple);
+    const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(initialRange);
 
     // Listen to mode changes and update the state accordingly
     useEffect(() => {
@@ -140,21 +134,11 @@ const meta = {
     }
     if (mode === 'range') {
       return (
-        <Calendar
-          {...args}
-          mode="range"
-          onSelect={handleSelectRange}
-          selected={selectedRange}
-        />
+        <Calendar {...args} mode="range" onSelect={handleSelectRange} selected={selectedRange} />
       );
     }
     return (
-      <Calendar
-        {...args}
-        mode="single"
-        onSelect={handleSelectSingle}
-        selected={selectedSingle}
-      />
+      <Calendar {...args} mode="single" onSelect={handleSelectSingle} selected={selectedSingle} />
     );
   },
 } satisfies Meta<typeof Calendar>;

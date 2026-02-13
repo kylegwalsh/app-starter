@@ -24,8 +24,7 @@ const meta = {
     },
     options: {
       control: 'object',
-      description:
-        'List of options to display, either flat array or grouped array',
+      description: 'List of options to display, either flat array or grouped array',
     },
     value: {
       control: 'text',
@@ -155,8 +154,7 @@ const meta = {
     },
     onCreateOption: {
       action: 'create option',
-      description:
-        'Function to create a new option from search query, can be async',
+      description: 'Function to create a new option from search query, can be async',
     },
     createOptionLabel: {
       control: false,
@@ -168,8 +166,7 @@ const meta = {
     },
     renderSelectedValue: {
       control: false,
-      description:
-        'Custom render function for the selected value(s) in the trigger',
+      description: 'Custom render function for the selected value(s) in the trigger',
     },
     icon: {
       control: false,
@@ -269,39 +266,25 @@ export const Multiple: Story = {
       await canvas.findByPlaceholderText('Select an option...', {
         exact: true,
       }),
-      'appl'
+      'appl',
     );
     // Verify Apple option is visible
-    await waitFor(() =>
-      expect(canvas.queryByText('Apple', { exact: true })).toBeVisible()
-    );
+    await waitFor(() => expect(canvas.queryByText('Apple', { exact: true })).toBeVisible());
     // Verify Banana option is not visible
-    expect(
-      canvas.queryByText('Banana', { exact: true })
-    ).not.toBeInTheDocument();
+    expect(canvas.queryByText('Banana', { exact: true })).not.toBeInTheDocument();
     // Click Apple option to select it
-    await userEvent.click(
-      (await canvas.findByText('Apple', { exact: true })) as HTMLElement
-    );
+    await userEvent.click((await canvas.findByText('Apple', { exact: true })) as HTMLElement);
     // Clear the search text
     await userEvent.clear(await canvas.findByRole('textbox'));
     // Wait for Banana option to appear and click it
-    await waitFor(() =>
-      expect(canvas.queryByText('Banana', { exact: true })).toBeVisible()
-    );
-    await userEvent.click(
-      (await canvas.findByText('Banana', { exact: true })) as HTMLElement
-    );
+    await waitFor(() => expect(canvas.queryByText('Banana', { exact: true })).toBeVisible());
+    await userEvent.click((await canvas.findByText('Banana', { exact: true })) as HTMLElement);
     // Click outside the combobox to close it
     await userEvent.click(body);
     await new Promise((resolve) => setTimeout(resolve, 250));
     // Verify both Apple and Banana badges are shown
-    await waitFor(() =>
-      expect(canvas.queryByText('Apple', { exact: true })).toBeVisible()
-    );
-    await waitFor(() =>
-      expect(canvas.queryByText('Banana', { exact: true })).toBeVisible()
-    );
+    await waitFor(() => expect(canvas.queryByText('Apple', { exact: true })).toBeVisible());
+    await waitFor(() => expect(canvas.queryByText('Banana', { exact: true })).toBeVisible());
     // Click back into combobox and focus the input
     await userEvent.click(await canvas.findByRole('combobox'));
     // Wait for input to be focused
@@ -314,14 +297,10 @@ export const Multiple: Story = {
     await new Promise((resolve) => setTimeout(resolve, 250));
     // Verify both options are removed (no badges visible) - wait for popover to close
     await waitFor(() =>
-      expect(
-        canvas.queryByText('Apple', { exact: true })
-      ).not.toBeInTheDocument()
+      expect(canvas.queryByText('Apple', { exact: true })).not.toBeInTheDocument(),
     );
     await waitFor(() =>
-      expect(
-        canvas.queryByText('Banana', { exact: true })
-      ).not.toBeInTheDocument()
+      expect(canvas.queryByText('Banana', { exact: true })).not.toBeInTheDocument(),
     );
   },
 };
@@ -341,9 +320,7 @@ export const MultipleSortable: Story = {
     // Verify initial order: Apple, Banana, Orange
     const combobox = await canvas.findByRole('combobox');
     // Find badges by their draggable attribute
-    const badges = Array.from(
-      combobox.querySelectorAll('[draggable="true"]')
-    ) as HTMLElement[];
+    const badges = Array.from(combobox.querySelectorAll('[draggable="true"]')) as HTMLElement[];
     expect(badges[0]).toHaveTextContent('Apple');
     expect(badges[1]).toHaveTextContent('Banana');
     expect(badges[2]).toHaveTextContent('Orange');
@@ -407,7 +384,7 @@ export const MultipleSortable: Story = {
     // Wait for reordering to complete
     await waitFor(() => {
       const updatedBadges = Array.from(
-        combobox.querySelectorAll('[draggable="true"]')
+        combobox.querySelectorAll('[draggable="true"]'),
       ) as HTMLElement[];
       // Verify new order: Banana, Orange, Apple
       expect(updatedBadges[0]).toHaveTextContent('Banana');
@@ -427,7 +404,7 @@ export const WithCreateOption: Story = {
         createOptionLabel={(searchValue) => `Create "${searchValue}"`}
         onCreateOption={(searchValue) => {
           const newOption = {
-            value: searchValue.toLowerCase().replace(/\s+/g, '-'),
+            value: searchValue.toLowerCase().replaceAll(' ', '-'),
             label: searchValue,
           };
           // Add the new option to the options list
@@ -455,7 +432,7 @@ export const Loading: Story = {
 export const LoadingResults: Story = {
   render: (args) => {
     const [loadingResults, setLoadingResults] = useState(false);
-    const [search, setSearch] = useState('');
+    const [, setSearch] = useState('');
 
     return (
       <Combobox
@@ -546,9 +523,7 @@ export const CustomRender: Story = {
     defaultValue: 'banana',
     renderSelectedValue: (option: ComboboxOption | null) =>
       option ? (
-        <span className="font-semibold text-primary">
-          {option.label.toUpperCase()}
-        </span>
+        <span className="text-primary font-semibold">{option.label.toUpperCase()}</span>
       ) : null,
     renderOption: (option, selected) => (
       <div className="flex items-center gap-2">
@@ -575,9 +550,7 @@ export const Controlled: Story = {
           }}
           value={value}
         />
-        <div className="text-muted-foreground text-sm">
-          Current value: {value ?? 'None'}
-        </div>
+        <div className="text-muted-foreground text-sm">Current value: {value ?? 'None'}</div>
       </div>
     );
   },

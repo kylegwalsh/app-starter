@@ -6,13 +6,13 @@ export default function NotFound() {
     <div className="flex min-h-svh w-full flex-col items-center justify-center px-4 py-12">
       <div className="text-center">
         {/* 404 Header */}
-        <h1 className="mb-4 font-bold text-6xl text-muted-foreground">404</h1>
+        <h1 className="text-muted-foreground mb-4 text-6xl font-bold">404</h1>
 
         {/* Error Message */}
-        <h2 className="mb-2 font-semibold text-2xl">Page not found</h2>
-        <p className="mb-8 max-w-md text-muted-foreground">
-          Sorry, we couldn't find the page you're looking for. It might have
-          been moved, deleted, or doesn't exist.
+        <h2 className="mb-2 text-2xl font-semibold">Page not found</h2>
+        <p className="text-muted-foreground mb-8 max-w-md">
+          Sorry, we couldn't find the page you're looking for. It might have been moved, deleted, or
+          doesn't exist.
         </p>
 
         {/* Actions */}
@@ -27,7 +27,7 @@ export default function NotFound() {
         </div>
 
         {/* Additional Help */}
-        <div className="mt-12 text-muted-foreground text-sm">
+        <div className="text-muted-foreground mt-12 text-sm">
           <p>If you believe this is an error, please contact support.</p>
         </div>
       </div>

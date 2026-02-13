@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs';
+
 import { defineConfig, devices } from '@playwright/test';
 import { config } from '@repo/config';
 
 // Read AWS_PROFILE from VSCode settings (ensures we use the correct profile if it's defined there)
 let AWS_PROFILE = '';
 try {
-  const content = readFileSync('../../.vscode/settings.json', 'utf-8');
+  const content = readFileSync('../../.vscode/settings.json', 'utf8');
   const match = content.match(/"AWS_PROFILE"\s*:\s*"([^"]+)"/);
   AWS_PROFILE = match?.[1] ?? '';
 } catch {

@@ -1,3 +1,4 @@
+// oxlint-disable-next-line triple-slash-reference: This is how SST expects the types
 /// <reference path="./.sst/platform/config.d.ts" />
 
 // The config that manages our SST application / deployments
@@ -29,10 +30,7 @@ export default $config({
     $transform(sst.aws.Function, (args) => {
       // ---------- SECRETS ----------
       // Link the secrets to every method
-      args.link = ([] as unknown[]).concat(
-        (args.link as unknown[]) || [],
-        Object.values(secrets)
-      );
+      args.link = ([] as unknown[]).concat((args.link as unknown[]) || [], Object.values(secrets));
 
       // ---------- PERMISSIONS ----------
       // Add permissions for the Bedrock AI API
@@ -69,16 +67,13 @@ export default $config({
                 const { execSync } = await import('node:child_process');
 
                 // Inject sourcemaps with posthog metadata
-                execSync(
-                  `bunx posthog-cli sourcemap inject --directory ${dir}`,
-                  {
-                    stdio: 'inherit',
-                  }
-                );
+                execSync(`bunx posthog-cli sourcemap inject --directory ${dir}`, {
+                  stdio: 'inherit',
+                });
                 // Upload sourcemaps
                 execSync(
                   `bunx posthog-cli sourcemap upload --directory ${dir} --project "${process.env.GITHUB_REPO} (backend)" --version ${process.env.GITHUB_SHA}`,
-                  { stdio: 'inherit' }
+                  { stdio: 'inherit' },
                 );
               }
             } catch (error) {

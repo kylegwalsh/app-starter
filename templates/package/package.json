@@ -1,19 +1,19 @@
 {
   "name": "@repo/{{packageName}}",
   "version": "0.0.1",
-  "type": "module",
   "private": true,
+  "type": "module",
   "exports": {
     ".": "./index.ts"
   },
   "scripts": {
-    "lint": "ultracite check .",
-    "lint:fix": "ultracite fix .",
-    "types:check": "tsc --noEmit",
+    "lint": "oxlint --type-aware --type-check",
+    "lint:fix": "oxlint --type-aware --type-check --fix",
+    "format": "oxfmt",
     "update-readme": "doctoc README.md"
   },
   "devDependencies": {
     "@repo/tsconfig": "workspace:*",
-    "typescript": "5.8.3"
+    "typescript": "5.9.3"
   }
 }

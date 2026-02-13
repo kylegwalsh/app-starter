@@ -29,12 +29,13 @@ let nextConfig: NextConfig = {
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
   // Override the webpack config for custom functionality
-  webpack: (config: object) => {
+  webpack: (config) => {
     // Ensure the web always grabs the .web files over the normal files (so it can share directories with the backend)
-    // @ts-expect-error - Next doesn't type the config correctly
-    config.resolve.extensions = config.resolve.extensions.flatMap(
-      (ext: string) => [`.web${ext}`, ext]
-    );
+    // oxlint-disable no-unsafe-assignment, no-unsafe-member-access: The config is not fully typed
+    config.resolve.extensions = config.resolve.extensions.flatMap((ext: string) => [
+      `.web${ext}`,
+      ext,
+    ]);
 
     return config;
   },

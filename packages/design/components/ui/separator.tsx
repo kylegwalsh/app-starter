@@ -1,6 +1,6 @@
 'use client';
 
-// biome-ignore lint/performance/noNamespaceImport: This won't impact performance
+// oxlint-disable no-namespace-import: This won't impact performance
 import * as SeparatorPrimitive from '@radix-ui/react-separator';
 import { cn } from '@repo/design/lib/utils';
 import type { ComponentProps } from 'react';
@@ -15,7 +15,7 @@ function Separator({
     <SeparatorPrimitive.Root
       className={cn(
         'shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px',
-        className
+        className,
       )}
       data-slot="separator-root"
       decorative={decorative}

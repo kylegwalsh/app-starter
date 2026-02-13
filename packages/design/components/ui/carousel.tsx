@@ -1,11 +1,8 @@
-// biome-ignore-all lint/a11y/useSemanticElements: This is how shadcn defined it
 'use client';
 
 import { Button } from '@repo/design/components/ui/button';
 import { cn } from '@repo/design/lib/utils';
-import useEmblaCarousel, {
-  type UseEmblaCarouselType,
-} from 'embla-carousel-react';
+import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import {
   type ComponentProps,
@@ -64,7 +61,7 @@ function Carousel({
       ...opts,
       axis: orientation === 'horizontal' ? 'x' : 'y',
     },
-    plugins
+    plugins,
   );
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
@@ -95,7 +92,7 @@ function Carousel({
         scrollNext();
       }
     },
-    [scrollPrev, scrollNext]
+    [scrollPrev, scrollNext],
   );
 
   useEffect(() => {
@@ -124,8 +121,7 @@ function Carousel({
         carouselRef,
         api,
         opts,
-        orientation:
-          orientation || (opts?.axis === 'y' ? 'vertical' : 'horizontal'),
+        orientation: orientation || (opts?.axis === 'y' ? 'vertical' : 'horizontal'),
         scrollPrev,
         scrollNext,
         canScrollPrev,
@@ -150,17 +146,9 @@ function CarouselContent({ className, ...props }: ComponentProps<'div'>) {
   const { carouselRef, orientation } = useCarousel();
 
   return (
-    <div
-      className="overflow-hidden"
-      data-slot="carousel-content"
-      ref={carouselRef}
-    >
+    <div className="overflow-hidden" data-slot="carousel-content" ref={carouselRef}>
       <div
-        className={cn(
-          'flex',
-          orientation === 'horizontal' ? '-ml-4' : '-mt-4 flex-col',
-          className
-        )}
+        className={cn('flex', orientation === 'horizontal' ? '-ml-4' : '-mt-4 flex-col', className)}
         {...props}
       />
     </div>
@@ -176,7 +164,7 @@ function CarouselItem({ className, ...props }: ComponentProps<'div'>) {
       className={cn(
         'min-w-0 shrink-0 grow-0 basis-full',
         orientation === 'horizontal' ? 'pl-4' : 'pt-4',
-        className
+        className,
       )}
       data-slot="carousel-item"
       role="group"
@@ -200,7 +188,7 @@ function CarouselPrevious({
         orientation === 'horizontal'
           ? '-left-12 -translate-y-1/2 top-1/2'
           : '-top-12 -translate-x-1/2 left-1/2 rotate-90',
-        className
+        className,
       )}
       data-slot="carousel-previous"
       disabled={!canScrollPrev}
@@ -230,7 +218,7 @@ function CarouselNext({
         orientation === 'horizontal'
           ? '-right-12 -translate-y-1/2 top-1/2'
           : '-bottom-12 -translate-x-1/2 left-1/2 rotate-90',
-        className
+        className,
       )}
       data-slot="carousel-next"
       disabled={!canScrollNext}

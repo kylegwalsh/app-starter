@@ -12,8 +12,7 @@ export const UserInitializer = () => {
   const { user, organization, isLoading, isLoggedIn } = useUser();
   const queryClient = useQueryClient();
   const [previouslyIdentified, setPreviouslyIdentified] = useState(false);
-  const [previousOrganizationId, setPreviousOrganizationId] =
-    useState<string>();
+  const [previousOrganizationId, setPreviousOrganizationId] = useState<string>();
 
   // Once the user becomes defined, identify them
   useEffect(() => {
@@ -42,11 +41,7 @@ export const UserInitializer = () => {
 
   // Whenever the organization changes, identify it
   useEffect(() => {
-    if (
-      isLoggedIn &&
-      organization?.id &&
-      organization.id !== previousOrganizationId
-    ) {
+    if (isLoggedIn && organization?.id && organization.id !== previousOrganizationId) {
       setPreviousOrganizationId(organization.id);
       analytics.organizationIdentify({
         organizationId: organization.id,

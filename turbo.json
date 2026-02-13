@@ -6,7 +6,6 @@
     },
     "test:ci": {
       "passThroughEnv": ["AWS_*", "SST_*"]
-    },
-    "types:check": {}
+    }
   }
 }

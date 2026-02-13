@@ -8,8 +8,8 @@
  * - FC<typeof Component, Props> - inherits the props from the referenced component + custom props
  */
 declare type FC<T = object, P = never> = [P] extends [never]
-  ? // biome-ignore lint/suspicious/noExplicitAny: We need to allow any for the component type
+  ? // oxlint-disable no-explicit-any: We need to allow any to allow for flexible extensions
     T extends React.ComponentType<any>
-    ? React.FC<React.PropsWithChildren<ComponentProps<T>>> // Just component type + children
+    ? React.FC<React.PropsWithChildren<React.ComponentProps<T>>> // Just component type + children
     : React.FC<React.PropsWithChildren<T>> // Just props + children
-  : React.FC<React.PropsWithChildren<ComponentProps<T> & P>>; // Component type + props + children
+  : React.FC<React.PropsWithChildren<React.ComponentProps<T> & P>>; // Component type + props + children

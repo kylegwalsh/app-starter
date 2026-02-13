@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid';
+
 import { db } from '@/db';
 
 /** Regularly pings database to keep it awake */
