@@ -271,7 +271,9 @@ export const Multiple: Story = {
     // Verify Apple option is visible
     await waitFor(() => expect(canvas.queryByText('Apple', { exact: true })).toBeVisible());
     // Verify Banana option is not visible
-    expect(canvas.queryByText('Banana', { exact: true })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(canvas.queryByText('Banana', { exact: true })).not.toBeInTheDocument(),
+    );
     // Click Apple option to select it
     await userEvent.click((await canvas.findByText('Apple', { exact: true })) as HTMLElement);
     // Clear the search text
