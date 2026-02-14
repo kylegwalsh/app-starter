@@ -11,7 +11,7 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./tests/setup/setup.ts'],
     globalSetup: ['./tests/setup/global-setup.ts', './tests/setup/global-teardown.ts'],
-    include: ['tests/**/*.test.ts'],
+    include: ['**/*.test.ts'],
     coverage: {
       reporter: ['text', 'html'],
     },

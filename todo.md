@@ -37,7 +37,7 @@
 
 ## OTHER
 
-- Collocate tests next to the files they test
+- Login wrote password to url params???
 - Replace cursor rules with AGENTS.md / skills and test in cursor + claude
   - Add new rules to app starter
   - Tell AI to use react-hook-form for all forms
@@ -45,7 +45,6 @@
   - Add approved commands list, like linting, etc
   - Remove settings.local file from git history
 - Ensure starter supports sending invites
-- Login wrote password to url params???
 - Ensure CI file is properly formatted on Windows and Mac (Windows doesn't seem to replace double quotes with single quotes)
 - Try to upgrade prisma and see how they handle the direct url (once better documented). The vscode extension currently complains about our prisma schema file being out of date.
 - Ensure that SST mono mode kills NextJS ports after web e2e test (keeping port active after run)

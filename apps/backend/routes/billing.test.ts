@@ -1,4 +1,4 @@
-import { trpcFactory } from '../factories';
+import { trpcFactory } from '@/tests/factories';
 
 // Mock stripe
 const { mockStripe } = vi.hoisted(() => ({

@@ -18,7 +18,7 @@ bun backend run test [-- <vitest-args>]
 - Run a specific file with verbose reporter:
 
 ```bash
-bun backend run test -- tests/api/billing.test.ts --reporter=verbose
+bun backend run test -- routes/billing.test.ts --reporter=verbose
 ```
 
 - Environment: Tests run under `sst shell`, so environment variables and SST bindings are available at runtime.
@@ -28,16 +28,71 @@ bun backend run test -- tests/api/billing.test.ts --reporter=verbose
 <guidelines>
 
 - Runner: Vitest.
-- Database: Tests use a mocked Prisma client backed by in-memory SQLite, provided in `apps/backend/tests/mocks/db.ts`.
-- tRPC Factory: Router callers are initialized with a default user for testing in `apps/backend/tests/factories/trpc-factory.ts` (additional factories exist alongside it).
-- Scope: Prefer integration-style tests that exercise routes/procedures and DB interactions with minimal mocking. Always at least test the basic cases for each route.
+- Co-location: Tests live next to the file they test (e.g., `routes/billing.ts` → `routes/billing.test.ts`). Do not create a separate directory for tests.
+- Database: In tests, `import { db } from '@/db'` gives you an isolated SQLite-backed Prisma client (aliased in `vitest.config.ts`). Use it exactly like you would use Prisma in production code — create records, query them, assert against them.
+- tRPC Factory: Router callers are initialized with a default user and organization via `apps/backend/tests/factories/trpc-factory.ts` (additional factories exist alongside it).
+- Scope: Prefer integration-style tests that exercise real routes and real DB interactions. Mock as little as possible — only mock external services (e.g., Stripe API calls).
+- Mocks: When you do need to mock, prefer mocking low-level modules by their concrete file path (e.g., `@/core/stripe`) instead of high-level barrels like `@/core`. Do NOT mock `@repo/config` — it is initialized via `sst shell` with environment and resource bindings.
 - Isolation: Each test must be independent; we reset the DB state between tests.
-- Mocks: Only mock external services (e.g., Stripe, HTTP calls). Prefer mocking low-level modules by their concrete file path (e.g., `@/core/stripe`) instead of high-level barrels like `@/core`.
-- Do NOT mock `@repo/config`. It is initialized via `sst shell` with environment and resource bindings.
-- Example: See `apps/backend/tests/api/billing.test.ts` for a good test example including mocking and our tRPC caller pattern.
 - Errors: Assert on expected error types/messages for unhappy paths.
 - Performance: Keep tests fast; avoid unnecessary sleeps/timeouts.
 
 </guidelines>
+
+<example>
+
+A typical test file co-located at `routes/billing.test.ts`:
+
+```typescript
+import { db } from '@/db';
+import { trpcFactory } from '@/tests/factories';
+
+// Only mock external services — never mock the database
+const { mockStripe } = vi.hoisted(() => ({
+  mockStripe: {
+    billingPortal: { sessions: { create: vi.fn() } },
+    invoices: { list: vi.fn() },
+  },
+}));
+vi.mock('@/core/stripe', () => ({ stripe: mockStripe }));
+
+describe('Billing Router', () => {
+  let trpc: Awaited<ReturnType<typeof trpcFactory.createRouter>>['router'];
+  let organization: Awaited<ReturnType<typeof trpcFactory.createRouter>>['organization'];
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const mock = await trpcFactory.createRouter();
+    trpc = mock.router;
+    organization = mock.organization;
+  });
+
+  it('returns the portal URL', async () => {
+    // Arrange: set up real data in the DB using Prisma
+    await db.organization.update({
+      where: { id: organization.id },
+      data: { stripeCustomerId: 'cus_123' },
+    });
+
+    mockStripe.billingPortal.sessions.create.mockResolvedValueOnce({
+      url: 'https://billing.stripe.com/session_abc',
+    });
+
+    // Act: invoke the endpoint through the tRPC caller
+    const result = await trpc.billing.getPortalUrl();
+
+    // Assert: check the response and verify side effects
+    expect(result).toEqual({ url: 'https://billing.stripe.com/session_abc' });
+  });
+});
+```
+
+Key points:
+
+- **Real database**: Use `db` to create and manipulate records — no Prisma mocking.
+- **Mock only externals**: Stripe, third-party HTTP calls, etc.
+- **Test through the API**: Use the tRPC caller to invoke endpoints, not internal functions.
+
+</example>
 
 </testing_rules>

@@ -31,8 +31,8 @@ alwaysApply: false
   /core        # Core services (auth, stripe, etc)
   /db          # Prisma schema, migrations, connection utilities
   /functions   # Lambda entrypoints (api, auth, crons)
-  /routes      # tRPC routers, context, procedures, middleware
-  /tests       # Vitest setup, factories, mocks
+  /routes      # tRPC routers, context, procedures, middleware (tests co-located here)
+  /tests       # Vitest setup, factories, mocks (not for test files — those live next to source)
   ```
 
 </backend_stack_defaults>
@@ -115,9 +115,10 @@ alwaysApply: false
 <testing>
 
 - Runner: Vitest.
-- Database: Tests use a mocked Prisma client backed by in-memory SQLite, provided in `apps/backend/tests/mocks/db.ts`.
-- tRPC Factory: Router callers are initialized with a default user for testing in `apps/backend/tests/factories/trpc.ts` (additional factories exist alongside it).
-- Scope: Prefer integration-style tests that exercise routes/procedures and DB interactions with minimal mocking. Always at least test the basic cases for each route.
+- Co-location: Tests live next to the file they test (e.g., `routes/billing.ts` → `routes/billing.test.ts`). Do not put tests in a separate top-level `tests/` directory.
+- Database: In tests, `import { db } from '@/db'` resolves to an isolated SQLite-backed Prisma client (configured in `vitest.config.ts`). Use it just like you would use Prisma normally — create records, query them, etc.
+- tRPC Factory: Router callers are initialized with a default user and organization via `apps/backend/tests/factories/trpc-factory.ts` (additional factories exist alongside it).
+- Scope: Prefer integration-style tests that exercise real routes and real DB interactions. Mock as little as possible — only mock external services (e.g., Stripe API calls). Set up test data using `db` directly, invoke endpoints through the tRPC caller, and assert against actual database state.
 - Isolation: Each test must be independent; we reset the DB state between tests.
 
 </testing>
