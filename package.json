@@ -47,7 +47,7 @@
     "inquirer": "9.2.16",
     "jsdom": "26.1.0",
     "lint-staged": "15.2.2",
-    "oxfmt": "0.31.0",
+    "oxfmt": "0.32.0",
     "oxlint": "1.47.0",
     "oxlint-tsgolint": "0.12.1",
     "sst": "3.17.38",

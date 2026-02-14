@@ -5,9 +5,7 @@ const lintStagedConfig = {
     `oxlint --type-aware --type-check --fix ${filenames.join(' ')}`,
   ],
   // Format all supported file types with oxfmt
-  '*.{js,jsx,ts,tsx,json,jsonc,yaml,yml,toml,html,css,scss,less,md,mdx}': (filenames) => [
-    `oxfmt ${filenames.join(' ')}`,
-  ],
+  '*': (filenames) => [`oxfmt --no-error-on-unmatched-pattern ${filenames.join(' ')}`],
 };
 
 export default lintStagedConfig;

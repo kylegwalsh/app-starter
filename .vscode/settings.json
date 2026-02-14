@@ -45,9 +45,6 @@
     "source.fixAll.oxc": "explicit"
   },
   "editor.defaultFormatter": "oxc.oxc-vscode",
-  "[html]": {
-    "editor.defaultFormatter": "vscode.html-language-features"
-  },
   "[prisma]": {
     "editor.defaultFormatter": "Prisma.prisma"
   },
