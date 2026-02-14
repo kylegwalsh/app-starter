@@ -44,7 +44,7 @@
     "superjson": "2.2.2"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "15.3.2",
+    "@next/bundle-analyzer": "15.3.6",
     "@playwright/test": "1.52.0",
     "@repo/backend": "workspace:*",
     "@repo/tsconfig": "workspace:*",

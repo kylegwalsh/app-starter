@@ -37,8 +37,6 @@
 
 ## OTHER
 
-- Fix storybook tests in CI (combobox banana not in document is flakey)
-- Experiment with Sherif as replacement to manypkg and add linting step to CI
 - Collocate tests next to the files they test
 - Replace cursor rules with AGENTS.md / skills and test in cursor + claude
   - Add new rules to app starter
