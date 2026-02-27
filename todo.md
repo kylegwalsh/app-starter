@@ -29,22 +29,21 @@
 
 - They are rolling out a new messaging system that will replace crisp
 
-## ORPC
+## oRPC
 
-- Move oRPC deps out of root package.json
+- Try oRPC
 - Remove all tRPC packages
-- Try to get it working instead of tRPC
 
 ## OTHER
 
-- Login wrote password to url params???
-- Replace cursor rules with AGENTS.md / skills and test in cursor + claude
-  - Add new rules to app starter
-  - Tell AI to use react-hook-form for all forms
-  - Tell AI that we use bun as the workspace manager
-  - Add approved commands list, like linting, etc
-  - Remove settings.local file from git history
+- Fix better-auth signin form submitting when no input (zod not validating)
 - Ensure starter supports sending invites
+  - Update better-auth-ui
+  - Add new routes / logic
+  - Ensure creating an account works for the redirect to accept-invite
+  - Accepting the invite doesn't automatically load the new organization on the home page
+  - Have to allow no organization and have a signup for a demo or something
+- Login wrote password to url params???
 - Ensure CI file is properly formatted on Windows and Mac (Windows doesn't seem to replace double quotes with single quotes)
 - Try to upgrade prisma and see how they handle the direct url (once better documented). The vscode extension currently complains about our prisma schema file being out of date.
 - Ensure that SST mono mode kills NextJS ports after web e2e test (keeping port active after run)

@@ -1,0 +1,110 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch",
+      "WebSearch",
+
+      "Bash(ls:*)",
+      "Bash(pwd:*)",
+      "Bash(find:*)",
+      "Bash(file:*)",
+      "Bash(stat:*)",
+      "Bash(wc:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(cat:*)",
+      "Bash(tree:*)",
+      "Bash(grep:*)",
+      "Bash(echo:*)",
+      "Bash(cd:*)",
+      "Bash(cp:*)",
+      "Bash(sort:*)",
+      "Bash(paste:*)",
+      "Bash(bc)",
+      "Bash(xargs:*)",
+      "Bash(findstr:*)",
+
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote:*)",
+      "Bash(git tag:*)",
+      "Bash(git stash list:*)",
+      "Bash(git rev-parse:*)",
+
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run logs:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh api:*)",
+
+      "Bash(node --version)",
+      "Bash(node -e:*)",
+      "Bash(bun:*)",
+      "Bash(bunx:*)",
+      "Bash(bunx oxlint:*)",
+      "Bash(bunx oxfmt:*)",
+      "Bash(turbo:*)",
+
+      "mcp__posthog__dashboards-get-all",
+      "mcp__posthog__dashboard-get",
+      "mcp__posthog__list-errors",
+      "mcp__posthog__error-details",
+      "mcp__posthog__experiment-get-all",
+      "mcp__posthog__experiment-get",
+      "mcp__posthog__experiment-results-get",
+      "mcp__posthog__feature-flag-get-all",
+      "mcp__posthog__feature-flag-get-definition",
+      "mcp__posthog__insights-get-all",
+      "mcp__posthog__insight-get",
+      "mcp__posthog__insight-query",
+      "mcp__posthog__query-run",
+      "mcp__posthog__query-generate-hogql-from-question",
+      "mcp__posthog__organization-details-get",
+      "mcp__posthog__organizations-get",
+      "mcp__posthog__projects-get",
+      "mcp__posthog__event-definitions-list",
+      "mcp__posthog__properties-list",
+      "mcp__posthog__switch-organization",
+      "mcp__posthog__switch-project",
+      "mcp__posthog__surveys-get-all",
+      "mcp__posthog__survey-get",
+      "mcp__posthog__survey-stats",
+      "mcp__posthog__surveys-global-stats",
+      "mcp__posthog__logs-query",
+      "mcp__posthog__logs-list-attributes",
+      "mcp__posthog__logs-list-attribute-values",
+      "mcp__posthog__actions-get-all",
+      "mcp__posthog__action-get",
+      "mcp__posthog__docs-search",
+      "mcp__posthog__entity-search",
+      "mcp__posthog__get-llm-total-costs-for-project",
+
+      "Skill(test-backend)",
+      "Skill(test-web)",
+      "Skill(debug-error)"
+    ],
+    "deny": []
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/format-on-save.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

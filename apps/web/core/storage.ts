@@ -1,4 +1,4 @@
-/** The type safe storage options available */
+/** Type-safe storage options available */
 type StorageKey = 'sessionExisted';
 
 /** An interface to interact with our underlying storage mechanism (localStorage on web) */
