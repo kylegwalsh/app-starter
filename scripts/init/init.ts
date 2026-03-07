@@ -449,7 +449,7 @@ const initSecrets = () => {
 // ---------- AWS HELPERS ----------
 /**
  * Prompt the user to select an AWS profile or create a new one.
- * Updates ~/.aws/credentials, ~/.aws/config, and .vscode/settings.json as needed.
+ * Updates ~/.aws/credentials, ~/.aws/config, .vscode/settings.json, and .zed/settings.json as needed.
  * Returns the selected profile name and credentials for personal and CI.
  */
 export const selectOrCreateAwsProfile = async ({
@@ -463,6 +463,7 @@ export const selectOrCreateAwsProfile = async ({
   const credPath = path.join(homedir, '.aws/credentials');
   const configPath = path.join(homedir, '.aws/config');
   const vscodeSettingsPath = path.resolve('.vscode/settings.json');
+  const zedSettingsPath = path.resolve('.zed/settings.json');
 
   let profile = '';
   let accessKey = '';
@@ -683,7 +684,18 @@ export const selectOrCreateAwsProfile = async ({
         `$1${profile}$2`,
       );
       fs.writeFileSync(vscodeSettingsPath, settings);
-      console.log(`✔ Updated .vscode/settings.json to use AWS profile: ${profile}\n`);
+      console.log(`✔ Updated .vscode/settings.json to use AWS profile: ${profile}`);
+    }
+
+    // Make sure we update our .zed/settings.json so it defaults to this AWS profile in the future
+    if (fs.existsSync(zedSettingsPath)) {
+      let settings = fs.readFileSync(zedSettingsPath, 'utf8');
+      settings = settings.replaceAll(
+        /(['"]AWS_PROFILE['"]\s*:\s*['"])[^'"]*(['"])/g,
+        `$1${profile}$2`,
+      );
+      fs.writeFileSync(zedSettingsPath, settings);
+      console.log(`✔ Updated .zed/settings.json to use AWS profile: ${profile}\n`);
     }
 
     // Ask if they want to use the same credentials for Github Actions CI

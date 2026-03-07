@@ -1,4 +1,9 @@
 {
+  "terminal": {
+    "env": {
+      "AWS_PROFILE": "odin"
+    }
+  },
   "lsp": {
     "oxlint": {
       "initialization_options": {
