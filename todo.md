@@ -38,12 +38,6 @@
 - Try oRPC
 - Remove all tRPC packages
 
-## SST Upgrade
-
-- See if we can run tests without hackily deploying a stage (like we do in CI)
-- Ensure that SST mono mode kills NextJS ports after web e2e test (keeping port active after run)
-- See if we need the hacky CI we had for various stages (can probably run non-existent stage locally and see what happens)
-
 ## OTHER
 
 - Ensure starter supports sending invites
