@@ -38,17 +38,22 @@
 - Try oRPC
 - Remove all tRPC packages
 
+## SST Upgrade
+
+- See if we can run tests without hackily deploying a stage (like we do in CI)
+- See if we can hot reload when modifying packages outside the backend
+- Ensure that SST mono mode kills NextJS ports after web e2e test (keeping port active after run)
+- See if we need the hacky CI we had for various stages (can probably run non-existent stage locally and see what happens)
+
 ## OTHER
 
 - Ensure starter supports sending invites
-  - Update better-auth-ui
   - Add new routes / logic
   - Ensure creating an account works for the redirect to accept-invite
   - Accepting the invite doesn't automatically load the new organization on the home page
   - Have to allow no organization and have a signup for a demo or something
 - Login wrote password to url params (seems to be due to hydration and the underlying library not having method="POST") - https://github.com/better-auth-ui/better-auth-ui/issues/343
 - Add chat SDK
-- Ensure that SST mono mode kills NextJS ports after web e2e test (keeping port active after run)
 - Debug why first stripe invocation causes SST proxy to die on Windows (could be related to below issue) - https://github.com/sst/sst/issues/6051
 - When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
 
@@ -56,6 +61,5 @@
 
 - Disable autoplay of storybook stories when supported: https://github.com/storybookjs/storybook/discussions/25011
 - Remove the patch we applied to the AI SDK after this PR is addressed: https://github.com/vercel/ai/issues/9593
-- Upgrade SST to see if it improves windows support (like hot reloading backend when modifying packages outside the backend)
 - Potentially remove separate authConfig after issue is resolved - https://github.com/better-auth/better-auth/issues/3408
 - Once oxlint/tsgolint is updated, see if we can remove the oxlint ts-ignore rules we added to the backend auth file

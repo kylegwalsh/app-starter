@@ -117,7 +117,6 @@ export default $config({
             sourcemap: true,
             // Copy the necessary prisma files over to our functions
             esbuild: {
-              platform: 'node',
               external: ['@prisma/client'],
             },
           };

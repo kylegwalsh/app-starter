@@ -15,6 +15,7 @@ on:
 
 # Global environment variables
 env:
+  LOG_LEVEL: silent
   AWS_REGION: us-east-1
   SST_STAGE: ${{ vars.SST_STAGE }}
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -71,22 +72,6 @@ jobs:
       - name: Install SST providers
         run: bun sst install
 
-      # Cache indicator for CI initialization (never invalidates unless manually cleared)
-      - name: Cache CI initialization indicator
-        id: cache-ci-initialized
-        uses: actions/cache@v4
-        with:
-          path: .ci-initialized
-          key: sst-ci-initialized
-
-      # Initialize minimal ci stage since SST fails tests if the ci stage does't exist (only runs once)
-      - name: Initialize minimal CI stage
-        if: steps.cache-ci-initialized.outputs.cache-hit != 'true'
-        run: |
-          bun sst unlock --stage minimal || true
-          SKIP_SOURCEMAPS=true bun sst deploy --stage minimal
-          echo "initialized" > .ci-initialized
-
       # Get Playwright version
       - name: Get Playwright version
         id: playwright-version
@@ -142,7 +127,7 @@ jobs:
           job-name: test
 
       - name: Run tests
-        run: bun test:ci
+        run: bun run test -- --silent
 
   # Run our standard tests
   verify-migrations:
@@ -199,7 +184,7 @@ jobs:
       # Deploy the "ci" environment for running E2E tests
       - name: Deploy app
         run: |
-          bun sst unlock --stage ci
+          bun sst unlock --stage ci || true
           SKIP_SOURCEMAPS=true bun sst deploy --stage ci
 
       - name: Run E2E tests
