@@ -6,10 +6,9 @@
 
 ## BETTER AUTH
 
-> Better Auth needs to add better stripe support for organizations (https://github.com/better-auth/better-auth/issues/3772, https://github.com/better-auth/better-auth/issues/2079)
+> Better Auth recently added stripe support for organizations - https://better-auth.com/docs/plugins/stripe#organization
 
-- Attach stripeCustomerId to organization
-- Uncomment billing router
+- Attach stripeCustomerId to organization (migration)
 - Create /settings/plans page (ability to add / cancel plan)
 - Ensure subscriptions work with organizations
 - Test normal charges + subscriptions
@@ -29,6 +28,10 @@
 - See if we can deprecate axiom in favor of posthog logs
 - Remove weird log level thing we added for axiom (remove axiom as well)
 
+## LANGFUSE LOGGING
+
+- See if we can remove our hacky Langfuse flush in favor of the OpenTelemetry lambda layer we're using with Posthog logs
+
 ## POSTHOG MESSAGING
 
 - They are rolling out a new messaging system that will replace crisp
@@ -38,17 +41,21 @@
 - Try oRPC
 - Remove all tRPC packages
 
-## OTHER
+## USER INVITES
 
 - Ensure starter supports sending invites
   - Add new routes / logic
   - Ensure creating an account works for the redirect to accept-invite
   - Accepting the invite doesn't automatically load the new organization on the home page
   - Have to allow no organization and have a signup for a demo or something
+
+## OTHER
+
 - Login wrote password to url params (seems to be due to hydration and the underlying library not having method="POST") - https://github.com/better-auth-ui/better-auth-ui/issues/343
 - Add chat SDK
 - On Windows, editing a monorepo package (like config) doesn't cause the backend to hot reload
 - Debug why first stripe invocation causes SST proxy to die on Windows (could be related to below issue) - https://github.com/sst/sst/issues/6051
+- Update migrations once we finish updating schema
 - When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
 
 ## MINOR IMPROVEMENTS
