@@ -47,7 +47,6 @@
   - Accepting the invite doesn't automatically load the new organization on the home page
   - Have to allow no organization and have a signup for a demo or something
 - Login wrote password to url params (seems to be due to hydration and the underlying library not having method="POST") - https://github.com/better-auth-ui/better-auth-ui/issues/343
-- Try to upgrade prisma and see how they handle the direct url (once better documented). The vscode extension currently complains about our prisma schema file being out of date.
 - Add chat SDK
 - Ensure that SST mono mode kills NextJS ports after web e2e test (keeping port active after run)
 - Debug why first stripe invocation causes SST proxy to die on Windows (could be related to below issue) - https://github.com/sst/sst/issues/6051

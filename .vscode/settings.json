@@ -48,6 +48,7 @@
   "[prisma]": {
     "editor.defaultFormatter": "Prisma.prisma"
   },
+  "prisma.pinToPrisma6": true,
   // Tailwind settings
   "tailwindCSS.experimental.configFile": "packages/design/styles/globals.css",
   // TypeScript settings
