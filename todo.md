@@ -58,5 +58,4 @@
 - Remove the patch we applied to the AI SDK after this PR is addressed: https://github.com/vercel/ai/issues/9593
 - Upgrade SST to see if it improves windows support (like hot reloading backend when modifying packages outside the backend)
 - Potentially remove separate authConfig after issue is resolved - https://github.com/better-auth/better-auth/issues/3408
-- Try pglite with backend tests whenever the prisma adapter works better
 - Once oxlint/tsgolint is updated, see if we can remove the oxlint ts-ignore rules we added to the backend auth file

@@ -87,6 +87,7 @@
     "openai",
     "oxfmt",
     "oxlint",
+    "pglite",
     "polyfillio",
     "postbuild",
     "posthog",

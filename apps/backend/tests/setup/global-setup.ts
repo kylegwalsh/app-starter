@@ -4,17 +4,18 @@ import path from 'node:path';
 
 /** Set up our mock database for our tests */
 const setupMockDatabase = () => {
-  // The new datasource and generator blocks to inject into our test schema
+  // Use PostgreSQL (matching production) with PGlite driver adapter
   const newDatasource = `
     datasource db {
-      provider = "sqlite"
-      url      = "file:./dev.db"
+      provider = "postgresql"
+      url      = env("DATABASE_URL")
     }
   `;
   const newGenerator = `
     generator client {
-      provider = "prisma-client-js"
-      output   = "../../../../node_modules/.prisma-test/client"
+      provider        = "prisma-client-js"
+      output          = "../../../../node_modules/.prisma-test/client"
+      previewFeatures = ["driverAdapters"]
     }
   `;
 
@@ -41,10 +42,17 @@ const setupMockDatabase = () => {
   // Write the modified schema to the generated folder
   fs.writeFileSync(destSchemaPath, schema);
 
-  // Generate a fresh prisma client for our tests
-  execSync('bunx prisma db push --schema=tests/generated/test-schema.prisma --accept-data-loss', {
+  // Generate the Prisma client for our tests
+  execSync('bunx prisma generate --schema=tests/generated/test-schema.prisma --no-hints', {
     stdio: 'inherit',
   });
+
+  // Generate SQL to create all tables (used by each worker to initialize its PGlite instance)
+  const sql = execSync(
+    'bunx prisma migrate diff --from-empty --to-schema-datamodel=tests/generated/test-schema.prisma --script',
+    { encoding: 'utf8' },
+  );
+  fs.writeFileSync(path.join(generatedDir, 'setup.sql'), sql);
 };
 
 /** Sets up our test environment (runs only once before all tests) */

@@ -10,7 +10,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./tests/setup/setup.ts'],
-    globalSetup: ['./tests/setup/global-setup.ts', './tests/setup/global-teardown.ts'],
+    globalSetup: ['./tests/setup/global-setup.ts'],
+    pool: 'threads',
     include: ['**/*.test.ts'],
     coverage: {
       reporter: ['text', 'html'],
