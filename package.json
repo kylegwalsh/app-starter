@@ -18,6 +18,7 @@
     "deploy": "bun backend db:generate && sst deploy",
     "unlock": "sst unlock",
     "test": "turbo test --continue",
+    "test:silent": "cross-env LOG_LEVEL=silent turbo test --continue",
     "lint": "oxlint --type-aware --type-check",
     "lint:fix": "oxlint --type-aware --type-check --fix",
     "format": "oxfmt",
