@@ -1,3 +1,4 @@
+import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { stripe as stripePlugin } from '@better-auth/stripe';
 import type { Organization } from '@prisma/client';
 import { analytics } from '@repo/analytics';
@@ -5,12 +6,7 @@ import { config, env } from '@repo/config';
 import { plans } from '@repo/constants';
 import { email } from '@repo/email';
 import { type BetterAuthOptions, betterAuth } from 'better-auth';
-import { prismaAdapter } from 'better-auth/adapters/prisma';
-import {
-  admin as adminPlugin,
-  apiKey as apiKeyPlugin,
-  organization as organizationPlugin,
-} from 'better-auth/plugins';
+import { admin as adminPlugin, organization as organizationPlugin } from 'better-auth/plugins';
 
 import { db } from '@/db';
 
@@ -289,7 +285,6 @@ const authConfig = {
         },
       },
     }),
-    apiKeyPlugin(),
     stripePlugin({
       stripeClient,
       stripeWebhookSecret: (env as Record<string, string>).STRIPE_WEBHOOK_SECRET,

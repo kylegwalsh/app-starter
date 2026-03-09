@@ -30,9 +30,9 @@ export const createContext = async ({
       const sessionData = await auth.api.getSession({
         // It needs the cookie header to get the session, but lambda removes it
         // so we need to re-add it manually here
-        headers: {
+        headers: new Headers({
           cookie: event.cookies?.join('; ') ?? '',
-        },
+        }),
       });
       user = sessionData?.user;
 

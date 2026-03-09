@@ -37,7 +37,6 @@ model User {
   banExpires  DateTime?
   members     Member[]
   invitations Invitation[]
-  apikeys     Apikey[]
 
   @@unique([email])
   @@map("user")
@@ -131,33 +130,6 @@ model Invitation {
   user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
 
   @@map("invitation")
-}
-
-model Apikey {
-  id                  String    @id @default(cuid())
-  name                String?
-  start               String?
-  prefix              String?
-  key                 String
-  userId              String
-  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  refillInterval      Int?
-  refillAmount        Int?
-  lastRefillAt        DateTime?
-  enabled             Boolean?
-  rateLimitEnabled    Boolean?
-  rateLimitTimeWindow Int?
-  rateLimitMax        Int?
-  requestCount        Int?
-  remaining           Int?
-  lastRequest         DateTime?
-  expiresAt           DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  permissions         String?
-  metadata            String?
-
-  @@map("apikey")
 }
 
 model Subscription {

@@ -23,7 +23,7 @@
     "update-readme": "doctoc README.md"
   },
   "dependencies": {
-    "@daveyplate/better-auth-ui": "3.0.2",
+    "@daveyplate/better-auth-ui": "3.3.15",
     "@hookform/resolvers": "5.0.1",
     "@radix-ui/react-accordion": "1.2.11",
     "@radix-ui/react-alert-dialog": "1.1.14",

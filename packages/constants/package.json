@@ -13,7 +13,7 @@
     "update-readme": "doctoc README.md"
   },
   "devDependencies": {
-    "@better-auth/stripe": "1.4.2",
+    "@better-auth/stripe": "1.5.4",
     "@repo/tsconfig": "workspace:*",
     "typescript": "5.9.3"
   }

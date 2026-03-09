@@ -1,5 +1,9 @@
 # TODO
 
+## BETTER AUTH ADMIN
+
+- Try adding client deployment for admin panel: https://github.com/Tranthanh98/better-auth-dashboard/tree/master/client
+
 ## BETTER AUTH
 
 > Better Auth needs to add better stripe support for organizations (https://github.com/better-auth/better-auth/issues/3772, https://github.com/better-auth/better-auth/issues/2079)
@@ -36,16 +40,15 @@
 
 ## OTHER
 
-- Fix better-auth signin form submitting when no input (zod not validating)
 - Ensure starter supports sending invites
   - Update better-auth-ui
   - Add new routes / logic
   - Ensure creating an account works for the redirect to accept-invite
   - Accepting the invite doesn't automatically load the new organization on the home page
   - Have to allow no organization and have a signup for a demo or something
-- Login wrote password to url params???
-- Ensure CI file is properly formatted on Windows and Mac (Windows doesn't seem to replace double quotes with single quotes)
+- Login wrote password to url params (seems to be due to hydration and the underlying library not having method="POST") - https://github.com/better-auth-ui/better-auth-ui/issues/343
 - Try to upgrade prisma and see how they handle the direct url (once better documented). The vscode extension currently complains about our prisma schema file being out of date.
+- Add chat SDK
 - Ensure that SST mono mode kills NextJS ports after web e2e test (keeping port active after run)
 - Debug why first stripe invocation causes SST proxy to die on Windows (could be related to below issue) - https://github.com/sst/sst/issues/6051
 - When pushing final starter: Remove posthog settings from config / comment out the axiom secret / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
