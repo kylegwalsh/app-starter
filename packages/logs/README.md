@@ -1,6 +1,6 @@
 # @repo/logs
 
-Pino-based logging with request metadata helpers and pretty output locally. In production, logs are shipped to Axiom (and CloudWatch) for centralized logging.
+Pino-based logging with request metadata helpers and pretty output locally. In production, logs are shipped to PostHog via OpenTelemetry (and CloudWatch) for centralized logging.
 
 ## Table of Contents
 
@@ -16,9 +16,8 @@ Pino-based logging with request metadata helpers and pretty output locally. In p
 ## Overview
 
 - Backend-only usage (consumed by serverless backend services)
-- Ships production logs to Axiom (and CloudWatch)
+- Ships production logs to PostHog via OpenTelemetry (and CloudWatch)
 - Helpers to add Lambda request context and additional metadata
-- Flush function for serverless environments
 
 ## Structure
 

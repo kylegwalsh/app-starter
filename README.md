@@ -55,7 +55,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Documentation:** [Fumadocs](https://fumadocs.org/) for building a documentation site (optional, see below).
 - **Continuous Integration:** Automated testing and deployment via GitHub Actions.
 - **Alerts:** Slack integration for real-time notifications and alerts.
-- **Logging:** Shared logging package (Pino) with pretty local output, and production integration with Axiom and CloudWatch.
+- **Logging:** Shared logging package (Pino) with pretty local output, and production integration with Posthog and CloudWatch.
 - **AI Tracing & Evaluation:** Integrated with Langfuse for tracing, monitoring, and evaluating AI generations.
 - **AI-Assisted Development:** Pre-configured with Cursor rules for AI-powered workflows.
 - **Email:** Transactional and marketing/engagement email system powered by Loops (for password resets, onboarding, and user communications).
@@ -75,9 +75,8 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Oxfmt/Oxlint:** Fast, zero-config code formatter and linter (Rust-based) for consistent code quality.
 - **GitHub Actions:** CI/CD pipelines for automated testing and deployment.
 - **Slack:** Integration for deployment and error alerts.
-- **Posthog:** Analytics and error tracking.
+- **Posthog:** Analytics, logging, and error tracking.
 - **Stripe:** Payment processing platform for subscriptions and one-time payments.
-- **Axiom:** Log management platform integrated for production observability.
 - **Langfuse:** Open-source platform for AI tracing, monitoring, and evaluation.
 - **Loops:** Email platform for transactional (e.g., password reset) and user engagement emails.
 
@@ -171,12 +170,11 @@ This interactive script will guide you through configuring all the services and 
 - Guides you through setting up Supabase projects (production and development)
 - Configures Better Auth for authentication
 - Configures Loops for email (e.g., password reset, onboarding, user campaigns)
-- Optionally sets up PostHog for analytics and error tracking
+- Optionally sets up PostHog for analytics, logging, and error tracking
 - Configures GitHub environments and secrets for CI/CD
 - Sets up documentation site
 - Sets up Slack integration for CI notifications and error alerts
 - Sets up Crisp Chat for customer support
-- Sets up Axiom for observability
 - Sets up AI features and Langfuse
 - Sets up Stripe for payments
 

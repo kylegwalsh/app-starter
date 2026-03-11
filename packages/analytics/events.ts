@@ -1,9 +1,5 @@
 import { config } from '@repo/config';
-import type {
-  flushLogs as flushLogsMethod,
-  getLogMetadata as getLogMetadataMethod,
-  log as logMethod,
-} from '@repo/logs';
+import type { getLogMetadata as getLogMetadataMethod, log as logMethod } from '@repo/logs';
 import { time } from '@repo/utils';
 import type { PostHog as PostHogWeb } from 'posthog-js';
 import type { PostHog as PostHogBackend } from 'posthog-node';
@@ -19,7 +15,6 @@ type WebAnalyticsProps = SharedAnalyticsProps & {
   platformAnalytics: PostHogWeb;
   platform: 'web';
   log?: typeof console;
-  flushLogs?: undefined;
   getLogMetadata?: undefined;
 };
 
@@ -28,7 +23,6 @@ type BackendAnalyticsProps = SharedAnalyticsProps & {
   platformAnalytics: PostHogBackend;
   platform: 'backend';
   log?: typeof logMethod;
-  flushLogs?: typeof flushLogsMethod;
   getLogMetadata?: typeof getLogMetadataMethod;
 };
 
@@ -119,7 +113,6 @@ export const createAnalyticsEvents = <T extends 'web' | 'backend'>({
   onIdentify,
   onSignOut,
   log = console,
-  flushLogs,
   getLogMetadata,
 }: // Ensure our posthog library is typed correctly based on platform
 T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
@@ -184,11 +177,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
       // It only does anything for backend
       if (platform === 'backend') {
         await safeInvoke(async () => {
-          await Promise.all([
-            platformAnalytics.flush(),
-            // Analytics needs to flush logs separately (it seems like this instance of logs doesn't flush with the normal one)
-            flushLogs?.(),
-          ]);
+          await platformAnalytics.flush();
         });
       }
     },

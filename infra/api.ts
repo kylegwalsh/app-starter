@@ -5,7 +5,7 @@ export const api = new sst.aws.ApiGatewayV2('api', {
   domain: domain ? `api.${domain}` : undefined,
   cors: {
     allowOrigins: ['http://*', 'https://*'],
-    allowHeaders: ['content-type', 'authorization'],
+    allowHeaders: ['content-type', 'authorization', 'x-posthog-session-id'],
     allowCredentials: true,
   },
 });

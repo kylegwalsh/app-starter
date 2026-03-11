@@ -1,5 +1,5 @@
 import { config } from '@repo/config';
-import { flushLogs, getLogMetadata, log } from '@repo/logs';
+import { getLogMetadata, log } from '@repo/logs';
 import { PostHog } from 'posthog-node';
 
 import { createAnalyticsEvents } from './events';
@@ -27,6 +27,5 @@ export const analytics = createAnalyticsEvents<'backend'>({
   platform: 'backend',
   // Logging helpers
   log,
-  flushLogs,
   getLogMetadata,
 });

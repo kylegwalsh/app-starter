@@ -6,14 +6,6 @@
 
 declare module "sst" {
   export interface Resource {
-    "AXIOM_DATASET": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "AXIOM_TOKEN": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
     "BETTER_AUTH_SECRET": {
       "type": "sst.sst.Secret"
       "value": string

@@ -987,7 +987,7 @@ const setupPosthog = async ({ projectName }: { projectName: string }) => {
     try {
       // Ask if they want to set up PostHog
       const doSetup = await promptYesNo(
-        'Do you want to set up PostHog for analytics and error tracking? (y/n) ',
+        'Do you want to set up PostHog for analytics, logging, and error tracking? (y/n) ',
       );
       if (!doSetup) {
         console.log('PostHog setup skipped.\n');
@@ -1197,86 +1197,6 @@ const setupDocsSite = async ({ domain }: { domain?: string }) => {
   );
   fs.writeFileSync(sstConfigPath, sstConfig);
   console.log('✔ Enabled docs site stack in sst.config.ts.\n');
-};
-
-// ---------- AXIOM HELPERS ----------
-/** Guides the user through setting up Axiom observability */
-const setupAxiom = async (): Promise<boolean> => {
-  console.log('Setting up Axiom observability...');
-
-  // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) {
-    initSecrets();
-  }
-
-  // Check if Axiom is already configured in SST secrets
-  if (
-    devSecrets.AXIOM_TOKEN &&
-    prodSecrets.AXIOM_TOKEN &&
-    devSecrets.AXIOM_DATASET &&
-    prodSecrets.AXIOM_DATASET
-  ) {
-    console.log('✔ Axiom already configured.\n');
-    return true;
-  }
-
-  console.log('Axiom provides enhanced log searching and monitoring beyond AWS CloudWatch.');
-  // Ask if they want to set up Axiom
-  const doSetup = await promptYesNo(
-    'Would you like to set up Axiom for enhanced observability? (y/n) ',
-  );
-  if (!doSetup) {
-    console.log('Axiom setup skipped.\n');
-    return false;
-  }
-
-  // Guide the user through the setup steps
-  console.log('\nSign up or log in at: https://axiom.co/');
-  console.log('1. Create a new dataset');
-  console.log('2. Create an API token at: https://app.axiom.co/settings/api-tokens');
-
-  // Prompt for the API token
-  let token = '';
-  while (!token) {
-    const input = await promptUser('Enter your Axiom API token: ');
-    token = input.trim();
-    if (!token) {
-      console.log('Please enter a valid Axiom API token.');
-      token = '';
-    }
-  }
-
-  // Prompt for the ingestion URL
-  let dataset = '';
-  while (!dataset) {
-    const input = await promptUser('Enter your Axiom dataset name: ');
-    dataset = input.trim().toLowerCase();
-    if (!dataset) {
-      console.log('Please enter a valid Axiom dataset.');
-      dataset = '';
-    }
-  }
-
-  // Add secrets to SST
-  console.log('\nAdding Axiom secrets to SST...');
-  execSync(`bun tsx ${addEnvScript} AXIOM_TOKEN "${token}" "${token}"`);
-  execSync(`bun tsx ${addEnvScript} AXIOM_DATASET "${dataset}" "${dataset}"`);
-
-  // Uncomment secrets in infra/secrets.ts
-  const secretsPath = path.resolve('infra/secrets.ts');
-  let secretsContent = fs.readFileSync(secretsPath, 'utf8');
-  secretsContent = secretsContent.replaceAll(
-    '// export const AXIOM_TOKEN',
-    'export const AXIOM_TOKEN',
-  );
-  secretsContent = secretsContent.replaceAll(
-    '// export const AXIOM_DATASET',
-    'export const AXIOM_DATASET',
-  );
-  fs.writeFileSync(secretsPath, secretsContent);
-  console.log('✔ Axiom secrets have been set in SST.\n');
-
-  return true;
 };
 
 // ---------- LANGFUSE HELPERS ----------
@@ -1927,9 +1847,6 @@ const init = async () => {
 
   // Setup docs site
   await setupDocsSite({ domain });
-
-  // Setup Axiom observability
-  await setupAxiom();
 
   // Setup Loops emails
   const loopsSetup = await setupLoops();

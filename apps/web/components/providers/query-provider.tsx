@@ -3,6 +3,7 @@
 import { config } from '@repo/config';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink, loggerLink } from '@trpc/client';
+import { posthog } from 'posthog-js';
 import { type ReactNode, useState } from 'react';
 import superjson from 'superjson';
 
@@ -25,9 +26,16 @@ export const QueryProvider = ({ children }: { children: ReactNode }) => {
           url: `${config.api.url}/trpc`,
           // Ensure we send our auth cookies to the backend
           fetch(_url, options) {
+            /** Extract PostHog session ID for log → session replay linking */
+            const sessionId = typeof window !== 'undefined' ? posthog.get_session_id() : undefined;
+
             return fetch(_url, {
               ...options,
               credentials: 'include',
+              headers: {
+                ...options?.headers,
+                ...(sessionId ? { 'x-posthog-session-id': sessionId } : {}),
+              },
             } as RequestInit);
           },
         }),

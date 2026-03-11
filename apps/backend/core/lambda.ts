@@ -37,8 +37,12 @@ export const withLambdaContext = <T extends EventType = undefined>(
     addLambdaRequestContext(event, context);
     if ('requestContext' in event) {
       const { path, method } = event.requestContext.http;
+      const sessionId = event.headers?.['x-posthog-session-id'];
       addLogMetadata({
+        // Include request details
         request: { path, method },
+        // Extract PostHog session ID for log → session replay linking
+        sessionId,
       });
     }
 

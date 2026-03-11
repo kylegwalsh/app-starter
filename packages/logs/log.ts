@@ -1,5 +1,8 @@
-import { Axiom } from '@axiomhq/js';
-import { config, env } from '@repo/config';
+import { SeverityNumber } from '@opentelemetry/api-logs';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import { BatchLogRecordProcessor, LoggerProvider } from '@opentelemetry/sdk-logs';
+import { config } from '@repo/config';
 import pino from 'pino';
 import {
   GlobalContextStorageProvider,
@@ -8,13 +11,45 @@ import {
 } from 'pino-lambda';
 import pretty from 'pino-pretty';
 
-// ---------- DESTINATIONS ----------
-/** Our axiom client */
-const axiom = (env as Record<string, string>).AXIOM_TOKEN
-  ? new Axiom({
-      token: (env as Record<string, string>).AXIOM_TOKEN,
-    })
-  : undefined;
+// ---------- OTEL LOGGER ----------
+/** Map pino level labels to OTel severity */
+const pinoLevelToSeverity: Record<string, SeverityNumber> = {
+  trace: SeverityNumber.TRACE,
+  debug: SeverityNumber.DEBUG,
+  info: SeverityNumber.INFO,
+  warn: SeverityNumber.WARN,
+  error: SeverityNumber.ERROR,
+  fatal: SeverityNumber.FATAL,
+};
+
+/** Initialize the OTel logger provider for PostHog when running in AWS */
+const { otelLogger, otelProvider } = (() => {
+  // We only ship logs to PostHog if we're running in AWS and have a valid API key
+  if (!config.isAWS || !config.posthog.apiKey) {
+    return { otelLogger: undefined, otelProvider: undefined };
+  }
+
+  // Create the exporter for PostHog
+  const exporter = new OTLPLogExporter({
+    url: 'https://us.i.posthog.com/i/v1/logs',
+    headers: {
+      Authorization: `Bearer ${config.posthog.apiKey}`,
+    },
+  });
+
+  // Create the provider for the OTel logger
+  const provider = new LoggerProvider({
+    resource: resourceFromAttributes({
+      'service.name': 'backend',
+      env: config.stage,
+    }),
+    processors: [new BatchLogRecordProcessor(exporter)],
+  });
+
+  return { otelLogger: provider.getLogger('pino'), otelProvider: provider };
+})();
+
+// ---------- OTHER DESTINATIONS ----------
 /** Our lambda destination (ensures things are formatted for cloudwatch) */
 const lambdaDest = pinoLambdaDestination();
 /** Our pretty destination (ensures things are formatted for the console) */
@@ -23,7 +58,7 @@ const prettyDest = pretty({
   translateTime: 'SYS:HH:mm:ss',
   // Ignore some params that we don't care about locally
   ignore:
-    'env,userId,request,langfuseTraceId,awsRequestId,apiRequestId,x-correlation-id,x-correlation-trace-id',
+    'userId,organizationId,sessionId,request,langfuseTraceId,awsRequestId,apiRequestId,x-correlation-id,x-correlation-trace-id',
 });
 
 // ---------- HELPERS ----------
@@ -34,6 +69,7 @@ type LogMetadata = {
   langfuseTraceId?: string;
   userId?: string;
   awsRequestId?: string;
+  sessionId?: string;
   request?: { method?: string; path?: string };
 };
 
@@ -49,8 +85,8 @@ export const addLogMetadata = (metadata: Record<string, unknown>) => {
 /** Ensures all logs are flushed */
 export const flushLogs = async () => {
   try {
-    if (axiom) {
-      await axiom.flush();
+    if (otelProvider) {
+      await otelProvider.forceFlush();
     }
   } catch (error) {
     console.error('[log] Failed to flush logs:', error);
@@ -74,29 +110,32 @@ const customDestination = {
         // We should structure the logs for cloudwatch
         lambdaDest.write(payload);
 
-        // Since we can't see the logs easily, we should also send logs to Axiom (if it's configured)
-        if (axiom) {
-          // Format the payload to be the way axiom expects it
+        // Ship logs to PostHog via OpenTelemetry
+        if (otelLogger) {
           const {
             time,
             level,
             msg,
             'x-correlation-id': correlationId,
             'x-correlation-trace-id': traceId,
-            // Grab the rest of the context
             ...context
           } = JSON.parse(payload) as PinoLog;
-          axiom.ingest(env.AXIOM_DATASET, [
-            {
-              // Axiom-specific fields (we have to include level twice or it doesn't work right)
-              _time: time,
-              level,
-              severity: level,
-              message: msg,
-              // Remaining context
+
+          otelLogger.emit({
+            severityNumber: pinoLevelToSeverity[level] ?? SeverityNumber.INFO,
+            severityText: level,
+            body: msg,
+            timestamp: time ? new Date(time as string | number) : undefined,
+            attributes: {
               ...context,
+              // PostHog session replay linking
+              ...(context.sessionId ? { sessionId: context.sessionId as string } : {}),
+              ...(context.userId ? { posthogDistinctId: context.userId as string } : {}),
+              // Correlation IDs
+              ...(correlationId ? { 'x-correlation-id': correlationId as string } : {}),
+              ...(traceId ? { 'x-correlation-trace-id': traceId as string } : {}),
             },
-          ]);
+          });
         }
       }
       // If we're running locally, show the pretty output
@@ -115,10 +154,6 @@ export const log = pino(
     level: process.env.LOG_LEVEL || 'info',
     formatters: {
       level: (label) => ({ level: label }),
-    },
-    // Attach any global context variables
-    base: {
-      env: config.stage,
     },
     // Add any additional global context into our logs
     mixin: () => getLogMetadata(),

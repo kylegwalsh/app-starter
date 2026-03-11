@@ -36,7 +36,16 @@ Parse the stack trace frames:
 - If source maps are available in the trace, map minified locations back to source
 - Note the call chain leading to the error
 
-### 4. Locate in Codebase
+### 4. Check PostHog Logs
+
+Use `mcp__posthog__logs-query` to search for logs around the error's timestamp:
+
+- First, try filtering by `awsRequestId` from the error event properties — this is the most precise match
+- If no results, fall back to a broader search: filter by request path (from the `request` attribute), severity levels (error/warn), and the time window between first/last seen
+- Look for warning/error logs leading up to the failure
+- Note any additional runtime context that helps explain the error
+
+### 5. Locate in Codebase
 
 Use Grep/Glob to find the relevant source file and function:
 
@@ -44,7 +53,7 @@ Use Grep/Glob to find the relevant source file and function:
 - Read the surrounding code to understand context
 - Check recent git history for related changes: `git log --oneline -10 -- <file>`
 
-### 5. Propose a Fix
+### 6. Propose a Fix
 
 Explain to the user:
 
@@ -54,7 +63,7 @@ Explain to the user:
 
 Wait for user confirmation before proceeding.
 
-### 6. Fix with TDD
+### 7. Fix with TDD
 
 Invoke `/test-driven-development` to fix the bug:
 
@@ -64,6 +73,6 @@ Invoke `/test-driven-development` to fix the bug:
 
 Use `/test-backend` or `/test-web` as appropriate for the affected code.
 
-### 7. Verify
+### 8. Verify
 
 Run the full relevant test suite to confirm no regressions.
