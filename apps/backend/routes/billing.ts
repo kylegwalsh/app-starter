@@ -1,4 +1,3 @@
-import { config } from '@repo/config';
 import { log } from '@repo/logs';
 
 import { stripe } from '@/core';
@@ -8,23 +7,6 @@ import { protectedProcedure } from './trpc/procedures';
 
 /** The billing router */
 export const billingRouter = t.router({
-  /** Create a URL to allow organizations to view their billing details */
-  getPortalUrl: protectedProcedure.query(async ({ ctx }) => {
-    const { organization } = ctx;
-
-    // If the organization doesn't have a Stripe customer ID, throw an error
-    if (!organization.stripeCustomerId) {
-      throw new Error('Organization does not have a Stripe customer ID');
-    }
-
-    /** Create a stripe billing portal session so they can change their settings */
-    const session = await stripe.billingPortal.sessions.create({
-      customer: organization.stripeCustomerId,
-      return_url: `${config.app.url}/settings/billing`,
-    });
-
-    return { url: session.url };
-  }),
   /** Gets a list of all the organization's invoices */
   getHistory: protectedProcedure.query(async ({ ctx }) => {
     const { organization } = ctx;

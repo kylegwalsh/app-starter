@@ -308,6 +308,39 @@ const authConfig = {
 
           return member?.role === 'owner' || member?.role === 'admin';
         },
+        // ---------- STRIPE HOOKS ----------
+        // Fires when a subscription is created via normal checkout
+        onSubscriptionComplete: async ({ subscription, plan }) => {
+          await analytics.planChanged({
+            userId: subscription.referenceId,
+            organizationId: subscription.referenceId,
+            plan: plan.name,
+          });
+        },
+        // Fires when a subscription is created via the Stripe dashboard
+        onSubscriptionCreated: async ({ subscription, plan }) => {
+          await analytics.planChanged({
+            userId: subscription.referenceId,
+            organizationId: subscription.referenceId,
+            plan: plan.name,
+          });
+        },
+        // Fires when a subscription is updated
+        onSubscriptionUpdate: async ({ subscription, event }) => {
+          await analytics.planChanged({
+            userId: subscription.referenceId,
+            organizationId: subscription.referenceId,
+            plan: subscription.plan,
+          });
+        },
+        // Fires when a subscription is cancelled
+        onSubscriptionCancel: async ({ subscription }) => {
+          await analytics.planCancelled({
+            userId: subscription.referenceId,
+            organizationId: subscription.referenceId,
+            plan: subscription.plan,
+          });
+        },
       },
     }),
   ],

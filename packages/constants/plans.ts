@@ -11,7 +11,7 @@ export type Plan = StripePlan & {
 };
 
 /** The list of plans available in our app */
-export const plans = {
+export const plans = Object.freeze({
   free: {
     name: 'free',
     title: 'Free',
@@ -36,4 +36,4 @@ export const plans = {
     priceId: 'price_1RstcDF1kcHuFeSjIe68lopS',
     annualDiscountPriceId: 'price_1RstZwF1kcHuFeSjmUap4a30',
   },
-} as const satisfies Record<string, Plan>;
+}) satisfies Record<string, Plan>;

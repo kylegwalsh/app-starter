@@ -363,10 +363,8 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
       properties: EventProps<
         T,
         {
-          /** The plan the user was on before the change */
-          previousPlan: string;
           /** The plan the user changed to */
-          currentPlan: string;
+          plan: string;
         }
       >,
     ) => {
@@ -387,9 +385,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         T,
         {
           /** The plan the user was on before cancellation */
-          previousPlan: string;
-          /** The plan after cancellation (typically 'free') */
-          currentPlan: string;
+          plan: string;
         }
       >,
     ) => {

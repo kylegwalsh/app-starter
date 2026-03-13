@@ -10,6 +10,8 @@
 
 - Create /settings/plans page (ability to add / cancel plan)
 - Ensure subscriptions work with organizations
+- Verify changing plans updates subscriptions hook
+- Test stripe hooks to confirm we're grabbing the organization/user ids correctly
 - Potentially add field to update billing email
 
 ```ts

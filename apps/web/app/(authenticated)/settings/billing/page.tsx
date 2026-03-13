@@ -1,25 +1,15 @@
 'use client';
 
 import { SettingsCard } from '@daveyplate/better-auth-ui';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Skeleton,
-} from '@repo/design';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/design';
 import { ExternalLink } from 'lucide-react';
-import Link from 'next/link';
 
 import { BillingHistory, DashboardLayout } from '@/components';
-import { trpc } from '@/core';
+import { useSubscription } from '@/hooks';
 
 /** The payment and billing settings page */
 export default function BillingPage() {
-  const { data, isLoading } = trpc.billing.getPortalUrl.useQuery();
-  const { url } = data ?? {};
+  const { openBillingPortal, isLoading } = useSubscription();
 
   return (
     <DashboardLayout
@@ -36,23 +26,12 @@ export default function BillingPage() {
             footer: 'md:basis-full w-full',
           }}
           description="Update your payment method, billing email, and address."
-          instructions="You’ll be redirected to Stripe to securely manage your payment details."
+          instructions="You'll be redirected to Stripe to securely manage your payment details."
           title="Manage payment settings"
         >
-          {isLoading ? (
-            <Skeleton className="mx-6 h-9 w-48 md:ml-auto" />
-          ) : (
-            <Button asChild>
-              <Link
-                className="mx-6 md:ml-auto"
-                href={url ?? ''}
-                rel="noreferrer noopener"
-                target="_blank"
-              >
-                Open billing portal <ExternalLink />
-              </Link>
-            </Button>
-          )}
+          <Button className="mx-6 md:ml-auto" disabled={isLoading} onClick={openBillingPortal}>
+            Open billing portal <ExternalLink />
+          </Button>
         </SettingsCard>
 
         <Card>

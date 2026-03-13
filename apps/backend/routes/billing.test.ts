@@ -3,11 +3,6 @@ import { trpcFactory } from '@/tests/factories';
 // Mock stripe
 const { mockStripe } = vi.hoisted(() => ({
   mockStripe: {
-    billingPortal: {
-      sessions: {
-        create: vi.fn(),
-      },
-    },
     invoices: {
       list: vi.fn(),
     },
@@ -28,26 +23,6 @@ describe('Billing Router', () => {
       organization: { stripeCustomerId: 'test-customer-id' },
     });
     trpc = mock.router;
-  });
-
-  describe('getPortalUrl', () => {
-    it('throws when organization has no Stripe customer ID', async () => {
-      const { router: noStripeTrpc } = await trpcFactory.createRouter({
-        organization: { stripeCustomerId: null },
-      });
-
-      await expect(noStripeTrpc.billing.getPortalUrl()).rejects.toThrow(
-        'Organization does not have a Stripe customer ID',
-      );
-    });
-
-    it('returns a billing portal URL when organization has a Stripe customer ID', async () => {
-      const url = 'https://stripe.test/portal/session_123';
-      mockStripe.billingPortal.sessions.create.mockResolvedValueOnce({ url });
-
-      const result = await trpc.billing.getPortalUrl();
-      expect(result).toEqual({ url });
-    });
   });
 
   describe('getHistory', () => {

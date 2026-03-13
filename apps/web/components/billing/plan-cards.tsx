@@ -1,11 +1,22 @@
 'use client';
 
-import { analytics } from '@repo/analytics';
-import { plans } from '@repo/constants';
-import { Label, PricingCard, Switch } from '@repo/design';
+import { type plans } from '@repo/constants';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Label,
+  PricingCard,
+  Switch,
+} from '@repo/design';
+import { useState } from 'react';
 
-import { auth } from '@/core';
-import { useOrganization, useSubscription } from '@/hooks';
+import { useSubscription } from '@/hooks';
 
 type Props = {
   /** Whether we should show our monthly/annual switch */
@@ -14,41 +25,49 @@ type Props = {
 
 /** Our list of plan cards */
 export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
-  const { organization } = useOrganization();
-  const { subscription, isLoading: isLoadingSubscription } = useSubscription();
+  const { currentPlan, isLoading, upgrade, cancel } = useSubscription();
+  const [pendingPlan, setPendingPlan] = useState<keyof typeof plans | null>(null);
 
-  /** Change the organization's plan */
-  const changePlan = async (plan: keyof typeof plans) => {
-    if (!organization?.id) {
+  /** Confirm and execute the plan change */
+  const confirmChangePlan = async () => {
+    if (!pendingPlan) {
       return;
     }
 
-    if (plan === 'free') {
-      await auth.subscription.cancel({
-        referenceId: organization.id,
-        customerType: 'organization',
-        subscriptionId: subscription?.id ?? '',
-        returnUrl: '/settings/plans',
-      });
-      await analytics.planCancelled({ previousPlan: currentPlan, currentPlan: 'free' });
-      return;
+    if (pendingPlan === 'free') {
+      await cancel();
+    } else {
+      await upgrade(pendingPlan);
     }
-
-    await auth.subscription.upgrade({
-      plan,
-      referenceId: organization.id,
-      customerType: 'organization',
-      successUrl: '/',
-      cancelUrl: '/settings/plans',
-    });
-    await analytics.planChanged({ previousPlan: currentPlan, currentPlan: plan });
+    setPendingPlan(null);
   };
 
-  const currentPlan = subscription?.plan ?? 'free';
-  const isDisabled = isLoadingSubscription || !organization;
+  const isCancelling = pendingPlan === 'free';
 
   return (
     <>
+      {/* Confirmation dialog */}
+      <AlertDialog open={!!pendingPlan} onOpenChange={(open) => !open && setPendingPlan(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isCancelling ? 'Cancel your subscription?' : `Switch to ${pendingPlan}?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isCancelling
+                ? 'You will lose access to your current plan features at the end of your billing period.'
+                : `You are about to change your plan from ${currentPlan} to ${pendingPlan}.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{isCancelling ? 'Keep my plan' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmChangePlan}>
+              {isCancelling ? 'Confirm cancellation' : 'Confirm change'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Monthly/Annual switch */}
       {showSwitch && (
         <div className="flex flex-col items-center justify-center gap-2">
@@ -69,29 +88,29 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
         <PricingCard
           description="Get started with the essentials"
           features={['1 user', 'Plan features', 'Product support']}
-          onClick={() => changePlan('free')}
-          plan={plans.free.title}
-          price={plans.free.price}
-          disabled={isDisabled || currentPlan === 'free'}
+          onClick={() => setPendingPlan('free')}
+          plan="Free"
+          price={0}
+          disabled={isLoading || currentPlan === 'free'}
         />
 
         <PricingCard
           description="Everything you need for a growing business"
           features={['5 user', 'Plan features', 'Product support']}
-          onClick={() => changePlan('pro')}
-          plan={plans.pro.title}
+          onClick={() => setPendingPlan('pro')}
+          plan="Pro"
           popular
-          price={plans.pro.price}
-          disabled={isDisabled || currentPlan === 'pro'}
+          price={50}
+          disabled={isLoading || currentPlan === 'pro'}
         />
 
         <PricingCard
           description="Advanced features for scaling your business"
           features={['10 user', 'Plan features', 'Product support']}
-          onClick={() => changePlan('enterprise')}
-          plan={plans.enterprise.title}
-          price={plans.enterprise.price}
-          disabled={isDisabled || currentPlan === 'enterprise'}
+          onClick={() => setPendingPlan('enterprise')}
+          plan="Enterprise"
+          price={100}
+          disabled={isLoading || currentPlan === 'enterprise'}
         />
       </div>
     </>
