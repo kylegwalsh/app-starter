@@ -9,6 +9,7 @@
 > Better Auth recently added stripe support for organizations - https://better-auth.com/docs/plugins/stripe#organization
 
 - Create /settings/plans page (ability to add / cancel plan)
+- Test that annual pricing works when picking plan
 - Ensure subscriptions work with organizations
 - Verify changing plans updates subscriptions hook
 - Test stripe hooks to confirm we're grabbing the organization/user ids correctly

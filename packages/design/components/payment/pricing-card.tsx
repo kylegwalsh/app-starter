@@ -9,27 +9,42 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  Skeleton,
 } from '@repo/design/components/ui';
 import { cn } from '@repo/design/lib/utils';
 import { Check } from 'lucide-react';
-import type { FC } from 'react';
 
 type Props = {
+  /** The name of the plan displayed as the card title */
   plan: string;
+  /** Short description shown below the price */
   description?: string;
+  /** Numeric price displayed on the card */
   price: number;
+  /** Billing period label */
   period?: string;
+  /** Currency symbol prepended to the price */
   currency?: string;
+  /** List of feature strings to show */
   features: string[];
+  /** Callback fired when the CTA button is clicked */
   onClick: (...args: unknown[]) => void;
+  /** Label for the CTA button */
   buttonText?: string;
+  /** Visual variant for the CTA button */
   buttonVariant?: 'default' | 'outline' | 'secondary' | 'destructive' | 'ghost' | 'link';
+  /** Optional banner displayed above the plan title */
   banner?: {
     text: string;
     variant?: 'default' | 'secondary' | 'destructive' | 'outline';
   };
+  /** Highlights the card with a primary border and "Most popular" badge */
   popular?: boolean;
+  /** Dims the card and disables the button (e.g. for the current plan) */
   disabled?: boolean;
+  /** Whether we're still loading and should disable the button */
+  loading?: boolean;
+  /** Additional CSS classes for the card container */
   className?: string;
 };
 
@@ -38,6 +53,7 @@ export const PricingCard: FC<Props> = ({
   plan,
   description,
   price,
+  period = 'mo',
   currency = '$',
   features,
   onClick,
@@ -46,6 +62,7 @@ export const PricingCard: FC<Props> = ({
   banner,
   popular = false,
   disabled = false,
+  loading = false,
   className,
 }) => {
   const displayBanner =
@@ -70,7 +87,7 @@ export const PricingCard: FC<Props> = ({
         <CardTitle className={cn('mb-7', displayBanner && '!mb-7')}>{plan}</CardTitle>
         <div className="flex items-end justify-center gap-2">
           <span className="text-5xl font-bold">{priceDisplay}</span>
-          <span className="text-muted-foreground">/mo</span>
+          <span className="text-muted-foreground">/{period}</span>
         </div>
       </CardHeader>
 
@@ -98,14 +115,18 @@ export const PricingCard: FC<Props> = ({
       </CardContent>
 
       <CardFooter>
-        <Button
-          className="w-full"
-          disabled={disabled}
-          onClick={onClick}
-          variant={popular ? 'default' : buttonVariant}
-        >
-          {buttonText}
-        </Button>
+        {loading ? (
+          <Skeleton className="h-9 w-full" />
+        ) : (
+          <Button
+            className="w-full"
+            disabled={disabled}
+            onClick={onClick}
+            variant={popular ? 'default' : buttonVariant}
+          >
+            {buttonText}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { type plans } from '@repo/constants';
+import { plans } from '@repo/constants';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +14,7 @@ import {
   PricingCard,
   Switch,
 } from '@repo/design';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useSubscription } from '@/hooks';
 
@@ -25,45 +25,58 @@ type Props = {
 
 /** Our list of plan cards */
 export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
-  const { currentPlan, isLoading, upgrade, cancel } = useSubscription();
+  const { currentPlan, isFetched, upgrade, cancel } = useSubscription();
   const [pendingPlan, setPendingPlan] = useState<keyof typeof plans | null>(null);
+  const [isAnnual, setIsAnnual] = useState(false);
 
-  /** Confirm and execute the plan change */
-  const confirmChangePlan = async () => {
-    if (!pendingPlan) {
-      return;
-    }
+  /** Get the button text for a plan card based on whether it's an upgrade, downgrade, or current */
+  const getButtonText = useCallback(
+    (plan: keyof typeof plans) => {
+      if (currentPlan === plan) {
+        return 'Current plan';
+      }
 
-    if (pendingPlan === 'free') {
-      await cancel();
-    } else {
-      await upgrade(pendingPlan);
-    }
+      const rank = { free: 0, pro: 1, enterprise: 2 } as const;
+      return rank[plan] > rank[currentPlan as keyof typeof rank] ? 'Upgrade' : 'Downgrade';
+    },
+    [currentPlan],
+  );
+
+  /** Handle plan selection — cancel requires confirmation, upgrades go through directly */
+  const handlePlanChange = useCallback(
+    async (plan: keyof typeof plans) => {
+      if (plan === 'free') {
+        setPendingPlan(plan);
+      } else {
+        await upgrade({ plan, annual: isAnnual });
+      }
+    },
+    [isAnnual, upgrade],
+  );
+
+  /** Confirm cancellation */
+  const confirmCancel = useCallback(async () => {
+    await cancel();
     setPendingPlan(null);
-  };
-
-  const isCancelling = pendingPlan === 'free';
+  }, [cancel]);
 
   return (
     <>
-      {/* Confirmation dialog */}
-      <AlertDialog open={!!pendingPlan} onOpenChange={(open) => !open && setPendingPlan(null)}>
+      {/* Cancellation confirmation dialog */}
+      <AlertDialog
+        open={pendingPlan === 'free'}
+        onOpenChange={(open) => !open && setPendingPlan(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {isCancelling ? 'Cancel your subscription?' : `Switch to ${pendingPlan}?`}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Cancel your subscription?</AlertDialogTitle>
             <AlertDialogDescription>
-              {isCancelling
-                ? 'You will lose access to your current plan features at the end of your billing period.'
-                : `You are about to change your plan from ${currentPlan} to ${pendingPlan}.`}
+              You will lose access to your current plan features at the end of your billing period.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{isCancelling ? 'Keep my plan' : 'Cancel'}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmChangePlan}>
-              {isCancelling ? 'Confirm cancellation' : 'Confirm change'}
-            </AlertDialogAction>
+            <AlertDialogCancel>Keep my plan</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancel}>Confirm cancellation</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -75,7 +88,7 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
             <Label className="me-3" htmlFor="payment-schedule">
               Monthly
             </Label>
-            <Switch id="payment-schedule" />
+            <Switch id="payment-schedule" checked={isAnnual} onCheckedChange={setIsAnnual} />
             <Label className="ms-3" htmlFor="payment-schedule">
               Annual
             </Label>
@@ -88,29 +101,35 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
         <PricingCard
           description="Get started with the essentials"
           features={['1 user', 'Plan features', 'Product support']}
-          onClick={() => setPendingPlan('free')}
-          plan="Free"
-          price={0}
-          disabled={isLoading || currentPlan === 'free'}
+          onClick={() => handlePlanChange('free')}
+          plan={plans.free.title}
+          price={isAnnual ? plans.free.annualPrice : plans.free.price}
+          disabled={currentPlan === 'free'}
+          loading={!isFetched}
+          buttonText={getButtonText('free')}
         />
 
         <PricingCard
           description="Everything you need for a growing business"
           features={['5 user', 'Plan features', 'Product support']}
-          onClick={() => setPendingPlan('pro')}
-          plan="Pro"
+          onClick={() => handlePlanChange('pro')}
+          plan={plans.pro.title}
           popular
-          price={50}
-          disabled={isLoading || currentPlan === 'pro'}
+          price={isAnnual ? plans.pro.annualPrice : plans.pro.price}
+          disabled={currentPlan === 'pro'}
+          loading={!isFetched}
+          buttonText={getButtonText('pro')}
         />
 
         <PricingCard
           description="Advanced features for scaling your business"
           features={['10 user', 'Plan features', 'Product support']}
-          onClick={() => setPendingPlan('enterprise')}
-          plan="Enterprise"
-          price={100}
-          disabled={isLoading || currentPlan === 'enterprise'}
+          onClick={() => handlePlanChange('enterprise')}
+          plan={plans.enterprise.title}
+          price={isAnnual ? plans.enterprise.annualPrice : plans.enterprise.price}
+          disabled={currentPlan === 'enterprise'}
+          loading={!isFetched}
+          buttonText={getButtonText('enterprise')}
         />
       </div>
     </>

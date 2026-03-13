@@ -1,4 +1,4 @@
-import { type plans } from '@repo/constants';
+import { plans } from '@repo/constants';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
@@ -10,31 +10,35 @@ import { useOrganization } from './use-organization';
 export const useSubscription = () => {
   const { organization } = useOrganization();
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const {
+    data: subscription,
+    isFetched,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['subscription', organization?.id],
     queryFn: async () => {
       const result = await auth.subscription.list({
         query: { referenceId: organization!.id, customerType: 'organization' },
       });
-      return (
-        result.data?.find((sub) => sub.status === 'active' || sub.status === 'trialing') ?? null
-      );
+      return result.data?.find((sub) => sub.status === 'active' || sub.status === 'trialing');
     },
     enabled: !!organization?.id,
   });
 
-  const subscription = data ?? null;
-  const currentPlan = subscription?.plan ?? 'free';
+  const currentPlan = isFetched ? (subscription?.plan ?? plans.free.name) : undefined;
 
   /** Upgrade or switch to a new plan */
   const upgrade = useCallback(
-    async (plan: keyof typeof plans) => {
+    async ({ plan, annual = false }: { plan: keyof typeof plans; annual?: boolean }) => {
       if (!organization?.id) {
         return;
       }
 
       await auth.subscription.upgrade({
         plan,
+        annual,
         referenceId: organization.id,
         customerType: 'organization',
         successUrl: '/',
@@ -74,6 +78,7 @@ export const useSubscription = () => {
   return {
     subscription,
     currentPlan,
+    isFetched,
     isLoading,
     error,
     refetch,
