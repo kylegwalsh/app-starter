@@ -57,6 +57,7 @@ model Session {
   activeOrganizationId String?
 
   @@unique([token])
+  @@index([userId])
   @@map("session")
 }
 
@@ -76,6 +77,7 @@ model Account {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
+  @@index([userId])
   @@map("account")
 }
 
@@ -87,6 +89,7 @@ model Verification {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  @@index([identifier])
   @@map("verification")
 }
 
@@ -115,6 +118,8 @@ model Member {
   role           String
   createdAt      DateTime     @default(now())
 
+  @@index([organizationId])
+  @@index([userId])
   @@map("member")
 }
 
@@ -125,10 +130,13 @@ model Invitation {
   email          String
   role           String?
   status         String
+  createdAt      DateTime     @default(now())
   expiresAt      DateTime
   inviterId      String
   user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
 
+  @@index([organizationId])
+  @@index([email])
   @@map("invitation")
 }
 
@@ -139,10 +147,17 @@ model Subscription {
   stripeCustomerId     String?
   stripeSubscriptionId String?
   status               String?
+  seats                Int?
   periodStart          DateTime?
   periodEnd            DateTime?
   cancelAtPeriodEnd    Boolean?
-  seats                Int?
+  trialStart           DateTime?
+  trialEnd             DateTime?
+  cancelAt             DateTime?
+  canceledAt           DateTime?
+  endedAt              DateTime?
+  billingInterval      String?
+  stripeScheduleId     String?
 
   @@map("subscription")
 }

@@ -8,12 +8,19 @@
 
 > Better Auth recently added stripe support for organizations - https://better-auth.com/docs/plugins/stripe#organization
 
-- Attach stripeCustomerId to organization (migration)
 - Create /settings/plans page (ability to add / cancel plan)
 - Ensure subscriptions work with organizations
+- Potentially add field to update billing email
+
+```ts
+await stripeClient.customers.update(organization.stripeCustomerId, {
+  email: 'billing@company.com',
+});
+```
+
 - Test normal charges + subscriptions
 - Comment out plans in stripe plugin
-- Maybe comment out stripe client or ensure it doesn't run without env vars (like langfuse) - ensure it works with setup script
+- Maybe comment out stripe client or ensure it doesn't run without env vars (like langfuse) - Ensure it works with setup script
 
 ## POSTHOG WORKFLOWS
 
@@ -40,10 +47,19 @@
   - Accepting the invite doesn't automatically load the new organization on the home page
   - Have to allow no organization and have a signup for a demo or something
 
+## AI
+
+- Create slack app
+- Connect chat SDK
+- Possibly set up basic MCP structure
+- Rethink how we trace for Langfuse and how we can support evals (input must be easily replayed against functions)
+
+## Marketing site
+
+- Consider adding marketing site to repo
+
 ## OTHER
 
-- Rethink how we trace for Langfuse and how we can support evals (input must be easily replayed against functions)
-- Add chat SDK and slack integration
 - Login wrote password to url params (seems to be due to hydration and the underlying library not having method="POST") - https://github.com/better-auth-ui/better-auth-ui/issues/343
 - On Windows, editing a monorepo package (like config) doesn't cause the backend to hot reload
 - Debug why first stripe invocation causes SST proxy to die on Windows (could be related to below issue) - https://github.com/sst/sst/issues/6051

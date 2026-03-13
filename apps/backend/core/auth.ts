@@ -289,6 +289,10 @@ const authConfig = {
       stripeClient,
       stripeWebhookSecret: (env as Record<string, string>).STRIPE_WEBHOOK_SECRET,
       createCustomerOnSignUp: true,
+      // Ensure that stripe is attached to organizations rather than users
+      organization: {
+        enabled: true,
+      },
       // Configure stripe plans
       subscription: {
         enabled: true,

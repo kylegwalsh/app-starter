@@ -1,9 +1,11 @@
 'use client';
 
+import { analytics } from '@repo/analytics';
 import { plans } from '@repo/constants';
 import { Label, PricingCard, Switch } from '@repo/design';
 
 import { auth } from '@/core';
+import { useOrganization, useSubscription } from '@/hooks';
 
 type Props = {
   /** Whether we should show our monthly/annual switch */
@@ -12,20 +14,38 @@ type Props = {
 
 /** Our list of plan cards */
 export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
-  /** Change the user's plan */
+  const { organization } = useOrganization();
+  const { subscription, isLoading: isLoadingSubscription } = useSubscription();
+
+  /** Change the organization's plan */
   const changePlan = async (plan: keyof typeof plans) => {
-    if (plan === 'free') {
-      await auth.subscription.cancel({
-        returnUrl: '/settings/plans',
-      });
+    if (!organization?.id) {
       return;
     }
+
+    if (plan === 'free') {
+      await auth.subscription.cancel({
+        referenceId: organization.id,
+        customerType: 'organization',
+        subscriptionId: subscription?.id ?? '',
+        returnUrl: '/settings/plans',
+      });
+      await analytics.planCancelled({ previousPlan: currentPlan, currentPlan: 'free' });
+      return;
+    }
+
     await auth.subscription.upgrade({
       plan,
+      referenceId: organization.id,
+      customerType: 'organization',
       successUrl: '/',
       cancelUrl: '/settings/plans',
     });
+    await analytics.planChanged({ previousPlan: currentPlan, currentPlan: plan });
   };
+
+  const currentPlan = subscription?.plan ?? 'free';
+  const isDisabled = isLoadingSubscription || !organization;
 
   return (
     <>
@@ -52,7 +72,7 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
           onClick={() => changePlan('free')}
           plan={plans.free.title}
           price={plans.free.price}
-          // disabled={user?.subscription === 'free'}
+          disabled={isDisabled || currentPlan === 'free'}
         />
 
         <PricingCard
@@ -62,7 +82,7 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
           plan={plans.pro.title}
           popular
           price={plans.pro.price}
-          // disabled={user?.subscription === 'pro'}
+          disabled={isDisabled || currentPlan === 'pro'}
         />
 
         <PricingCard
@@ -71,7 +91,7 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
           onClick={() => changePlan('enterprise')}
           plan={plans.enterprise.title}
           price={plans.enterprise.price}
-          // disabled={user?.subscription === 'enterprise'}
+          disabled={isDisabled || currentPlan === 'enterprise'}
         />
       </div>
     </>

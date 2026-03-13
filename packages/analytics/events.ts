@@ -358,6 +358,52 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         }
       });
     },
+    /** Track when a plan is changed (upgraded or switched) */
+    planChanged: async (
+      properties: EventProps<
+        T,
+        {
+          /** The plan the user was on before the change */
+          previousPlan: string;
+          /** The plan the user changed to */
+          currentPlan: string;
+        }
+      >,
+    ) => {
+      log.info('[analytics] Event: Plan Changed', {
+        category: 'Billing',
+        ...properties,
+      });
+      await safeInvoke(() => {
+        track('Plan Changed', {
+          category: 'Billing',
+          ...properties,
+        });
+      });
+    },
+    /** Track when a plan is cancelled */
+    planCancelled: async (
+      properties: EventProps<
+        T,
+        {
+          /** The plan the user was on before cancellation */
+          previousPlan: string;
+          /** The plan after cancellation (typically 'free') */
+          currentPlan: string;
+        }
+      >,
+    ) => {
+      log.info('[analytics] Event: Plan Cancelled', {
+        category: 'Billing',
+        ...properties,
+      });
+      await safeInvoke(() => {
+        track('Plan Cancelled', {
+          category: 'Billing',
+          ...properties,
+        });
+      });
+    },
     /** Reset the analytics when the user signs out */
     reset: async () => {
       log.info('[analytics] Resetting user');
