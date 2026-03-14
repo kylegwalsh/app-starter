@@ -1,275 +1,286 @@
-import { type FormEvent, useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
+import {
+  UserActionsPanel,
+  UserDetailsCard,
+  UserDetailsHeader,
+  UserSessionsPanel,
+} from "../../components/user";
+import { adminApi, type Session, type User } from "../../lib/auth-client";
+import type { Route } from "./+types/users.$userId";
 
-import { UserActionsPanel } from '~/components/user';
-import { adminApi, type AdminUser, type UserSession } from '~/lib/auth-client';
+export function meta({}: Route.MetaArgs) {
+  return [
+    { title: "User Details - Better Auth Admin" },
+    { name: "description", content: "View and manage user details" },
+  ];
+}
 
-/** User detail page — view, edit, manage sessions, and perform actions */
-const UserDetail = () => {
-  const { userId } = useParams<{ userId: string }>();
+export default function UserDetailPage() {
+  const { userId } = useParams();
   const navigate = useNavigate();
-  const [user, setUser] = useState<AdminUser | null>(null);
-  const [sessions, setSessions] = useState<UserSession[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState('');
-  const [role, setRole] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<{
+    name: string;
+    email: string;
+    role: "user" | "admin";
+    emailVerified: boolean;
+  }>({ name: "", email: "", role: "user", emailVerified: false });
+  const [isSaving, setIsSaving] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [showSessionsPanel, setShowSessionsPanel] = useState(false);
 
-  const fetchUser = useCallback(async () => {
+  useEffect(() => {
+    async function fetchUser() {
+      if (!userId) return;
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        // Use listUsers with filter to get specific user
+        const { data, error: apiError } = await adminApi.listUsers({
+          query: {
+            filterField: "id",
+            filterValue: userId,
+            filterOperator: "eq",
+            limit: 1,
+          },
+        });
+
+        if (apiError || !data) {
+          throw new Error(apiError?.message || "Failed to fetch user");
+        }
+
+        if (data.users.length === 0) {
+          throw new Error("User not found");
+        }
+
+        const fetchedUser = data.users[0] as User;
+        setUser(fetchedUser);
+        setEditForm({
+          name: fetchedUser.name || "",
+          email: fetchedUser.email,
+          role: (fetchedUser.role as "user" | "admin") || "user",
+          emailVerified: fetchedUser.emailVerified,
+        });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load user");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchUser();
+  }, [userId]);
+
+  const handleSave = async () => {
     if (!userId) return;
+
     try {
-      // Fetch user details via list with ID filter
-      const result = await adminApi.listUsers({
+      setIsSaving(true);
+      // Update user data
+      const { data, error: updateError } = await adminApi.updateUser({
+        userId,
+        data: {
+          name: editForm.name,
+          email: editForm.email,
+          emailVerified: editForm.emailVerified,
+        },
+      });
+
+      if (updateError) {
+        throw new Error(updateError.message || "Failed to update user");
+      }
+
+      // Update role if changed
+      if (editForm.role !== user?.role) {
+        const { error: roleError } = await adminApi.setRole({
+          userId,
+          role: editForm.role,
+        });
+
+        if (roleError) {
+          throw new Error(roleError.message || "Failed to update role");
+        }
+      }
+
+      // Refetch user to get updated data
+      const { data: refreshData } = await adminApi.listUsers({
         query: {
-          searchField: 'id',
-          searchValue: userId,
-          searchOperator: 'is' as const,
+          filterField: "id",
+          filterValue: userId,
+          filterOperator: "eq",
           limit: 1,
         },
       });
-      const found = (result.data?.users as AdminUser[])?.[0];
-      if (found) {
-        setUser(found);
-        setName(found.name || '');
-        setRole(found.role || 'user');
+
+      if (refreshData && refreshData.users.length > 0) {
+        setUser(refreshData.users[0] as User);
       }
 
-      // Fetch sessions
-      const sessionsResult = await adminApi.listUserSessions({ userId });
-      if (sessionsResult.data?.sessions) {
-        setSessions(sessionsResult.data.sessions as UserSession[]);
-      }
-    } catch {
-      // User not found
+      setIsEditing(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update user");
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
-  }, [userId]);
+  };
 
-  useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
-
-  const handleSave = async (e: FormEvent) => {
-    e.preventDefault();
+  const fetchUserSessions = async () => {
     if (!userId) return;
-    setSaving(true);
+
     try {
-      await adminApi.updateUser({ userId, data: { name } });
-      if (role !== user?.role) {
-        await adminApi.setRole({ userId, role });
+      setIsLoadingSessions(true);
+      const { data, error: sessionsError } = await adminApi.listUserSessions({
+        userId,
+      });
+
+      if (sessionsError) {
+        throw new Error(sessionsError.message || "Failed to fetch sessions");
       }
-      setEditing(false);
-      fetchUser();
-    } catch {
-      // Keep editing state on error
+
+      setSessions((data?.sessions as Session[]) || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load sessions");
     } finally {
-      setSaving(false);
+      setIsLoadingSessions(false);
     }
   };
 
   const handleRevokeSession = async (sessionToken: string) => {
-    await adminApi.revokeUserSession({ sessionToken });
-    fetchUser();
+    try {
+      setActionLoading(`revoke-${sessionToken}`);
+      const { error: revokeError } = await adminApi.revokeUserSession({
+        sessionToken,
+      });
+
+      if (revokeError) {
+        throw new Error(revokeError.message || "Failed to revoke session");
+      }
+
+      // Remove the revoked session from the list
+      setSessions((prev) => prev.filter((s) => s.token !== sessionToken));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to revoke session");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const handleRevokeAllSessions = async () => {
+  const handleRevokAllSessions = async () => {
     if (!userId) return;
-    await adminApi.revokeUserSessions({ userId });
-    fetchUser();
+
+    try {
+      setActionLoading("revoke-all");
+      const { error: revokeError } = await adminApi.revokeUserSessions({
+        userId,
+      });
+
+      if (revokeError) {
+        throw new Error(revokeError.message || "Failed to revoke all sessions");
+      }
+
+      setSessions([]);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to revoke all sessions",
+      );
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const handleAction = () => {
-    fetchUser();
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+      <div className="space-y-6">
+        <div className="h-8 bg-gray-200 rounded w-48 animate-pulse" />
+        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4 animate-pulse">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-gray-200 rounded-full" />
+            <div className="space-y-2">
+              <div className="h-6 bg-gray-200 rounded w-32" />
+              <div className="h-4 bg-gray-200 rounded w-48" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (!user) {
+  if (error || !user) {
     return (
-      <div className="text-center">
-        <p className="text-gray-500">User not found.</p>
-        <Link to="/dashboard/users" className="mt-2 text-blue-600 hover:text-blue-800">
-          Back to Users
-        </Link>
+      <div className="space-y-6">
+        <div className="h-8 bg-gray-900 text-white rounded w-48">
+          <h1 className="text-2xl font-bold">User Details</h1>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-700">{error || "User not found"}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <Link to="/dashboard/users" className="text-sm text-blue-600 hover:text-blue-800">
-            &larr; Back to Users
-          </Link>
-          <h1 className="mt-2 text-2xl font-bold text-gray-900">{user.name || user.email}</h1>
-        </div>
-        {!editing && (
-          <button
-            onClick={() => setEditing(true)}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Edit
-          </button>
-        )}
-      </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <UserDetailsHeader
+        isEditing={isEditing}
+        isSaving={isSaving}
+        onEdit={() => setIsEditing(true)}
+        onCancel={() => {
+          setIsEditing(false);
+          setEditForm({
+            name: user.name || "",
+            email: user.email,
+            role: (user.role as "user" | "admin") || "user",
+            emailVerified: user.emailVerified,
+          });
+        }}
+        onSave={handleSave}
+      />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* User info / edit form */}
+      {/* Main Content - Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - User Details Card & Sessions Panel */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            {editing ? (
-              <form onSubmit={handleSave} className="space-y-4">
-                <div>
-                  <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700">Name</label>
-                  <input
-                    id="edit-name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="edit-role" className="block text-sm font-medium text-gray-700">Role</label>
-                  <select
-                    id="edit-role"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                  >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {saving ? 'Saving...' : 'Save'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditing(false);
-                      setName(user.name || '');
-                      setRole(user.role || 'user');
-                    }}
-                    className="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <dl className="space-y-3">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Email</dt>
-                  <dd className="text-sm text-gray-900">{user.email}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Name</dt>
-                  <dd className="text-sm text-gray-900">{user.name || '—'}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Role</dt>
-                  <dd>
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
-                      user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {user.role || 'user'}
-                    </span>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Status</dt>
-                  <dd>
-                    {user.banned ? (
-                      <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">
-                        Banned{user.banReason ? `: ${user.banReason}` : ''}
-                      </span>
-                    ) : (
-                      <span className="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
-                        Active
-                      </span>
-                    )}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Email Verified</dt>
-                  <dd className="text-sm text-gray-900">{user.emailVerified ? 'Yes' : 'No'}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Created</dt>
-                  <dd className="text-sm text-gray-900">{new Date(user.createdAt).toLocaleString()}</dd>
-                </div>
-              </dl>
-            )}
-          </div>
+          <UserDetailsCard
+            user={user}
+            isEditing={isEditing}
+            editForm={editForm}
+            onEditFormChange={setEditForm}
+          />
 
-          {/* Sessions */}
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Sessions ({sessions.length})</h3>
-              {sessions.length > 0 && (
-                <button
-                  onClick={handleRevokeAllSessions}
-                  className="text-sm text-red-600 hover:text-red-800"
-                >
-                  Revoke All
-                </button>
-              )}
-            </div>
-            {sessions.length === 0 ? (
-              <p className="mt-3 text-sm text-gray-500">No active sessions.</p>
-            ) : (
-              <div className="mt-3 space-y-2">
-                {sessions.map((session) => (
-                  <div
-                    key={session.id}
-                    className="flex items-center justify-between rounded-md border border-gray-100 p-3 text-sm"
-                  >
-                    <div>
-                      <p className="text-gray-700">{session.userAgent || 'Unknown device'}</p>
-                      <p className="text-xs text-gray-400">
-                        {session.ipAddress || 'Unknown IP'} · Expires{' '}
-                        {new Date(session.expiresAt).toLocaleString()}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleRevokeSession(session.token)}
-                      className="text-xs text-red-600 hover:text-red-800"
-                    >
-                      Revoke
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Sessions Panel - Constrained to left column */}
+          <UserSessionsPanel
+            sessions={sessions}
+            isLoading={isLoadingSessions}
+            actionLoading={actionLoading}
+            onRefresh={fetchUserSessions}
+            onRevokeSession={handleRevokeSession}
+            onRevokeAll={handleRevokAllSessions}
+          />
         </div>
 
-        {/* Actions sidebar */}
+        {/* Right Column - Actions Panel */}
         <div>
           <UserActionsPanel
-            userId={user.id}
-            isBanned={user.banned}
-            onAction={handleAction}
+            user={user}
+            onError={setError}
+            onSessionsToggle={() => {
+              setShowSessionsPanel(!showSessionsPanel);
+              if (!showSessionsPanel) {
+                fetchUserSessions();
+              }
+            }}
+            showSessionsPanel={showSessionsPanel}
           />
         </div>
       </div>
     </div>
   );
-};
-
-export default UserDetail;
+}

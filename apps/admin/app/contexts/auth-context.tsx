@@ -1,76 +1,109 @@
-import { createContext, useCallback, useContext, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  authClient,
+  signIn,
+  signOut,
+  useSession,
+  type User,
+} from "../lib/auth-client";
 
-import { getSession, signIn, signOut, useSession } from '~/lib/auth-client';
-
-type AuthContextValue = {
-  user: { id: string; name: string; email: string; role: string | null } | null;
+interface AuthContextType {
+  user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   clearError: () => void;
-};
+}
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending } = useSession();
   const [error, setError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const user = session?.user ?? null;
+  const user = session?.user as User | null;
   const isAuthenticated = !!user;
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === "admin";
 
   const login = useCallback(async (email: string, password: string) => {
     setError(null);
+    setIsLoggingIn(true);
+
     try {
-      const result = await signIn.email({ email, password });
+      const result = await signIn.email({
+        email,
+        password,
+      });
 
       if (result.error) {
-        setError(result.error.message ?? 'Login failed');
-        return;
+        setError(result.error.message || "Login failed");
+        return false;
       }
 
-      // Verify the user is an admin
-      const sessionResult = await getSession();
-      if (sessionResult.data?.user?.role !== 'admin') {
+      const session = await authClient.getSession();
+
+      // Check if user is admin
+      const userData = session?.data?.user as User | undefined;
+
+      if (userData?.role !== "admin") {
         await signOut();
-        setError('Access denied. Admin privileges required.');
-        return;
+        setError("Access denied. Admin privileges required.");
+        return false;
       }
-    } catch {
-      setError('An unexpected error occurred');
+
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+      return false;
+    } finally {
+      setIsLoggingIn(false);
     }
   }, []);
 
   const logout = useCallback(async () => {
-    await signOut();
+    try {
+      await signOut();
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
   }, []);
 
-  const clearError = useCallback(() => setError(null), []);
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
 
   return (
-    <AuthContext value={{
-      user,
-      isAuthenticated,
-      isAdmin,
-      isLoading: isPending,
-      error,
-      login,
-      logout,
-      clearError,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated,
+        isAdmin,
+        isLoading: isPending || isLoggingIn,
+        error,
+        login,
+        logout,
+        clearError,
+      }}
+    >
       {children}
-    </AuthContext>
+    </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-};
+}

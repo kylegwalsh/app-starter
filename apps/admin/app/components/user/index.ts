@@ -1,3 +1,9 @@
-export { UserActionsPanel } from './user-actions-panel';
-export { UsersFilters } from './users-filters';
-export { UsersTable } from './users-table';
+export { UserActionsPanel } from "./UserActionsPanel";
+export { UserDetailsCard } from "./UserDetailsCard";
+export { UserDetailsHeader } from "./UserDetailsHeader";
+export { UserSessionsPanel } from "./UserSessionsPanel";
+export { UsersFilters } from "./UsersFilters";
+export { UsersHeader } from "./UsersHeader";
+export { UsersLoadingSkeleton } from "./UsersLoadingSkeleton";
+export { UsersPagination } from "./UsersPagination";
+export { UsersTable } from "./UsersTable";

@@ -1,128 +1,173 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router';
+import { useCallback, useEffect, useState } from "react";
+import { DataFetchError } from "../../components/data-fetch-error";
+import {
+  UsersFilters,
+  UsersHeader,
+  UsersLoadingSkeleton,
+  UsersPagination,
+  UsersTable,
+} from "../../components/user";
+import { adminApi, type User } from "../../lib/auth-client";
+import type { Route } from "./+types/users.index";
 
-import { UsersFilters, UsersTable } from '~/components/user';
-import { adminApi, type AdminUser } from '~/lib/auth-client';
+export function meta({}: Route.MetaArgs) {
+  return [
+    { title: "Users - Better Auth Admin" },
+    { name: "description", content: "Manage users" },
+  ];
+}
 
-/** User list page with search, filter, sort, and pagination */
-const UsersIndex = () => {
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [offset, setOffset] = useState(0);
-  const limit = 25;
+type SortField = "email" | "name" | "createdAt";
+type SortOrder = "asc" | "desc";
+type FilterStatus = "all" | "active" | "banned" | "unverified";
+
+export default function UsersListPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState<SortField>("createdAt");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const fetchUsers = useCallback(async () => {
-    setLoading(true);
     try {
-      const result = await adminApi.listUsers({
+      setIsLoading(true);
+      setError(null);
+      const { data, error: apiError } = await adminApi.listUsers({
         query: {
-          limit,
-          offset,
-          sortBy,
-          sortDirection,
-          ...(search
-            ? { searchField: 'email', searchValue: search, searchOperator: 'contains' as const }
-            : {}),
-          ...(statusFilter === 'banned'
-            ? { filterField: 'banned', filterValue: 'true' }
-            : statusFilter === 'active'
-              ? { filterField: 'banned', filterValue: 'false' }
-              : {}),
+          limit: 1000,
         },
       });
-      if (result.data?.users) {
-        setUsers(result.data.users as AdminUser[]);
+
+      if (apiError || !data) {
+        throw new Error(apiError?.message || "Failed to fetch users");
       }
-    } catch {
-      // Keep existing users on error
+
+      setUsers(data.users as User[]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load users");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [search, statusFilter, sortBy, sortDirection, offset]);
+  }, []);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // Reset pagination when filters change
+  // Filter and sort users
   useEffect(() => {
-    setOffset(0);
-  }, [search, statusFilter]);
+    let result = [...users];
 
-  const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (user) =>
+          user.email.toLowerCase().includes(query) ||
+          user.name?.toLowerCase().includes(query),
+      );
+    }
+
+    // Apply status filter
+    switch (filterStatus) {
+      case "active":
+        result = result.filter((u) => !u.banned && u.emailVerified);
+        break;
+      case "banned":
+        result = result.filter((u) => u.banned);
+        break;
+      case "unverified":
+        result = result.filter((u) => !u.emailVerified);
+        break;
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      let aVal: string | Date = "";
+      let bVal: string | Date = "";
+
+      switch (sortField) {
+        case "email":
+          aVal = a.email;
+          bVal = b.email;
+          break;
+        case "name":
+          aVal = a.name || "";
+          bVal = b.name || "";
+          break;
+        case "createdAt":
+          aVal = new Date(a.createdAt);
+          bVal = new Date(b.createdAt);
+          break;
+      }
+
+      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    setFilteredUsers(result);
+    setCurrentPage(1);
+  }, [users, searchQuery, sortField, sortOrder, filterStatus]);
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
-      setSortBy(field);
-      setSortDirection('asc');
+      setSortField(field);
+      setSortOrder("asc");
     }
   };
 
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
+  if (isLoading) {
+    return <UsersLoadingSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <DataFetchError
+        title="Users"
+        description="Manage user accounts"
+        error={error}
+        onRetry={fetchUsers}
+      />
+    );
+  }
+
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-          <p className="mt-1 text-sm text-gray-500">Manage application users.</p>
-        </div>
-        <Link
-          to="/dashboard/users/new"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Add User
-        </Link>
-      </div>
-
-      <div className="mt-6">
-        <UsersFilters
-          search={search}
-          onSearchChange={setSearch}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-        />
-      </div>
-
-      <div className="mt-4">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
-          </div>
-        ) : (
-          <UsersTable
-            users={users}
-            sortBy={sortBy}
-            sortDirection={sortDirection}
-            onSort={handleSort}
-          />
-        )}
-      </div>
-
-      {/* Pagination */}
-      <div className="mt-4 flex items-center justify-between">
-        <button
-          onClick={() => setOffset((o) => Math.max(0, o - limit))}
-          disabled={offset === 0}
-          className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <span className="text-sm text-gray-500">
-          Showing {offset + 1}–{offset + users.length}
-        </span>
-        <button
-          onClick={() => setOffset((o) => o + limit)}
-          disabled={users.length < limit}
-          className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
+    <div className="space-y-6">
+      <UsersHeader filteredCount={filteredUsers.length} />
+      <UsersFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        filterStatus={filterStatus}
+        onFilterStatusChange={setFilterStatus}
+      />
+      <UsersTable
+        users={paginatedUsers}
+        sortField={sortField}
+        sortOrder={sortOrder}
+        onSort={toggleSort}
+      />
+      <UsersPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        itemsPerPage={itemsPerPage}
+        totalItems={filteredUsers.length}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
-};
-
-export default UsersIndex;
+}

@@ -1,44 +1,84 @@
-import { adminClient } from 'better-auth/client/plugins';
+// Better-Auth Admin Client Configuration
+import { adminClient, organizationClient } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
 
-/** The API URL for our Better Auth backend */
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Base URL for the auth API — VITE_API_URL is set by SST at build time
+const AUTH_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-/** Better Auth client configured with the admin plugin */
 export const authClient = createAuthClient({
-  baseURL,
-  plugins: [adminClient()],
+  baseURL: AUTH_API_URL,
+  plugins: [adminClient(), organizationClient()],
 });
 
-/** Convenience exports */
-export const { signIn, signOut, useSession, getSession } = authClient;
+// Re-export commonly used hooks and methods
+export const { signIn, signOut, signUp, useSession, getSession } = authClient;
 
-/** Admin API methods */
+// Export admin API directly from authClient
 export const adminApi = authClient.admin;
 
-/** User type from the admin API */
-export type AdminUser = {
-  id: string;
-  name: string;
-  email: string;
-  emailVerified: boolean;
-  image: string | null;
-  role: string | null;
-  banned: boolean | null;
-  banReason: string | null;
-  banExpires: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+// Export organization API directly from authClient
+export const organizationApi = authClient.organization;
 
-/** Session type */
-export type UserSession = {
+// User type based on better-auth schema
+export interface User {
   id: string;
-  token: string;
+  email: string;
+  name: string | null;
+  image: string | null;
+  emailVerified: boolean;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  banned: boolean;
+  banReason: string | null;
+  banExpires: Date | string | null;
+  role: string | null;
+}
+
+// Session type
+export interface Session {
+  id: string;
   userId: string;
-  expiresAt: string;
-  createdAt: string;
-  updatedAt: string;
+  expiresAt: Date | string;
+  token: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
   ipAddress: string | null;
   userAgent: string | null;
-};
+}
+
+// Admin user type (user with admin role)
+export interface AdminUser extends User {
+  role: 'admin';
+}
+
+// Organization type
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  metadata?: Record<string, unknown> | null;
+  createdAt: Date | string;
+}
+
+// Organization member type
+export interface Member {
+  id: string;
+  userId: string;
+  organizationId: string;
+  role: 'owner' | 'admin' | 'member';
+  createdAt: Date | string;
+  user?: User;
+}
+
+// Organization invitation type
+export interface Invitation {
+  id: string;
+  email: string;
+  inviterId: string;
+  organizationId: string;
+  role: 'admin' | 'member';
+  status: 'pending' | 'accepted' | 'rejected' | 'canceled';
+  expiresAt: Date | string;
+  createdAt: Date | string;
+}
