@@ -42,6 +42,14 @@ try {
   // Do nothing
 }
 
+/** The URL of our admin dashboard */
+let adminUrl = '';
+try {
+  adminUrl = process.env.VITE_ADMIN_URL ?? resources?.admin?.url ?? '';
+} catch {
+  // Do nothing
+}
+
 /** Whether this application is running as one of our main deployments (not locally) */
 const isDeployment = ['prod', 'dev'].includes(stage ?? '');
 
@@ -67,6 +75,11 @@ export const config = {
   api: {
     /** The URL of our own API (found differently for frontend and backend) */
     url: apiUrl,
+  },
+  /** Details for our admin dashboard */
+  admin: {
+    /** The URL of the admin dashboard */
+    url: adminUrl,
   },
   /** The configuration for PostHog (our analytics system) */
   posthog: {

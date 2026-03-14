@@ -1,0 +1,15 @@
+{
+  "extends": "@repo/tsconfig/react.json",
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".react-router/types/**/*"
+  ],
+  "compilerOptions": {
+    "rootDirs": [".", "./.react-router/types"],
+    "outDir": "dist",
+    "paths": {
+      "~/*": ["./app/*"]
+    }
+  }
+}

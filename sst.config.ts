@@ -139,6 +139,7 @@ export default $config({
     // Import primary application stacks
     await import('./infra/api');
     await import('./infra/web');
+    await import('./infra/admin');
     await import('./infra/keep-alive');
     // Optional docs site
     // await import('./infra/docs');

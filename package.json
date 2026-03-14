@@ -11,6 +11,7 @@
     "dev": "sst dev",
     "backend": "cd apps/backend && bun",
     "web": "cd apps/web && bun",
+    "admin": "cd apps/admin && bun",
     "docs": "cd apps/docs && bun",
     "storybook": "cd apps/storybook && bun",
     "design": "cd packages/design && bun",
