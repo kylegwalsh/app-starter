@@ -137,6 +137,7 @@ export default $config({
     }
 
     // Import primary application stacks
+    await import('./infra/webhooks');
     await import('./infra/api');
     await import('./infra/web');
     await import('./infra/keep-alive');

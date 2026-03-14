@@ -21,5 +21,10 @@ export const LOOPS_API_KEY = new sst.Secret('LOOPS_API_KEY');
 export const STRIPE_SECRET_KEY = new sst.Secret('STRIPE_SECRET_KEY');
 export const STRIPE_WEBHOOK_SECRET = new sst.Secret('STRIPE_WEBHOOK_SECRET');
 
+// Slack (Chat SDK)
+export const SLACK_SIGNING_SECRET = new sst.Secret('SLACK_SIGNING_SECRET');
+export const SLACK_CLIENT_ID = new sst.Secret('SLACK_CLIENT_ID');
+export const SLACK_CLIENT_SECRET = new sst.Secret('SLACK_CLIENT_SECRET');
+
 // Set the default secrets for the stage...
 export const STAGE = new sst.Secret('STAGE', $app.stage);
