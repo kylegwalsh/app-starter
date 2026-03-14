@@ -1,21 +1,20 @@
-import type { ReactNode } from "react";
-import { Navigate, useLocation } from "react-router";
-import { useAuth } from "../contexts/auth-context";
+import { Button, Card, CardContent, CardHeader } from '@repo/design';
+import { Loader2Icon, ShieldAlertIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { Link, Navigate, useLocation } from 'react-router';
 
-interface RequireAdminProps {
-  children: ReactNode;
-}
+import { useAuth } from '../contexts/auth-context';
 
-export function RequireAdmin({ children }: RequireAdminProps) {
+export function RequireAdmin({ children }: { children: ReactNode }) {
   const { isAuthenticated, isAdmin, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-background flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600">Loading...</p>
+          <Loader2Icon className="text-primary h-8 w-8 animate-spin" />
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -27,37 +26,23 @@ export function RequireAdmin({ children }: RequireAdminProps) {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md text-center">
-          <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-            <svg
-              className="w-8 h-8 text-red-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Access Denied
-          </h2>
-          <p className="text-gray-600 mb-4">
-            You don't have permission to access this page. Admin privileges are
-            required.
-          </p>
-          <a
-            href="/login"
-            className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Return to Login
-          </a>
-        </div>
+      <div className="bg-background flex min-h-screen items-center justify-center">
+        <Card className="max-w-md text-center">
+          <CardHeader>
+            <div className="bg-destructive/10 mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full">
+              <ShieldAlertIcon className="text-destructive h-8 w-8" />
+            </div>
+            <h2 className="text-xl font-semibold">Access Denied</h2>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              You don't have permission to access this page. Admin privileges are required.
+            </p>
+            <Button asChild>
+              <Link to="/login">Return to Login</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

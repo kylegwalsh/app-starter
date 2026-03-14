@@ -23,7 +23,9 @@ app/
 
 ## UI/UX
 
-- Tailwind v4 for all styling (no shared design system — standalone app)
+- Uses `@repo/design` shared component library (shadcn/ui + Radix primitives)
+- Tailwind CSS v4 with `@tailwindcss/vite` plugin and shadcn theme variables (oklch)
+- Icons from `lucide-react` (no inline SVGs)
 - Admin-only access enforced via Better Auth role checks
 - `RequireAdmin` wrapper component gates dashboard routes
 

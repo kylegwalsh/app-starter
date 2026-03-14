@@ -1,12 +1,29 @@
-import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router";
-import { adminApi } from "../../lib/auth-client";
-import type { Route } from "./+types/users.new";
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@repo/design';
+import { ArrowLeftIcon, Loader2Icon } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router';
 
-export function meta({}: Route.MetaArgs) {
+import { adminApi } from '../../lib/auth-client';
+
+export function meta() {
   return [
-    { title: "Create User - Better Auth Admin" },
-    { name: "description", content: "Create a new user" },
+    { title: 'Create User - Better Auth Admin' },
+    { name: 'description', content: 'Create a new user' },
   ];
 }
 
@@ -14,43 +31,36 @@ export default function CreateUserPage() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState<{
-    name: string;
-    email: string;
-    password: string;
-    confirmPassword: string;
-    role: "user" | "admin";
-  }>({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    role: "user",
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: 'user' as 'user' | 'admin',
   });
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // Validation
     if (!form.email || !form.password) {
-      setError("Email and password are required");
+      setError('Email and password are required');
       return;
     }
 
     if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match");
+      setError('Passwords do not match');
       return;
     }
 
     if (form.password.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError('Password must be at least 8 characters');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const { data, error: createError } = await adminApi.createUser({
+      const { error: createError } = await adminApi.createUser({
         email: form.email,
         password: form.password,
         name: form.name,
@@ -58,12 +68,12 @@ export default function CreateUserPage() {
       });
 
       if (createError) {
-        throw new Error(createError.message || "Failed to create user");
+        throw new Error(createError.message || 'Failed to create user');
       }
 
-      navigate("/dashboard/users");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create user");
+      navigate('/dashboard/users');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to create user');
     } finally {
       setIsSubmitting(false);
     }
@@ -71,159 +81,117 @@ export default function CreateUserPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
-        <Link
-          to="/dashboard/users"
-          className="text-gray-500 hover:text-gray-700"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Create User</h1>
+        <Button variant="ghost" size="icon" asChild>
+          <Link to="/dashboard/users">
+            <ArrowLeftIcon className="h-4 w-4" />
+          </Link>
+        </Button>
+        <h1 className="text-2xl font-bold">Create User</h1>
       </div>
 
-      {/* Form Card */}
-      <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700">{error}</p>
-          </div>
-        )}
+      <Card className="max-w-2xl">
+        <CardHeader>
+          <CardTitle>New User</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2">
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Full Name
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                placeholder="John Doe"
-              />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="John Doe"
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="email">
+                  Email Address <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  required
+                  placeholder="user@example.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">
+                  Password <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  required
+                  minLength={8}
+                  placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
+                />
+                <p className="text-muted-foreground text-xs">Minimum 8 characters</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">
+                  Confirm Password <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={form.confirmPassword}
+                  onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                  required
+                  placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="role">Role</Label>
+                <Select
+                  value={form.role}
+                  onValueChange={(v) => setForm({ ...form, role: v as 'user' | 'admin' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="md:col-span-2">
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Email Address <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                placeholder="user@example.com"
-              />
+            <div className="flex items-center justify-end gap-3 border-t pt-4">
+              <Button variant="outline" asChild>
+                <Link to="/dashboard/users">Cancel</Link>
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2Icon className="h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create User'
+                )}
+              </Button>
             </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                required
-                minLength={8}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                placeholder="••••••••"
-              />
-              <p className="mt-1 text-xs text-gray-500">Minimum 8 characters</p>
-            </div>
-
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Confirm Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={form.confirmPassword}
-                onChange={(e) =>
-                  setForm({ ...form, confirmPassword: e.target.value })
-                }
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label
-                htmlFor="role"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Role
-              </label>
-              <select
-                id="role"
-                value={form.role}
-                onChange={(e) =>
-                  setForm({ ...form, role: e.target.value as "user" | "admin" })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
-            <Link
-              to="/dashboard/users"
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700"
-            >
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                "Create User"
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

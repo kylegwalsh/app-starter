@@ -1,121 +1,64 @@
-export function OrganizationPluginDisabledCard() {
+import { BuildingIcon, ShieldAlertIcon } from 'lucide-react';
+
+export const OrganizationPluginDisabledCard = () => {
   return (
     <div className="flex items-center justify-center py-8">
-      <div className="relative bg-blue-50 border border-blue-200 rounded-2xl p-10 max-w-xl w-full text-center overflow-hidden">
+      <div className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-blue-200 bg-blue-50 p-10 text-center">
         {/* Decorative background icon */}
         <div className="absolute right-6 bottom-6 opacity-[0.07]">
-          <svg
-            className="w-32 h-32 text-blue-600"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
+          <ShieldAlertIcon className="h-32 w-32 text-blue-600" />
         </div>
 
         {/* Shield icon */}
-        <div className="flex justify-center mb-5">
-          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
-            <svg
-              className="w-10 h-10 text-blue-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01"
-              />
-            </svg>
+        <div className="mb-5 flex justify-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-100">
+            <ShieldAlertIcon className="h-10 w-10 text-blue-500" />
           </div>
         </div>
 
-        <h2 className="text-xl font-bold text-gray-900 mb-3">
-          Organization Plugin Not Enabled
-        </h2>
-        <p className="text-gray-500 mb-8 max-w-md mx-auto">
-          The multi-tenant organization management system is currently inactive.
-          To activate this protocol, update your backend configuration.
+        <h2 className="text-foreground mb-3 text-xl font-bold">Organization Plugin Not Enabled</h2>
+        <p className="text-muted-foreground mx-auto mb-8 max-w-md">
+          The multi-tenant organization management system is currently inactive. To activate this
+          protocol, update your backend configuration.
         </p>
 
         {/* Code snippet */}
-        <div className="relative bg-white border border-blue-200 rounded-xl p-5 text-left overflow-hidden">
-          <div className="absolute right-4 top-4 opacity-[0.07]">
-            <svg
-              className="w-16 h-16 text-blue-600"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-            </svg>
-          </div>
-          <p className="text-xs font-semibold text-gray-400 tracking-wider uppercase mb-3">
+        <div className="relative overflow-hidden rounded-xl border border-blue-200 bg-white p-5 text-left">
+          <p className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
             Activation Required
           </p>
           <pre className="text-sm leading-relaxed">
             <code>
-              <span className="text-gray-400">
-                {"// better-auth.config.ts"}
-              </span>
-              {"\n"}
-              <span className="text-gray-900 font-semibold">
-                {"plugins: ["}
-              </span>
-              {"\n"}
-              <span className="text-blue-500 font-semibold">
-                {"  organization()"}
-              </span>
-              {"\n"}
-              <span className="text-gray-900 font-semibold">{"]"}</span>
+              <span className="text-muted-foreground">// better-auth.config.ts</span>
+              {'\n'}
+              <span className="text-foreground font-semibold">plugins: [</span>
+              {'\n'}
+              <span className="font-semibold text-blue-500">{'  organization()'}</span>
+              {'\n'}
+              <span className="text-foreground font-semibold">]</span>
             </code>
           </pre>
         </div>
       </div>
     </div>
   );
-}
+};
 
-interface ManagementRestrictedHeaderProps {
+type ManagementRestrictedHeaderProps = {
   title: string;
   icon?: React.ReactNode;
-}
+};
 
-export function ManagementRestrictedHeader({
-  title,
-  icon,
-}: ManagementRestrictedHeaderProps) {
+export const ManagementRestrictedHeader = ({ title, icon }: ManagementRestrictedHeaderProps) => {
   return (
     <div>
       <div className="flex items-center gap-2">
-        {icon || (
-          <svg
-            className="w-6 h-6 text-blue-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-            />
-          </svg>
-        )}
-        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+        {icon ?? <BuildingIcon className="h-6 w-6 text-blue-500" />}
+        <h1 className="text-foreground text-2xl font-bold">{title}</h1>
       </div>
-      <p className="text-xs font-semibold text-blue-600 tracking-wider uppercase mt-0.5">
+      <p className="mt-0.5 text-xs font-semibold tracking-wider text-blue-600 uppercase">
         Management Restricted
       </p>
     </div>
   );
-}
+};

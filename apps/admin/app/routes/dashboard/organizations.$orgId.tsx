@@ -1,69 +1,142 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
-import { OrganizationDetailPluginDisabled } from "../../components/organisations/organization-detail-plugin-disabled";
+import {
+  Alert,
+  AlertDescription,
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@repo/design';
+import { ArrowLeftIcon, Loader2Icon, PlusIcon, Trash2Icon } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
+
+import { OrganizationDetailPluginDisabled } from '../../components/organisations/organization-detail-plugin-disabled';
 import {
   organizationApi,
   type Invitation,
   type Member,
   type Organization,
   type User,
-} from "../../lib/auth-client";
+} from '../../lib/auth-client';
 
 export function meta() {
   return [
-    { title: "Organization Details - Better Auth Admin" },
-    { name: "description", content: "View and manage organization details" },
+    { title: 'Organization Details - Better Auth Admin' },
+    { name: 'description', content: 'View and manage organization details' },
   ];
 }
 
-interface MemberWithUser extends Member {
+type MemberWithUser = Member & {
   user?: User;
-}
+};
 
-interface FullOrganization extends Organization {
+type FullOrganization = Organization & {
   members?: MemberWithUser[];
   invitations?: Invitation[];
-}
+};
+
+const getRoleBadgeVariant = (role: string): 'default' | 'secondary' | 'outline' => {
+  switch (role) {
+    case 'owner': {
+      return 'default';
+    }
+    case 'admin': {
+      return 'outline';
+    }
+    default: {
+      return 'secondary';
+    }
+  }
+};
+
+const getStatusBadgeVariant = (
+  status: string,
+): 'default' | 'secondary' | 'outline' | 'destructive' => {
+  switch (status) {
+    case 'accepted': {
+      return 'default';
+    }
+    case 'rejected':
+    case 'canceled': {
+      return 'destructive';
+    }
+    case 'pending': {
+      return 'outline';
+    }
+    default: {
+      return 'secondary';
+    }
+  }
+};
+
+const formatDate = (date: Date | string) =>
+  new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 
 export default function OrganizationDetailPage() {
   const { orgId } = useParams();
   const navigate = useNavigate();
-  const [organization, setOrganization] = useState<FullOrganization | null>(
-    null,
-  );
+  const [organization, setOrganization] = useState<FullOrganization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteForm, setInviteForm] = useState({
-    email: "",
-    role: "member" as "admin" | "member",
+    email: '',
+    role: 'member' as 'admin' | 'member',
   });
   const [inviteError, setInviteError] = useState<string | null>(null);
 
   const fetchOrganization = useCallback(async () => {
-    if (!orgId) return;
+    if (!orgId) {
+      return;
+    }
 
     try {
       setIsLoading(true);
       setError(null);
 
-      const { data, error: apiError } =
-        await organizationApi.getFullOrganization({
-          query: { organizationId: orgId },
-        });
+      const { data, error: apiError } = await organizationApi.getFullOrganization({
+        query: { organizationId: orgId },
+      });
 
       if (apiError || !data) {
-        throw new Error(apiError?.message || "Failed to fetch organization");
+        throw new Error(apiError?.message || 'Failed to fetch organization');
       }
 
       setOrganization(data as FullOrganization);
-    } catch (err) {
-      console.error("Error fetching organization:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load organization",
-      );
+    } catch (error) {
+      console.error('Error fetching organization:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load organization');
     } finally {
       setIsLoading(false);
     }
@@ -74,23 +147,23 @@ export default function OrganizationDetailPage() {
   }, [fetchOrganization]);
 
   const handleDelete = async () => {
-    if (!orgId) return;
+    if (!orgId) {
+      return;
+    }
 
     try {
-      setActionLoading("delete");
+      setActionLoading('delete');
       const { error: deleteError } = await organizationApi.delete({
         organizationId: orgId,
       });
 
       if (deleteError) {
-        throw new Error(deleteError.message || "Failed to delete organization");
+        throw new Error(deleteError.message || 'Failed to delete organization');
       }
 
-      navigate("/dashboard/organizations");
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to delete organization",
-      );
+      navigate('/dashboard/organizations');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to delete organization');
     } finally {
       setActionLoading(null);
       setShowDeleteConfirm(false);
@@ -99,9 +172,11 @@ export default function OrganizationDetailPage() {
 
   const handleUpdateMemberRole = async (
     memberId: string,
-    newRole: "owner" | "admin" | "member",
+    newRole: 'owner' | 'admin' | 'member',
   ) => {
-    if (!orgId) return;
+    if (!orgId) {
+      return;
+    }
 
     try {
       setActionLoading(`role-${memberId}`);
@@ -112,23 +187,25 @@ export default function OrganizationDetailPage() {
       });
 
       if (updateError) {
-        throw new Error(updateError.message || "Failed to update member role");
+        throw new Error(updateError.message || 'Failed to update member role');
       }
 
       await fetchOrganization();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to update member role",
-      );
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to update member role');
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleRemoveMember = async (memberIdOrEmail: string) => {
-    if (!orgId) return;
+    if (!orgId) {
+      return;
+    }
 
-    if (!confirm("Are you sure you want to remove this member?")) return;
+    if (!confirm('Are you sure you want to remove this member?')) {
+      return;
+    }
 
     try {
       setActionLoading(`remove-${memberIdOrEmail}`);
@@ -138,53 +215,55 @@ export default function OrganizationDetailPage() {
       });
 
       if (removeError) {
-        throw new Error(removeError.message || "Failed to remove member");
+        throw new Error(removeError.message || 'Failed to remove member');
       }
 
       await fetchOrganization();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to remove member");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to remove member');
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleInviteMember = async () => {
-    if (!orgId) return;
+    if (!orgId) {
+      return;
+    }
 
     setInviteError(null);
 
     if (!inviteForm.email) {
-      setInviteError("Email is required");
+      setInviteError('Email is required');
       return;
     }
 
     try {
-      setActionLoading("invite");
-      const { error: inviteError } = await organizationApi.inviteMember({
+      setActionLoading('invite');
+      const { error: inviteApiError } = await organizationApi.inviteMember({
         email: inviteForm.email,
         role: inviteForm.role,
         organizationId: orgId,
       });
 
-      if (inviteError) {
-        throw new Error(inviteError.message || "Failed to send invitation");
+      if (inviteApiError) {
+        throw new Error(inviteApiError.message || 'Failed to send invitation');
       }
 
       setShowInviteModal(false);
-      setInviteForm({ email: "", role: "member" });
+      setInviteForm({ email: '', role: 'member' });
       await fetchOrganization();
-    } catch (err) {
-      setInviteError(
-        err instanceof Error ? err.message : "Failed to send invitation",
-      );
+    } catch (error) {
+      setInviteError(error instanceof Error ? error.message : 'Failed to send invitation');
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleCancelInvitation = async (invitationId: string) => {
-    if (!confirm("Are you sure you want to cancel this invitation?")) return;
+    if (!confirm('Are you sure you want to cancel this invitation?')) {
+      return;
+    }
 
     try {
       setActionLoading(`cancel-${invitationId}`);
@@ -193,49 +272,14 @@ export default function OrganizationDetailPage() {
       });
 
       if (cancelError) {
-        throw new Error(cancelError.message || "Failed to cancel invitation");
+        throw new Error(cancelError.message || 'Failed to cancel invitation');
       }
 
       await fetchOrganization();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to cancel invitation",
-      );
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to cancel invitation');
     } finally {
       setActionLoading(null);
-    }
-  };
-
-  const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case "owner":
-        return "bg-purple-100 text-purple-800";
-      case "admin":
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "accepted":
-        return "bg-green-100 text-green-800";
-      case "rejected":
-      case "canceled":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -243,35 +287,22 @@ export default function OrganizationDetailPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <Link
-            to="/dashboard/organizations"
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </Link>
-          <div className="animate-pulse">
-            <div className="h-8 w-48 bg-gray-200 rounded" />
-          </div>
+          <Button variant="ghost" size="icon" asChild>
+            <Link to="/dashboard/organizations">
+              <ArrowLeftIcon className="h-4 w-4" />
+            </Link>
+          </Button>
+          <Skeleton className="h-8 w-48" />
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-6 w-32 bg-gray-200 rounded" />
-            <div className="h-4 w-64 bg-gray-200 rounded" />
-            <div className="h-4 w-48 bg-gray-200 rounded" />
-          </div>
-        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-64" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -280,420 +311,349 @@ export default function OrganizationDetailPage() {
     return <OrganizationDetailPluginDisabled />;
   }
 
-  if (!organization) return null;
+  if (!organization) {
+    return null;
+  }
+
+  const pendingInvitations =
+    organization.invitations?.filter((inv) => inv.status === 'pending') ?? [];
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link
-            to="/dashboard/organizations"
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </Link>
+          <Button variant="ghost" size="icon" asChild>
+            <Link to="/dashboard/organizations">
+              <ArrowLeftIcon className="h-4 w-4" />
+            </Link>
+          </Button>
           <div className="flex items-center gap-3">
-            {organization.logo ? (
-              <img
-                src={organization.logo}
-                alt={organization.name}
-                className="w-12 h-12 rounded-lg object-cover"
-              />
-            ) : (
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-blue-600 font-semibold">
-                  {organization.name.substring(0, 2).toUpperCase()}
-                </span>
-              </div>
-            )}
+            <Avatar className="h-12 w-12 rounded-lg">
+              <AvatarImage src={organization.logo ?? undefined} alt={organization.name} />
+              <AvatarFallback className="rounded-lg">
+                {organization.name.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {organization.name}
-              </h1>
-              <p className="text-sm text-gray-500 font-mono">
-                {organization.slug}
-              </p>
+              <h1 className="text-2xl font-bold">{organization.name}</h1>
+              <p className="text-muted-foreground font-mono text-sm">{organization.slug}</p>
             </div>
           </div>
         </div>
         <div className="flex gap-2">
-          <Link
-            to={`/dashboard/organizations/${orgId}/edit`}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Edit
-          </Link>
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          >
+          <Button variant="outline" asChild>
+            <Link to={`/dashboard/organizations/${orgId}/edit`}>Edit</Link>
+          </Button>
+          <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)}>
             Delete
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">{error}</p>
-          <button
-            onClick={() => setError(null)}
-            className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
-          >
-            Dismiss
-          </button>
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setError(null)}
+              className="h-auto p-0 text-sm underline"
+            >
+              Dismiss
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
 
-      {/* Organization Info */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Organization Details
-        </h2>
-        <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Name</dt>
-            <dd className="text-gray-900">{organization.name}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Slug</dt>
-            <dd className="text-gray-900 font-mono">{organization.slug}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Created</dt>
-            <dd className="text-gray-900">
-              {formatDate(organization.createdAt)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Members</dt>
-            <dd className="text-gray-900">
-              {organization.members?.length || 0}
-            </dd>
-          </div>
-        </dl>
-      </div>
+      {/* Organization Details */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Organization Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <dt className="text-muted-foreground text-sm font-medium">Name</dt>
+              <dd>{organization.name}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground text-sm font-medium">Slug</dt>
+              <dd className="font-mono">{organization.slug}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground text-sm font-medium">Created</dt>
+              <dd>{formatDate(organization.createdAt)}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground text-sm font-medium">Members</dt>
+              <dd>{organization.members?.length ?? 0}</dd>
+            </div>
+          </dl>
+        </CardContent>
+      </Card>
 
       {/* Members Section */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Members</h2>
-          <button
-            onClick={() => setShowInviteModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle>Members</CardTitle>
+          <Button size="sm" onClick={() => setShowInviteModal(true)}>
+            <PlusIcon className="mr-2 h-4 w-4" />
             Invite Member
-          </button>
-        </div>
-
-        {organization.members && organization.members.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Joined
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {organization.members && organization.members.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Joined</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {organization.members.map((member) => (
-                  <tr key={member.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
+                  <TableRow key={member.id}>
+                    <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                          <span className="text-gray-600 text-sm font-medium">
-                            {(member.user?.name || member.user?.email || "U")
-                              .substring(0, 1)
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>
+                            {(member.user?.name || member.user?.email || 'U')
+                              .slice(0, 1)
                               .toUpperCase()}
-                          </span>
-                        </div>
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
-                          <p className="font-medium text-gray-900">
-                            {member.user?.name || "Unknown"}
-                          </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="font-medium">{member.user?.name || 'Unknown'}</p>
+                          <p className="text-muted-foreground text-sm">
                             {member.user?.email || member.userId}
                           </p>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select
+                    </TableCell>
+                    <TableCell>
+                      <Select
                         value={member.role}
-                        onChange={(e) =>
-                          handleUpdateMemberRole(
-                            member.id,
-                            e.target.value as "owner" | "admin" | "member",
-                          )
+                        onValueChange={(value) =>
+                          handleUpdateMemberRole(member.id, value as 'owner' | 'admin' | 'member')
                         }
                         disabled={actionLoading === `role-${member.id}`}
-                        className={`px-2 py-1 text-xs font-medium rounded-full border-0 ${getRoleBadgeColor(
-                          member.role,
-                        )} ${
-                          actionLoading === `role-${member.id}`
-                            ? "opacity-50"
-                            : ""
-                        }`}
                       >
-                        <option value="owner">Owner</option>
-                        <option value="admin">Admin</option>
-                        <option value="member">Member</option>
-                      </select>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                        <SelectTrigger className="w-28">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="owner">Owner</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="member">Member</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
                       {formatDate(member.createdAt)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleRemoveMember(member.id)}
                         disabled={
-                          actionLoading === `remove-${member.id}` ||
-                          member.role === "owner"
+                          actionLoading === `remove-${member.id}` || member.role === 'owner'
                         }
-                        className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-destructive hover:text-destructive"
                       >
-                        {actionLoading === `remove-${member.id}`
-                          ? "Removing..."
-                          : "Remove"}
-                      </button>
-                    </td>
-                  </tr>
+                        {actionLoading === `remove-${member.id}` ? (
+                          <Loader2Icon className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2Icon className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-gray-500 text-center py-8">
-            No members in this organization
-          </p>
-        )}
-      </div>
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="text-muted-foreground py-8 text-center">
+              No members in this organization
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Invitations Section */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Pending Invitations
-        </h2>
+      <Card>
+        <CardHeader>
+          <CardTitle>Pending Invitations</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {pendingInvitations.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Expires</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingInvitations.map((invitation) => (
+                  <TableRow key={invitation.id}>
+                    <TableCell>{invitation.email}</TableCell>
+                    <TableCell>
+                      <Badge variant={getRoleBadgeVariant(invitation.role)}>
+                        {invitation.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(invitation.status)}>
+                        {invitation.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDate(invitation.expiresAt)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleCancelInvitation(invitation.id)}
+                        disabled={actionLoading === `cancel-${invitation.id}`}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        {actionLoading === `cancel-${invitation.id}` ? (
+                          <Loader2Icon className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2Icon className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="text-muted-foreground py-8 text-center">No pending invitations</p>
+          )}
+        </CardContent>
+      </Card>
 
-        {organization.invitations && organization.invitations.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Expires
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {organization.invitations
-                  .filter((inv) => inv.status === "pending")
-                  .map((invitation) => (
-                    <tr key={invitation.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-gray-900">
-                        {invitation.email}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${getRoleBadgeColor(
-                            invitation.role,
-                          )}`}
-                        >
-                          {invitation.role}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(
-                            invitation.status,
-                          )}`}
-                        >
-                          {invitation.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">
-                        {formatDate(invitation.expiresAt)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => handleCancelInvitation(invitation.id)}
-                          disabled={actionLoading === `cancel-${invitation.id}`}
-                          className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
-                        >
-                          {actionLoading === `cancel-${invitation.id}`
-                            ? "Canceling..."
-                            : "Cancel"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-gray-500 text-center py-8">
-            No pending invitations
-          </p>
-        )}
-      </div>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Organization</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{organization.name}&quot;? This will remove all
+              members and invitations. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={actionLoading === 'delete'}
+            >
+              {actionLoading === 'delete' ? (
+                <>
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Delete Organization
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete "{organization.name}"? This will
-              remove all members and invitations. This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={actionLoading === "delete"}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-              >
-                {actionLoading === "delete" ? "Deleting..." : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Invite Member Dialog */}
+      <Dialog
+        open={showInviteModal}
+        onOpenChange={(open) => {
+          setShowInviteModal(open);
+          if (!open) {
+            setInviteError(null);
+            setInviteForm({ email: '', role: 'member' });
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite Member</DialogTitle>
+            <DialogDescription>Send an invitation to join this organization.</DialogDescription>
+          </DialogHeader>
 
-      {/* Invite Member Modal */}
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Invite Member
-            </h3>
-
+          <div className="space-y-4 py-2">
             {inviteError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-700 text-sm">{inviteError}</p>
-              </div>
+              <Alert variant="destructive">
+                <AlertDescription>{inviteError}</AlertDescription>
+              </Alert>
             )}
 
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="invite-email"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Email Address
-                </label>
-                <input
-                  id="invite-email"
-                  type="email"
-                  value={inviteForm.email}
-                  onChange={(e) =>
-                    setInviteForm({ ...inviteForm, email: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  placeholder="user@example.com"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="invite-role"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Role
-                </label>
-                <select
-                  id="invite-role"
-                  value={inviteForm.role}
-                  onChange={(e) =>
-                    setInviteForm({
-                      ...inviteForm,
-                      role: e.target.value as "admin" | "member",
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                >
-                  <option value="member">Member</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="invite-email">Email Address</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                value={inviteForm.email}
+                onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                placeholder="user@example.com"
+              />
             </div>
 
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowInviteModal(false);
-                  setInviteError(null);
-                  setInviteForm({ email: "", role: "member" });
-                }}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            <div className="space-y-2">
+              <Label htmlFor="invite-role">Role</Label>
+              <Select
+                value={inviteForm.role}
+                onValueChange={(value) =>
+                  setInviteForm({ ...inviteForm, role: value as 'admin' | 'member' })
+                }
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleInviteMember}
-                disabled={actionLoading === "invite"}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                {actionLoading === "invite" ? "Sending..." : "Send Invitation"}
-              </button>
+                <SelectTrigger id="invite-role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="member">Member</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </div>
-      )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowInviteModal(false);
+                setInviteError(null);
+                setInviteForm({ email: '', role: 'member' });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleInviteMember} disabled={actionLoading === 'invite'}>
+              {actionLoading === 'invite' ? (
+                <>
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                'Send Invitation'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
