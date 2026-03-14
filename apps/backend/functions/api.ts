@@ -1,80 +1,99 @@
+import { OpenAPIHandler } from '@orpc/openapi/fetch';
+import { OpenAPIReferencePlugin } from '@orpc/openapi/plugins';
+import { CORSPlugin } from '@orpc/server/plugins';
+import { ZodToJsonSchemaConverter } from '@orpc/zod';
+import { analytics } from '@repo/analytics';
 import { config } from '@repo/config';
-import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
-import { createOpenApiAwsLambdaHandler, generateOpenApiDocument } from 'better-trpc-openapi';
+import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 
 import { withLambdaContext } from '@/core';
 import { router } from '@/routes';
-import { createContext } from '@/routes/trpc/context';
-import { onError } from '@/routes/trpc/error';
 
-// ---------- INITIALIZE OUR ROUTE HANDLERS ----------
-/** Our handler for tRPC routes */
-const trpcHandler = awsLambdaRequestHandler({
-  router,
-  createContext,
-  onError,
+// ---------- INITIALIZE OUR ROUTE HANDLER ----------
+const orpcHandler = new OpenAPIHandler(router, {
+  plugins: [
+    new CORSPlugin(),
+    new OpenAPIReferencePlugin({
+      docsProvider: 'swagger',
+      schemaConverters: [new ZodToJsonSchemaConverter()],
+      specGenerateOptions: {
+        info: { title: config.app.name, version: '1.0.0' },
+        servers: [{ url: config.api.url }],
+      },
+    }),
+  ],
 });
 
-/** Generates a standard rest handler for any routes we flagged with rest meta data in our tRPC router */
-const restHandler = createOpenApiAwsLambdaHandler({
-  router,
-  createContext,
-  onError,
-});
+// ---------- LAMBDA ADAPTER HELPERS ----------
+/** Converts an API Gateway V2 event to a standard fetch Request */
+const lambdaEventToRequest = (event: APIGatewayProxyEventV2): Request => {
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(event.headers ?? {})) {
+    if (value) {
+      headers.set(key, value);
+    }
+  }
+  // API Gateway strips cookies from headers — re-add them
+  if (event.cookies?.length) {
+    headers.set('cookie', event.cookies.join('; '));
+  }
+
+  const url = `https://${event.requestContext.domainName}${event.rawPath}${event.rawQueryString ? `?${event.rawQueryString}` : ''}`;
+
+  return new Request(url, {
+    method: event.requestContext.http.method,
+    headers,
+    body: event.body
+      ? event.isBase64Encoded
+        ? Buffer.from(event.body, 'base64')
+        : event.body
+      : undefined,
+  });
+};
+
+/** Converts a fetch Response to an API Gateway V2 result */
+const responseToLambdaResult = async (response: Response) => {
+  const headers: Record<string, string> = {};
+  for (const [key, value] of response.headers.entries()) {
+    headers[key] = value;
+  }
+
+  const body = await response.text();
+
+  return {
+    statusCode: response.status,
+    headers,
+    body,
+  };
+};
 
 // ---------- MAIN API ENTRY POINT ----------
 /** The main entry point for the backend APIs */
-export const handler = withLambdaContext<'api'>((event, context) => {
-  const path = event.rawPath;
-
-  // If the path is /trpc, return the tRPC handler
-  if (path.startsWith('/trpc')) {
-    return trpcHandler(event, context);
+export const handler = withLambdaContext<'api'>(async (event) => {
+  const request = lambdaEventToRequest(event);
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(event.headers ?? {})) {
+    if (value) {
+      headers.set(key, value);
+    }
+  }
+  if (event.cookies?.length) {
+    headers.set('cookie', event.cookies.join('; '));
   }
 
-  // If the path is /api, return the REST handler
-  if (path.startsWith('/api')) {
-    return restHandler(event, context);
-  }
-
-  // If the path is /docs, return the swagger documentation
-  if (path === '/docs') {
-    // Generate our open API documentation and swagger UI
-    const openApiDocument = generateOpenApiDocument(router, {
-      title: config.app.name,
-      version: '1.0.0',
-      baseUrl: config.api.url,
+  try {
+    const { matched, response } = await orpcHandler.handle(request, {
+      context: { headers },
     });
-    const swaggerHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Swagger UI</title>
-          <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css" />
-        </head>
-        <body>
-          <div id="swagger-ui"></div>
-          <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
-          <script>
-            window.onload = function() {
-              SwaggerUIBundle({
-                spec: ${JSON.stringify(openApiDocument)},
-                dom_id: '#swagger-ui',
-              });
-            };
-          </script>
-        </body>
-      </html>
-    `;
 
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'text/html' },
-      body: swaggerHtml,
-    };
+    if (matched && response) {
+      return responseToLambdaResult(response);
+    }
+  } catch (error) {
+    // Capture unexpected errors
+    analytics.captureException(error);
   }
 
-  // If the path is not found, return a 404
   return {
     statusCode: 404,
     body: JSON.stringify({ message: 'Not found' }),

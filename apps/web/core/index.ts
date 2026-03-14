@@ -1,3 +1,3 @@
 export * from './auth';
 export * from './storage';
-export { trpc } from './trpc';
+export { orpc } from './orpc';

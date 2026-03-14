@@ -1,4 +1,4 @@
-import { trpcFactory } from '@/tests/factories';
+import { routerFactory } from '@/tests/factories';
 
 // Mock stripe
 const { mockStripe } = vi.hoisted(() => ({
@@ -15,19 +15,19 @@ vi.mock('@/core/stripe', () => ({ stripe: mockStripe }));
 
 // Test our router
 describe('Billing Router', () => {
-  let trpc: Awaited<ReturnType<typeof trpcFactory.createRouter>>['router'];
+  let api: Awaited<ReturnType<typeof routerFactory.createRouter>>['router'];
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const mock = await trpcFactory.createRouter({
+    const mock = await routerFactory.createRouter({
       organization: { stripeCustomerId: 'test-customer-id' },
     });
-    trpc = mock.router;
+    api = mock.router;
   });
 
   describe('getHistory', () => {
     it('returns an empty history when organization has no Stripe customer ID', async () => {
-      const result = await trpc.billing.getHistory();
+      const result = await api.billing.getHistory();
       expect(result).toEqual({ history: [] });
     });
 
@@ -57,7 +57,7 @@ describe('Billing Router', () => {
         ],
       });
 
-      const { history } = await trpc.billing.getHistory();
+      const { history } = await api.billing.getHistory();
       expect(history).toHaveLength(2);
       // Should be sorted desc by date, so invoice (created 200) first
       expect(history[0]).toMatchObject({
@@ -75,7 +75,7 @@ describe('Billing Router', () => {
     it('returns empty history if Stripe APIs throw', async () => {
       mockStripe.invoices.list.mockRejectedValueOnce(new Error('stripe down'));
 
-      const result = await trpc.billing.getHistory();
+      const result = await api.billing.getHistory();
       expect(result).toEqual({ history: [] });
     });
   });

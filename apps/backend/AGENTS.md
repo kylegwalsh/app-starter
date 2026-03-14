@@ -2,13 +2,13 @@
 
 ## Stack
 
-Node.js + TypeScript, SST (AWS Lambda), tRPC, Prisma (Postgres), Better Auth, Stripe, Vitest
+Node.js + TypeScript, SST (AWS Lambda), oRPC, Prisma (Postgres), Better Auth, Stripe, Vitest
 
 ## Directory Layout
 
 ```text
 functions/   Lambda entrypoints (api, auth, crons)
-routes/      tRPC routers, context, procedures, middleware (most changes happen here)
+routes/      oRPC routers, context, procedures, middleware (most changes happen here)
 core/        Core services (auth, stripe, re-usable business logic helpers)
 db/          Prisma schema, migrations, connection utilities
 tests/       Vitest setup, factories, mocks (not test files — those live next to source)
@@ -29,8 +29,8 @@ tests/       Vitest setup, factories, mocks (not test files — those live next 
 
 ## API & Routing
 
-- New routes go in `routes/`. Context via `routes/trpc/context`. Procedures in `routes/trpc/procedures`.
-- Errors auto-handled by `routes/trpc/error`.
+- New routes go in `routes/`. Context via `routes/orpc/context`. Procedures in `routes/orpc/procedures`.
+- Errors auto-handled by `routes/orpc/error`.
 
 ## Database
 
@@ -59,7 +59,7 @@ tests/       Vitest setup, factories, mocks (not test files — those live next 
 - Run tests with the `/test-backend` skill.
 - Co-locate tests next to source: `routes/billing.ts` → `routes/billing.test.ts`.
 - Integration-style: real routes, real DB (isolated SQLite). Mock only external services.
-- Use `trpcFactory.createRouter()` from `@/tests/factories` for route tests.
+- Use `routerFactory.createRouter()` from `@/tests/factories` for route tests.
 - For patterns and a full example, see `.claude/docs/backend-testing.md`.
 
 ## Review & CI

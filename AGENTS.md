@@ -6,8 +6,8 @@ Monorepo managed with **bun + SST + Turborepo**. TypeScript everywhere.
 
 ```text
 apps/
-  web/           Next.js frontend (Tailwind v4, tRPC, Jotai, Better Auth)
-  backend/       SST serverless backend (tRPC, Prisma, Stripe, Better Auth)
+  web/           Next.js frontend (Tailwind v4, oRPC, Jotai, Better Auth)
+  backend/       SST serverless backend (oRPC, Prisma, Stripe, Better Auth)
   storybook/     Component stories
   docs/          Fumadocs (optional)
 packages/

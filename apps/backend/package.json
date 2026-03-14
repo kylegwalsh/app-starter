@@ -26,6 +26,9 @@
   "dependencies": {
     "@better-auth/prisma-adapter": "1.5.4",
     "@better-auth/stripe": "1.5.4",
+    "@orpc/openapi": "latest",
+    "@orpc/server": "latest",
+    "@orpc/zod": "latest",
     "@prisma/client": "6.7.0",
     "@repo/ai": "workspace:*",
     "@repo/analytics": "workspace:*",
@@ -34,14 +37,11 @@
     "@repo/email": "workspace:*",
     "@repo/logs": "workspace:*",
     "@repo/utils": "workspace:*",
-    "@trpc/server": "11.2.0",
     "better-auth": "1.5.4",
-    "better-trpc-openapi": "github:kylegwalsh/trpc-openapi#69359b66b170d3a251aa4aca5f832ab25b93fa7f",
     "hono": "4.8.4",
     "nanoid": "3.3.11",
     "prisma": "6.7.0",
     "stripe": "18.4.0",
-    "superjson": "2.2.2",
     "zod": "3.25.49"
   },
   "devDependencies": {

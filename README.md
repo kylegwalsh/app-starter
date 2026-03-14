@@ -318,7 +318,7 @@ This monorepo is set up for robust testing of both backend and frontend applicat
 
 - **Test Runner:** [Vitest](https://vitest.dev/)
 - **Database:** In-memory SQLite
-- **Purpose:** We use Vitest to run integration tests against the actual backend routes and tRPC endpoints. The backend is tested with a real in-memory SQLite database (serves as a mock database), so you can verify the full behavior of your API with minimal mocking. This approach ensures that your tests are as close to production as possible, catching issues that might be missed with heavy mocking.
+- **Purpose:** We use Vitest to run integration tests against the actual backend routes and oRPC endpoints. The backend is tested with a real in-memory SQLite database (serves as a mock database), so you can verify the full behavior of your API with minimal mocking. This approach ensures that your tests are as close to production as possible, catching issues that might be missed with heavy mocking.
 
 **How to run backend tests:**
 

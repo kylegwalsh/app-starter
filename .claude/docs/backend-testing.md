@@ -11,7 +11,7 @@ Use the `/test-backend` skill to run tests. It accepts an optional file path arg
 
 - **Co-location**: Test next to source (`routes/billing.ts` → `routes/billing.test.ts`). Never a separate test directory.
 - **Database**: `import { db } from '@/db'` → isolated SQLite Prisma client (aliased in `vitest.config.ts`). Use like normal Prisma.
-- **tRPC factory**: `apps/backend/tests/factories/trpc-factory.ts` provides router callers with default user + org.
+- **Router factory**: `apps/backend/tests/factories/router-factory.ts` provides router callers with default user + org.
 - **Integration-style**: Exercise real routes + real DB. Mock only external services (e.g., Stripe).
 - **Mocking**: Mock by concrete path (`@/core/stripe`), not barrels (`@/core`). Never mock `@repo/config`.
 - **Isolation**: Each test independent. DB state reset between tests.
@@ -21,7 +21,7 @@ Use the `/test-backend` skill to run tests. It accepts an optional file path arg
 
 ```typescript
 import { db } from '@/db';
-import { trpcFactory } from '@/tests/factories';
+import { routerFactory } from '@/tests/factories';
 
 const { mockStripe } = vi.hoisted(() => ({
   mockStripe: {
@@ -32,13 +32,13 @@ const { mockStripe } = vi.hoisted(() => ({
 vi.mock('@/core/stripe', () => ({ stripe: mockStripe }));
 
 describe('Billing Router', () => {
-  let trpc: Awaited<ReturnType<typeof trpcFactory.createRouter>>['router'];
-  let organization: Awaited<ReturnType<typeof trpcFactory.createRouter>>['organization'];
+  let api: Awaited<ReturnType<typeof routerFactory.createRouter>>['router'];
+  let organization: Awaited<ReturnType<typeof routerFactory.createRouter>>['organization'];
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const mock = await trpcFactory.createRouter();
-    trpc = mock.router;
+    const mock = await routerFactory.createRouter();
+    api = mock.router;
     organization = mock.organization;
   });
 
@@ -52,7 +52,7 @@ describe('Billing Router', () => {
       url: 'https://billing.stripe.com/session_abc',
     });
 
-    const result = await trpc.billing.getPortalUrl();
+    const result = await api.billing.getPortalUrl();
     expect(result).toEqual({ url: 'https://billing.stripe.com/session_abc' });
   });
 });

@@ -1,9 +1,8 @@
 # Backend
 
-This app provides the serverless backend for the monorepo. It is built with SST (AWS), tRPC (with OpenAPI generation), Hono (for auth endpoints), Prisma/Postgres, and Better Auth. It exposes:
+This app provides the serverless backend for the monorepo. It is built with SST (AWS), oRPC (REST-native with OpenAPI generation), Hono (for auth endpoints), Prisma/Postgres, and Better Auth. It exposes:
 
-- tRPC endpoints under `/trpc`
-- REST endpoints (generated from tRPC via OpenAPI metadata) under `/api`
+- REST API endpoints at the root path (served by oRPC)
 - Swagger UI for the generated OpenAPI spec at `/docs`
 - Auth routes handled by Better Auth under a dedicated Lambda entry `/api/auth`
 
@@ -29,7 +28,7 @@ This app provides the serverless backend for the monorepo. It is built with SST 
 ## Overview
 
 - **Runtime/Infra**: SST deploys AWS Lambda + API Gateway. Common Lambda concerns (logging, analytics, AI tracing) are wrapped via `withLambdaContext`.
-- **API**: A central `router` composes feature routers (e.g., `billing`) using tRPC. We also expose REST via `better-trpc-openapi` and serve Swagger.
+- **API**: A central `router` composes feature routers (e.g., `billing`) using oRPC. REST endpoints and Swagger docs are served natively.
 - **Auth**: [Better Auth](https://better-auth.com/) with Prisma adapter. Organizations are first-class; each user maintains a default/active organization. Optional personal organizations are supported and auto-provisioned.
 - **DB**: Prisma client against Postgres. Schema lives in `db/schema.prisma`.
 
@@ -41,15 +40,16 @@ apps/backend/
 ├── db/                # Prisma schema and client wiring
 │   ├── schema.prisma  # Our database schema
 │   └── connect.ts     # PrismaClient init using env.DATABASE_URL
-├── routes/            # tRPC routers and wiring
-│   ├── index.ts       # Root tRPC router composition
-│   └── trpc/          # tRPC init, context, middleware, procedures
-│       ├── context.ts     # Builds Context { user, organization, etc }
-│       ├── middleware.ts  # tRPC middleware (timing, auth enforcement, etc)
-│       ├── procedures.ts  # tRPC procedures (public, protected, etc)
-│       └── error.ts       # tRPC error handling and reporting
+├── routes/            # oRPC routers and wiring
+│   ├── index.ts       # Root router composition
+│   └── orpc/          # oRPC init, context, middleware, procedures
+│       ├── base.ts        # Base oRPC builder + initial context type
+│       ├── context.ts     # Auth middleware { user, organization }
+│       ├── middleware.ts  # Middleware (timing, AI trace, etc)
+│       ├── procedures.ts  # Procedures (public, protected)
+│       └── error.ts       # Error handling and reporting
 ├── functions/         # Lambda entrypoints
-│   ├── api.ts         # Multi-router handler for /trpc, /api, /docs
+│   ├── api.ts         # OpenAPI handler for REST + Swagger docs
 │   └── auth.ts        # Hono-based Better Auth handler for /api/auth
 ├── scripts/           # Local scripts (secrets, migrations, helpers)
 ├── tests/             # Vitest setup, mocks, and API/core tests
@@ -80,9 +80,8 @@ Infrastructure is managed by SST. See the root-level `sst.config.ts` and the `in
 
 - `functions/api.ts`
   - Delegates to:
-    - tRPC handler for paths starting with `/trpc`
-    - REST handler (OpenAPI) for paths starting with `/api`
-    - Inlined Swagger UI at `/docs` (generated from the tRPC router)
+    - oRPC OpenAPI handler for all REST routes at the root path
+    - Swagger UI auto-served at `/docs`
 
 - `functions/auth.ts`
   - Hono app that forwards all `GET`/`POST` requests to `auth.handler` (Better Auth).
@@ -93,7 +92,7 @@ Authentication is managed by Better Auth.
 
 - `core/auth.ts`: Central config for Better Auth (Prisma adapter, secrets, cookie settings) plus auth-event webhooks (e.g., user/org lifecycle, password reset email hooks, analytics).
 - Routes: Auth HTTP routes are exposed under `/api/auth` (handled via Hono and forwarded to `auth.handler`).
-- Context: `routes/trpc/context.ts` parses the Better Auth cookie from the Lambda event to populate `user` and the active `organization` for requests.
+- Context: `routes/orpc/context.ts` parses the Better Auth cookie from the request headers to populate `user` and the active `organization` for requests.
 
 ## Database
 
@@ -128,7 +127,7 @@ Additional commands:
 
 ## Testing
 
-We use Vitest for testing. We focus on integration-style testing by leveraging mocks and spinning up the actual tRPC server.
+We use Vitest for testing. We focus on integration-style testing by leveraging mocks and spinning up the actual oRPC server.
 
 - **Runner**: Vitest
 - **DB boundary**: `@/db` is swapped to a SQLite-backed client during tests

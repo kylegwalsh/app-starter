@@ -2,14 +2,13 @@ import { log } from '@repo/logs';
 
 import { stripe } from '@/core';
 
-import { t } from './trpc/init';
-import { protectedProcedure } from './trpc/procedures';
+import { protectedProcedure } from './orpc/procedures';
 
 /** The billing router */
-export const billingRouter = t.router({
+export const billingRouter = {
   /** Gets a list of all the organization's invoices */
-  getHistory: protectedProcedure.query(async ({ ctx }) => {
-    const { organization } = ctx;
+  getHistory: protectedProcedure.handler(async ({ context }) => {
+    const { organization } = context;
 
     // If the organization doesn't have a Stripe customer ID, return an empty array
     if (!organization.stripeCustomerId) {
@@ -57,4 +56,4 @@ export const billingRouter = t.router({
       return { history: [] };
     }
   }),
-});
+};

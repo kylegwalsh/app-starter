@@ -5,7 +5,7 @@ import type { NextConfig } from 'next';
 let nextConfig: NextConfig = {
   // Transpile the packages so we can use them in the web app
   transpilePackages: ['@repo/design', '@repo/config'],
-  // We validate the types manually, so we'll just skip it here (the trpc routes complain anyways)
+  // We validate the types manually, so we'll just skip it here (the oRPC routes complain anyways)
   typescript: {
     ignoreBuildErrors: true,
   },

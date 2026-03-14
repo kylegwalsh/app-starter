@@ -99,7 +99,7 @@
     "superjson",
     "tabindex",
     "textnodes",
-    "trpc",
+    "orpc",
     "trunc",
     "tsgolint",
     "turborepo",

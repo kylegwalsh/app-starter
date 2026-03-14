@@ -19,7 +19,7 @@ const authHandler = new sst.aws.Function('authHandler', {
   link: [api, site],
 });
 
-/** We use one function for all of our standard routes (handled by tRPC + openapi) */
+/** We use one function for all of our standard routes (handled by oRPC) */
 const apiHandler = new sst.aws.Function('apiHandler', {
   handler: 'apps/backend/functions/api.handler',
   link: [api, site],
@@ -29,16 +29,9 @@ const apiHandler = new sst.aws.Function('apiHandler', {
 api.route('GET /api/auth/{path+}', authHandler.arn);
 api.route('POST /api/auth/{path+}', authHandler.arn);
 
-// tRPC routes
-api.route('GET /trpc/{path+}', apiHandler.arn);
-api.route('POST /trpc/{path+}', apiHandler.arn);
-
-// REST routes
-api.route('GET /api/{path+}', apiHandler.arn);
-api.route('POST /api/{path+}', apiHandler.arn);
-api.route('PUT /api/{path+}', apiHandler.arn);
-api.route('DELETE /api/{path+}', apiHandler.arn);
-api.route('PATCH /api/{path+}', apiHandler.arn);
-
-// Swagger docs (for REST routes)
-api.route('GET /docs', apiHandler.arn);
+// oRPC routes (REST-native, includes docs + spec)
+api.route('GET /{path+}', apiHandler.arn);
+api.route('POST /{path+}', apiHandler.arn);
+api.route('PUT /{path+}', apiHandler.arn);
+api.route('DELETE /{path+}', apiHandler.arn);
+api.route('PATCH /{path+}', apiHandler.arn);

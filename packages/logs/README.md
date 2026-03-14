@@ -28,7 +28,7 @@ Pino-based logging with request metadata helpers and pretty output locally. In p
 ```ts
 import { log, addLogMetadata } from '@repo/logs';
 
-addLogMetadata({ request: { path: '/trpc', method: 'GET' } });
+addLogMetadata({ request: { path: '/billing/getHistory', method: 'GET' } });
 log.info('Hello');
 log.error({ err }, 'Something failed');
 ```

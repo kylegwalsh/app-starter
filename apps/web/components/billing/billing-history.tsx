@@ -18,18 +18,19 @@ import {
   TableRow,
 } from '@repo/design';
 import { format } from '@repo/utils';
+import { useQuery } from '@tanstack/react-query';
 import { Download } from 'lucide-react';
 import Link from 'next/link';
 import { type FC, useEffect, useMemo, useState } from 'react';
 
-import { trpc } from '@/core';
+import { orpc } from '@/core';
 
 /** The number of items to show per page */
 const PAGE_SIZE = 10;
 
 /** Renders a table of invoices */
 export const BillingHistory: FC = () => {
-  const { data, isLoading } = trpc.billing.getHistory.useQuery();
+  const { data, isLoading } = useQuery(orpc.billing.getHistory.queryOptions({}));
   const history = useMemo(() => data?.history ?? [], [data?.history]);
 
   // Mobile "show more" state

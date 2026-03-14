@@ -1,10 +1,9 @@
 import { billingRouter } from './billing';
-import { t } from './trpc/init';
 
-/** The actual router used to handle all tRPC traffic */
-export const router = t.router({
+/** The router used to handle all API traffic */
+export const router = {
   billing: billingRouter,
-});
+};
 
 /**
  * The type of our backend router

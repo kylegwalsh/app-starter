@@ -1,6 +1,6 @@
 # Web
 
-This app is a Next.js (App Router) frontend for the monorepo. It integrates Better Auth, tRPC (React Query), Tailwind v4 via `@repo/design`, and analytics. It pairs with the backend for typed APIs and shared config.
+This app is a Next.js (App Router) frontend for the monorepo. It integrates Better Auth, oRPC (TanStack Query), Tailwind v4 via `@repo/design`, and analytics. It pairs with the backend for typed APIs and shared config.
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@ This app is a Next.js (App Router) frontend for the monorepo. It integrates Bett
 ## Overview
 
 - Next.js App Router with server and client components
-- Type-safe API calls with tRPC React Query bound to the backend `AppRouter`
+- Type-safe API calls with oRPC + TanStack Query bound to the backend `AppRouter`
 - Better Auth UI integration and session-aware layouts
 - Shared design system and global styles from `@repo/design`
 
@@ -40,7 +40,7 @@ apps/web/
 ├── components/            # UI building blocks and providers directly related to this app
 ├── core/                  # App-level singletons & clients
 │   ├── auth.ts            # Better Auth client (plugins configured)
-│   ├── trpc.ts            # TRPC React client bound to backend AppRouter
+│   ├── orpc.ts            # oRPC client bound to backend AppRouter
 │   └── ...
 ├── hooks/                 # React hooks for reusable state
 ├── tests/                 # Web tests
@@ -89,10 +89,10 @@ Better Auth powers authentication and provides hooks/UI for user and organizatio
 
 ## APIs
 
-The app communicates with the backend via tRPC and React Query for fetching and mutations.
+The app communicates with the backend via oRPC and TanStack Query for fetching and mutations.
 
-- Types: We import the backend `AppRouter` and create a typed client in `core/trpc.ts`.
-- Usage: `trpc.<router>.<procedure>.useQuery()` for reads, `.useMutation()` for writes; React Query manages caching and invalidation.
+- Types: We import the backend `AppRouter` and create a typed client in `core/orpc.ts`.
+- Usage: `useQuery(orpc.<router>.<procedure>.queryOptions({}))` for reads, `useMutation(orpc.<router>.<procedure>.mutationOptions({}))` for writes; TanStack Query manages caching and invalidation.
 
 ## State
 

@@ -1,14 +1,14 @@
+import { createRouterClient } from '@orpc/server';
 import type { Organization, User } from '@prisma/client';
 
-import { router as trpcRouter } from '@/routes';
-import type { Context } from '@/routes/trpc/context';
+import { router } from '@/routes';
 
 import { organizationFactory } from './organization-factory';
 import { userFactory } from './user-factory';
 
-/** Exports a factory for creating a test-based tRPC handler */
-export const trpcFactory = {
-  /** Creates a test-based tRPC handler with a user and organization */
+/** Exports a factory for creating a test-based oRPC router client */
+export const routerFactory = {
+  /** Creates a test-based router client with a user and organization */
   createRouter: async ({
     user: userFields,
     organization: organizationFields,
@@ -29,9 +29,11 @@ export const trpcFactory = {
       role: 'owner',
     });
 
-    // Create the router
-    const router = trpcRouter.createCaller({ user, organization } as Context);
+    // Create the router client
+    const client = createRouterClient(router, {
+      context: { headers: new Headers() },
+    });
 
-    return { user, organization, router };
+    return { user, organization, router: client };
   },
 };
