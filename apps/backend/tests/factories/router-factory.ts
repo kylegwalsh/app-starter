@@ -1,6 +1,7 @@
 import { createRouterClient } from '@orpc/server';
 import type { Organization, User } from '@prisma/client';
 
+import { auth } from '@/core';
 import { router } from '@/routes';
 
 import { organizationFactory } from './organization-factory';
@@ -29,9 +30,18 @@ export const routerFactory = {
       role: 'owner',
     });
 
-    // Create the router client
+    // Mock auth.api.getSession to return our test user and organization
+    vi.spyOn(auth.api, 'getSession').mockResolvedValue({
+      user,
+      session: { activeOrganizationId: organization.id },
+    } as unknown as Awaited<ReturnType<typeof auth.api.getSession>>);
+
+    // Create the router client with a fake cookie so withAuth triggers session lookup
+    const headers = new Headers();
+    headers.set('cookie', 'better-auth.session_token=test-session');
+
     const client = createRouterClient(router, {
-      context: { headers: new Headers() },
+      context: { headers },
     });
 
     return { user, organization, router: client };

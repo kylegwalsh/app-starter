@@ -19,6 +19,8 @@ const orpcHandler = new OpenAPIHandler(router, {
       specGenerateOptions: {
         info: { title: config.app.name, version: '1.0.0' },
         servers: [{ url: config.api.url }],
+        // Only include routes tagged "public" in the OpenAPI spec
+        filter: ({ contract }) => contract['~orpc'].route.tags?.includes('public') ?? false,
       },
     }),
   ],
