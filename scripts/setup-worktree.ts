@@ -25,6 +25,13 @@ const gitCommonDir = execSync('git rev-parse --git-common-dir', {
 }).trim();
 
 const mainRoot = dirname(resolve(gitCommonDir));
+
+// Guard: don't run in the main repo itself
+if (process.cwd() === mainRoot) {
+  console.log('Not in a worktree, skipping setup.');
+  process.exit(0);
+}
+
 const platformSrc = join(mainRoot, '.sst', 'platform');
 const sstDir = join(process.cwd(), '.sst');
 const platformDest = join(sstDir, 'platform');
