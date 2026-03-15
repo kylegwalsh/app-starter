@@ -35,6 +35,18 @@ infra/           SST/AWS infrastructure stacks
 - `bun lint` / `bun lint:fix`: Lint all code
 - `bun format`: Format all code
 
+## Working in a Git Worktree
+
+When working in a git worktree (e.g. `.claude/worktrees/<name>`), run this once after creating the worktree:
+
+```bash
+bun setup-worktree
+```
+
+This installs dependencies and symlinks `.sst/platform` from the main worktree so SST global types (`$app`, `sst`) are available for type-aware linting. Without this, `bun lint` will report `Cannot find name '$app'` / `Cannot find name 'sst'` errors.
+
+> **Prerequisite:** The main repo must have `.sst/platform` already generated (run `bun dev` at least once in the main repo).
+
 ## Principles
 
 Clarity · Consistency · Simplicity · Reliability · Observability

@@ -104,6 +104,15 @@
             "command": "bash .claude/hooks/format-on-save.sh"
           }
         ]
+      },
+      {
+        "matcher": "EnterWorktree",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/setup-worktree-on-enter.sh"
+          }
+        ]
       }
     ]
   }

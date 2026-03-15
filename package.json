@@ -29,6 +29,7 @@
     "update-readme": "doctoc README.md",
     "get-package-version": "tsx scripts/get-package-version",
     "create:package": "tsx scripts/create-package",
+    "setup-worktree": "tsx scripts/setup-worktree",
     "postinstall": "sherif --fix",
     "pre-commit": "tsx scripts/pre-commit",
     "prepare": "husky"

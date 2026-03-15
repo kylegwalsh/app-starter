@@ -106,6 +106,8 @@
     "typecheck",
     "unauthed",
     "uninvoked",
-    "vaul"
+    "vaul",
+    "worktree",
+    "worktrees"
   ]
 }
