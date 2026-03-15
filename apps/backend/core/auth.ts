@@ -1,3 +1,4 @@
+import { oauthProvider } from '@better-auth/oauth-provider';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { stripe as stripePlugin } from '@better-auth/stripe';
 import type { Organization } from '@prisma/client';
@@ -252,6 +253,16 @@ const authConfig = {
   // The various plugins we're using
   plugins: [
     adminPlugin(),
+    oauthProvider({
+      loginPage: `${config.app.url}/sign-in`,
+      consentPage: `${config.app.url}/consent`,
+      allowDynamicClientRegistration: true,
+      allowUnauthenticatedClientRegistration: true,
+      scopes: [
+        { name: 'mcp:tools', description: 'List and execute tools' },
+        { name: 'mcp:resources', description: 'Read resources' },
+      ],
+    }),
     organizationPlugin({
       schema: {
         organization: {

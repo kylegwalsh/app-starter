@@ -1,3 +1,4 @@
+import { oauthProviderClient } from '@better-auth/oauth-provider/client';
 import { stripeClient } from '@better-auth/stripe/client';
 import { config } from '@repo/config';
 import {
@@ -21,6 +22,7 @@ const authConfig = {
     }),
     adminClient(),
     stripeClient({ subscription: true }),
+    oauthProviderClient(),
   ],
 } satisfies Parameters<typeof createAuthClient>[0];
 

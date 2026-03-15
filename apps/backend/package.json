@@ -24,8 +24,10 @@
     "postinstall": "bun db:generate"
   },
   "dependencies": {
+    "@better-auth/oauth-provider": "1.5.4",
     "@better-auth/prisma-adapter": "1.5.4",
     "@better-auth/stripe": "1.5.4",
+    "@modelcontextprotocol/sdk": "1.27.1",
     "@prisma/client": "6.7.0",
     "@repo/ai": "workspace:*",
     "@repo/analytics": "workspace:*",

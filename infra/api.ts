@@ -5,7 +5,13 @@ export const api = new sst.aws.ApiGatewayV2('api', {
   domain: domain ? `api.${domain}` : undefined,
   cors: {
     allowOrigins: ['http://*', 'https://*'],
-    allowHeaders: ['content-type', 'authorization', 'x-posthog-session-id'],
+    allowHeaders: [
+      'content-type',
+      'authorization',
+      'x-posthog-session-id',
+      'mcp-session-id',
+      'mcp-protocol-version',
+    ],
     allowCredentials: true,
   },
 });
@@ -22,6 +28,12 @@ const authHandler = new sst.aws.Function('authHandler', {
 /** We use one function for all of our standard routes (handled by tRPC + openapi) */
 const apiHandler = new sst.aws.Function('apiHandler', {
   handler: 'apps/backend/functions/api.handler',
+  link: [api, site],
+});
+
+/** We use a dedicated function for MCP (Model Context Protocol) routes */
+const mcpHandler = new sst.aws.Function('mcpHandler', {
+  handler: 'apps/backend/functions/mcp.handler',
   link: [api, site],
 });
 
@@ -42,3 +54,12 @@ api.route('PATCH /api/{path+}', apiHandler.arn);
 
 // Swagger docs (for REST routes)
 api.route('GET /docs', apiHandler.arn);
+
+// MCP (Model Context Protocol) routes
+api.route('GET /mcp', mcpHandler.arn);
+api.route('POST /mcp', mcpHandler.arn);
+api.route('DELETE /mcp', mcpHandler.arn);
+api.route('GET /mcp/{path+}', mcpHandler.arn);
+
+// OAuth discovery (proxied via MCP handler)
+api.route('GET /.well-known/{path+}', mcpHandler.arn);

@@ -140,6 +140,101 @@ model Invitation {
   @@map("invitation")
 }
 
+model OauthApplication {
+  id           String  @id @default(cuid())
+  clientId     String
+  clientSecret String?
+  name         String
+  redirectURLs String
+  metadata     String?
+  type         String  @default("web")
+  disabled     Boolean @default(false)
+  icon         String?
+  scopes       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  userId       String?
+
+  accessTokens       OauthAccessToken[]
+  refreshTokens      OauthRefreshToken[]
+  authorizationCodes OauthAuthorizationCode[]
+  consents           OauthConsent[]
+
+  @@unique([clientId])
+  @@index([userId])
+  @@map("oauth_application")
+}
+
+model OauthAccessToken {
+  id                   String   @id @default(cuid())
+  token                String
+  accessTokenExpiresAt DateTime
+  refreshTokenId       String?
+  applicationId        String
+  application          OauthApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  userId               String
+  scopes               String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@unique([token])
+  @@index([applicationId])
+  @@index([userId])
+  @@map("oauth_access_token")
+}
+
+model OauthRefreshToken {
+  id                    String   @id @default(cuid())
+  token                 String
+  refreshTokenExpiresAt DateTime
+  accessToken           String?
+  applicationId         String
+  application           OauthApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  userId                String
+  scopes                String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([token])
+  @@index([applicationId])
+  @@index([userId])
+  @@map("oauth_refresh_token")
+}
+
+model OauthAuthorizationCode {
+  id                    String   @id @default(cuid())
+  code                  String
+  applicationId         String
+  application           OauthApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  userId                String
+  scopes                String?
+  redirectURI           String
+  codeChallenge         String?
+  codeChallengeMethod   String?
+  expiresAt             DateTime
+  createdAt             DateTime @default(now())
+
+  @@unique([code])
+  @@index([applicationId])
+  @@index([userId])
+  @@map("oauth_authorization_code")
+}
+
+model OauthConsent {
+  id            String   @id @default(cuid())
+  applicationId String
+  application   OauthApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  userId        String
+  scopes        String?
+  consentGiven  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([applicationId, userId])
+  @@index([userId])
+  @@map("oauth_consent")
+}
+
 model Subscription {
   id                   String    @id @default(cuid())
   plan                 String
