@@ -1,6 +1,5 @@
-import { Toaster } from '@repo/design';
+import { Toaster, toast } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { toast } from 'sonner';
 import { action } from 'storybook/actions';
 
 /**

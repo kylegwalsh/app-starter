@@ -1,4 +1,5 @@
 import { log } from '@repo/logs';
+import { z } from 'zod';
 
 import { stripe } from '@/core';
 
@@ -7,6 +8,47 @@ import { protectedProcedure } from './trpc/procedures';
 
 /** The billing router */
 export const billingRouter = t.router({
+  /**
+   * Creates a one-time Stripe Checkout session for a fixed amount.
+   * Returns a checkout URL to redirect the user to.
+   */
+  charge: protectedProcedure
+    .input(
+      z.object({
+        /** Amount in dollars (will be converted to cents) */
+        amount: z.number().positive(),
+        /** Description shown on the Stripe checkout page */
+        description: z.string(),
+        /** URL to redirect to after successful payment */
+        successUrl: z.string().url(),
+        /** URL to redirect to if the user cancels */
+        cancelUrl: z.string().url(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { organization } = ctx;
+      const { amount, description, successUrl, cancelUrl } = input;
+
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        customer: organization.stripeCustomerId ?? undefined,
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: 'usd',
+              unit_amount: Math.round(amount * 100),
+              product_data: { name: description },
+            },
+          },
+        ],
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      });
+
+      return { url: session.url };
+    }),
+
   /** Gets a list of all the organization's invoices */
   getHistory: protectedProcedure.query(async ({ ctx }) => {
     const { organization } = ctx;

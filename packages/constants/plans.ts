@@ -26,7 +26,7 @@ export const plans = Object.freeze({
     price: 50,
     annualPrice: 40,
     priceId: 'price_1RstbzF1kcHuFeSjwYcZnY4Q',
-    annualDiscountPriceId: 'price_1RstZwF1kcHuFeSjmUap4a30',
+    annualDiscountPriceId: 'price_1TBRvrF1kcHuFeSj1kjkkCwm',
   },
   enterprise: {
     name: 'enterprise',
@@ -34,6 +34,6 @@ export const plans = Object.freeze({
     price: 100,
     annualPrice: 80,
     priceId: 'price_1RstcDF1kcHuFeSjIe68lopS',
-    annualDiscountPriceId: 'price_1RstZwF1kcHuFeSjmUap4a30',
+    annualDiscountPriceId: 'price_1TBRwVF1kcHuFeSj6EJWNt20',
   },
 }) satisfies Record<string, Plan>;

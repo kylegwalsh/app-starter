@@ -288,10 +288,34 @@ const authConfig = {
     stripePlugin({
       stripeClient,
       stripeWebhookSecret: (env as Record<string, string>).STRIPE_WEBHOOK_SECRET,
-      createCustomerOnSignUp: true,
       // Ensure that stripe is attached to organizations rather than users
       organization: {
         enabled: true,
+        // Ensure personal organizations use the owner's email
+        getCustomerCreateParams: async (organization) => {
+          const org = await db.organization.findUnique({
+            where: { id: organization.id },
+            select: {
+              isPersonal: true,
+              members: {
+                where: { role: 'owner' },
+                select: { user: { select: { email: true, name: true } } },
+                take: 1,
+              },
+            },
+          });
+
+          const owner = org?.members[0];
+          if (!owner) {
+            return {};
+          }
+
+          return {
+            ...(org?.isPersonal && {
+              email: owner.user.email,
+            }),
+          };
+        },
       },
       // Configure stripe plans
       subscription: {
@@ -326,7 +350,7 @@ const authConfig = {
           });
         },
         // Fires when a subscription is updated
-        onSubscriptionUpdate: async ({ subscription, event }) => {
+        onSubscriptionUpdate: async ({ subscription }) => {
           await analytics.planChanged({
             userId: subscription.referenceId,
             organizationId: subscription.referenceId,
@@ -341,6 +365,19 @@ const authConfig = {
             plan: subscription.plan,
           });
         },
+      },
+      // Handle events not covered by the subscription hooks (e.g. one-time charges)
+      onEvent: async (event) => {
+        if (event.type === 'checkout.session.completed') {
+          const session = event.data.object;
+
+          // Only handle payment mode sessions — subscriptions are handled by the hooks above
+          if (session.mode !== 'payment') {
+            return;
+          }
+
+          // You can add your one-time charge logic here
+        }
       },
     }),
   ],
