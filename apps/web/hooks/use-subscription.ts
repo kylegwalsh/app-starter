@@ -27,7 +27,7 @@ export const useSubscription = () => {
         result.data?.find((sub) => sub.status === 'active' || sub.status === 'trialing') ?? null
       );
     },
-    enabled: !!organization?.id,
+    enabled: !!organization?.id && config.stripe.isEnabled,
   });
 
   /** The current plan the user is on */
@@ -48,7 +48,7 @@ export const useSubscription = () => {
       plan: keyof typeof plans;
       annual?: boolean;
     }) => {
-      if (!organization?.id) {
+      if (!organization?.id || !config.stripe.isEnabled) {
         return;
       }
       const { error } = await auth.subscription.upgrade({
@@ -74,7 +74,7 @@ export const useSubscription = () => {
     isError: isCancelError,
   } = useMutation({
     mutationFn: async () => {
-      if (!organization?.id || !subscription?.stripeSubscriptionId) {
+      if (!organization?.id || !subscription?.stripeSubscriptionId || !config.stripe.isEnabled) {
         return;
       }
       const { error } = await auth.subscription.cancel({
@@ -109,7 +109,7 @@ export const useSubscription = () => {
     isError: isOpenBillingPortalError,
   } = useMutation({
     mutationFn: async () => {
-      if (!organization?.id) {
+      if (!organization?.id || !config.stripe.isEnabled) {
         return;
       }
       const { error } = await auth.subscription.billingPortal({

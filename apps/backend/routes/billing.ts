@@ -1,4 +1,5 @@
 import { log } from '@repo/logs';
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { stripe } from '@/core';
@@ -26,6 +27,10 @@ export const billingRouter = t.router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (!stripe) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Billing is not configured' });
+      }
+
       const { organization } = ctx;
       const { amount, description, successUrl, cancelUrl } = input;
 
@@ -53,25 +58,16 @@ export const billingRouter = t.router({
   getHistory: protectedProcedure.query(async ({ ctx }) => {
     const { organization } = ctx;
 
-    // If the organization doesn't have a Stripe customer ID, return an empty array
-    if (!organization.stripeCustomerId) {
+    if (!stripe || !organization.stripeCustomerId) {
       return { history: [] };
     }
 
     try {
-      // Get billing history from Stripe
       const [invoices, charges] = await Promise.all([
-        stripe.invoices.list({
-          customer: organization.stripeCustomerId,
-          limit: 100,
-        }),
-        stripe.charges.list({
-          customer: organization.stripeCustomerId,
-          limit: 100,
-        }),
+        stripe.invoices.list({ customer: organization.stripeCustomerId, limit: 100 }),
+        stripe.charges.list({ customer: organization.stripeCustomerId, limit: 100 }),
       ]);
 
-      /** Combine and format the billing history */
       const history = [
         ...invoices.data.map((invoice) => ({
           id: invoice.id,

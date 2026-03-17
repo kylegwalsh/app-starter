@@ -16,7 +16,14 @@ const { mockStripe } = vi.hoisted(() => ({
     },
   },
 }));
-vi.mock('@/core/stripe', () => ({ stripe: mockStripe }));
+vi.mock('@/core/stripe', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/core/stripe')>();
+
+  return {
+    ...original,
+    stripe: mockStripe,
+  };
+});
 
 // Test our router
 describe('Billing Router', () => {

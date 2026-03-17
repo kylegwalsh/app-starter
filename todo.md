@@ -4,12 +4,6 @@
 
 - Try adding client deployment for admin panel: https://github.com/Tranthanh98/better-auth-dashboard/tree/master/client
 
-## BETTER AUTH
-
-- Test stripe hooks to confirm we're grabbing the organization/user ids correctly
-- Comment out plans in stripe plugin
-- Maybe comment out stripe client or ensure it doesn't run without env vars (like langfuse) - Ensure it works with setup script
-
 ## POSTHOG WORKFLOWS
 
 - Deprecate Loops in favor of PostHog workflows once it's further along
