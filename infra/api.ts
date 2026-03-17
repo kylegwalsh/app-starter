@@ -11,18 +11,20 @@ export const api = new sst.aws.ApiGatewayV2('api', {
 });
 
 // Import the web app so that we can access it's URL in our functions
-const { site } = await import('./web');
+const { web } = await import('./web');
+// Import the admin app so that we can access it's URL in our functions
+const { admin } = await import('./admin');
 
 /** We use a special function for our auth routes (handled by Better Auth) */
 const authHandler = new sst.aws.Function('authHandler', {
   handler: 'apps/backend/functions/auth.handler',
-  link: [api, site],
+  link: [api, web, admin],
 });
 
 /** We use one function for all of our standard routes (handled by tRPC + openapi) */
 const apiHandler = new sst.aws.Function('apiHandler', {
   handler: 'apps/backend/functions/api.handler',
-  link: [api, site],
+  link: [api, web, admin],
 });
 
 // Auth routes

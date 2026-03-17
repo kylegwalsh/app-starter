@@ -5,6 +5,9 @@ import { domain } from './utils';
 export const admin = new sst.aws.StaticSite('admin', {
   domain: domain ? `admin.${domain}` : undefined,
   path: 'apps/admin',
+  vite: {
+    types: 'sst-env.d.ts',
+  },
   build: {
     command: 'bun run build',
     output: 'build/client',

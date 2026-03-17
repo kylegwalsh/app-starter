@@ -21,6 +21,9 @@ coverage
 # NextJS
 next-env.d.ts
 
+# React Router
+.react-router
+
 # Storybook
 *storybook.log
 **/.storybook-static
