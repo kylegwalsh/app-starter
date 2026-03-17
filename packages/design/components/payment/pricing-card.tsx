@@ -42,7 +42,9 @@ type Props = {
   popular?: boolean;
   /** Dims the card and disables the button (e.g. for the current plan) */
   disabled?: boolean;
-  /** Whether we're still loading and should disable the button */
+  /** Shows a skeleton in place of the button while data is initializing */
+  initializing?: boolean;
+  /** Disables the button and shows a loading spinner while an action is in progress */
   loading?: boolean;
   /** Additional CSS classes for the card container */
   className?: string;
@@ -62,6 +64,7 @@ export const PricingCard: FC<Props> = ({
   banner,
   popular = false,
   disabled = false,
+  initializing = false,
   loading = false,
   className,
 }) => {
@@ -86,7 +89,11 @@ export const PricingCard: FC<Props> = ({
         )}
         <CardTitle className={cn('mb-7', displayBanner && '!mb-7')}>{plan}</CardTitle>
         <div className="flex items-end justify-center gap-2">
-          <span className="text-5xl font-bold">{priceDisplay}</span>
+          {initializing ? (
+            <Skeleton className="h-12 w-24" />
+          ) : (
+            <span className="text-5xl font-bold">{priceDisplay}</span>
+          )}
           <span className="text-muted-foreground">/{period}</span>
         </div>
       </CardHeader>
@@ -115,12 +122,13 @@ export const PricingCard: FC<Props> = ({
       </CardContent>
 
       <CardFooter>
-        {loading ? (
+        {initializing ? (
           <Skeleton className="h-9 w-full" />
         ) : (
           <Button
             className="w-full"
-            disabled={disabled}
+            disabled={disabled || loading}
+            loading={loading}
             onClick={onClick}
             variant={popular ? 'default' : buttonVariant}
           >

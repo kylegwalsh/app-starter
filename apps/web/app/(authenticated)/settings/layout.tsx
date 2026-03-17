@@ -1,5 +1,6 @@
 'use client';
 
+import { config } from '@repo/config';
 import { Tabs, TabsList, TabsTrigger } from '@repo/design';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -18,8 +19,13 @@ const SettingsLayout: FC = ({ children }) => {
     () => [
       { label: 'General', href: '/settings' },
       { label: 'Account', href: '/settings/account' },
-      { label: 'Plans', href: '/settings/plans' },
-      { label: 'Billing', href: '/settings/billing' },
+      // Only show billing tabs when Stripe is configured
+      ...(config.stripe.isEnabled
+        ? [
+            { label: 'Plans', href: '/settings/plans' },
+            { label: 'Billing', href: '/settings/billing' },
+          ]
+        : []),
       // Only show the organization tab if the user is logged into a non-personal organization
       ...(isLoading || organization?.isPersonal
         ? []

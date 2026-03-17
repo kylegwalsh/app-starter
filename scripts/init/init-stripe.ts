@@ -1,4 +1,4 @@
-import { getDomain, setupStripe } from './init.js';
+import { getDomain, printStripeFinalNotes, setupStripe } from './init.js';
 
 /** Initialize Stripe configuration */
 const initStripe = async () => {
@@ -8,7 +8,10 @@ const initStripe = async () => {
   const domain = await getDomain();
 
   // Setup Stripe
-  await setupStripe({ domain });
+  const stripeConfig = await setupStripe({ domain });
+
+  // Print final notes
+  printStripeFinalNotes(stripeConfig);
 
   // End the script
   process.exit(0);

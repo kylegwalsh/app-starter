@@ -4,27 +4,6 @@
 
 - Try adding client deployment for admin panel: https://github.com/Tranthanh98/better-auth-dashboard/tree/master/client
 
-## BETTER AUTH
-
-> Better Auth recently added stripe support for organizations - https://better-auth.com/docs/plugins/stripe#organization
-
-- Create /settings/plans page (ability to add / cancel plan)
-- Test that annual pricing works when picking plan
-- Ensure subscriptions work with organizations
-- Verify changing plans updates subscriptions hook
-- Test stripe hooks to confirm we're grabbing the organization/user ids correctly
-- Potentially add field to update billing email
-
-```ts
-await stripeClient.customers.update(organization.stripeCustomerId, {
-  email: 'billing@company.com',
-});
-```
-
-- Test normal charges + subscriptions
-- Comment out plans in stripe plugin
-- Maybe comment out stripe client or ensure it doesn't run without env vars (like langfuse) - Ensure it works with setup script
-
 ## POSTHOG WORKFLOWS
 
 - Deprecate Loops in favor of PostHog workflows once it's further along
@@ -41,6 +20,11 @@ await stripeClient.customers.update(organization.stripeCustomerId, {
 
 - Try oRPC
 - Remove all tRPC packages
+- See if oRPC works without building backend types first
+
+## Hono
+
+- Consider unifying all backend APIs under hono + hono-query
 
 ## USER INVITES
 
@@ -53,7 +37,9 @@ await stripeClient.customers.update(organization.stripeCustomerId, {
 ## AI
 
 - Create slack app
+- Verify OAuth org selection works
 - Connect chat SDK
+- Build chat UI for web-app using chat SDK
 - Possibly set up basic MCP structure
 - Rethink how we trace for Langfuse and how we can support evals (input must be easily replayed against functions)
 
