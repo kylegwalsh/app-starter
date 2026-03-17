@@ -1432,11 +1432,9 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
   // Read config
   const configPath = path.resolve('packages/config/config.ts');
   let configContent = fs.readFileSync(configPath, 'utf8');
-
-  // Read config
-  const publishableKeyMatch = configContent.match(
-    /stripe:\s*{[^}]*publishableKey:\s*isProd\s*\?\s*['"]([^'"]*)['"]\s*:\s*['"]([^'"]*)['"]/,
-  );
+  const publishableKeyRegex =
+    /const publishableKey\s*=\s*isProd\s*\?\s*['"]([^'"]*)['"]\s*:\s*['"]([^'"]*)['"]/;
+  const publishableKeyMatch = configContent.match(publishableKeyRegex);
 
   // Initialize all the required variables
   let prodPublishableKey = publishableKeyMatch?.[1] || '';
@@ -1595,8 +1593,8 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
 
   // Update config with publishable keys
   configContent = configContent.replace(
-    /publishableKey:\s*isProd \? ['"][^'"]*['"] : ['"][^'"]*['"]/,
-    `publishableKey: isProd ? '${prodPublishableKey}' : '${devPublishableKey}'`,
+    publishableKeyRegex,
+    `const publishableKey = isProd ? '${prodPublishableKey}' : '${devPublishableKey}'`,
   );
   fs.writeFileSync(configPath, configContent);
   console.log('✔ Stripe publishable keys have been saved to config.');
@@ -1752,6 +1750,26 @@ const printTips = async () => {
   await promptUser('Press enter to continue...\n');
 };
 
+/** Prints Stripe-specific setup instructions. */
+export const printStripeFinalNotes = (stripeConfig: Awaited<ReturnType<typeof setupStripe>>) => {
+  if (!stripeConfig.didSetup) {
+    return;
+  }
+
+  console.log('Stripe setup...');
+  if (!stripeConfig.didSetupProd) {
+    console.log(
+      '- Production Stripe is not yet configured. Finish your Stripe onboarding and re-run the stripe-specific setup with: bun run init:stripe',
+    );
+  }
+  console.log(
+    '- Finish creating plans at https://dashboard.stripe.com/test/products, then add the pricing IDs to packages/constants/plans.ts',
+  );
+  console.log(
+    '- Configure the Billing Portal to enable those plans: https://dashboard.stripe.com/test/settings/billing/portal\n',
+  );
+};
+
 /** Prints final setup instructions and tips for the user. */
 const printFinalNotes = ({
   posthogSetup,
@@ -1764,18 +1782,6 @@ const printFinalNotes = ({
 }) => {
   console.log('--- Final Notes ---');
   console.log('You can start the app with: bun dev\n');
-
-  // Mention Stripe setup if they configured it
-  if (stripeConfig.didSetup) {
-    if (!stripeConfig.didSetupProd) {
-      console.log(
-        '- Production Stripe is not yet configured. Finish your Stripe onboarding and re-run the stripe-specific setup with: bun run init:stripe',
-      );
-    }
-    console.log(
-      '- If you want to support subscriptions with Stripe, set up your plans in apps/backend/core/auth.ts',
-    );
-  }
 
   // Only mention the error tracking setup if they opted in
   if (posthogSetup) {
@@ -1794,6 +1800,10 @@ const printFinalNotes = ({
   console.log(
     '- Make sure you restart your terminal for your AWS profile changes to take effect.\n',
   );
+
+  // Mention Stripe setup if they configured it
+  printStripeFinalNotes(stripeConfig);
+
   console.log('✔ Setup complete! Happy coding!\n');
 };
 

@@ -66,4 +66,5 @@ npm-debug.log*
 
 # Agents
 .claude/settings.local.json
+.claude/worktrees
 .omc

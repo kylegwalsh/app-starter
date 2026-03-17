@@ -95,6 +95,17 @@
     "deny": []
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/setup-worktree-on-enter.sh"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|MultiEdit|Write",
@@ -102,6 +113,15 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/format-on-save.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "EnterWorktree",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/setup-worktree-on-enter.sh"
           }
         ]
       }

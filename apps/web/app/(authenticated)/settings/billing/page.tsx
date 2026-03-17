@@ -9,7 +9,7 @@ import { useSubscription } from '@/hooks';
 
 /** The payment and billing settings page */
 export default function BillingPage() {
-  const { openBillingPortal, isLoading } = useSubscription();
+  const { openBillingPortal, isOpeningBillingPortal } = useSubscription();
 
   return (
     <DashboardLayout
@@ -29,7 +29,11 @@ export default function BillingPage() {
           instructions="You'll be redirected to Stripe to securely manage your payment details."
           title="Manage payment settings"
         >
-          <Button className="mx-6 md:ml-auto" disabled={isLoading} onClick={openBillingPortal}>
+          <Button
+            className="mx-6 md:ml-auto"
+            loading={isOpeningBillingPortal}
+            onClick={() => openBillingPortal()}
+          >
             Open billing portal <ExternalLink />
           </Button>
         </SettingsCard>
