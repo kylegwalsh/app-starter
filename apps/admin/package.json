@@ -7,6 +7,7 @@
     "dev": "sst shell -- next dev -p 3001",
     "start": "sst shell -- next start",
     "build": "next build",
+    "build:open-next": "open-next build",
     "lint": "oxlint --type-aware --type-check",
     "lint:fix": "oxlint --type-aware --type-check --fix",
     "format": "oxfmt",
@@ -22,6 +23,7 @@
     "react-dom": "19.1.0"
   },
   "devDependencies": {
+    "@opennextjs/aws": "3.6.2",
     "@repo/tsconfig": "workspace:*",
     "@types/react": "19.1.4",
     "@types/react-dom": "19.1.5",

@@ -7,7 +7,7 @@ export const admin = new sst.aws.Nextjs('admin', {
   domain: domain ? `admin.${domain}` : undefined,
   link: [gateway],
   path: 'apps/admin',
-  buildCommand: 'bunx open-next build',
+  buildCommand: 'bun run build:open-next',
   environment: {
     NEXT_PUBLIC_STAGE: $app.stage,
     NEXT_PUBLIC_API_URL: gateway.url,
