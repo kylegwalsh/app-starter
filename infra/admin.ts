@@ -1,16 +1,16 @@
-import { api } from './api';
+import { gateway } from './gateway';
 import { domain } from './utils';
+import { web } from './web';
 
-// Admin dashboard — static SPA deployed at admin.{domain}
-export const admin = new sst.aws.StaticSite('admin', {
+// Admin dashboard for managing users and organizations
+export const admin = new sst.aws.Nextjs('admin', {
   domain: domain ? `admin.${domain}` : undefined,
+  link: [gateway],
   path: 'apps/admin',
-  build: {
-    command: 'bun run build',
-    output: 'build/client',
-  },
+  buildCommand: 'bunx open-next build',
   environment: {
-    VITE_API_URL: api.url,
-    VITE_STAGE: $app.stage,
+    NEXT_PUBLIC_STAGE: $app.stage,
+    NEXT_PUBLIC_API_URL: gateway.url,
+    NEXT_PUBLIC_WEB_URL: web.url,
   },
 });

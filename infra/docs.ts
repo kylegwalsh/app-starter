@@ -4,4 +4,5 @@ import { domain } from './utils';
 export const site = new sst.aws.Nextjs('docs', {
   domain: domain ? `docs.${domain}` : undefined,
   path: 'apps/docs',
+  buildCommand: 'bunx open-next build',
 });

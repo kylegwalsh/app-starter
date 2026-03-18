@@ -1,5 +1,5 @@
-import { resources } from './cloud-resources';
 import { env } from './env';
+import { adminUrl, apiUrl, appUrl } from './urls';
 
 // ---------- HELPERS ----------
 /** Determine which stage (environment the app is running in) */
@@ -16,40 +16,6 @@ if (stage === 'prod' || stage === 'staging') {
   isProd = true;
 }
 
-/** The URL of our web app */
-let appUrl: string | undefined;
-// oxlint-disable no-explicit-any: We need the backend to build and ignore the window
-declare const window: any;
-if (typeof window !== 'undefined') {
-  // oxlint-disable no-unsafe-assignment, no-unsafe-member-access: The window is not typed here
-  appUrl = window.location.origin;
-}
-if (!appUrl) {
-  try {
-    appUrl = resources?.web?.url?.includes?.('dev.mode')
-      ? 'http://localhost:3000'
-      : resources?.web?.url;
-  } catch {
-    // Do nothing
-  }
-}
-
-/** The URL of our API */
-let apiUrl = '';
-try {
-  apiUrl = process.env.NEXT_PUBLIC_API_URL ?? resources?.api?.url ?? '';
-} catch {
-  // Do nothing
-}
-
-/** The URL of our admin dashboard */
-let adminUrl = '';
-try {
-  adminUrl = process.env.VITE_ADMIN_URL ?? resources?.admin?.url ?? '';
-} catch {
-  // Do nothing
-}
-
 /** Whether this application is running as one of our main deployments (not locally) */
 const isDeployment = ['prod', 'dev'].includes(stage ?? '');
 
@@ -60,6 +26,8 @@ export const config = {
   stage,
   /** Whether this application is running as one of our main deployments (not locally) */
   isDeployment,
+  /** Whether this application has a custom domain configured */
+  hasCustomDomain: !apiUrl.endsWith('amazonaws.com'),
   /** Whether we're running in an AWS deployment */
   isAWS: !!(process?.env?.LAMBDA_TASK_ROOT || process?.env?.AWS_EXECUTION_ENV),
   /** Whether the application is using production resources */

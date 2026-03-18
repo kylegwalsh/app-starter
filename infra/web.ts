@@ -1,4 +1,4 @@
-import { api } from './api';
+import { gateway } from './gateway';
 import { domain } from './utils';
 
 // const username = 'username';
@@ -6,14 +6,14 @@ import { domain } from './utils';
 // const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');
 
 // Our main web app
-export const site = new sst.aws.Nextjs('web', {
+export const web = new sst.aws.Nextjs('web', {
   domain: domain ? `app.${domain}` : undefined,
-  link: [api],
+  link: [gateway],
   path: 'apps/web',
   buildCommand: 'bunx open-next build',
   environment: {
     NEXT_PUBLIC_STAGE: $app.stage,
-    NEXT_PUBLIC_API_URL: api.url,
+    NEXT_PUBLIC_API_URL: gateway.url,
   },
   // Password protect every stage but prod
   // edge:

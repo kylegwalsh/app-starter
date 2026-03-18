@@ -26,6 +26,10 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "admin": {
+      "type": "sst.aws.Nextjs"
+      "url": string
+    }
     "api": {
       "type": "sst.aws.ApiGatewayV2"
       "url": string

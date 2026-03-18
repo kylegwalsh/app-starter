@@ -91,7 +91,7 @@ _All packages and apps are written in TypeScript for consistency and type safety
 /
 ├── apps/              # Deployable applications (frontend, backend, documentation)
 │   ├── web/           # Next.js frontend app
-│   ├── admin/         # Admin panel (React Router v7 SPA, Better Auth admin)
+│   ├── admin/         # Admin panel (Next.js App Router, Better Auth admin)
 │   ├── backend/       # Serverless backend (SST)
 │   ├── storybook/     # Storybook documentation and testing for components
 │   └── docs/          # (Optional) Fumadocs-powered documentation app (deployment disabled by default)

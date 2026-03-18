@@ -232,13 +232,20 @@ const authConfig = {
       });
     },
   },
-  // If your API and frontend are on the same top-level domain, you can remove this
+  // Share cookies across subdomains (app.*, admin.*, api.*) when on a custom domain.
+  // When no custom domain is set (e.g. *.amazonaws.com), fall back to sameSite: 'none' for cross-origin access.
   advanced: {
-    defaultCookieAttributes: {
-      sameSite: 'none',
-      secure: true,
-      partitioned: true,
-    },
+    defaultCookieAttributes: config.hasCustomDomain
+      ? {
+          domain: `.${new URL(config.api.url).hostname.split('.').slice(-2).join('.')}`,
+          sameSite: 'lax' as const,
+          secure: true,
+        }
+      : {
+          sameSite: 'none' as const,
+          secure: true,
+          partitioned: true,
+        },
   },
   // Cache the cookie for 5 minutes on the frontend
   session: {

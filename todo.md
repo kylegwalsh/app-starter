@@ -1,9 +1,5 @@
 # TODO
 
-## BETTER AUTH ADMIN
-
-- Try adding client deployment for admin panel: https://github.com/Tranthanh98/better-auth-dashboard/tree/master/client
-
 ## POSTHOG WORKFLOWS
 
 - Deprecate Loops in favor of PostHog workflows once it's further along

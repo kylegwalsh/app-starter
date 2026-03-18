@@ -1,17 +1,11 @@
 {
-  "extends": "@repo/tsconfig/react.json",
-  "include": ["**/*", "**/.server/**/*", "**/.client/**/*", ".react-router/types/**/*"],
+  "extends": "@repo/tsconfig/nextjs.json",
   "compilerOptions": {
-    "types": ["node", "vite/client"],
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "rootDirs": [".", "./.react-router/types"],
     "paths": {
-      "~/*": ["./app/*"]
+      "@/*": ["./*"]
     },
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "strict": true
-  }
+    "strictNullChecks": true
+  },
+  "include": ["**/*", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

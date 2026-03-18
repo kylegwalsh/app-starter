@@ -1,6 +1,6 @@
 # Admin
 
-This app is the internal admin panel for managing users and organizations. It is built with React Router v7 (SPA mode), Tailwind v4, and Better Auth's admin client. It connects directly to the backend's auth API for all admin operations.
+This app is the internal admin panel for managing users and organizations. It is built with Next.js (App Router, client-rendered), Tailwind v4 via `@repo/design`, and Better Auth's admin client. It connects directly to the backend's auth API for all admin operations.
 
 ## Table of Contents
 
@@ -10,56 +10,70 @@ This app is the internal admin panel for managing users and organizations. It is
 - [Overview](#overview)
 - [Directory Structure](#directory-structure)
 - [Running Locally](#running-locally)
-- [Authentication](#authentication)
+- [Deploying](#deploying)
 - [Design System](#design-system)
+- [Authentication](#authentication)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Overview
 
-- React Router v7 in SPA mode (no SSR)
-- Better Auth admin client for user/org management
-- Tailwind v4 for styling
+- Next.js App Router with all pages client-rendered (`'use client'`)
+- Better Auth admin + organization client for user/org management
+- Shared design system and global styles from `@repo/design`
 - Admin-only access enforced via Better Auth role checks
 
 ## Directory Structure
 
 ```text
 apps/admin/
-├── app/
-│   ├── components/        # UI components (user management, org management)
-│   ├── contexts/          # Auth context provider
-│   ├── lib/               # Auth client configuration
-│   ├── routes/            # React Router route modules
-│   │   ├── dashboard/     # Protected dashboard routes (users, orgs)
-│   │   ├── home.tsx       # Landing / redirect
-│   │   └── login.tsx      # Admin login
-│   ├── root.tsx           # Root layout
-│   ├── routes.ts          # Route definitions
-│   └── app.css            # Global styles
-├── react-router.config.ts # React Router SPA config
-├── vite.config.ts         # Vite config
+├── app/                       # Next.js routes (App Router)
+│   ├── layout.tsx             # Root layout, AuthProvider, fonts, globals.css
+│   ├── page.tsx               # Landing / redirect
+│   ├── login/                 # Admin login page
+│   └── dashboard/             # Protected admin routes
+│       ├── layout.tsx         # Dashboard shell (sidebar, RequireAdmin gate)
+│       ├── page.tsx           # Dashboard overview (stats)
+│       ├── users/             # User management pages
+│       └── organizations/     # Organization management pages
+├── components/                # UI components (user management, org management, shared)
+├── contexts/                  # Auth context provider
+├── core/                      # App-level singletons & clients
+│   └── auth.ts                # Better Auth client (admin + organization plugins)
+├── next.config.ts             # Next.js config
+├── postcss.config.mjs         # PostCSS config
 └── package.json
 ```
 
 ## Running Locally
 
-From the repo root, start all dev servers (includes admin):
+From the repo root, start SST which also starts the admin app:
 
 ```sh
 bun dev
 ```
 
-Or run the admin app individually:
+## Deploying
+
+From the repo root, you can deploy the infrastructure and apps with SST:
 
 ```sh
-bun admin dev
+bun run deploy
 ```
-
-## Authentication
-
-The admin panel uses Better Auth's admin plugin to authenticate and authorize. Only users with the `admin` role can access the dashboard. The auth client is configured in `lib/auth-client.ts` and session state is managed via `contexts/auth-context.tsx`.
 
 ## Design System
 
-The admin panel uses Tailwind v4 directly for styling. Global styles are defined in `app/app.css`.
+The shared `@repo/design` system standardizes UI across apps and bundles accessible components, Tailwind v4, and theming.
+
+- Package: `@repo/design`
+- Tailwind v4: Admin uses its own `app/globals.css` with distinct oklch theme tokens, separate from `@repo/design/globals.css`.
+- Icons: `lucide-react` (no inline SVGs).
+
+## Authentication
+
+Better Auth powers authentication and provides the admin + organization SDK for management operations.
+
+- Client: Configured in `core/auth.ts` (baseURL to backend, admin + organization plugins).
+- Context: `contexts/auth-context.tsx` manages session state, login/logout, and admin role checks.
+- Routing: The `RequireAdmin` component in `components/require-admin.tsx` gates all dashboard routes — unauthenticated users are redirected to `/login?redirect=<path>`, non-admin users see an access denied page.
+- Access: `useAuth()` hook provides `user`, `isAdmin`, `isAuthenticated`, `login`, `logout`, and `clearError`.
