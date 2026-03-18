@@ -17,6 +17,9 @@ import { stripePluginInstance } from './stripe';
  */
 const SUPPORT_PERSONAL_ORGANIZATIONS = true;
 
+/** Extract the base domain from the API URL */
+const baseDomain = new URL(config.api.url).hostname.split('.').slice(-2).join('.');
+
 /** Get or create a personal organization for a user */
 const getOrCreatePersonalOrganization = async ({ userId }: { userId: string }) => {
   // First, try to find existing personal organization for this user
@@ -235,9 +238,11 @@ const authConfig = {
   // Share cookies across subdomains (app.*, admin.*, api.*) when on a custom domain.
   // When no custom domain is set (e.g. *.amazonaws.com), fall back to sameSite: 'none' for cross-origin access.
   advanced: {
+    cookiePrefix: config.isProd ? 'auth' : `auth-${config.stage}`,
     defaultCookieAttributes: config.hasCustomDomain
       ? {
-          domain: `.${new URL(config.api.url).hostname.split('.').slice(-2).join('.')}`,
+          // Scope the cookie to be restricted to the correct subdomain
+          domain: config.isProd ? `.${baseDomain}` : `.${config.stage}.${baseDomain}`,
           sameSite: 'lax' as const,
           secure: true,
         }

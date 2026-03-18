@@ -35,13 +35,21 @@
 - Create slack app
 - Verify OAuth org selection works
 - Connect chat SDK
-- Build chat UI for web-app using chat SDK
+- Build chat UI for web-app
 - Possibly set up basic MCP structure
 - Rethink how we trace for Langfuse and how we can support evals (input must be easily replayed against functions)
 
 ## Marketing site
 
 - Consider adding marketing site to repo
+
+## PRISMA V7
+
+- Wait a bit for it to stabilize, then move to Prisma v7 for large speed up
+- Drop custom lambda layer stuff
+- See if we should store generated types in client and remove generate step in postinstall + ci if possible
+- See if they changed the way migrations are handled
+- Cache PrismaClient instance between Lambda invocations to reduce cold-start time
 
 ## OTHER
 
