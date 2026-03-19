@@ -1,20 +1,8 @@
 'use client';
 
 import { plans } from '@repo/constants';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  Label,
-  PricingCard,
-  Switch,
-} from '@repo/design';
-import { useCallback, useState } from 'react';
+import { Label, PricingCard, Switch } from '@repo/design';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useSubscription } from '@/hooks';
 
@@ -25,62 +13,77 @@ type Props = {
 
 /** Our list of plan cards */
 export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
-  const { currentPlan, isFetched, upgrade, cancel } = useSubscription();
-  const [pendingPlan, setPendingPlan] = useState<keyof typeof plans | null>(null);
+  const {
+    currentPlan,
+    isAnnual: isAnnualSubscription,
+    isFetched,
+    upgrade,
+    cancel,
+  } = useSubscription();
+  const [activePlan, setActivePlan] = useState<keyof typeof plans | null>(null);
   const [isAnnual, setIsAnnual] = useState(false);
 
-  /** Get the button text for a plan card based on whether it's an upgrade, downgrade, or current */
+  // Default the toggle to the user's current billing period once loaded
+  useEffect(() => {
+    if (isFetched) {
+      setIsAnnual(isAnnualSubscription);
+    }
+  }, [isFetched, isAnnualSubscription]);
+
+  /** Get the button text for a plan card */
   const getButtonText = useCallback(
     (plan: keyof typeof plans) => {
       if (currentPlan === plan) {
+        // If the user is on this plan but toggled to a different billing period, offer the switch
+        if (isAnnual && !isAnnualSubscription) {
+          return 'Change to annual';
+        }
+        if (!isAnnual && isAnnualSubscription) {
+          return 'Change to monthly';
+        }
         return 'Current plan';
       }
 
       const rank = { free: 0, pro: 1, enterprise: 2 } as const;
       return rank[plan] > rank[currentPlan as keyof typeof rank] ? 'Upgrade' : 'Downgrade';
     },
-    [currentPlan],
+    [currentPlan, isAnnual, isAnnualSubscription],
   );
 
-  /** Handle plan selection — cancel requires confirmation, upgrades go through directly */
+  /** Whether the button for a given plan should be disabled */
+  const isDisabled = useCallback(
+    (plan: keyof typeof plans) => {
+      if (!!activePlan && activePlan !== plan) {
+        return true;
+      }
+      // Disable if on this plan with matching billing period
+      if (currentPlan === plan && isAnnual === isAnnualSubscription) {
+        return true;
+      }
+      return false;
+    },
+    [activePlan, currentPlan, isAnnual, isAnnualSubscription],
+  );
+
+  /** Handle plan selection */
   const handlePlanChange = useCallback(
     async (plan: keyof typeof plans) => {
-      if (plan === 'free') {
-        setPendingPlan(plan);
-      } else {
-        await upgrade({ plan, annual: isAnnual });
+      setActivePlan(plan);
+      try {
+        if (plan === 'free') {
+          await cancel();
+        } else {
+          await upgrade({ plan, annual: isAnnual });
+        }
+      } finally {
+        setActivePlan(null);
       }
     },
-    [isAnnual, upgrade],
+    [isAnnual, upgrade, cancel],
   );
-
-  /** Confirm cancellation */
-  const confirmCancel = useCallback(async () => {
-    await cancel();
-    setPendingPlan(null);
-  }, [cancel]);
 
   return (
     <>
-      {/* Cancellation confirmation dialog */}
-      <AlertDialog
-        open={pendingPlan === 'free'}
-        onOpenChange={(open) => !open && setPendingPlan(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancel your subscription?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You will lose access to your current plan features at the end of your billing period.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep my plan</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmCancel}>Confirm cancellation</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Monthly/Annual switch */}
       {showSwitch && (
         <div className="flex flex-col items-center justify-center gap-2">
@@ -104,8 +107,9 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
           onClick={() => handlePlanChange('free')}
           plan={plans.free.title}
           price={isAnnual ? plans.free.annualPrice : plans.free.price}
-          disabled={currentPlan === 'free'}
-          loading={!isFetched}
+          initializing={!isFetched}
+          loading={activePlan === 'free'}
+          disabled={isDisabled('free')}
           buttonText={getButtonText('free')}
         />
 
@@ -116,8 +120,9 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
           plan={plans.pro.title}
           popular
           price={isAnnual ? plans.pro.annualPrice : plans.pro.price}
-          disabled={currentPlan === 'pro'}
-          loading={!isFetched}
+          initializing={!isFetched}
+          loading={activePlan === 'pro'}
+          disabled={isDisabled('pro')}
           buttonText={getButtonText('pro')}
         />
 
@@ -127,8 +132,9 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
           onClick={() => handlePlanChange('enterprise')}
           plan={plans.enterprise.title}
           price={isAnnual ? plans.enterprise.annualPrice : plans.enterprise.price}
-          disabled={currentPlan === 'enterprise'}
-          loading={!isFetched}
+          initializing={!isFetched}
+          loading={activePlan === 'enterprise'}
+          disabled={isDisabled('enterprise')}
           buttonText={getButtonText('enterprise')}
         />
       </div>

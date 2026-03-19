@@ -52,6 +52,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Database:** Supabase for scalable, hosted Postgres and real-time data.
 - **Backend:** Serverless backend managed with SST, deployed to AWS.
 - **Web Frontend:** Next.js for fast, modern web applications.
+- **Admin Panel:** Internal admin dashboard for managing users and organizations, powered by Better Auth's admin plugin.
 - **Documentation:** [Fumadocs](https://fumadocs.org/) for building a documentation site (optional, see below).
 - **Continuous Integration:** Automated testing and deployment via GitHub Actions.
 - **Alerts:** Slack integration for real-time notifications and alerts.
@@ -90,6 +91,7 @@ _All packages and apps are written in TypeScript for consistency and type safety
 /
 ├── apps/              # Deployable applications (frontend, backend, documentation)
 │   ├── web/           # Next.js frontend app
+│   ├── admin/         # Admin panel (Next.js App Router, Better Auth admin)
 │   ├── backend/       # Serverless backend (SST)
 │   ├── storybook/     # Storybook documentation and testing for components
 │   └── docs/          # (Optional) Fumadocs-powered documentation app (deployment disabled by default)
@@ -219,6 +221,7 @@ bun dev
 This command will:
 
 - Launch the Next.js frontend (`apps/web`)
+- Start the admin panel (`apps/admin`)
 - Start the backend using SST locally (`apps/backend`)
 - Connect to your Supabase database
 - Generate any required types and assets

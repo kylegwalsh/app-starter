@@ -19,24 +19,25 @@ datasource db {
 // ---------------------- END SETUP ---------------------- //
 
 model User {
-  id                    String    @id @default(cuid())
+  id                    String       @id @default(cuid())
   name                  String
   email                 String
   emailVerified         Boolean
   image                 String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
   defaultOrganizationId String?
-  stripeCustomerId      String?
+  role                  String?
+  banned                Boolean?
+  banReason             String?
+  banExpires            DateTime?
+  members               Member[]
+  invitations           Invitation[]
   sessions              Session[]
   accounts              Account[]
 
-  role        String?
-  banned      Boolean?
-  banReason   String?
-  banExpires  DateTime?
-  members     Member[]
-  invitations Invitation[]
+  // Unused but added by better auth migrations
+  stripeCustomerId String?
 
   @@unique([email])
   @@map("user")

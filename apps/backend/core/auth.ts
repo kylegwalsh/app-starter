@@ -1,17 +1,15 @@
 import { oauthProvider } from '@better-auth/oauth-provider';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
-import { stripe as stripePlugin } from '@better-auth/stripe';
 import type { Organization } from '@prisma/client';
 import { analytics } from '@repo/analytics';
 import { config, env } from '@repo/config';
-import { plans } from '@repo/constants';
 import { email } from '@repo/email';
 import { type BetterAuthOptions, betterAuth } from 'better-auth';
 import { admin as adminPlugin, organization as organizationPlugin } from 'better-auth/plugins';
 
 import { db } from '@/db';
 
-import { stripe as stripeClient } from './stripe';
+import { stripePluginInstance } from './stripe';
 
 // ---------- HELPERS ----------
 /**
@@ -19,6 +17,9 @@ import { stripe as stripeClient } from './stripe';
  * A valid use case for not supporting them is if you want to manually create organizations and invite users.
  */
 const SUPPORT_PERSONAL_ORGANIZATIONS = true;
+
+/** Extract the base domain from the API URL */
+const baseDomain = new URL(config.api.url).hostname.split('.').slice(-2).join('.');
 
 /** Get or create a personal organization for a user */
 const getOrCreatePersonalOrganization = async ({ userId }: { userId: string }) => {
@@ -118,7 +119,7 @@ const authConfig = {
   secret: env.BETTER_AUTH_SECRET,
   baseURL: config.api.url,
   appName: config.app.name,
-  trustedOrigins: [config.app.url as string],
+  trustedOrigins: [config.app.url, config.admin.url].filter(Boolean) as string[],
   // Connect to our prisma database
   database: prismaAdapter(db, {
     provider: 'postgresql',
@@ -235,13 +236,22 @@ const authConfig = {
       });
     },
   },
-  // If your API and frontend are on the same top-level domain, you can remove this
+  // Share cookies across subdomains (app.*, admin.*, api.*) when on a custom domain.
+  // When no custom domain is set (e.g. *.amazonaws.com), fall back to sameSite: 'none' for cross-origin access.
   advanced: {
-    defaultCookieAttributes: {
-      sameSite: 'none',
-      secure: true,
-      partitioned: true,
-    },
+    cookiePrefix: config.isProd ? 'auth' : `auth-${config.stage}`,
+    defaultCookieAttributes: config.hasCustomDomain
+      ? {
+          // Scope the cookie to be restricted to the correct subdomain
+          domain: config.isProd ? `.${baseDomain}` : `.${config.stage}.${baseDomain}`,
+          sameSite: 'lax' as const,
+          secure: true,
+        }
+      : {
+          sameSite: 'none' as const,
+          secure: true,
+          partitioned: true,
+        },
   },
   // Cache the cookie for 5 minutes on the frontend
   session: {
@@ -296,64 +306,7 @@ const authConfig = {
         },
       },
     }),
-    stripePlugin({
-      stripeClient,
-      stripeWebhookSecret: (env as Record<string, string>).STRIPE_WEBHOOK_SECRET,
-      createCustomerOnSignUp: true,
-      // Ensure that stripe is attached to organizations rather than users
-      organization: {
-        enabled: true,
-      },
-      // Configure stripe plans
-      subscription: {
-        enabled: true,
-        plans: Object.values(plans).filter((plan) => !!plan.priceId),
-        // Ensure that we validate whether a user can manage this organization's subscription
-        authorizeReference: async ({ user, referenceId }) => {
-          const member = await db.member.findFirst({
-            where: {
-              userId: user.id,
-              organizationId: referenceId,
-            },
-          });
-
-          return member?.role === 'owner' || member?.role === 'admin';
-        },
-        // ---------- STRIPE HOOKS ----------
-        // Fires when a subscription is created via normal checkout
-        onSubscriptionComplete: async ({ subscription, plan }) => {
-          await analytics.planChanged({
-            userId: subscription.referenceId,
-            organizationId: subscription.referenceId,
-            plan: plan.name,
-          });
-        },
-        // Fires when a subscription is created via the Stripe dashboard
-        onSubscriptionCreated: async ({ subscription, plan }) => {
-          await analytics.planChanged({
-            userId: subscription.referenceId,
-            organizationId: subscription.referenceId,
-            plan: plan.name,
-          });
-        },
-        // Fires when a subscription is updated
-        onSubscriptionUpdate: async ({ subscription, event }) => {
-          await analytics.planChanged({
-            userId: subscription.referenceId,
-            organizationId: subscription.referenceId,
-            plan: subscription.plan,
-          });
-        },
-        // Fires when a subscription is cancelled
-        onSubscriptionCancel: async ({ subscription }) => {
-          await analytics.planCancelled({
-            userId: subscription.referenceId,
-            organizationId: subscription.referenceId,
-            plan: subscription.plan,
-          });
-        },
-      },
-    }),
+    ...(stripePluginInstance ? [stripePluginInstance] : []),
   ],
 } satisfies BetterAuthOptions;
 
