@@ -71,9 +71,11 @@ The shared `@repo/design` system standardizes UI across apps and bundles accessi
 
 ## Authentication
 
-Better Auth powers authentication and provides the admin + organization SDK for management operations.
+Better Auth with admin + organization plugins. Client configured in `core/auth.ts`, session state managed via `contexts/auth-context.tsx`. All dashboard routes are gated by the `RequireAdmin` component — unauthenticated users redirect to `/login`, non-admins see an access denied page.
 
-- Client: Configured in `core/auth.ts` (baseURL to backend, admin + organization plugins).
-- Context: `contexts/auth-context.tsx` manages session state, login/logout, and admin role checks.
-- Routing: The `RequireAdmin` component in `components/require-admin.tsx` gates all dashboard routes — unauthenticated users are redirected to `/login?redirect=<path>`, non-admin users see an access denied page.
-- Access: `useAuth()` hook provides `user`, `isAdmin`, `isAuthenticated`, `login`, `logout`, and `clearError`.
+## Features
+
+- **User Management**: View, edit, ban/unban, delete users, and reset passwords from `/dashboard/users/[userId]`.
+- **Organization Management**: View and manage organizations from `/dashboard/organizations`.
+- **Impersonation**: Start a session as any non-admin user and get redirected to the main web app. Requires a custom domain deployment (`config.hasCustomDomain`).
+- **Session Management**: View and revoke individual or all sessions for a user.
