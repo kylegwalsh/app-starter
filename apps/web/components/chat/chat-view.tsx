@@ -1,0 +1,197 @@
+'use client';
+
+import {
+  ChatError,
+  ChatFilePreview,
+  ChatInput,
+  ChatMessage,
+  ChatMessages,
+  ChatToolInvocation,
+  ChatTypingIndicator,
+} from '@repo/design/components/chat';
+import { FileIcon } from 'lucide-react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+import { useChatContext } from './chat-provider';
+
+/** Map tool invocation state from AI SDK format to our component format */
+const mapToolState = (state: string) => {
+  if (state === 'output-available') {
+    return 'result' as const;
+  }
+  if (state === 'output-error') {
+    return 'error' as const;
+  }
+  return 'call' as const;
+};
+
+/** Renders the full chat view — messages list + input bar */
+function ChatView() {
+  const {
+    messages,
+    input,
+    setInput,
+    handleSubmit,
+    isLoading,
+    isUploading,
+    uploadError,
+    error,
+    regenerate,
+    attachedFiles,
+    addFiles,
+    removeFile,
+    submitFeedback,
+  } = useChatContext();
+
+  return (
+    <div className="flex h-full flex-col">
+      <ChatMessages>
+        {messages.length === 0 && !isLoading && !error && (
+          <div className="text-muted-foreground flex flex-1 items-center justify-center text-sm">
+            Send a message to start a conversation
+          </div>
+        )}
+
+        {messages
+          .filter((m) => m.role === 'user' || m.role === 'assistant')
+          .map((message, index, filtered) => {
+            const isLatest = message.role === 'assistant' && index === filtered.length - 1;
+
+            return (
+              <ChatMessage
+                isLatest={isLatest}
+                isStreaming={isLoading && isLatest}
+                key={message.id}
+                onFeedback={
+                  message.role === 'assistant'
+                    ? (rating, comment) => submitFeedback(message.id, rating, comment)
+                    : undefined
+                }
+                onCopy={() => {
+                  const text = message.parts
+                    .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+                    .map((p) => p.text)
+                    .join('\n');
+                  navigator.clipboard.writeText(text);
+                }}
+                role={message.role as 'user' | 'assistant'}
+              >
+                {message.parts.map((part) => {
+                  if (part.type === 'text') {
+                    return (
+                      <div
+                        className="prose prose-sm dark:prose-invert max-w-none"
+                        key={`${message.id}-text`}
+                      >
+                        <Markdown remarkPlugins={[remarkGfm]}>{part.text}</Markdown>
+                      </div>
+                    );
+                  }
+
+                  // Render file/image parts
+                  if (part.type === 'file') {
+                    const filePart = part as { mediaType: string; url: string; filename?: string };
+                    const isImage = filePart.mediaType.startsWith('image/');
+
+                    if (isImage) {
+                      return (
+                        // oxlint-disable-next-line no-img-element: CDN-hosted images, not optimizable by next/image
+                        <img
+                          alt={filePart.filename ?? 'Uploaded image'}
+                          className="max-h-64 rounded-lg object-contain"
+                          key={filePart.url}
+                          src={filePart.url}
+                        />
+                      );
+                    }
+
+                    return (
+                      <a
+                        className="bg-muted/50 hover:bg-muted flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
+                        href={filePart.url}
+                        key={filePart.url}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      >
+                        <FileIcon className="text-muted-foreground size-4" />
+                        {filePart.filename ?? 'Download file'}
+                      </a>
+                    );
+                  }
+
+                  // Handle tool invocations via the SDK's discriminated part types
+                  if (part.type.startsWith('tool-') && 'toolCallId' in part) {
+                    const toolPart = part as {
+                      toolName: string;
+                      toolCallId: string;
+                      state: string;
+                      output?: unknown;
+                      errorText?: string;
+                    };
+                    return (
+                      <ChatToolInvocation
+                        error={toolPart.errorText}
+                        key={toolPart.toolCallId}
+                        result={
+                          toolPart.output != null ? JSON.stringify(toolPart.output) : undefined
+                        }
+                        state={mapToolState(toolPart.state)}
+                        toolName={toolPart.toolName}
+                      />
+                    );
+                  }
+
+                  return null;
+                })}
+              </ChatMessage>
+            );
+          })}
+
+        {/* Typing indicator when waiting for first token */}
+        {isLoading && messages.length > 0 && messages.at(-1)?.role === 'user' && (
+          <ChatTypingIndicator />
+        )}
+
+        {/* Inline error — shown where the assistant's response would be */}
+        {error && !isLoading && (
+          <ChatError
+            message={error.message || 'There was an error generating a response.'}
+            onRetry={regenerate}
+          />
+        )}
+      </ChatMessages>
+
+      {/* Upload error */}
+      {uploadError && <div className="text-destructive mx-4 mb-2 text-xs">{uploadError}</div>}
+
+      {/* Input bar */}
+      <div className="bg-background border-t p-4">
+        <ChatInput
+          filePreview={
+            attachedFiles.length > 0
+              ? attachedFiles.map((attached, i) => (
+                  <ChatFilePreview
+                    isUploading={isUploading}
+                    key={attached.previewUrl || attached.file.name}
+                    name={attached.file.name}
+                    onRemove={isUploading ? undefined : () => removeFile(i)}
+                    previewUrl={attached.previewUrl}
+                    type={attached.file.type}
+                  />
+                ))
+              : undefined
+          }
+          isLoading={isLoading || isUploading}
+          onChange={setInput}
+          onFilesSelected={addFiles}
+          onSubmit={handleSubmit}
+          placeholder="Send a message..."
+          value={input}
+        />
+      </div>
+    </div>
+  );
+}
+
+export { ChatView };

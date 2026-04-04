@@ -9,8 +9,9 @@ import { auth } from '@/core';
 import { mcpAdapter } from './adapters';
 import { internalDocsPlugin, internalDocsLoginHTML } from './docs';
 import { honoErrorHandler } from './error';
-import { corsMiddleware, timingMiddleware } from './middleware';
+import { cdnCookiesMiddleware, corsMiddleware, timingMiddleware } from './middleware';
 import { router } from './routes';
+import { chatApp } from './routes/chat';
 
 // ---------- CONFIGURATION ----------
 // Our global configuration for the hono wrapper
@@ -53,8 +54,14 @@ app.on(['GET', 'POST'], ['/api/auth/*'], (c) => {
 // MCP routes
 app.route('/mcp', mcpAdapter);
 
+// Chat streaming route (direct Hono — not oRPC — because useChat expects a specific streaming format)
+app.route('/api/chat', chatApp);
+
 // A dedicated login for our Swagger docs to authenticate users and set the session cookie
 app.get('/api/login', (c) => c.html(internalDocsLoginHTML));
+
+// CDN signed cookies — sets CloudFront cookies for file access on auth'd requests
+app.use('/rpc/*', cdnCookiesMiddleware);
 
 // ---------- MAIN API (oRPC) ----------
 // We use oRPC to benefit from e2e type safety, validation, and auto-generated react hooks

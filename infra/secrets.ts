@@ -21,5 +21,10 @@ export const LOOPS_API_KEY = new sst.Secret('LOOPS_API_KEY');
 // export const STRIPE_SECRET_KEY = new sst.Secret('STRIPE_SECRET_KEY');
 // export const STRIPE_WEBHOOK_SECRET = new sst.Secret('STRIPE_WEBHOOK_SECRET');
 
+// CloudFront (file uploads CDN)
+export const CLOUDFRONT_KEY_PAIR_ID = new sst.Secret('CLOUDFRONT_KEY_PAIR_ID');
+export const CLOUDFRONT_PRIVATE_KEY = new sst.Secret('CLOUDFRONT_PRIVATE_KEY');
+export const CLOUDFRONT_PUBLIC_KEY = new sst.Secret('CLOUDFRONT_PUBLIC_KEY');
+
 // Set the default secrets for the stage...
 export const STAGE = new sst.Secret('STAGE', $app.stage);

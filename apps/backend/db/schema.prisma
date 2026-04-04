@@ -39,6 +39,7 @@ model User {
   oauthrefreshtokens    OauthRefreshToken[]
   oauthaccesstokens     OauthAccessToken[]
   oauthconsents         OauthConsent[]
+  conversations         Conversation[]
   // Unused but added by better auth migrations
   stripeCustomerId      String?
 
@@ -269,4 +270,33 @@ model Jwks {
   expiresAt  DateTime?
 
   @@map("jwks")
+}
+
+model Conversation {
+  id             String    @id @default(cuid())
+  title          String?
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  messages       Message[]
+
+  @@index([userId])
+  @@index([organizationId])
+  @@map("conversation")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  parts          Json
+  traceId        String?
+  feedback       Boolean?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@map("message")
 }
