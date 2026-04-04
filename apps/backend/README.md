@@ -6,7 +6,8 @@ This app provides the serverless backend for the monorepo. It is built with SST 
 - oRPC endpoints via **OpenAPIHandler** at `/api` (external consumers, Postman)
 - Swagger UI for the generated OpenAPI spec at `/api` (local dev only)
 - Auth routes handled by Better Auth under `/api/auth`
-- MCP server at `/mcp`
+- AI chat streaming at `/api/chat` (Vercel AI SDK `useChat` compatible)
+- MCP server at `/mcp` (with code execution tools via Daytona)
 
 ## Table of Contents
 

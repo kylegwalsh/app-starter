@@ -58,6 +58,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Alerts:** Slack integration for real-time notifications and alerts.
 - **Logging:** Shared logging package (Pino) with pretty local output, and production integration with Posthog and CloudWatch.
 - **AI Tracing & Evaluation:** Integrated with Langfuse for tracing, monitoring, and evaluating AI generations.
+- **AI Chat:** Built-in chat UI with streaming responses, conversation persistence, file uploads (S3 + CloudFront), user feedback (Langfuse), and sandboxed code execution (Daytona).
 - **MCP Server:** Built-in [Model Context Protocol](https://modelcontextprotocol.io/) server with OAuth authentication, allowing AI assistants (Claude, Cursor, etc.) to interact with your app's backend tools.
 - **AI-Assisted Development:** Pre-configured with Cursor rules for AI-powered workflows.
 - **Email:** Transactional and marketing/engagement email system powered by Loops (for password resets, onboarding, and user communications).
