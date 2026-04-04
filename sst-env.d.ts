@@ -34,11 +34,7 @@ declare module "sst" {
       "type": "sst.aws.ApiGatewayV2"
       "url": string
     }
-    "apiHandler": {
-      "name": string
-      "type": "sst.aws.Function"
-    }
-    "authHandler": {
+    "serverHandler": {
       "name": string
       "type": "sst.aws.Function"
     }

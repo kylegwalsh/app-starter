@@ -39,8 +39,8 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-import { EditOrganizationDialog } from '@/components/organisations/edit-organization-dialog';
-import { OrganizationDetailPluginDisabled } from '@/components/organisations/organization-detail-plugin-disabled';
+import { EditOrganizationDialog } from '@/components/organizations/edit-organization-dialog';
+import { OrganizationDetailPluginDisabled } from '@/components/organizations/organization-detail-plugin-disabled';
 import {
   organizationApi,
   type Invitation,

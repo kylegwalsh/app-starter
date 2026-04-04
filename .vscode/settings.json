@@ -29,6 +29,9 @@
   "editor.suggest.showReferences": false,
   "editor.suggest.showCustomcolors": false,
   "editor.suggest.shareSuggestSelections": false,
+  "editor.suggest.showVariables": false,
+  "editor.suggest.showSnippets": false,
+  "editor.suggest.showWords": false,
   "emmet.showExpandedAbbreviation": "never",
   // Prevent auto-accepting suggestions on commit characters like comma
   "editor.acceptSuggestionOnCommitCharacter": false,
@@ -80,12 +83,14 @@
     "lintstagedrc",
     "logtail",
     "misrefactored",
+    "modelcontextprotocol",
     "networkidle",
     "nextjs",
     "noninteractive",
     "ohash",
     "openai",
     "opennextjs",
+    "orpc",
     "oxfmt",
     "oxlint",
     "pglite",
@@ -96,11 +101,11 @@
     "shadcn",
     "sherif",
     "sonner",
+    "Streamable",
     "supabase",
     "superjson",
     "tabindex",
     "textnodes",
-    "trpc",
     "trunc",
     "tsgolint",
     "turborepo",
@@ -109,6 +114,7 @@
     "uninvoked",
     "vaul",
     "worktree",
-    "worktrees"
+    "worktrees",
+    "evals"
   ]
 }

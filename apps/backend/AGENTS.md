@@ -2,16 +2,20 @@
 
 ## Stack
 
-Node.js + TypeScript, SST (AWS Lambda), tRPC, Prisma (Postgres), Better Auth, Stripe, Vitest
+Node.js + TypeScript, SST (AWS Lambda), Hono, oRPC, Prisma (Postgres), Better Auth, Stripe, Vitest
 
 ## Directory Layout
 
 ```text
-functions/   Lambda entrypoints (api, auth, crons)
-routes/      tRPC routers, context, procedures, middleware (most changes happen here)
-core/        Core services (auth, stripe, re-usable business logic helpers)
-db/          Prisma schema, migrations, connection utilities
-tests/       Vitest setup, factories, mocks (not test files — those live next to source)
+lambda/         Lambda entrypoints (api, crons)
+api/            All of our API code (hono + oRPC)
+api/routes/     oRPC routers (most new API work happens here)
+api/middleware/ Hono middleware (CORS, timing)
+api/adapters/   Protocol adapters (MCP)
+mcp/            MCP server and tools
+core/           Core services (auth, stripe, re-usable business logic helpers)
+db/             Prisma schema, migrations, connection utilities
+tests/          Vitest setup, factories, mocks (not test files — those live next to source)
 ```
 
 ## Commands
@@ -29,8 +33,9 @@ tests/       Vitest setup, factories, mocks (not test files — those live next 
 
 ## API & Routing
 
-- New routes go in `routes/`. Context via `routes/trpc/context`. Procedures in `routes/trpc/procedures`.
-- Errors auto-handled by `routes/trpc/error`.
+- **Hono** is the unified HTTP entry point (`api/index.ts`). It handles non-API concerns first (auth, MCP, etc) then delegates to oRPC handlers.
+- **oRPC** is where almost all API logic lives. New endpoints go in `api/routes/` using `protectedProcedure` or `publicProcedure` from `api/procedures.ts`. Do not add business logic in Hono routes directly.
+- Two oRPC handlers serve the same router: **RPCHandler** (`/rpc/*`) for the typed frontend client, and **OpenAPIHandler** (`/api/*`) for external consumers and Swagger docs.
 
 ## Database
 
@@ -57,9 +62,9 @@ tests/       Vitest setup, factories, mocks (not test files — those live next 
 ## Testing
 
 - Run tests with the `/test-backend` skill.
-- Co-locate tests next to source: `routes/billing.ts` → `routes/billing.test.ts`.
+- Co-locate tests next to source: `api/routes/billing.ts` → `api/routes/billing.test.ts`.
 - Integration-style: real routes, real DB (isolated SQLite). Mock only external services.
-- Use `trpcFactory.createRouter()` from `@/tests/factories` for route tests.
+- Use `routerFactory.createRouter()` from `@/tests/factories` for route tests.
 - For patterns and a full example, see `.claude/docs/backend-testing.md`.
 
 ## Review & CI

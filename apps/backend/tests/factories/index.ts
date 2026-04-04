@@ -1,3 +1,3 @@
 export * from './organization-factory';
-export * from './trpc-factory';
+export * from './router-factory';
 export * from './user-factory';

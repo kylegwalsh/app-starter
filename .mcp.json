@@ -3,6 +3,10 @@
     "posthog": {
       "type": "http",
       "url": "https://mcp.posthog.com/mcp"
+    },
+    "my-app": {
+      "type": "http",
+      "url": "https://7iby4brpxi.execute-api.us-east-1.amazonaws.com/mcp"
     }
   }
 }

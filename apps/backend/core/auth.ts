@@ -5,7 +5,7 @@ import { analytics } from '@repo/analytics';
 import { config, env } from '@repo/config';
 import { email } from '@repo/email';
 import { type BetterAuthOptions, betterAuth } from 'better-auth';
-import { admin as adminPlugin, organization as organizationPlugin } from 'better-auth/plugins';
+import { admin as adminPlugin, jwt, organization as organizationPlugin } from 'better-auth/plugins';
 
 import { db } from '@/db';
 
@@ -119,6 +119,8 @@ const authConfig = {
   secret: env.BETTER_AUTH_SECRET,
   baseURL: config.api.url,
   appName: config.app.name,
+  // Disable the JWT plugin's /token endpoint to avoid conflict with oauth-provider's /oauth2/token
+  disabledPaths: ['/token'],
   trustedOrigins: [config.app.url, config.admin.url].filter(Boolean) as string[],
   // Connect to our prisma database
   database: prismaAdapter(db, {
@@ -239,7 +241,7 @@ const authConfig = {
   // Share cookies across subdomains (app.*, admin.*, api.*) when on a custom domain.
   // When no custom domain is set (e.g. *.amazonaws.com), fall back to sameSite: 'none' for cross-origin access.
   advanced: {
-    cookiePrefix: config.isProd ? 'auth' : `auth-${config.stage}`,
+    cookiePrefix: config.isProd ? 'better-auth' : `better-auth-${config.stage}`,
     defaultCookieAttributes: config.hasCustomDomain
       ? {
           // Scope the cookie to be restricted to the correct subdomain
@@ -255,6 +257,7 @@ const authConfig = {
   },
   // Cache the cookie for 5 minutes on the frontend
   session: {
+    storeSessionInDatabase: true,
     cookieCache: {
       enabled: true,
       maxAge: 5 * 60,
@@ -262,17 +265,24 @@ const authConfig = {
   },
   // The various plugins we're using
   plugins: [
+    // Enable admin support (for admin panel)
     adminPlugin(),
+    // Enable OAuth support (for MCP clients)
+    jwt(),
     oauthProvider({
-      loginPage: `${config.app.url}/sign-in`,
-      consentPage: `${config.app.url}/consent`,
+      loginPage: `${config.app.url}/auth/sign-in`,
+      consentPage: `${config.app.url}/authorize`,
+      // Allow MCP clients to register dynamically without a session
       allowDynamicClientRegistration: true,
       allowUnauthenticatedClientRegistration: true,
-      scopes: [
-        { name: 'mcp:tools', description: 'List and execute tools' },
-        { name: 'mcp:resources', description: 'Read resources' },
-      ],
+      // We need to include a trailing slash because some MCP clients expect it
+      validAudiences: [config.api.url, `${config.api.url}/`],
+      // Silence the setup guidance from the oauth plugin
+      silenceWarnings: {
+        oauthAuthServerConfig: true,
+      },
     }),
+    // Enable organization support (core relation in our database models)
     organizationPlugin({
       schema: {
         organization: {
@@ -306,6 +316,7 @@ const authConfig = {
         },
       },
     }),
+    // Enable stripe support (for billing)
     ...(stripePluginInstance ? [stripePluginInstance] : []),
   ],
 } satisfies BetterAuthOptions;

@@ -24,8 +24,8 @@ const pinoLevelToSeverity: Record<string, SeverityNumber> = {
 
 /** Initialize the OTel logger provider for PostHog when running in AWS */
 const { otelLogger, otelProvider } = (() => {
-  // We only ship logs to PostHog if we're running in AWS and have a valid API key
-  if (!config.isAWS || !config.posthog.apiKey) {
+  // We only ship logs to PostHog if it's enabled (usually in deployed AWS environment)
+  if (!config.posthog.isEnabled || !config.posthog.apiKey) {
     return { otelLogger: undefined, otelProvider: undefined };
   }
 
@@ -105,13 +105,17 @@ type PinoLog = {
 const customDestination = {
   write: (payload: string) => {
     try {
-      // When we're running in AWS, we need to do a few things
+      // When we're running in AWS, structure the base logs for cloudwatch
       if (config.isAWS) {
-        // We should structure the logs for cloudwatch
         lambdaDest.write(payload);
+      }
+      // If we're running locally, show the pretty output
+      else {
+        prettyDest.write(payload);
+      }
 
-        // Ship logs to PostHog via OpenTelemetry
-        if (otelLogger) {
+        // Ship logs to PostHog via OpenTelemetry if it's enabled
+        if (config.posthog.isEnabled && otelLogger) {
           const {
             time,
             level,
@@ -137,11 +141,7 @@ const customDestination = {
             },
           });
         }
-      }
-      // If we're running locally, show the pretty output
-      else {
-        prettyDest.write(payload);
-      }
+
     } catch (error) {
       console.error('[log] Failed to handle log:', error);
     }

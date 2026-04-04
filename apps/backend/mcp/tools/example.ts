@@ -1,37 +1,26 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { ai } from '@repo/ai';
+import { z } from 'zod';
 
-import { db } from '@/db';
-import type { McpSession } from '@/mcp/auth';
+import { createTool } from '../utils';
 
-/** Register the example `get-current-user` tool on the MCP server */
-export const registerExampleTool = (server: McpServer, { session }: { session: McpSession }) => {
-  server.tool('get-current-user', 'Returns the authenticated user profile', {}, async () => {
+/** Tells you a joke based on a topic of your choice */
+export const tellMeAJoke = createTool({
+  name: 'tell-me-a-joke',
+  description: 'Tells you a joke based on a topic of your choice',
+  inputSchema: { topic: z.string() },
+  annotations: { readOnlyHint: true, destructiveHint: false },
+  handler: async (args, session) => {
     if (!session.userId) {
-      return {
-        content: [{ type: 'text' as const, text: 'Not authenticated' }],
-        isError: true,
-      };
+      return { content: [{ type: 'text', text: 'Not authenticated' }], isError: true };
     }
 
-    const user = await db.user.findUnique({
-      where: { id: session.userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        createdAt: true,
-      },
+    const result = await ai.streamText({
+      prompt: `Tell me a joke based on the topic: ${args.topic}`,
     });
 
-    if (!user) {
-      return {
-        content: [{ type: 'text' as const, text: 'User not found' }],
-        isError: true,
-      };
-    }
+    // Consume the stream and collect the full text
+    const text = await result.text;
 
-    return {
-      content: [{ type: 'text' as const, text: JSON.stringify(user) }],
-    };
-  });
-};
+    return { content: [{ type: 'text', text }] };
+  },
+});

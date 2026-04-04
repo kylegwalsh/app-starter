@@ -21,8 +21,8 @@ const authConfig = {
       schema: inferOrgAdditionalFields<typeof backendAuth>(),
     }),
     adminClient(),
-    stripeClient({ subscription: true }),
     oauthProviderClient(),
+    stripeClient({ subscription: true }),
   ],
 } satisfies Parameters<typeof createAuthClient>[0];
 
