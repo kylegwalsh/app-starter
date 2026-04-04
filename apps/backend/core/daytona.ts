@@ -1,4 +1,4 @@
-import { Daytona } from '@daytonaio/sdk';
+import { Daytona, SandboxState } from '@daytonaio/sdk';
 import { env } from '@repo/config';
 import { log } from '@repo/logs';
 
@@ -38,13 +38,13 @@ export const sandboxManager = {
         const sandbox = await daytona.get(conversation.sandboxId);
 
         // Restart if stopped
-        if (sandbox.status === 'stopped') {
+        if (sandbox.state === SandboxState.STOPPED) {
           log.info({ sandboxId: sandbox.id, conversationId }, 'Restarting stopped sandbox');
           await sandbox.start();
         }
 
         // Recover if archived
-        if (sandbox.status === 'archived') {
+        if (sandbox.state === SandboxState.ARCHIVED) {
           log.info({ sandboxId: sandbox.id, conversationId }, 'Recovering archived sandbox');
           await sandbox.recover();
         }
@@ -59,7 +59,6 @@ export const sandboxManager = {
     // Create a new sandbox
     const sandbox = await daytona.create({
       language: 'python',
-      resources: { cpu: 1, memory: 2, disk: 5 },
       autoStopInterval: 15,
       autoArchiveInterval: 10_080, // 7 days
       autoDeleteInterval: 43_200, // 30 days

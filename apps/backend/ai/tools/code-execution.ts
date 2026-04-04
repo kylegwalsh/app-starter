@@ -9,10 +9,7 @@ import { createTool, type ToolResult } from '../utils';
 const ok = (text: string): ToolResult => ({ content: [{ type: 'text', text }] });
 
 /** Helper to build an error tool result */
-const fail = (text: string): ToolResult => ({
-  content: [{ type: 'text', text }],
-  isError: true,
-});
+const fail = (text: string): ToolResult => ({ content: [{ type: 'text', text }], isError: true });
 
 /** Get the sandbox, throwing if unavailable so the handler's catch block returns a clean error */
 const requireSandbox = async (conversationId: string | undefined) => {
@@ -36,28 +33,12 @@ export const runCode = createTool({
   handler: async (args, session) => {
     try {
       const sandbox = await requireSandbox(session.conversationId);
-      // oxlint-disable-next-line no-unsafe-member-access: Daytona SDK types not available in worktree
-      const response = await (
-        sandbox as Record<string, unknown> & {
-          process: {
-            codeRun: (
-              code: string,
-              env: undefined,
-              timeout: number,
-            ) => Promise<{ result: string; exitCode: number }>;
-          };
-        }
-      ).process.codeRun(args.code, undefined, args.timeout ?? 30);
+      const response = await sandbox.process.codeRun(args.code, undefined, args.timeout ?? 30);
 
       // Check for generated images in /output/
       let outputNote = '';
       try {
-        // oxlint-disable-next-line no-unsafe-member-access: Daytona SDK types not available
-        const outputFiles = await (
-          sandbox as Record<string, unknown> & {
-            fs: { listFiles: (path: string) => Promise<{ name: string; isDir: boolean }[]> };
-          }
-        ).fs.listFiles('/output');
+        const outputFiles = await sandbox.fs.listFiles('/output');
         const imageFiles = outputFiles.filter(
           (f) => !f.isDir && /\.(png|jpg|jpeg|gif|svg)$/i.test(f.name),
         );
@@ -95,12 +76,7 @@ export const sandboxWriteFile = createTool({
   handler: async (args, session) => {
     try {
       const sandbox = await requireSandbox(session.conversationId);
-      // oxlint-disable-next-line no-unsafe-member-access: Daytona SDK types not available
-      await (
-        sandbox as Record<string, unknown> & {
-          fs: { uploadFile: (content: Buffer, path: string) => Promise<void> };
-        }
-      ).fs.uploadFile(Buffer.from(args.content, 'utf8'), args.path);
+      await sandbox.fs.uploadFile(Buffer.from(args.content, 'utf8'), args.path);
       return ok(`File written to ${args.path}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : `Failed to write file: ${args.path}`;
@@ -123,12 +99,7 @@ export const sandboxReadFile = createTool({
   handler: async (args, session) => {
     try {
       const sandbox = await requireSandbox(session.conversationId);
-      // oxlint-disable-next-line no-unsafe-member-access: Daytona SDK types not available
-      const content: unknown = await (
-        sandbox as Record<string, unknown> & {
-          fs: { downloadFile: (path: string) => Promise<unknown> };
-        }
-      ).fs.downloadFile(args.path);
+      const content = await sandbox.fs.downloadFile(args.path);
       const text = typeof content === 'string' ? content : String(content);
       return ok(text);
     } catch (error) {
@@ -154,19 +125,12 @@ export const sandboxExecuteCommand = createTool({
   handler: async (args, session) => {
     try {
       const sandbox = await requireSandbox(session.conversationId);
-      // oxlint-disable-next-line no-unsafe-member-access: Daytona SDK types not available
-      const response = await (
-        sandbox as Record<string, unknown> & {
-          process: {
-            executeCommand: (
-              cmd: string,
-              cwd?: string,
-              env?: undefined,
-              timeout?: number,
-            ) => Promise<{ result: string; exitCode: number }>;
-          };
-        }
-      ).process.executeCommand(args.command, args.cwd, undefined, args.timeout ?? 30);
+      const response = await sandbox.process.executeCommand(
+        args.command,
+        args.cwd,
+        undefined,
+        args.timeout ?? 30,
+      );
 
       if (response.exitCode !== 0) {
         return fail(`Error (exit code ${String(response.exitCode)}):\n${response.result}`);
