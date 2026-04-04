@@ -5,6 +5,7 @@ import type { z } from 'zod';
 export type McpSession = {
   accessToken: string;
   userId?: string;
+  conversationId?: string;
 };
 
 /** The result returned by an MCP tool handler */

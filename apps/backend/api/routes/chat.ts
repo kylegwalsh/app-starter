@@ -55,6 +55,7 @@ chatApp.post('/', async (c) => {
   const tools = toAISDKTools({
     accessToken: '',
     userId: user.id,
+    conversationId: conversation.id,
   });
 
   // If this is a new conversation, generate an AI title in parallel with the chat stream
@@ -90,6 +91,16 @@ chatApp.post('/', async (c) => {
 
   // Stream the response using our traced wrapper
   const streamResult = await ai.streamText({
+    system: `You are a helpful AI assistant with access to a persistent code execution environment.
+
+When you need to analyze data, perform calculations, or generate visualizations:
+- Use the run-code tool to execute Python code
+- Use write-file to save data files for processing
+- Use read-file to check outputs
+- Use execute-command to install packages (e.g., pip install pandas matplotlib)
+
+Files persist across messages in this conversation. You can build on previous work.
+When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.png')).`,
     messages: convertToModelMessages(messages),
     tools,
     stopWhen: stepCountIs(5),

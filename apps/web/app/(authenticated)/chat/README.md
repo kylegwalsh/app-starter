@@ -141,3 +141,58 @@ Follows the ChatGPT pattern:
 - A **"Try again"** button calls `regenerate()` to retry the last response
 - The user's message is never lost
 - The error replaces the typing indicator
+
+## Feedback
+
+- **Thumbs up** — immediate submit, no popover. Scores the Langfuse trace as positive.
+- **Thumbs down** — opens a popover asking "How could this response be improved?" with an optional comment. Scores the Langfuse trace as negative with the comment.
+- Feedback is stored as `Boolean` on the Message model. Comments are sent to Langfuse only (not stored in DB).
+- The Langfuse `traceId` flows from backend → frontend via `messageMetadata` in the AI SDK stream.
+
+## Code Execution (Daytona)
+
+Each conversation has a persistent sandboxed environment powered by [Daytona](https://daytona.io). The AI can run Python code, read/write files, and install packages. Files persist across messages.
+
+### How It Works
+
+```
+User: "Analyze this data"
+  │
+  AI decides what to do, calls tools:
+  ├─ execute-command: "pip install pandas matplotlib"
+  ├─ write-file: saves data to /data/input.csv
+  ├─ run-code: Python script that reads, processes, and charts the data
+  │
+  AI responds with insights + inline chart
+```
+
+### Tools
+
+| Tool              | Description                                |
+| ----------------- | ------------------------------------------ |
+| `run-code`        | Execute Python code in the sandbox         |
+| `write-file`      | Write content to a file in the sandbox     |
+| `read-file`       | Read a file from the sandbox               |
+| `execute-command` | Run shell commands (pip install, ls, etc.) |
+
+### Sandbox Lifecycle
+
+- **Auto-stop**: 15 min idle (restarted transparently on next use)
+- **Auto-archive**: 7 days stopped (restored transparently)
+- **Auto-delete**: 30 days (starts fresh)
+
+### Data Pipeline Pattern (Future)
+
+For large datasets, tools write directly to the sandbox filesystem rather than passing data through the AI's context window:
+
+```
+Tool: query-data({ sql: "SELECT ...", outputPath: "/data/results.csv" })
+  → Executes SQL against read-only replica
+  → Streams 100K rows directly into sandbox as CSV
+  → Returns to AI: "Wrote 100,000 rows to /data/results.csv (45MB)"
+
+Tool: run-code({ code: "df = pd.read_csv('/data/results.csv')..." })
+  → Processes the data in the sandbox
+```
+
+The AI orchestrates the flow but never handles bulk data.

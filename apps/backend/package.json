@@ -30,6 +30,7 @@
     "@better-auth/oauth-provider": "1.5.4",
     "@better-auth/prisma-adapter": "1.5.4",
     "@better-auth/stripe": "1.5.4",
+    "@daytonaio/sdk": "0.1.0",
     "@modelcontextprotocol/sdk": "1.27.1",
     "@orpc/openapi": "1.13.8",
     "@orpc/server": "1.13.8",

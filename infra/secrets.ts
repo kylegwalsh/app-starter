@@ -21,6 +21,9 @@ export const LOOPS_API_KEY = new sst.Secret('LOOPS_API_KEY');
 // export const STRIPE_SECRET_KEY = new sst.Secret('STRIPE_SECRET_KEY');
 // export const STRIPE_WEBHOOK_SECRET = new sst.Secret('STRIPE_WEBHOOK_SECRET');
 
+// Daytona (code execution sandbox)
+export const DAYTONA_API_KEY = new sst.Secret('DAYTONA_API_KEY');
+
 // CloudFront (file uploads CDN)
 export const CLOUDFRONT_KEY_PAIR_ID = new sst.Secret('CLOUDFRONT_KEY_PAIR_ID');
 export const CLOUDFRONT_PRIVATE_KEY = new sst.Secret('CLOUDFRONT_PRIVATE_KEY');
