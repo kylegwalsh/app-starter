@@ -3,7 +3,7 @@ import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/
 import { config } from '@repo/config';
 import { Hono } from 'hono';
 
-import { createMcpServer } from '@/mcp/server';
+import { createMcpServer } from '@/ai/mcp/server';
 
 /** MCP sub-app — mounted at /mcp in the main API */
 const mcpAdapter = new Hono();

@@ -12,7 +12,7 @@ api/            All of our API code (hono + oRPC)
 api/routes/     oRPC routers (most new API work happens here)
 api/middleware/ Hono middleware (CORS, timing)
 api/adapters/   Protocol adapters (MCP)
-mcp/            MCP server and tools
+ai/             AI tools, MCP server, and tool adapter
 core/           Core services (auth, stripe, re-usable business logic helpers)
 db/             Prisma schema, migrations, connection utilities
 tests/          Vitest setup, factories, mocks (not test files — those live next to source)

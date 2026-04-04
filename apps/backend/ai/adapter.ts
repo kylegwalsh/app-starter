@@ -3,17 +3,17 @@ import { zodSchema } from 'ai';
 import { z } from 'zod';
 
 // oxlint-disable-next-line no-namespace: Namespace import used to auto-register all exported tools
-import * as mcpTools from './tools';
-import type { McpSession, McpTool } from './utils';
+import * as allTools from './tools';
+import type { AiTool, ToolSession } from './utils';
 
 /**
- * Convert our MCP tool definitions into native AI SDK tools.
+ * Convert our tool definitions into native AI SDK tools.
  * Executes in-process — no network hops, no extra auth round-trips.
  */
-export const toAISDKTools = (session: McpSession): ToolSet => {
+export const toAISDKTools = (session: ToolSession): ToolSet => {
   const aiTools: ToolSet = {};
 
-  for (const exported of Object.values(mcpTools) as unknown as McpTool[]) {
+  for (const exported of Object.values(allTools) as unknown as AiTool[]) {
     if (!('isTool' in exported && exported.isTool)) {
       continue;
     }

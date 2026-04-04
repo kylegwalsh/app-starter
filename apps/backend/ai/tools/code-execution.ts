@@ -3,13 +3,13 @@ import { z } from 'zod';
 
 import { sandboxManager } from '@/core/daytona';
 
-import { createTool, type McpToolResult } from '../utils';
+import { createTool, type ToolResult } from '../utils';
 
 /** Helper to build a successful tool result */
-const ok = (text: string): McpToolResult => ({ content: [{ type: 'text', text }] });
+const ok = (text: string): ToolResult => ({ content: [{ type: 'text', text }] });
 
 /** Helper to build an error tool result */
-const fail = (text: string): McpToolResult => ({
+const fail = (text: string): ToolResult => ({
   content: [{ type: 'text', text }],
   isError: true,
 });
@@ -25,6 +25,7 @@ const requireSandbox = async (conversationId: string | undefined) => {
 /** Execute Python code in a persistent sandboxed environment */
 export const runCode = createTool({
   name: 'run-code',
+  mcpSupported: false,
   description:
     'Execute Python code in a persistent sandboxed environment. Files and variables persist across calls within the conversation. Use for data analysis, calculations, file processing, and generating charts. Save charts to /output/ directory.',
   inputSchema: {
@@ -83,6 +84,7 @@ export const runCode = createTool({
 /** Write content to a file in the sandbox */
 export const sandboxWriteFile = createTool({
   name: 'write-file',
+  mcpSupported: false,
   description:
     'Write content to a file in the sandbox. Use for saving data, scripts, configs, or CSV files for analysis.',
   inputSchema: {
@@ -111,6 +113,7 @@ export const sandboxWriteFile = createTool({
 /** Read a file from the sandbox */
 export const sandboxReadFile = createTool({
   name: 'read-file',
+  mcpSupported: false,
   description:
     'Read a file from the sandbox. Use to check results, review generated data, or read analysis output.',
   inputSchema: {
@@ -139,6 +142,7 @@ export const sandboxReadFile = createTool({
 /** Run a shell command in the sandbox */
 export const sandboxExecuteCommand = createTool({
   name: 'execute-command',
+  mcpSupported: false,
   description:
     'Run a shell command in the sandbox. Use for installing packages (pip install), listing files (ls), or running scripts.',
   inputSchema: {

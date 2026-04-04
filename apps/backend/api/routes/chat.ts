@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 import { auth } from '@/core';
 import { db } from '@/db';
-import { toAISDKTools } from '@/mcp/adapter';
+import { toAISDKTools } from '@/ai/adapter';
 
 /** Chat sub-app — mounted at /api/chat in the main API */
 const chatApp = new Hono();
