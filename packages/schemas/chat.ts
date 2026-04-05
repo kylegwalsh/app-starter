@@ -23,9 +23,10 @@ export const chatSchema = {
     comment: z.string().max(1000).optional(),
   }),
 
-  /** Schema for message metadata passed through the stream (contains traceId) */
+  /** Schema for message metadata — flows through the stream and persists with the message */
   messageMetadata: z.object({
     traceId: z.string().optional(),
+    feedback: z.boolean().optional(),
   }),
 
   /** Schema for the chat message input (validated on the backend) */
@@ -36,7 +37,7 @@ export const chatSchema = {
         .object({
           id: z.string(),
           role: z.enum(['user', 'assistant', 'system']),
-          parts: z.array(z.record(z.unknown())),
+          parts: z.array(z.object({ type: z.string() }).passthrough()),
         })
         .passthrough(),
     ),

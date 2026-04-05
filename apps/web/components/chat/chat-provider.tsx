@@ -9,6 +9,7 @@ import {
   createContext,
   use,
   useCallback,
+  useEffect,
   useMemo,
   useState,
   type FormEvent,
@@ -57,6 +58,17 @@ function ChatProvider({ conversationId, initialMessages, children }: ChatProvide
   const [input, setInput] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Clean up object URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      for (const file of attachedFiles) {
+        if (file.previewUrl) {
+          URL.revokeObjectURL(file.previewUrl);
+        }
+      }
+    };
+  }, [attachedFiles]);
 
   const transport = useMemo(
     () =>

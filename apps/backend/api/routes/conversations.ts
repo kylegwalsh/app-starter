@@ -70,12 +70,16 @@ export const conversationsRouter = orpc.prefix('/conversations').router({
         throw new ORPCError('NOT_FOUND', { message: 'Conversation not found' });
       }
 
-      // Reconstruct UIMessages from stored data
-      const messages: UIMessage[] = conversation.messages.map((msg) => ({
+      // Reconstruct UIMessages with metadata (traceId + feedback)
+      const messages = conversation.messages.map((msg) => ({
         id: msg.id,
         role: msg.role as UIMessage['role'],
         parts: msg.parts as unknown as UIMessage['parts'],
         createdAt: msg.createdAt,
+        metadata: {
+          traceId: msg.traceId ?? undefined,
+          feedback: msg.feedback ?? undefined,
+        },
       }));
 
       return {
@@ -129,10 +133,22 @@ export const conversationsRouter = orpc.prefix('/conversations').router({
     .handler(async ({ context, input }) => {
       const conversation = await db.conversation.findFirst({
         where: { id: input.id, userId: context.user.id, organizationId: context.organization.id },
+        select: { id: true, sandboxId: true },
       });
 
       if (!conversation) {
         throw new ORPCError('NOT_FOUND', { message: 'Conversation not found' });
+      }
+
+      // Stop the associated Daytona sandbox if one exists
+      if (conversation.sandboxId) {
+        try {
+          const { sandboxManager } = await import('@/core/daytona');
+          const sandbox = await sandboxManager.getOrCreate(conversation.id);
+          await sandbox.stop();
+        } catch {
+          // Sandbox may already be gone — that's fine
+        }
       }
 
       await db.conversation.delete({ where: { id: input.id } });

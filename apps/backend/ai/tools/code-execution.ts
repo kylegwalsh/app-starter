@@ -110,12 +110,34 @@ export const sandboxReadFile = createTool({
   },
 });
 
+/** Allowed command prefixes — restricts what the AI can execute in the sandbox shell */
+const ALLOWED_COMMAND_PREFIXES = [
+  'pip install',
+  'pip3 install',
+  'python',
+  'python3',
+  'ls',
+  'cat',
+  'head',
+  'tail',
+  'wc',
+  'find',
+  'grep',
+  'mkdir',
+  'cp',
+  'mv',
+  'echo',
+  'pwd',
+  'cd',
+  'chmod',
+];
+
 /** Run a shell command in the sandbox */
 export const sandboxExecuteCommand = createTool({
   name: 'execute-command',
   mcpSupported: false,
   description:
-    'Run a shell command in the sandbox. Use for installing packages (pip install), listing files (ls), or running scripts.',
+    'Run a shell command in the sandbox. Allowed commands: pip install, python, ls, cat, head, tail, wc, find, grep, mkdir, cp, mv, echo, pwd. Use for installing packages and running scripts.',
   inputSchema: {
     command: z.string().describe('Shell command to run'),
     cwd: z.string().optional().describe('Working directory'),
@@ -123,6 +145,17 @@ export const sandboxExecuteCommand = createTool({
   },
   annotations: { readOnlyHint: false, destructiveHint: false },
   handler: async (args, session) => {
+    // Validate command against allowlist to prevent prompt injection abuse
+    const commandBase = args.command.trim().split(/\s+/)[0] ?? '';
+    const isAllowed = ALLOWED_COMMAND_PREFIXES.some(
+      (prefix) => args.command.trim().startsWith(prefix) || commandBase === prefix.split(' ')[0],
+    );
+    if (!isAllowed) {
+      return fail(
+        `Command "${commandBase}" is not allowed. Permitted: ${ALLOWED_COMMAND_PREFIXES.join(', ')}`,
+      );
+    }
+
     try {
       const sandbox = await requireSandbox(session.conversationId);
       const response = await sandbox.process.executeCommand(

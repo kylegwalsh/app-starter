@@ -7,9 +7,9 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 
+import { toAISDKTools } from '@/ai/adapter';
 import { auth } from '@/core';
 import { db } from '@/db';
-import { toAISDKTools } from '@/ai/adapter';
 
 /** Chat sub-app — mounted at /api/chat in the main API */
 const chatApp = new Hono();
@@ -22,7 +22,10 @@ chatApp.post('/', async (c) => {
   }
 
   const user = sessionData.user;
-  const organizationId = sessionData.session?.activeOrganizationId ?? undefined;
+  const organizationId = sessionData.session?.activeOrganizationId;
+  if (!organizationId) {
+    throw new HTTPException(403, { message: 'Active organization required' });
+  }
 
   // Validate the request body
   const parseResult = chatSchema.chatMessage.safeParse(await c.req.json());
@@ -34,20 +37,18 @@ chatApp.post('/', async (c) => {
   // Validated above — cast to UIMessage[] since the SDK's full part union can't be expressed in Zod
   const messages = parseResult.data.messages as unknown as UIMessage[];
 
-  // Ensure the conversation exists (create if new), scoped to user + organization
-  let conversation = conversationId
-    ? await db.conversation.findFirst({
-        where: { id: conversationId, userId: user.id, organizationId },
-      })
-    : null;
-
-  if (!conversation) {
+  // Load existing conversation or create a new one
+  let conversation;
+  if (conversationId) {
+    conversation = await db.conversation.findFirst({
+      where: { id: conversationId, userId: user.id, organizationId },
+    });
+    if (!conversation) {
+      throw new HTTPException(404, { message: 'Conversation not found' });
+    }
+  } else {
     conversation = await db.conversation.create({
-      data: {
-        id: conversationId,
-        userId: user.id,
-        organizationId,
-      },
+      data: { userId: user.id, organizationId },
     });
   }
 
@@ -106,10 +107,12 @@ When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.
     stopWhen: stepCountIs(5),
   });
 
-  // Track existing message count so we only persist new messages
-  const existingMessageCount = await db.message.count({
+  // Get existing message IDs for deduplication (avoids race conditions vs index-based slicing)
+  const existingMessages = await db.message.findMany({
     where: { conversationId: conversation.id },
+    select: { id: true },
   });
+  const existingMessageIds = new Set(existingMessages.map((m) => m.id));
 
   // Get the Langfuse trace ID so we can pass it to the client for feedback scoring
   const traceId = ai.getRequestTraceId();
@@ -126,8 +129,8 @@ When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.
     },
     onFinish: async ({ messages: allMessages }) => {
       try {
-        // Only persist messages that are new (after the existing ones)
-        const newMessages = allMessages.slice(existingMessageCount);
+        // Only persist messages that don't already exist in the DB
+        const newMessages = allMessages.filter((msg) => !existingMessageIds.has(msg.id));
         if (newMessages.length === 0) {
           return;
         }
