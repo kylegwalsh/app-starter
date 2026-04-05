@@ -1,3 +1,4 @@
+import { CLOUDFRONT_PUBLIC_KEY } from './secrets';
 import { domain } from './utils';
 
 // Private S3 bucket for chat file uploads
@@ -7,7 +8,7 @@ export const uploadsBucket = new sst.aws.Bucket('uploads', {
 
 // CloudFront key group for signed cookies (key pair must be created manually in AWS)
 const cloudfrontPublicKey = new aws.cloudfront.PublicKey('uploadsCdnPublicKey', {
-  encodedKey: sst.Secret.value('CLOUDFRONT_PUBLIC_KEY'),
+  encodedKey: CLOUDFRONT_PUBLIC_KEY.value,
   name: `uploads-cdn-public-key-${$app.stage}`,
 });
 
