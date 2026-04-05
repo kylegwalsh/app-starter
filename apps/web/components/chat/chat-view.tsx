@@ -60,9 +60,7 @@ function ChatView() {
 
             return (
               <ChatMessage
-                existingFeedback={
-                  (message.metadata as { feedback?: boolean } | undefined)?.feedback ?? null
-                }
+                existingFeedback={message.metadata?.feedback ?? null}
                 isLatest={isLatest}
                 isStreaming={isLoading && isLatest}
                 key={message.id}

@@ -15,8 +15,13 @@ import {
   type FormEvent,
   type ReactNode,
 } from 'react';
+import type { z } from 'zod';
 
 import { orpc } from '@/core/orpc';
+
+/** Our chat message type with typed metadata (traceId, feedback) */
+type ChatMessageMetadata = z.infer<typeof chatSchema.messageMetadata>;
+type ChatMessage = UIMessage<ChatMessageMetadata>;
 
 /** A file attached to a message before sending */
 type AttachedFile = {
@@ -25,7 +30,7 @@ type AttachedFile = {
 };
 
 type ChatContextValue = {
-  messages: UIMessage[];
+  messages: ChatMessage[];
   status: string;
   error: Error | undefined;
   input: string;
@@ -49,7 +54,7 @@ type ChatProviderProps = {
   /** Existing conversation ID (for loading a saved conversation) */
   conversationId?: string;
   /** Pre-loaded messages from the database */
-  initialMessages?: UIMessage[];
+  initialMessages?: ChatMessage[];
   children: ReactNode;
 };
 
@@ -79,7 +84,7 @@ function ChatProvider({ conversationId, initialMessages, children }: ChatProvide
     [],
   );
 
-  const { messages, status, error, sendMessage, stop, regenerate } = useChat({
+  const { messages, status, error, sendMessage, stop, regenerate } = useChat<ChatMessage>({
     transport,
     id: conversationId,
     messages: initialMessages,
