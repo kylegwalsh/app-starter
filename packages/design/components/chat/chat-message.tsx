@@ -49,8 +49,9 @@ function ChatMessage({
   className,
 }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
-  // true = thumbs up, false = thumbs down, null = no feedback
-  const [feedback, setFeedback] = useState<boolean | null>(existingFeedback);
+  // Local feedback override — takes precedence over prop when user submits feedback this session
+  const [localFeedback, setLocalFeedback] = useState<boolean | null>(null);
+  const feedback = localFeedback ?? existingFeedback ?? null;
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [comment, setComment] = useState('');
   const isAssistant = role === 'assistant';
@@ -62,7 +63,7 @@ function ChatMessage({
   };
 
   const handleThumbsUp = () => {
-    setFeedback(true);
+    setLocalFeedback(true);
     onFeedback?.('up');
   };
 
@@ -71,7 +72,7 @@ function ChatMessage({
   };
 
   const handleSubmitNegativeFeedback = () => {
-    setFeedback(false);
+    setLocalFeedback(false);
     onFeedback?.('down', comment.trim() || undefined);
     setPopoverOpen(false);
     setComment('');

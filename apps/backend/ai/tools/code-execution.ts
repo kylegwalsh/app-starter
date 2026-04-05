@@ -145,6 +145,12 @@ export const sandboxExecuteCommand = createTool({
   },
   annotations: { readOnlyHint: false, destructiveHint: false },
   handler: async (args, session) => {
+    // Block shell metacharacters to prevent command chaining via prompt injection
+    const SHELL_META = /[;|&`$><]/;
+    if (SHELL_META.test(args.command)) {
+      return fail('Shell metacharacters (;|&`$><) are not permitted in commands.');
+    }
+
     // Validate command against allowlist to prevent prompt injection abuse
     const commandBase = args.command.trim().split(/\s+/)[0] ?? '';
     const isAllowed = ALLOWED_COMMAND_PREFIXES.some(

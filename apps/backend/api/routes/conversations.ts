@@ -140,11 +140,12 @@ export const conversationsRouter = orpc.prefix('/conversations').router({
         throw new ORPCError('NOT_FOUND', { message: 'Conversation not found' });
       }
 
-      // Stop the associated Daytona sandbox if one exists
+      // Stop the associated Daytona sandbox if one exists (use get, not getOrCreate, to avoid creating a new one)
       if (conversation.sandboxId) {
         try {
-          const { sandboxManager } = await import('@/core/daytona');
-          const sandbox = await sandboxManager.getOrCreate(conversation.id);
+          const { Daytona } = await import('@daytonaio/sdk');
+          const daytona = new Daytona();
+          const sandbox = await daytona.get(conversation.sandboxId);
           await sandbox.stop();
         } catch {
           // Sandbox may already be gone — that's fine

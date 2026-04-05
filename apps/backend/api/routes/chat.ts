@@ -136,6 +136,7 @@ When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.
         }
 
         const messageData: Prisma.MessageCreateManyInput[] = newMessages.map((msg) => ({
+          id: msg.id,
           conversationId: conversation.id,
           role: msg.role,
           parts: msg.parts as Prisma.InputJsonValue,

@@ -82,12 +82,12 @@ function ChatView() {
                 }}
                 role={message.role}
               >
-                {message.parts.map((part) => {
+                {message.parts.map((part, partIndex) => {
                   if (part.type === 'text') {
                     return (
                       <div
                         className="prose prose-sm dark:prose-invert max-w-none"
-                        key={`${message.id}-text`}
+                        key={`${message.id}-text-${String(partIndex)}`}
                       >
                         <Markdown remarkPlugins={[remarkGfm]}>{part.text}</Markdown>
                       </div>
