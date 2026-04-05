@@ -6,7 +6,7 @@ export const uploadsBucket = new sst.aws.Bucket('uploads', {
   access: 'cloudfront',
 });
 
-// CloudFront key group for signed cookies (key pair must be created manually in AWS)
+// CloudFront key group for signed cookies
 const cloudfrontPublicKey = new aws.cloudfront.PublicKey('uploadsCdnPublicKey', {
   encodedKey: CLOUDFRONT_PUBLIC_KEY.value,
   name: `uploads-cdn-public-key-${$app.stage}`,
