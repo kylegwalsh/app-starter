@@ -37,9 +37,20 @@
 
 # CHAT SDK
 
-- Connect chat SDK
+- ~~Connect chat SDK~~
+- ~~Build chat UI for web-app~~
 - Create slack app
-- Build chat UI for web-app
+
+## AI
+
+- Add Daytona setup to init script (sign up at daytona.io, get API key, `sst secret set DAYTONA_API_KEY <value>`)
+- Add CloudFront key pair setup to init script:
+  - Create a CloudFront key pair in AWS (IAM > Public keys)
+  - `sst secret set CLOUDFRONT_PUBLIC_KEY <pem-encoded-public-key>`
+  - `sst secret set CLOUDFRONT_PRIVATE_KEY <pem-encoded-private-key>`
+  - `sst secret set CLOUDFRONT_KEY_PAIR_ID <key-pair-id>`
+- Make storage infra (S3 + CloudFront) conditional — only deploy when CloudFront secrets are set, so `bun dev` works without them
+- Make Daytona sandbox manager fail gracefully when API key is not configured (return tool error, don't crash)
 
 # EVALS
 
