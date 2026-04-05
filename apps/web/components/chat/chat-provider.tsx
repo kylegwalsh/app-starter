@@ -170,7 +170,7 @@ function ChatProvider({ conversationId, initialMessages, children }: ChatProvide
 
               return {
                 type: 'file' as const,
-                url: result.cdnUrl as string,
+                url: result.cdnUrl,
                 mediaType: attached.file.type,
               };
             }),

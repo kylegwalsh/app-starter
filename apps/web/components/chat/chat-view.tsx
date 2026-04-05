@@ -9,6 +9,7 @@ import {
   ChatToolInvocation,
   ChatTypingIndicator,
 } from '@repo/design/components/chat';
+import { isFileUIPart } from 'ai';
 import { FileIcon } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -54,7 +55,10 @@ function ChatView() {
         )}
 
         {messages
-          .filter((m) => m.role === 'user' || m.role === 'assistant')
+          .filter(
+            (m): m is typeof m & { role: 'user' | 'assistant' } =>
+              m.role === 'user' || m.role === 'assistant',
+          )
           .map((message, index, filtered) => {
             const isLatest = message.role === 'assistant' && index === filtered.length - 1;
 
@@ -76,7 +80,7 @@ function ChatView() {
                     .join('\n');
                   navigator.clipboard.writeText(text);
                 }}
-                role={message.role as 'user' | 'assistant'}
+                role={message.role}
               >
                 {message.parts.map((part) => {
                   if (part.type === 'text') {
@@ -90,55 +94,51 @@ function ChatView() {
                     );
                   }
 
-                  // Render file/image parts
-                  if (part.type === 'file') {
-                    const filePart = part as { mediaType: string; url: string; filename?: string };
-                    const isImage = filePart.mediaType.startsWith('image/');
+                  // Render file/image parts (narrowed via SDK type guard)
+                  if (isFileUIPart(part)) {
+                    const isImage = part.mediaType.startsWith('image/');
 
-                    if (isImage) {
+                    if (isImage && part.url) {
                       return (
                         // oxlint-disable-next-line no-img-element: CDN-hosted images, not optimizable by next/image
                         <img
-                          alt={filePart.filename ?? 'Uploaded image'}
+                          alt={part.filename ?? 'Uploaded image'}
                           className="max-h-64 rounded-lg object-contain"
-                          key={filePart.url}
-                          src={filePart.url}
+                          key={part.url}
+                          src={part.url}
                         />
                       );
                     }
 
-                    return (
-                      <a
-                        className="bg-muted/50 hover:bg-muted flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
-                        href={filePart.url}
-                        key={filePart.url}
-                        rel="noopener noreferrer"
-                        target="_blank"
-                      >
-                        <FileIcon className="text-muted-foreground size-4" />
-                        {filePart.filename ?? 'Download file'}
-                      </a>
-                    );
+                    if (part.url) {
+                      return (
+                        <a
+                          className="bg-muted/50 hover:bg-muted flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
+                          href={part.url}
+                          key={part.url}
+                          rel="noopener noreferrer"
+                          target="_blank"
+                        >
+                          <FileIcon className="text-muted-foreground size-4" />
+                          {part.filename ?? 'Download file'}
+                        </a>
+                      );
+                    }
                   }
 
-                  // Handle tool invocations via the SDK's discriminated part types
-                  if (part.type.startsWith('tool-') && 'toolCallId' in part) {
-                    const toolPart = part as {
-                      toolName: string;
-                      toolCallId: string;
-                      state: string;
-                      output?: unknown;
-                      errorText?: string;
-                    };
+                  // Handle tool invocations (dynamic tools from MCP adapter)
+                  if (part.type === 'dynamic-tool') {
                     return (
                       <ChatToolInvocation
-                        error={toolPart.errorText}
-                        key={toolPart.toolCallId}
+                        error={'errorText' in part ? part.errorText : undefined}
+                        key={part.toolCallId}
                         result={
-                          toolPart.output != null ? JSON.stringify(toolPart.output) : undefined
+                          'output' in part && part.output != null
+                            ? JSON.stringify(part.output)
+                            : undefined
                         }
-                        state={mapToolState(toolPart.state)}
-                        toolName={toolPart.toolName}
+                        state={mapToolState(part.state)}
+                        toolName={part.toolName}
                       />
                     );
                   }
