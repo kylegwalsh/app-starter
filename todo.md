@@ -51,6 +51,12 @@
   - `sst secret set CLOUDFRONT_KEY_PAIR_ID <key-pair-id>`
 - Make storage infra (S3 + CloudFront) conditional — only deploy when CloudFront secrets are set, so `bun dev` works without them
 - Make Daytona sandbox manager fail gracefully when API key is not configured (return tool error, don't crash)
+- Disable chat routes / MCP server if AI is not set up during init (skip importing infra/storage, skip chat route mounting, etc.)
+- Auto-generate CloudFront RSA key pair in init script (`openssl genrsa 2048` + `openssl rsa -pubout`)
+
+## Worktree
+
+- Verify `bun setup-worktree` works correctly after the .sst symlink change (now symlinks entire .sst dir instead of just .sst/platform)
 
 # EVALS
 
