@@ -44,9 +44,9 @@ When working in a git worktree (e.g. `.claude/worktrees/<name>`), run this once 
 bun setup-worktree
 ```
 
-This installs dependencies and symlinks `.sst/platform` from the main worktree so SST global types (`$app`, `sst`) are available for type-aware linting. Without this, `bun lint` will report `Cannot find name '$app'` / `Cannot find name 'sst'` errors.
+This installs dependencies and symlinks the `.sst` directory from the main worktree so SST global types (`$app`, `sst`), generated `Resource` types, and deployment state are all available. Without this, `bun lint` will report `Cannot find name '$app'` / `Cannot find name 'sst'` errors.
 
-> **Prerequisite:** The main repo must have `.sst/platform` already generated (run `bun dev` at least once in the main repo).
+> **Prerequisite:** The main repo must have `.sst` already generated (run `bun dev` at least once in the main repo).
 
 ## Principles
 

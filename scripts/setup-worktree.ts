@@ -8,13 +8,14 @@
  *
  * What it does:
  *   1. Installs dependencies (bun install)
- *   2. Symlinks .sst/platform from the main worktree so SST global types
- *      ($app, sst) are available for type-aware linting.
- *      Uses a directory junction on Windows (no admin rights required).
+ *   2. Symlinks the entire .sst directory from the main worktree so SST
+ *      global types ($app, sst), generated Resource types, and deployment
+ *      state are all available. Uses a directory junction on Windows
+ *      (no admin rights required).
  */
 
 import { execSync } from 'node:child_process';
-import { existsSync, mkdirSync, symlinkSync } from 'node:fs';
+import { existsSync, symlinkSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 // Resolve the main repo root via git's common dir
@@ -32,32 +33,28 @@ if (process.cwd() === mainRoot) {
   process.exit(0);
 }
 
-const platformSrc = join(mainRoot, '.sst', 'platform');
-const sstDir = join(process.cwd(), '.sst');
-const platformDest = join(sstDir, 'platform');
+const sstSrc = join(mainRoot, '.sst');
+const sstDest = join(process.cwd(), '.sst');
 
 // 1. Install dependencies
 console.log('Installing dependencies...');
 execSync('bun install', { stdio: 'inherit' });
 
-// 2. Link .sst/platform
-if (!existsSync(platformSrc)) {
+// 2. Link .sst
+if (!existsSync(sstSrc)) {
   console.error(
-    `\n.sst/platform not found at: ${platformSrc}\nRun 'sst dev' or 'bun dev' in the main repo first to generate SST types.\n`,
+    `\n.sst not found at: ${sstSrc}\nRun 'sst dev' or 'bun dev' in the main repo first to generate SST types.\n`,
   );
   process.exit(1);
 }
 
-if (existsSync(platformDest)) {
-  console.log('.sst/platform already linked, skipping.');
+if (existsSync(sstDest)) {
+  console.log('.sst already linked, skipping.');
 } else {
-  if (!existsSync(sstDir)) {
-    mkdirSync(sstDir);
-  }
   // 'junction' works without elevated privileges on Windows; behaves as a
   // regular symlink on macOS/Linux.
-  symlinkSync(platformSrc, platformDest, 'junction');
-  console.log(`Linked .sst/platform -> ${platformSrc}`);
+  symlinkSync(sstSrc, sstDest, 'junction');
+  console.log(`Linked .sst -> ${sstSrc}`);
 }
 
 console.log('\nWorktree setup complete.');
