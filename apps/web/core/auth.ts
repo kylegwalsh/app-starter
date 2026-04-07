@@ -14,6 +14,13 @@ import type { auth as backendAuth } from '../../backend/core/auth';
 /** The config for our Better Auth client (defined separately to avoid TypeScript issues) */
 const authConfig = {
   baseURL: config.api.url,
+  // We must set the accept header to application/json to ensure the browser
+  // redirects the user correctly during the OAuth consent flow
+  fetchOptions: {
+    onRequest(context) {
+      context.headers.set('accept', 'application/json');
+    },
+  },
   // The various plugins we're using
   plugins: [
     inferAdditionalFields<typeof backendAuth>(),

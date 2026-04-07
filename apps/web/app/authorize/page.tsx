@@ -48,10 +48,12 @@ export default function AuthorizePage() {
       if (!clientId) {
         return null;
       }
+
       const { data } = await auth.oauth2.publicClient({ query: { client_id: clientId } });
       if (!data) {
         return null;
       }
+
       return {
         name: data.client_name ?? clientId,
         icon: data.logo_uri ?? null,
@@ -70,8 +72,10 @@ export default function AuthorizePage() {
     router.replace(`/auth/sign-in?redirectTo=${encodeURIComponent(redirectTo)}`);
   }, [isSessionPending, session, router]);
 
-  /** Submit consent decision to better-auth — the oauthProviderClient fetch plugin
-   *  automatically attaches the signed OAuth query from window.location.search */
+  /**
+   * Submit consent decision to better-auth — the oauthProviderClient fetch plugin
+   * automatically attaches the signed OAuth query from window.location.search
+   */
   const handleConsent = useCallback(
     async (accept: boolean) => {
       setIsSubmitting(true);
@@ -83,9 +87,12 @@ export default function AuthorizePage() {
           scope: scope ?? undefined,
         });
 
+        // Redirect to the client's redirect URI
         if (data?.redirect && data.url) {
           window.location.href = data.url;
-        } else {
+        }
+        // If the response is not a redirect, set an error
+        else {
           setError('Unexpected response from authorization server.');
           setIsSubmitting(false);
         }
