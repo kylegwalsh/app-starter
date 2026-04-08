@@ -24,6 +24,7 @@
 
 - Figure out if the oauth-provider changes are necessary (unsure what they do)
 - Go back through all files and confirm we're not pushing anything we shouldn't
+- Remove .mcp.json url
 - Remove any unused or overly complex oauth code
 - Consider moving to REST API for increased timeouts + streaming support (urls are uglier)
 
