@@ -68,9 +68,11 @@
     "classlist",
     "cmdk",
     "codegen",
+    "cuid",
     "daveyplate",
     "deepmerge",
     "embla",
+    "evals",
     "findstr",
     "frontmatter",
     "fumadocs",
@@ -94,6 +96,7 @@
     "oxfmt",
     "oxlint",
     "pglite",
+    "PKCE",
     "polyfillio",
     "postbuild",
     "posthog",
@@ -114,7 +117,6 @@
     "uninvoked",
     "vaul",
     "worktree",
-    "worktrees",
-    "evals"
+    "worktrees"
   ]
 }

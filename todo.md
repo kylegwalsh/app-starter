@@ -22,18 +22,9 @@
 
 ## MCP
 
-- Sync up cors headers between gateway and middleware
 - Figure out if the oauth-provider changes are necessary (unsure what they do)
 - Go back through all files and confirm we're not pushing anything we shouldn't
-
 - Remove any unused or overly complex oauth code
-- Test whether authorization page is showing logo_uri / name
-- Clean up authorization page code / redirects / etc
-- Ensure out authorization page shows good scopes and works as expected
-- Verify OAuth org selection works (need to add this to authorization page)
-- Add organization context to mcp/app
-- Clean up visual appearance of mcp consent page
-- More thoroughly type the session in mcp/app
 - Consider moving to REST API for increased timeouts + streaming support (urls are uglier)
 
 # CHAT SDK

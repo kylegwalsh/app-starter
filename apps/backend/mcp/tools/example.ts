@@ -9,11 +9,7 @@ export const tellMeAJoke = createTool({
   description: 'Tells you a joke based on a topic of your choice',
   inputSchema: { topic: z.string() },
   annotations: { readOnlyHint: true, destructiveHint: false },
-  handler: async (args, session) => {
-    if (!session.userId) {
-      return { content: [{ type: 'text', text: 'Not authenticated' }], isError: true };
-    }
-
+  handler: async (args) => {
     const result = await ai.streamText({
       prompt: `Tell me a joke based on the topic: ${args.topic}`,
     });
