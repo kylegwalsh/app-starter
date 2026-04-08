@@ -4,7 +4,7 @@ import type { z } from 'zod';
 
 /** The type representing an authenticated MCP session */
 export type McpSession = {
-  sessionId: string;
+  id: string;
   user: User;
   organization: Organization;
 };

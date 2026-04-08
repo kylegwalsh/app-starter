@@ -45,7 +45,7 @@ const handler = mcpHandler(
     // Enrich logs with MCP session context
     if (session) {
       addLogMetadata({
-        mcpSessionId: session.sessionId,
+        mcpSessionId: session.id,
         userId: session.user.id,
         organizationId: session.organization.id,
       });

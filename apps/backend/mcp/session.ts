@@ -29,7 +29,7 @@ export const resolveMcpSession = async ({
     // Strip the members array from the org before returning
     const { members: _, ...organization } = existing.organization;
     return {
-      sessionId,
+      id: sessionId,
       user: existing.user,
       organization,
     };
@@ -78,7 +78,7 @@ export const resolveMcpSession = async ({
   });
 
   return {
-    sessionId,
+    id: sessionId,
     user,
     organization: membership.organization,
   };

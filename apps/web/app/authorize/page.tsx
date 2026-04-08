@@ -10,21 +10,13 @@ import {
   CardTitle,
 } from '@repo/design';
 import { useQuery } from '@tanstack/react-query';
-import { CheckIcon, Loader2, ShieldCheckIcon } from 'lucide-react';
+import { Loader2, ShieldCheckIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AuthorizeSkeleton } from '@/components';
 import { auth } from '@/core';
-
-/** Human-readable labels for common OAuth scopes */
-const SCOPE_LABELS: Record<string, string> = {
-  openid: 'Verify your identity',
-  profile: 'Access your basic profile information',
-  email: 'View your email address',
-  offline_access: "Access your account while you're offline",
-};
 
 /** OAuth consent page for MCP and third-party clients */
 export default function AuthorizePage() {
@@ -33,15 +25,13 @@ export default function AuthorizePage() {
   const clientId = searchParams.get('client_id');
   const scope = searchParams.get('scope');
 
-  const scopes = scope?.split(/[\s+]+/).filter(Boolean) ?? [];
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string>();
 
   // Check session
   const { data: session, isPending: isSessionPending } = auth.useSession();
 
-  // Fetch client info via react-query
+  // Fetch client app info via react-query
   const { data: clientInfo, isLoading: isClientLoading } = useQuery({
     queryKey: ['oauth-client', clientId],
     queryFn: async () => {
@@ -136,30 +126,16 @@ export default function AuthorizePage() {
           <CardDescription className="text-xs md:text-sm">
             {clientInfo?.name ? (
               <>
-                <span className="text-foreground font-medium">{clientInfo.name}</span> wants to
-                access your account
+                <span className="text-foreground font-medium">{clientInfo.name}</span> is requesting
+                access to your account and organization data.
               </>
             ) : (
-              'An application is requesting access to your account.'
+              'An application is requesting access to your account and organization data'
             )}
           </CardDescription>
         </CardHeader>
 
         <CardContent className="grid gap-4">
-          {scopes.length > 0 && (
-            <div className="grid gap-3">
-              <p className="text-muted-foreground text-sm">This application will be able to:</p>
-              <ul className="grid gap-2">
-                {scopes.map((s) => (
-                  <li key={s} className="flex items-center gap-2 text-sm">
-                    <CheckIcon className="text-primary size-4 shrink-0" />
-                    <span>{SCOPE_LABELS[s] ?? s}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
           {error && <p className="text-destructive text-sm">{error}</p>}
 
           <div className="grid gap-2">

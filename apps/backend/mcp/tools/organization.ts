@@ -67,7 +67,7 @@ export const switchOrganization = createTool({
 
     // Update the MCP session's active organization
     await db.mcpSession.update({
-      where: { id: session.sessionId },
+      where: { id: session.id },
       data: { organizationId: args.organizationId },
     });
 

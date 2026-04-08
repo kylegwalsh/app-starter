@@ -20,16 +20,9 @@
   - Accepting the invite doesn't automatically load the new organization on the home page
   - Have to allow no organization and have a signup for a demo or something
 
-## MCP
-
-- Figure out if the oauth-provider changes are necessary (unsure what they do)
-- Go back through all files and confirm we're not pushing anything we shouldn't
-- Remove .mcp.json url
-- Remove any unused or overly complex oauth code
-- Consider moving to REST API for increased timeouts + streaming support (urls are uglier)
-
 # CHAT SDK
 
+- Consider moving to REST API for increased timeouts + streaming support (urls are uglier)
 - Connect chat SDK
 - Create slack app
 - Build chat UI for web-app

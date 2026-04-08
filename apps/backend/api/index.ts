@@ -8,7 +8,7 @@ import { auth } from '@/core';
 
 import { mcpAdapter } from './adapters';
 import { internalDocsPlugin, internalDocsLoginHTML } from './docs';
-import { honoErrorHandler } from './error';
+import { handleHonoError } from './error';
 import { corsMiddleware, timingMiddleware } from './middleware';
 import { router } from './routes';
 
@@ -18,7 +18,7 @@ import { router } from './routes';
 const app = new Hono();
 
 // Global error handler — captures all unhandled errors
-app.onError(honoErrorHandler);
+app.onError(handleHonoError);
 
 // Global middleware
 app.use('*', corsMiddleware);
