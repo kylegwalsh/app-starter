@@ -52,6 +52,7 @@
 
 ## OTHER
 
+- Add superset config file
 - Add SST debug launch file
 - Create good "clean" command to remove node_modules
 - test whether we need the hacky minimal env anymore or if SST supports running without a deployed stage
