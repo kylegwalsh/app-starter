@@ -1,13 +1,7 @@
 import type { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
-import type { Organization, User } from '@prisma/client';
 import type { z } from 'zod';
 
-/** The type representing an authenticated MCP session */
-export type McpSession = {
-  id: string;
-  user: User;
-  organization: Organization;
-};
+import type { McpSession } from './session';
 
 /** The result returned by an MCP tool handler */
 export type McpToolResult = {

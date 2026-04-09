@@ -2,9 +2,12 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { config } from '@repo/config';
 
+import { handleError } from '@/api/error';
+
+import type { McpSession } from './session';
 // oxlint-disable-next-line no-namespace: Namespace import used to auto-register all exported tools
 import * as tools from './tools';
-import type { McpSession, McpTool } from './utils';
+import type { McpTool } from './utils';
 
 /**
  * Create a transport that reconstitutes sessions across Lambda invocations.
@@ -34,22 +37,28 @@ export const createMcpServer = ({ session }: { session?: McpSession }) => {
   });
 
   // Auto-register all exported tools (skip on init requests where session isn't resolved yet)
-  if (session) {
-    for (const tool of Object.values(tools) as unknown as McpTool[]) {
-      if (!('isTool' in tool && tool.isTool)) {
-        continue;
-      }
-
-      server.registerTool(
-        tool.name,
-        {
-          description: tool.description,
-          inputSchema: tool.inputSchema,
-          annotations: tool.annotations,
-        },
-        (args) => tool.handler(args, session),
-      );
+  for (const tool of Object.values(tools) as unknown as McpTool[]) {
+    if (!('isTool' in tool && tool.isTool)) {
+      continue;
     }
+
+    server.registerTool(
+      tool.name,
+      {
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+        annotations: tool.annotations,
+      },
+      async (args) => {
+        try {
+          return await tool.handler(args, session!);
+        } catch (error) {
+          // Ensure we track any unhandled tool errors
+          await handleError({ error });
+          throw error;
+        }
+      },
+    );
   }
 
   return server;

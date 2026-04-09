@@ -1,11 +1,13 @@
-import { mcpHandler } from '@better-auth/oauth-provider';
+import { mcpHandler, oauthProviderAuthServerMetadata } from '@better-auth/oauth-provider';
 import { config } from '@repo/config';
 import { addLogMetadata } from '@repo/logs';
 import { Hono } from 'hono';
 
+import { auth } from '@/core';
 import { createMcpServer, createMcpTransport } from '@/mcp/server';
 import { resolveMcpSession } from '@/mcp/session';
 
+// ---------- BASE MCP HANDLER (/mcp/*) ----------
 /** MCP sub-app — mounted at /mcp in the main API */
 const mcpAdapter = new Hono();
 
@@ -66,4 +68,25 @@ mcpAdapter.all('/', async (c) => {
   return handler(c.req.raw);
 });
 
-export { mcpAdapter };
+// ---------- MCP DISCOVERY ENDPOINTS (/.well-known/*) ----------
+/** OAuth discovery endpoints required by MCP clients — mounted at /.well-known in the main API */
+const mcpDiscovery = new Hono();
+
+// OAuth authorization server metadata (Better Auth OAuth provider)
+const discoveryHandler = oauthProviderAuthServerMetadata(auth);
+mcpDiscovery.get('/oauth-authorization-server', async (c) => {
+  return discoveryHandler(c.req.raw);
+});
+
+// OAuth protected resource metadata
+mcpDiscovery.get('/oauth-protected-resource', (c) => {
+  const origin = new URL(config.api.url).origin;
+  return c.json({
+    resource: origin,
+    authorization_servers: [origin],
+    scopes_supported: ['openid', 'profile', 'email', 'offline_access'],
+    bearer_methods_supported: ['header'],
+  });
+});
+
+export { mcpAdapter, mcpDiscovery };

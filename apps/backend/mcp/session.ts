@@ -1,6 +1,13 @@
+import type { Organization, User } from '@prisma/client';
+
 import { db } from '@/db';
 
-import type { McpSession } from './utils';
+/** The type representing an authenticated MCP session */
+export type McpSession = {
+  id: string;
+  user: User;
+  organization: Organization;
+};
 
 /** Resolve an MCP session from the session ID and authenticated user */
 export const resolveMcpSession = async ({
