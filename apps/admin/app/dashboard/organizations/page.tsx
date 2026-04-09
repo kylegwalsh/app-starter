@@ -29,11 +29,11 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { DataTablePagination } from '@/components/data-table-pagination';
-import { OrganizationDialog } from '@/components/organisations/organization-dialog';
+import { OrganizationDialog } from '@/components/organizations/organization-dialog';
 import {
   ManagementRestrictedHeader,
   OrganizationPluginDisabledCard,
-} from '@/components/organisations/organization-plugin-disabled';
+} from '@/components/organizations/organization-plugin-disabled';
 import { organizationApi, type Organization } from '@/core/auth';
 
 type SortField = 'name' | 'slug' | 'createdAt';

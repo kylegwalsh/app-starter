@@ -262,17 +262,12 @@ export const OrganizationDialog = ({
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || slugAvailable === false}>
-              {isSubmitting ? (
-                <>
-                  <Loader2Icon className="h-4 w-4 animate-spin" />
-                  {isEdit ? 'Saving...' : 'Creating...'}
-                </>
-              ) : isEdit ? (
-                'Save Changes'
-              ) : (
-                'Create Organization'
-              )}
+            <Button
+              type="submit"
+              disabled={isSubmitting || slugAvailable === false}
+              loading={isSubmitting}
+            >
+              {isEdit ? 'Save Changes' : 'Create Organization'}
             </Button>
           </DialogFooter>
         </form>

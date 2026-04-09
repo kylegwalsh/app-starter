@@ -1,51 +1,11 @@
 'use client';
 
-import { config } from '@repo/config';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { httpBatchLink, loggerLink } from '@trpc/client';
-import { posthog } from 'posthog-js';
 import { type ReactNode, useState } from 'react';
-import superjson from 'superjson';
 
-import { trpc } from '@/core';
-
-/** Provides a query client and trpc client for communicating with our backend */
+/** Provides a query client for communicating with our backend */
 export const QueryProvider = ({ children }: { children: ReactNode }) => {
   const [queryClient] = useState(() => new QueryClient());
-  const [trpcClient] = useState(() =>
-    trpc.createClient({
-      links: [
-        // Adds pretty logs to your console in development and logs errors in production
-        loggerLink({
-          enabled: (opts) =>
-            config.stage !== 'prod' || (opts.direction === 'down' && opts.result instanceof Error),
-        }),
-        // Connect to our backend
-        httpBatchLink({
-          transformer: superjson,
-          url: `${config.api.url}/trpc`,
-          // Ensure we send our auth cookies to the backend
-          fetch(_url, options) {
-            /** Extract PostHog session ID for log → session replay linking */
-            const sessionId = typeof window !== 'undefined' ? posthog.get_session_id() : undefined;
 
-            return fetch(_url, {
-              ...options,
-              credentials: 'include',
-              headers: {
-                ...options?.headers,
-                ...(sessionId ? { 'x-posthog-session-id': sessionId } : {}),
-              },
-            } as RequestInit);
-          },
-        }),
-      ],
-    }),
-  );
-
-  return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </trpc.Provider>
-  );
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 };

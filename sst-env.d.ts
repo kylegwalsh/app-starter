@@ -38,10 +38,6 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Function"
     }
-    "authHandler": {
-      "name": string
-      "type": "sst.aws.Function"
-    }
     "web": {
       "type": "sst.aws.Nextjs"
       "url": string

@@ -29,7 +29,7 @@ export const OrganizationPluginDisabledCard = () => {
           </p>
           <pre className="text-sm leading-relaxed">
             <code>
-              {/* oxlint-disable-next-line eslint-plugin-react(jsx-no-comment-textnodes) */}
+              {/* oxlint-disable-next-line jsx-no-comment-textnodes */}
               <span className="text-muted-foreground">// better-auth.config.ts</span>
               {'\n'}
               <span className="text-foreground font-semibold">plugins: [</span>

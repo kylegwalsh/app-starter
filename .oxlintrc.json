@@ -53,7 +53,7 @@
     "uninvoked-array-callback": "error",
 
     // --- Unicorn rules ---
-    "no-useless-spread": "error",
+    "no-useless-spread": "off",
     "no-useless-fallback-in-spread": "error",
     "catch-error-name": "warn",
     "error-message": "warn",

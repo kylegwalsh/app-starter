@@ -1,13 +1,14 @@
 import { ai } from '@repo/ai';
 import { analytics } from '@repo/analytics';
 import { addLambdaRequestContext, addLogMetadata, flushLogs, log } from '@repo/logs';
-import type { APIGatewayProxyEventV2, Context, SQSEvent } from 'aws-lambda';
+import type { Context, SQSEvent } from 'aws-lambda';
+import type { LambdaEvent } from 'hono/aws-lambda';
 
 /** The lambda event options we accept */
 export type EventType = 'sqs' | 'api' | undefined;
 
 /** The actual payload type of the event */
-export type HandlerEvent<T extends EventType> = T extends 'sqs' ? SQSEvent : APIGatewayProxyEventV2;
+export type HandlerEvent<T extends EventType> = T extends 'sqs' ? SQSEvent : LambdaEvent;
 
 /** Type for a Lambda handler function */
 export type LambdaHandler<T extends EventType> = (
@@ -35,7 +36,7 @@ export const withLambdaContext = <T extends EventType = undefined>(
   return async (event, context) => {
     // Add Lambda request context for logging
     addLambdaRequestContext(event, context);
-    if ('requestContext' in event) {
+    if ('requestContext' in event && 'http' in event.requestContext) {
       const { path, method } = event.requestContext.http;
       const sessionId = event.headers?.['x-posthog-session-id'];
       addLogMetadata({

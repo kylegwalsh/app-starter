@@ -6,12 +6,10 @@ import {
   Button,
   Card,
   CardContent,
-  CardFooter,
-  CardHeader,
   Input,
   Label,
 } from '@repo/design';
-import { Loader2Icon, ShieldIcon, XIcon } from 'lucide-react';
+import { Loader2Icon, XIcon } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState, type FormEvent } from 'react';
 

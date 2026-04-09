@@ -1,4 +1,4 @@
-import { trpcFactory } from '@/tests/factories';
+import { routerFactory } from '@/tests/factories';
 
 // Mock stripe
 const { mockStripe } = vi.hoisted(() => ({
@@ -27,14 +27,14 @@ vi.mock('@/core/stripe', async (importOriginal) => {
 
 // Test our router
 describe('Billing Router', () => {
-  let trpc: Awaited<ReturnType<typeof trpcFactory.createRouter>>['router'];
+  let api: Awaited<ReturnType<typeof routerFactory.createRouter>>['router'];
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const mock = await trpcFactory.createRouter({
+    const mock = await routerFactory.createRouter({
       organization: { stripeCustomerId: 'test-customer-id' },
     });
-    trpc = mock.router;
+    api = mock.router;
   });
 
   describe('charge', () => {
@@ -43,7 +43,7 @@ describe('Billing Router', () => {
         url: 'https://checkout.stripe.com/test-session',
       });
 
-      const result = await trpc.billing.charge({
+      const result = await api.billing.charge({
         amount: 49.99,
         description: 'One-time setup fee',
         successUrl: 'https://example.com/success',
@@ -58,6 +58,7 @@ describe('Billing Router', () => {
           line_items: [
             expect.objectContaining({
               quantity: 1,
+              // oxlint-disable-next-line no-unsafe-assignment - we only care about a subset of the data
               price_data: expect.objectContaining({
                 currency: 'usd',
                 unit_amount: 4999,
@@ -72,14 +73,14 @@ describe('Billing Router', () => {
     });
 
     it('passes undefined as customer when org has no stripe customer id', async () => {
-      const { router: trpcNoCustomer } = await trpcFactory.createRouter({
+      const { router: apiNoCustomer } = await routerFactory.createRouter({
         organization: { stripeCustomerId: null },
       });
       mockStripe.checkout.sessions.create.mockResolvedValueOnce({
         url: 'https://checkout.stripe.com/test-session',
       });
 
-      await trpcNoCustomer.billing.charge({
+      await apiNoCustomer.billing.charge({
         amount: 10,
         description: 'Test',
         successUrl: 'https://example.com/success',
@@ -96,7 +97,7 @@ describe('Billing Router', () => {
         url: 'https://checkout.stripe.com/x',
       });
 
-      await trpc.billing.charge({
+      await api.billing.charge({
         amount: 1.5,
         description: 'Test',
         successUrl: 'https://example.com/success',
@@ -106,6 +107,7 @@ describe('Billing Router', () => {
       expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(
         expect.objectContaining({
           line_items: [
+            // oxlint-disable-next-line no-unsafe-assignment - we only care about a subset of the data
             expect.objectContaining({ price_data: expect.objectContaining({ unit_amount: 150 }) }),
           ],
         }),
@@ -114,33 +116,33 @@ describe('Billing Router', () => {
 
     it('throws for non-positive amounts', async () => {
       await expect(
-        trpc.billing.charge({
+        api.billing.charge({
           amount: 0,
           description: 'Test',
           successUrl: 'https://example.com/success',
           cancelUrl: 'https://example.com/cancel',
         }),
-      ).rejects.toThrow();
+      ).rejects.toThrow('Input validation failed');
     });
 
     it('throws for invalid urls', async () => {
       await expect(
-        trpc.billing.charge({
+        api.billing.charge({
           amount: 10,
           description: 'Test',
           successUrl: '/relative/path',
           cancelUrl: 'https://example.com/cancel',
         }),
-      ).rejects.toThrow();
+      ).rejects.toThrow('Input validation failed');
     });
   });
 
   describe('getHistory', () => {
     it('returns an empty history when organization has no Stripe customer ID', async () => {
-      const { router: trpcNoCustomer } = await trpcFactory.createRouter({
+      const { router: apiNoCustomer } = await routerFactory.createRouter({
         organization: { stripeCustomerId: null },
       });
-      const result = await trpcNoCustomer.billing.getHistory();
+      const result = await apiNoCustomer.billing.getHistory();
       expect(result).toEqual({ history: [] });
     });
 
@@ -170,7 +172,7 @@ describe('Billing Router', () => {
         ],
       });
 
-      const { history } = await trpc.billing.getHistory();
+      const { history } = await api.billing.getHistory();
       expect(history).toHaveLength(2);
       // Should be sorted desc by date, so invoice (created 200) first
       expect(history[0]).toMatchObject({
@@ -188,7 +190,7 @@ describe('Billing Router', () => {
     it('returns empty history if Stripe APIs throw', async () => {
       mockStripe.invoices.list.mockRejectedValueOnce(new Error('stripe down'));
 
-      const result = await trpc.billing.getHistory();
+      const result = await api.billing.getHistory();
       expect(result).toEqual({ history: [] });
     });
   });

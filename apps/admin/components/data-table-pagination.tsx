@@ -131,6 +131,7 @@ export const DataTablePagination = ({
             {/* Page numbers (hidden on mobile) */}
             {pages.map((page, i) =>
               page === 'ellipsis' ? (
+                // oxlint-disable-next-line no-array-index-key: Pagination ellipsis items have no unique data key
                 <PaginationItem key={`ellipsis-${i}`} className="hidden sm:list-item">
                   <PaginationEllipsis />
                 </PaginationItem>

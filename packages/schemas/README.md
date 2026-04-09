@@ -79,17 +79,17 @@ export function SignUpForm() {
 }
 ```
 
-Using the same schema as a tRPC router input:
+Using the same schema as an oRPC procedure input:
 
 ```ts
-import { initTRPC } from '@trpc/server';
+import { orpc } from '@/core';
 import { signUpSchema } from '@repo/schemas';
 
-export const appRouter = t.router({
-  signUp: t.procedure.input(signUpSchema).mutation(async ({ input, ctx }) => {
+import { publicProcedure } from '../procedures';
+
+export const authRouter = orpc.router({
+  signUp: publicProcedure.input(signUpSchema).handler(async ({ input, context }) => {
     return { ok: true };
   }),
 });
-
-export type AppRouter = typeof appRouter;
 ```

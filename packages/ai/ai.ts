@@ -16,7 +16,13 @@ import {
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { config, env } from '@repo/config';
 import { addLogMetadata, getLogMetadata } from '@repo/logs';
-import { type GenerateObjectResult, generateObject, generateText, type Prompt } from 'ai';
+import {
+  type GenerateObjectResult,
+  generateObject,
+  generateText,
+  streamText,
+  type Prompt,
+} from 'ai';
 import type { z } from 'zod';
 
 // ---------- LANGFUSE ----------
@@ -279,6 +285,29 @@ export const ai = {
         ...rest,
         experimental_telemetry: { isEnabled: true },
       } satisfies Parameters<typeof generateText>[0]),
+  ),
+  /** Stream text using an LLM */
+  streamText: traceGeneration(
+    async ({
+      model = defaultModel,
+      name,
+      parentTraceId,
+      ...rest
+    }: Omit<Parameters<typeof streamText>[0], 'model'> &
+      Prompt & {
+        /** The model to use for the generation */
+        model?: LanguageModelV2;
+        /** The name of the method to show in Langfuse */
+        name?: string;
+        /** The parent trace ID to attach this generation to in Langfuse (defaults to trace for entire route) */
+        parentTraceId?: string;
+      }) =>
+      streamText({
+        model,
+        maxRetries: 3,
+        ...rest,
+        experimental_telemetry: { isEnabled: true },
+      } satisfies Parameters<typeof streamText>[0]),
   ),
   /** Generate an object using an LLM */
   generateObject: traceGeneration(

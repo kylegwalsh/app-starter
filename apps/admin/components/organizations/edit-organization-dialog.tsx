@@ -17,13 +17,6 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
 import { organizationApi, type Organization } from '@/core/auth';
 
-// Auto-generate a slug from a name (replaces non-alphanumeric runs with hyphens)
-const generateSlug = (name: string) =>
-  name
-    .toLowerCase()
-    .replaceAll(/[^a-z0-9]+/g, '-')
-    .replaceAll(/^-|-$/g, '');
-
 // Sanitize manual slug input (allows hyphens, strips invalid characters)
 const sanitizeSlug = (input: string) => input.toLowerCase().replaceAll(/[^a-z0-9-]/g, '');
 
@@ -229,15 +222,12 @@ export const EditOrganizationDialog = ({
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || slugAvailable === false}>
-              {isSubmitting ? (
-                <>
-                  <Loader2Icon className="h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
+            <Button
+              type="submit"
+              disabled={isSubmitting || slugAvailable === false}
+              loading={isSubmitting}
+            >
+              Save Changes
             </Button>
           </DialogFooter>
         </form>

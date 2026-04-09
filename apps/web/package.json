@@ -20,7 +20,11 @@
     "postinstall": "tsx scripts/install-playwright"
   },
   "dependencies": {
-    "@daveyplate/better-auth-ui": "3.3.15",
+    "@better-auth/oauth-provider": "1.5.4",
+    "@better-auth/stripe": "1.5.4",
+    "@daveyplate/better-auth-ui": "3.4.0",
+    "@orpc/client": "1.13.8",
+    "@orpc/tanstack-query": "1.13.8",
     "@posthog/nextjs-config": "1.0.0",
     "@repo/analytics": "workspace:*",
     "@repo/config": "workspace:*",
@@ -30,16 +34,13 @@
     "@repo/seo": "workspace:*",
     "@repo/utils": "workspace:*",
     "@tanstack/react-query": "5.79.0",
-    "@trpc/client": "11.2.0",
-    "@trpc/react-query": "11.2.0",
     "better-auth": "1.5.4",
     "jotai": "2.12.4",
     "lucide-react": "0.475.0",
     "next": "15.3.6",
     "next-themes": "0.4.6",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "superjson": "2.2.2"
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "15.3.6",
@@ -47,7 +48,6 @@
     "@playwright/test": "1.52.0",
     "@repo/backend": "workspace:*",
     "@repo/tsconfig": "workspace:*",
-    "@trpc/server": "11.2.0",
     "@types/node": "24.10.1",
     "@types/react": "19.1.4",
     "@types/react-dom": "19.1.5",
