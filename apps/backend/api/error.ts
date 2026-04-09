@@ -15,7 +15,7 @@ export const handleError = async ({ error }: { error: unknown }) => {
 };
 
 /** Hono error handler — handles HTTP errors and reports them to analytics */
-export const honoErrorHandler: ErrorHandler = async (error, c) => {
+export const handleHonoError: ErrorHandler = async (error, c) => {
   // Handle the error and report it if it's a server error
   await handleError({ error });
 

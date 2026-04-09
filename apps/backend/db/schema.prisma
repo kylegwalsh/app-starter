@@ -18,6 +18,7 @@ datasource db {
 
 // ---------------------- END SETUP ---------------------- //
 
+/// Core user identity (created by Better Auth on signup)
 model User {
   id                    String              @id @default(cuid())
   name                  String
@@ -35,11 +36,12 @@ model User {
   invitations           Invitation[]
   sessions              Session[]
   accounts              Account[]
-  oauthclients          OauthClient[]
-  oauthrefreshtokens    OauthRefreshToken[]
-  oauthaccesstokens     OauthAccessToken[]
-  oauthconsents         OauthConsent[]
+  oauthClients          OauthClient[]
+  oauthRefreshTokens    OauthRefreshToken[]
+  oauthAccessTokens     OauthAccessToken[]
+  oauthConsents         OauthConsent[]
   conversations         Conversation[]
+  mcpSessions           McpSession[]
   // Unused but added by better auth migrations
   stripeCustomerId      String?
 
@@ -47,6 +49,25 @@ model User {
   @@map("user")
 }
 
+/// Team/workspace that groups members (can be personal or shared)
+model Organization {
+  id               String       @id @default(cuid())
+  name             String
+  slug             String?
+  logo             String?
+  createdAt        DateTime     @default(now())
+  metadata         String?
+  isPersonal       Boolean      @default(false)
+  stripeCustomerId String?
+  members          Member[]
+  invitations      Invitation[]
+  mcpSessions      McpSession[]
+
+  @@unique([slug])
+  @@map("organization")
+}
+
+/// Active login session for user
 model Session {
   id                   String              @id @default(cuid())
   expiresAt            DateTime
@@ -59,14 +80,15 @@ model Session {
   user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   impersonatedBy       String?
   activeOrganizationId String?
-  oauthrefreshtokens   OauthRefreshToken[]
-  oauthaccesstokens    OauthAccessToken[]
+  oauthRefreshTokens   OauthRefreshToken[]
+  oauthAccessTokens    OauthAccessToken[]
 
   @@unique([token])
   @@index([userId])
   @@map("session")
 }
 
+/// Linked auth provider (email/password, Google, GitHub, etc.) - one user can have multiple accounts
 model Account {
   id                    String    @id @default(cuid())
   accountId             String
@@ -87,6 +109,7 @@ model Account {
   @@map("account")
 }
 
+/// Short-lived verification tokens for email confirmation, password reset, etc
 model Verification {
   id         String   @id @default(cuid())
   identifier String
@@ -99,22 +122,7 @@ model Verification {
   @@map("verification")
 }
 
-model Organization {
-  id               String       @id @default(cuid())
-  name             String
-  slug             String?
-  logo             String?
-  createdAt        DateTime     @default(now())
-  metadata         String?
-  isPersonal       Boolean      @default(false)
-  stripeCustomerId String?
-  members          Member[]
-  invitations      Invitation[]
-
-  @@unique([slug])
-  @@map("organization")
-}
-
+/// Join table linking a user to an organization with a role (owner, admin, member)
 model Member {
   id             String       @id @default(cuid())
   organizationId String
@@ -129,6 +137,7 @@ model Member {
   @@map("member")
 }
 
+/// Pending invite to join an organization
 model Invitation {
   id             String       @id @default(cuid())
   organizationId String
@@ -146,6 +155,7 @@ model Invitation {
   @@map("invitation")
 }
 
+/// Stripe subscription record. Tracks plan, billing interval, trial, and cancellation state
 model Subscription {
   id                   String    @id @default(cuid())
   plan                 String
@@ -168,6 +178,7 @@ model Subscription {
   @@map("subscription")
 }
 
+/// Registered OAuth 2.0 client application (e.g. MCP clients). Defines allowed scopes, redirects, and grant types
 model OauthClient {
   id                      String              @id
   clientId                String
@@ -200,19 +211,20 @@ model OauthClient {
   requirePKCE             Boolean?
   referenceId             String?
   metadata                Json?
-  oauthrefreshtokens      OauthRefreshToken[]
-  oauthaccesstokens       OauthAccessToken[]
-  oauthconsents           OauthConsent[]
+  oauthRefreshTokens      OauthRefreshToken[]
+  oauthAccessTokens       OauthAccessToken[]
+  oauthConsents           OauthConsent[]
 
   @@unique([clientId])
   @@map("oauthClient")
 }
 
+/// Long-lived refresh token issued to an OAuth client. Used to obtain new access tokens
 model OauthRefreshToken {
   id                String             @id
   token             String
   clientId          String
-  oauthclient       OauthClient        @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  oauthClient       OauthClient        @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
   sessionId         String?
   session           Session?           @relation(fields: [sessionId], references: [id], onDelete: SetNull)
   userId            String
@@ -223,23 +235,24 @@ model OauthRefreshToken {
   revoked           DateTime?
   authTime          DateTime?
   scopes            String[]
-  oauthaccesstokens OauthAccessToken[]
+  oauthAccessTokens OauthAccessToken[]
 
   @@map("oauthRefreshToken")
 }
 
+/// Short-lived access token granting an OAuth client access to protected resources on behalf of a user
 model OauthAccessToken {
   id                String             @id
   token             String?
   clientId          String
-  oauthclient       OauthClient        @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  oauthClient       OauthClient        @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
   sessionId         String?
   session           Session?           @relation(fields: [sessionId], references: [id], onDelete: SetNull)
   userId            String?
   user              User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
   referenceId       String?
   refreshId         String?
-  oauthrefreshtoken OauthRefreshToken? @relation(fields: [refreshId], references: [id], onDelete: Cascade)
+  oauthRefreshToken OauthRefreshToken? @relation(fields: [refreshId], references: [id], onDelete: Cascade)
   expiresAt         DateTime?
   createdAt         DateTime?
   scopes            String[]
@@ -248,10 +261,11 @@ model OauthAccessToken {
   @@map("oauthAccessToken")
 }
 
+/// Records a user's consent to grant specific scopes to an OAuth client (avoids re-prompting)
 model OauthConsent {
   id          String      @id
   clientId    String
-  oauthclient OauthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  oauthClient OauthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
   userId      String?
   user        User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
   referenceId String?
@@ -262,6 +276,7 @@ model OauthConsent {
   @@map("oauthConsent")
 }
 
+/// JSON Web Key Set entries. Stores public/private key pairs for signing and verifying JWTs
 model Jwks {
   id         String    @id
   publicKey  String
@@ -272,6 +287,21 @@ model Jwks {
   @@map("jwks")
 }
 
+/// Active MCP (Model Context Protocol) session. Ties an MCP transport session to a user and organization
+model McpSession {
+  id             String        @id // The transport-level mcp-session-id we generate
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([userId])
+  @@map("mcp_session")
+}
+
+/// Conversation with the AI chat agent
 model Conversation {
   id             String    @id @default(cuid())
   title          String?
@@ -288,6 +318,7 @@ model Conversation {
   @@map("conversation")
 }
 
+/// Message in a conversation with the AI chat agent
 model Message {
   id             String       @id @default(cuid())
   conversationId String

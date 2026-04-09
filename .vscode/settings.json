@@ -30,7 +30,6 @@
   "editor.suggest.showCustomcolors": false,
   "editor.suggest.shareSuggestSelections": false,
   "editor.suggest.showVariables": false,
-  "editor.suggest.showSnippets": false,
   "editor.suggest.showWords": false,
   "emmet.showExpandedAbbreviation": "never",
   // Prevent auto-accepting suggestions on commit characters like comma
@@ -68,9 +67,11 @@
     "classlist",
     "cmdk",
     "codegen",
+    "cuid",
     "daveyplate",
     "deepmerge",
     "embla",
+    "evals",
     "findstr",
     "frontmatter",
     "fumadocs",
@@ -94,6 +95,7 @@
     "oxfmt",
     "oxlint",
     "pglite",
+    "PKCE",
     "polyfillio",
     "postbuild",
     "posthog",
@@ -114,7 +116,6 @@
     "uninvoked",
     "vaul",
     "worktree",
-    "worktrees",
-    "evals"
+    "worktrees"
   ]
 }

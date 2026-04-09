@@ -1,6 +1,5 @@
 'use client';
 
-import { OrganizationSwitcher, UserButton } from '@daveyplate/better-auth-ui';
 import {
   Collapsible,
   CollapsibleContent,
@@ -26,7 +25,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ComponentType, SVGProps } from 'react';
 
-import { useUser } from '@/hooks';
+import { OrganizationSwitcher, UserButton } from '@/components';
 
 /** The type for a navigation item */
 type NavItem = {
@@ -44,34 +43,11 @@ type NavItem = {
 
 /** The sidebar for the application */
 export const AppSidebar: FC = ({ children }) => {
-  const { organization } = useUser();
-
   return (
     <>
       <Sidebar collapsible="icon">
         <SidebarHeader>
-          <OrganizationSwitcher
-            classNames={{
-              trigger: {
-                base: 'w-full bg-background text-foreground shadow-md hover:bg-background hover:bg-background/30 dark:hover:bg-background/60 group-data-[collapsible=icon]:!bg-transparent group-data-[collapsible=icon]:!shadow-none group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:[&>svg]:hidden',
-                user: {
-                  content: 'group-data-[collapsible=icon]:hidden',
-                  title: 'group-data-[collapsible=icon]:hidden',
-                  subtitle: 'group-data-[collapsible=icon]:hidden',
-                },
-                organization: {
-                  subtitle: 'hidden',
-                },
-              },
-              content: {
-                base: organization?.isPersonal ? '[&_a]:hidden' : '',
-                organization: {
-                  subtitle: 'hidden',
-                },
-              },
-            }}
-            hidePersonal
-          />
+          <OrganizationSwitcher />
         </SidebarHeader>
         <SidebarContent className="overflow-x-hidden">
           <SidebarGroup>
@@ -100,26 +76,7 @@ export const AppSidebar: FC = ({ children }) => {
           <Separator className="mb-2 group-data-[collapsible=icon]:mb-1" />
           <SidebarMenu>
             <SidebarMenuItem>
-              <UserButton
-                additionalLinks={[
-                  {
-                    label: 'Settings',
-                    icon: <Settings />,
-                    href: '/settings',
-                  },
-                ]}
-                classNames={{
-                  trigger: {
-                    base: 'w-full bg-background text-foreground shadow-md hover:bg-background/30 dark:hover:bg-background/60 group-data-[collapsible=icon]:!bg-transparent group-data-[collapsible=icon]:!shadow-none group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:[&>svg]:hidden',
-                    user: {
-                      content: 'group-data-[collapsible=icon]:hidden',
-                      title: 'group-data-[collapsible=icon]:hidden',
-                      subtitle: 'group-data-[collapsible=icon]:hidden',
-                    },
-                  },
-                }}
-                disableDefaultLinks
-              />
+              <UserButton />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>

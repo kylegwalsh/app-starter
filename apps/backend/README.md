@@ -52,7 +52,7 @@ apps/backend/
 │   ├── error.ts       # Shared error handling (Hono + oRPC)
 │   ├── docs.ts        # Swagger UI config, login page
 │   ├── routes/        # oRPC routers (most new work happens here)
-│   ├── middleware/     # Hono middleware (CORS, timing)
+│   ├── middleware/    # Hono middleware (CORS, timing)
 │   └── adapters/      # Protocol adapters (MCP)
 ├── mcp/               # MCP server and tools
 ├── core/              # Core services (auth, stripe, etc)

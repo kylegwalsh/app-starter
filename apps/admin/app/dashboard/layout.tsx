@@ -59,7 +59,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <RequireAdmin>
       <SidebarProvider>
-        <Sidebar collapsible="none" className="min-h-svh">
+        <Sidebar collapsible="none" className="sticky top-0 h-svh">
           <SidebarHeader>
             <SidebarMenu>
               <SidebarMenuItem>

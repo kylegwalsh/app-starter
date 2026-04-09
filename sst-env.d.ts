@@ -50,7 +50,7 @@ declare module "sst" {
       "type": "sst.aws.ApiGatewayV2"
       "url": string
     }
-    "serverHandler": {
+    "apiHandler": {
       "name": string
       "type": "sst.aws.Function"
     }

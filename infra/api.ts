@@ -6,11 +6,11 @@ const { admin } = await import('./admin');
 const { uploadsBucket, uploadsCdn } = await import('./storage');
 
 /** Single function handles all backend routes — Hono routes internally */
-const serverHandler = new sst.aws.Function('serverHandler', {
+const apiHandler = new sst.aws.Function('apiHandler', {
   handler: 'apps/backend/lambda/api.handler',
   streaming: true,
   link: [gateway, web, admin, uploadsBucket, uploadsCdn],
 });
 
 // One catch-all route — Hono handles all path routing internally
-gateway.route('$default', serverHandler.arn);
+gateway.route('$default', apiHandler.arn);

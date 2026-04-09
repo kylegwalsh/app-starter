@@ -10,18 +10,6 @@ export const AuthorizeSkeleton = () => (
     </CardHeader>
 
     <CardContent className="grid gap-4">
-      <div className="grid gap-3">
-        <Skeleton className="h-5 w-full max-w-48" />
-        <div className="grid gap-2">
-          {[52, 36, 44, 48].map((width) => (
-            <div key={width} className="flex items-center gap-2">
-              <Skeleton className="size-4 shrink-0 rounded-full" />
-              <Skeleton className="h-5" style={{ width: `${String(width)}%` }} />
-            </div>
-          ))}
-        </div>
-      </div>
-
       <div className="grid gap-2">
         <Skeleton className="h-9 w-full rounded-md" />
         <Skeleton className="h-9 w-full rounded-md" />

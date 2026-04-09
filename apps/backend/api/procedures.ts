@@ -23,13 +23,14 @@ const baseProcedure = orpc.use(async ({ context, next }) => {
         });
         user = sessionData?.user;
 
-        // If the user has an active organization, we will populate the organization context
+        // If the user has an active organization, verify they're still a member
         const activeOrganizationId = sessionData?.session?.activeOrganizationId;
-        if (activeOrganizationId) {
-          organization =
-            (await db.organization.findUnique({
-              where: { id: activeOrganizationId },
-            })) ?? undefined;
+        if (activeOrganizationId && user) {
+          const membership = await db.member.findFirst({
+            where: { userId: user.id, organizationId: activeOrganizationId },
+            include: { organization: true },
+          });
+          organization = membership?.organization ?? undefined;
         }
       }
     } catch (error) {

@@ -20,21 +20,6 @@
   - Accepting the invite doesn't automatically load the new organization on the home page
   - Have to allow no organization and have a signup for a demo or something
 
-## MCP
-
-- Figure out if the oauth-provider changes are necessary (unsure what they do)
-- Go back through all files and confirm we're not pushing anything we shouldn't
-
-- Remove any unused or overly complex oauth code
-- Test whether authorization page is showing logo_uri / name
-- Clean up authorization page code / redirects / etc
-- Ensure out authorization page shows good scopes and works as expected
-- Verify OAuth org selection works (need to add this to authorization page)
-- Add organization context to mcp/app
-- Clean up visual appearance of mcp consent page
-- More thoroughly type the session in mcp/app
-- Consider moving to REST API for increased timeouts + streaming support (urls are uglier)
-
 # CHAT SDK
 
 - ~~Connect chat SDK~~
@@ -76,6 +61,7 @@
 
 ## OTHER
 
+- Add superset config file
 - Add SST debug launch file
 - Create good "clean" command to remove node_modules
 - test whether we need the hacky minimal env anymore or if SST supports running without a deployed stage

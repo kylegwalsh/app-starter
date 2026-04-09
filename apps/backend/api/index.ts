@@ -1,4 +1,3 @@
-import { oauthProviderAuthServerMetadata } from '@better-auth/oauth-provider';
 import { OpenAPIHandler } from '@orpc/openapi/fetch';
 import { RPCHandler } from '@orpc/server/fetch';
 import { config } from '@repo/config';
@@ -6,9 +5,9 @@ import { Hono } from 'hono';
 
 import { auth } from '@/core';
 
-import { mcpAdapter } from './adapters';
+import { mcpAdapter, mcpDiscovery } from './adapters';
 import { internalDocsPlugin, internalDocsLoginHTML } from './docs';
-import { honoErrorHandler } from './error';
+import { handleHonoError } from './error';
 import { cdnCookiesMiddleware, corsMiddleware, timingMiddleware } from './middleware';
 import { router } from './routes';
 import { chatApp } from './routes/chat';
@@ -19,7 +18,7 @@ import { chatApp } from './routes/chat';
 const app = new Hono();
 
 // Global error handler — captures all unhandled errors
-app.onError(honoErrorHandler);
+app.onError(handleHonoError);
 
 // Global middleware
 app.use('*', corsMiddleware);
@@ -28,31 +27,14 @@ app.use('*', timingMiddleware);
 // ---------- SPECIAL ROUTES ----------
 // These routes expect raw requests and different transport protocols than the main API (oRPC)
 
-// OAuth discovery — served at root because mcp-remote looks here, but the oauth-provider
-// plugin registers it under /api/auth due to basePath
-const discoveryHandler = oauthProviderAuthServerMetadata(auth);
-app.get('/.well-known/oauth-authorization-server', async (c) => {
-  return discoveryHandler(c.req.raw);
-});
-
-// Protected resource metadata — tells MCP clients where the auth server is
-app.get('/.well-known/oauth-protected-resource', (c) => {
-  const origin = new URL(config.api.url).origin;
-  return c.json({
-    resource: origin,
-    authorization_servers: [origin],
-    scopes_supported: ['openid', 'profile', 'email', 'offline_access'],
-    bearer_methods_supported: ['header'],
-  });
-});
-
 // Authentication routes (handled by Better Auth)
 app.on(['GET', 'POST'], ['/api/auth/*'], (c) => {
   return auth.handler(c.req.raw);
 });
 
-// MCP routes
+// MCP routes + OAuth discovery endpoints
 app.route('/mcp', mcpAdapter);
+app.route('/.well-known', mcpDiscovery);
 
 // Chat streaming route (direct Hono — not oRPC — because useChat expects a specific streaming format)
 app.route('/api/chat', chatApp);
