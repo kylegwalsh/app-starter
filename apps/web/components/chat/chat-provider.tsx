@@ -1,10 +1,10 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { config } from '@repo/config';
+import { eventIteratorToUnproxiedDataStream } from '@orpc/client';
 import { CHAT_ALLOWED_FILE_TYPES, CHAT_MAX_FILE_SIZE } from '@repo/constants';
 import { chatSchema } from '@repo/schemas';
-import { DefaultChatTransport, type UIMessage } from 'ai';
+import type { UIMessage } from 'ai';
 import {
   createContext,
   use,
@@ -17,7 +17,7 @@ import {
 } from 'react';
 import type { z } from 'zod';
 
-import { orpc } from '@/core/orpc';
+import { client, orpc } from '@/core/orpc';
 
 /** Our chat message type with typed metadata (traceId, feedback) */
 type ChatMessageMetadata = z.infer<typeof chatSchema.messageMetadata>;
@@ -75,17 +75,22 @@ function ChatProvider({ conversationId, initialMessages, children }: ChatProvide
     };
   }, [attachedFiles]);
 
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport({
-        api: `${config.api.url}/api/chat`,
-        credentials: 'include',
-      }),
-    [],
-  );
-
   const { messages, status, error, sendMessage, stop, regenerate } = useChat<ChatMessage>({
-    transport,
+    transport: {
+      async sendMessages(options) {
+        const iterator = await client.chat.send(
+          {
+            id: options.chatId,
+            messages: options.messages as z.input<typeof chatSchema.chatMessage>['messages'],
+          },
+          { signal: options.abortSignal ?? undefined },
+        );
+        return eventIteratorToUnproxiedDataStream(iterator);
+      },
+      async reconnectToStream() {
+        return null;
+      },
+    },
     id: conversationId,
     messages: initialMessages,
     messageMetadataSchema: chatSchema.messageMetadata,
@@ -204,7 +209,7 @@ function ChatProvider({ conversationId, initialMessages, children }: ChatProvide
 
   const submitFeedback = useCallback(
     (messageId: string, rating: 'up' | 'down', comment?: string) => {
-      orpc.conversations.submitFeedback.call({ messageId, rating, comment }).catch(() => {
+      orpc.chat.submitFeedback.call({ messageId, rating, comment }).catch(() => {
         // Silent failure — feedback is non-critical
       });
     },

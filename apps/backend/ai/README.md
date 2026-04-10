@@ -1,19 +1,27 @@
-# MCP Tools
+# AI Integration
 
-Model Context Protocol (MCP) tools that extend the AI chat agent's capabilities.
+AI capabilities for the backend — chat streaming, tool execution, and MCP server support. Built on the Vercel AI SDK with Langfuse observability.
 
-## How It Works
+```text
+ai/
+  adapter.ts       Converts tool definitions to AI SDK format for chat
+  utils.ts         Shared types (ToolSession, AiTool, createTool)
+  mcp/
+    server.ts      MCP server + transport (for external clients)
+    session.ts     DB-backed MCP session resolution
+  tools/           Tool definitions (shared across chat and MCP)
+```
 
-Tools are defined in `mcp/tools/` and automatically registered in two places:
+## Tools
 
-1. **MCP Server** (`mcp/server.ts`) — for external MCP clients (e.g., Claude Desktop, Cursor)
-2. **AI SDK Adapter** (`mcp/adapter.ts`) — for the chat agent (in-process, zero network overhead)
+Tools are defined once in `tools/` and automatically available in two contexts:
 
-This means you define a tool once and it's available to both external MCP clients and the built-in chat.
+1. **Chat** — the oRPC chat procedure (`api/routes/chat.ts`) converts tools to AI SDK format via `adapter.ts` and passes them to `streamText`
+2. **MCP** — the MCP server (`mcp/server.ts`) registers tools for external clients (e.g., Claude Desktop, Cursor)
 
-## Adding a New Tool
+### Adding a New Tool
 
-1. Create a file in `mcp/tools/` (e.g., `my-tool.ts`)
+1. Create a file in `tools/` (e.g., `my-tool.ts`)
 2. Export one or more tools using `createTool`:
 
 ```typescript
@@ -27,66 +35,28 @@ export const myTool = createTool({
     param: z.string().describe('Description of the parameter'),
   },
   annotations: { readOnlyHint: true, destructiveHint: false },
+  // By default, tools are supported in both chat and MCP
+  // mcpSupported: false,
+  // chatSupported: false,
   handler: async (args, session) => {
-    // session.userId — the authenticated user
-    // session.conversationId — the active conversation (if called from chat)
     const result = doSomething(args.param);
-    return { content: [{ type: 'text', text: result }] };
+    return result;
   },
 });
 ```
 
-3. Export from `mcp/tools/index.ts`:
+3. Export from `tools/index.ts`:
 
 ```typescript
 export * from './my-tool';
 ```
 
-That's it — the tool auto-registers in both the MCP server and the chat adapter.
+That's it — the tool auto-registers in both chat and MCP.
 
-## McpSession
+## Chat Streaming
 
-Every tool handler receives a `session` object:
+The chat endpoint is a standard oRPC `protectedProcedure` (`api/routes/chat.ts`). It uses the [Vercel AI SDK](https://ai-sdk.dev) for streaming (`streamText`) and the [oRPC AI SDK integration](https://orpc.dev/docs/integrations/ai-sdk) to stream responses as event iterators. The frontend consumes the stream via `eventIteratorToUnproxiedDataStream` in the `useChat` transport.
 
-```typescript
-type McpSession = {
-  accessToken: string; // OAuth token (for MCP clients)
-  userId?: string; // Authenticated user ID
-  conversationId?: string; // Active conversation (chat only)
-};
-```
+## MCP Server
 
-## Tool Categories
-
-### Sandbox Tools (code execution)
-
-Tools that operate inside a Daytona sandbox. The sandbox persists across messages in a conversation.
-
-- `run-code` — Execute Python code
-- `write-file` — Write to sandbox filesystem
-- `read-file` — Read from sandbox filesystem
-- `execute-command` — Run shell commands
-
-### Data Pipeline Tools (future)
-
-Tools that fetch large datasets and write them directly to the sandbox filesystem — the AI never sees the raw data, just metadata (row count, columns, file path). This avoids token limits.
-
-```
-AI calls: query-data({ sql: "SELECT ...", outputPath: "/data/results.csv" })
-Tool: executes SQL → streams to sandbox → returns "Wrote 45K rows to /data/results.csv"
-AI calls: run-code({ code: "import pandas as pd\ndf = pd.read_csv('/data/results.csv')..." })
-```
-
-### Simple Tools
-
-Tools with small outputs that the AI reads directly.
-
-- `tell-me-a-joke` — Example tool
-
-## Adapter (MCP → AI SDK)
-
-The adapter (`mcp/adapter.ts`) converts MCP tool definitions to native AI SDK tools at runtime. This means:
-
-- Tools execute **in-process** — no HTTP requests, no auth round-trips
-- The same tool handler code runs for both MCP clients and the chat agent
-- Tool discovery is automatic — add a tool to `mcp/tools/` and it appears in chat
+The MCP server (`mcp/server.ts`) exposes tools to external MCP clients via OAuth-authenticated Streamable HTTP. Session state is persisted in the database (`mcp/session.ts`) to support org switching across stateless Lambda invocations. The adapter lives at `api/adapters/mcp.ts`.

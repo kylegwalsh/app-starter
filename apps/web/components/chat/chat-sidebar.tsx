@@ -8,7 +8,7 @@ import { useParams, useRouter } from 'next/navigation';
 
 import { orpc } from '@/core/orpc';
 
-const listQueryOptions = orpc.conversations.list.queryOptions({ input: { limit: 50 } });
+const listQueryOptions = orpc.chat.list.queryOptions({ input: { limit: 50 } });
 
 /** Sidebar listing all conversations with create/delete actions */
 function ChatSidebar() {
@@ -18,7 +18,7 @@ function ChatSidebar() {
   const activeId = params?.id as string | undefined;
 
   const { data } = useQuery(listQueryOptions);
-  const deleteMutation = useMutation(orpc.conversations.delete.mutationOptions());
+  const deleteMutation = useMutation(orpc.chat.delete.mutationOptions());
 
   const handleDelete = async (conversationId: string) => {
     await deleteMutation.mutateAsync({ id: conversationId });

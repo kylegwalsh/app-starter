@@ -42,8 +42,6 @@ model User {
   oauthConsents         OauthConsent[]
   conversations         Conversation[]
   mcpSessions           McpSession[]
-  // Unused but added by better auth migrations
-  stripeCustomerId      String?
 
   @@unique([email])
   @@map("user")

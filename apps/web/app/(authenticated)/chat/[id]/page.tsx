@@ -13,7 +13,7 @@ export default function ChatConversationPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const { data, isLoading } = useQuery(orpc.conversations.get.queryOptions({ input: { id } }));
+  const { data, isLoading } = useQuery(orpc.chat.get.queryOptions({ input: { id } }));
 
   if (isLoading) {
     return (

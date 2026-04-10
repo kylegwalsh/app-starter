@@ -6,9 +6,7 @@ import { handleError } from '@/api/error';
 
 // oxlint-disable-next-line no-namespace: Namespace import used to auto-register all exported tools
 import * as tools from '../tools';
-import type { AiTool } from '../utils';
-
-import type { McpSession } from './session';
+import type { AiTool, ToolSession } from '../utils';
 
 /**
  * Create a transport that reconstitutes sessions across Lambda invocations.
@@ -31,14 +29,14 @@ export const createMcpTransport = ({ sessionId }: { sessionId: string | null }) 
 };
 
 /** Create a new MCP server instance with all MCP-supported tools registered */
-export const createMcpServer = ({ session }: { session?: McpSession }) => {
+export const createMcpServer = ({ session }: { session?: ToolSession }) => {
   const server = new McpServer({
     name: config.app.name,
     version: '1.0.0',
   });
 
   // Auto-register all exported tools that support MCP (skip on init requests where session isn't resolved yet)
-  for (const tool of Object.values(tools) as unknown as AiTool[]) {
+  for (const tool of Object.values(tools) as AiTool[]) {
     if (!('isTool' in tool && tool.isTool)) {
       continue;
     }
@@ -48,6 +46,7 @@ export const createMcpServer = ({ session }: { session?: McpSession }) => {
       continue;
     }
 
+    // Register the tool with the MCP server
     server.registerTool(
       tool.name,
       {
@@ -57,11 +56,12 @@ export const createMcpServer = ({ session }: { session?: McpSession }) => {
       },
       async (args) => {
         try {
-          return await tool.handler(args, session!);
+          const text = await tool.handler(args, session!);
+          return { content: [{ type: 'text' as const, text }] };
         } catch (error) {
-          // Ensure we track any unhandled tool errors
           await handleError({ error });
-          throw error;
+          const message = error instanceof Error ? error.message : 'Tool execution failed';
+          return { content: [{ type: 'text' as const, text: message }], isError: true };
         }
       },
     );

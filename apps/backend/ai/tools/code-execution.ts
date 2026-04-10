@@ -1,17 +1,10 @@
-import { log } from '@repo/logs';
 import { z } from 'zod';
 
 import { sandboxManager } from '@/core/daytona';
 
-import { createTool, type ToolResult } from '../utils';
+import { createTool } from '../utils';
 
-/** Helper to build a successful tool result */
-const ok = (text: string): ToolResult => ({ content: [{ type: 'text', text }] });
-
-/** Helper to build an error tool result */
-const fail = (text: string): ToolResult => ({ content: [{ type: 'text', text }], isError: true });
-
-/** Get the sandbox, throwing if unavailable so the handler's catch block returns a clean error */
+/** Get the sandbox, throwing if unavailable */
 const requireSandbox = async (conversationId: string | undefined) => {
   if (!conversationId) {
     throw new Error('Code execution requires an active conversation.');
@@ -22,7 +15,6 @@ const requireSandbox = async (conversationId: string | undefined) => {
 /** Execute Python code in a persistent sandboxed environment */
 export const runCode = createTool({
   name: 'run-code',
-  mcpSupported: false,
   description:
     'Execute Python code in a persistent sandboxed environment. Files and variables persist across calls within the conversation. Use for data analysis, calculations, file processing, and generating charts. Save charts to /output/ directory.',
   inputSchema: {
@@ -30,42 +22,37 @@ export const runCode = createTool({
     timeout: z.number().optional().describe('Timeout in seconds (default 30)'),
   },
   annotations: { readOnlyHint: false, destructiveHint: false },
+  // MCPs manage their own code execution (doesn't need this tool)
+  mcpSupported: false,
   handler: async (args, session) => {
+    const sandbox = await requireSandbox(session.conversationId);
+    const response = await sandbox.process.codeRun(args.code, undefined, args.timeout ?? 30);
+
+    // Check for generated images in /output/
+    let outputNote = '';
     try {
-      const sandbox = await requireSandbox(session.conversationId);
-      const response = await sandbox.process.codeRun(args.code, undefined, args.timeout ?? 30);
-
-      // Check for generated images in /output/
-      let outputNote = '';
-      try {
-        const outputFiles = await sandbox.fs.listFiles('/output');
-        const imageFiles = outputFiles.filter(
-          (f) => !f.isDir && /\.(png|jpg|jpeg|gif|svg)$/i.test(f.name),
-        );
-        if (imageFiles.length > 0) {
-          const fileNames = imageFiles.map((f) => f.name).join(', ');
-          outputNote = `\n\n[Generated files in /output/: ${fileNames}]`;
-        }
-      } catch {
-        // /output/ directory may not exist yet
+      const outputFiles = await sandbox.fs.listFiles('/output');
+      const imageFiles = outputFiles.filter(
+        (f) => !f.isDir && /\.(png|jpg|jpeg|gif|svg)$/i.test(f.name),
+      );
+      if (imageFiles.length > 0) {
+        const fileNames = imageFiles.map((f) => f.name).join(', ');
+        outputNote = `\n\n[Generated files in /output/: ${fileNames}]`;
       }
-
-      if (response.exitCode !== 0) {
-        return fail(`Error (exit code ${String(response.exitCode)}):\n${response.result}`);
-      }
-      return ok(`${response.result}${outputNote}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Code execution failed.';
-      log.error({ error, conversationId: session.conversationId }, 'Code execution failed');
-      return fail(message);
+    } catch {
+      // /output/ directory may not exist yet
     }
+
+    if (response.exitCode !== 0) {
+      throw new Error(`Error (exit code ${String(response.exitCode)}):\n${response.result}`);
+    }
+    return `${response.result}${outputNote}`;
   },
 });
 
 /** Write content to a file in the sandbox */
 export const sandboxWriteFile = createTool({
   name: 'write-file',
-  mcpSupported: false,
   description:
     'Write content to a file in the sandbox. Use for saving data, scripts, configs, or CSV files for analysis.',
   inputSchema: {
@@ -73,40 +60,30 @@ export const sandboxWriteFile = createTool({
     content: z.string().describe('File content to write'),
   },
   annotations: { readOnlyHint: false, destructiveHint: false },
+  // MCPs manage their own code execution (doesn't need this tool)
+  mcpSupported: false,
   handler: async (args, session) => {
-    try {
-      const sandbox = await requireSandbox(session.conversationId);
-      await sandbox.fs.uploadFile(Buffer.from(args.content, 'utf8'), args.path);
-      return ok(`File written to ${args.path}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : `Failed to write file: ${args.path}`;
-      log.error({ error, path: args.path }, 'Failed to write file to sandbox');
-      return fail(message);
-    }
+    const sandbox = await requireSandbox(session.conversationId);
+    await sandbox.fs.uploadFile(Buffer.from(args.content, 'utf8'), args.path);
+    return `File written to ${args.path}`;
   },
 });
 
 /** Read a file from the sandbox */
 export const sandboxReadFile = createTool({
   name: 'read-file',
-  mcpSupported: false,
   description:
     'Read a file from the sandbox. Use to check results, review generated data, or read analysis output.',
   inputSchema: {
     path: z.string().describe('File path to read'),
   },
   annotations: { readOnlyHint: true, destructiveHint: false },
+  // MCPs manage their own code execution (doesn't need this tool)
+  mcpSupported: false,
   handler: async (args, session) => {
-    try {
-      const sandbox = await requireSandbox(session.conversationId);
-      const content = await sandbox.fs.downloadFile(args.path);
-      const text = typeof content === 'string' ? content : String(content);
-      return ok(text);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : `Failed to read file: ${args.path}`;
-      log.error({ error, path: args.path }, 'Failed to read file from sandbox');
-      return fail(message);
-    }
+    const sandbox = await requireSandbox(session.conversationId);
+    const content = await sandbox.fs.downloadFile(args.path);
+    return typeof content === 'string' ? content : String(content);
   },
 });
 
@@ -135,7 +112,6 @@ const ALLOWED_COMMAND_PREFIXES = [
 /** Run a shell command in the sandbox */
 export const sandboxExecuteCommand = createTool({
   name: 'execute-command',
-  mcpSupported: false,
   description:
     'Run a shell command in the sandbox. Allowed commands: pip install, python, ls, cat, head, tail, wc, find, grep, mkdir, cp, mv, echo, pwd. Use for installing packages and running scripts.',
   inputSchema: {
@@ -144,11 +120,13 @@ export const sandboxExecuteCommand = createTool({
     timeout: z.number().optional().describe('Timeout in seconds (default 30)'),
   },
   annotations: { readOnlyHint: false, destructiveHint: false },
+  // MCPs manage their own code execution (doesn't need this tool)
+  mcpSupported: false,
   handler: async (args, session) => {
     // Block shell metacharacters to prevent command chaining via prompt injection
     const SHELL_META = /[;|&`$><]/;
     if (SHELL_META.test(args.command)) {
-      return fail('Shell metacharacters (;|&`$><) are not permitted in commands.');
+      throw new Error('Shell metacharacters (;|&`$><) are not permitted in commands.');
     }
 
     // Validate command against allowlist to prevent prompt injection abuse
@@ -157,28 +135,22 @@ export const sandboxExecuteCommand = createTool({
       (prefix) => args.command.trim().startsWith(prefix) || commandBase === prefix.split(' ')[0],
     );
     if (!isAllowed) {
-      return fail(
+      throw new Error(
         `Command "${commandBase}" is not allowed. Permitted: ${ALLOWED_COMMAND_PREFIXES.join(', ')}`,
       );
     }
 
-    try {
-      const sandbox = await requireSandbox(session.conversationId);
-      const response = await sandbox.process.executeCommand(
-        args.command,
-        args.cwd,
-        undefined,
-        args.timeout ?? 30,
-      );
+    const sandbox = await requireSandbox(session.conversationId);
+    const response = await sandbox.process.executeCommand(
+      args.command,
+      args.cwd,
+      undefined,
+      args.timeout ?? 30,
+    );
 
-      if (response.exitCode !== 0) {
-        return fail(`Error (exit code ${String(response.exitCode)}):\n${response.result}`);
-      }
-      return ok(response.result);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Command execution failed.';
-      log.error({ error, command: args.command }, 'Command execution failed');
-      return fail(message);
+    if (response.exitCode !== 0) {
+      throw new Error(`Error (exit code ${String(response.exitCode)}):\n${response.result}`);
     }
+    return response.result;
   },
 });

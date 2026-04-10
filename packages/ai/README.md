@@ -100,3 +100,4 @@ Notes:
 - Langfuse is activated when the required env vars are present. Telemetry is attached automatically to generations.
 - The default provider is Amazon Bedrock (using AWS credentials from the Lambda environment). Other providers are scaffolded and can be enabled with API keys.
 - Use `startActiveObservation` to create logical groupings of AI operations in your traces, making it easier to analyze and debug complex workflows in Langfuse.
+- For chat streaming, tools, and MCP server integration, see [`apps/backend/ai/README.md`](../../apps/backend/ai/README.md).

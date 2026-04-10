@@ -1,12 +1,12 @@
 import { billingRouter } from './billing';
-import { conversationsRouter } from './conversations';
+import { chatRouter } from './chat';
 import { healthRouter } from './health';
 import { uploadsRouter } from './uploads';
 
 /** The router used to handle all API traffic */
 export const router = {
   billing: billingRouter,
-  conversations: conversationsRouter,
+  chat: chatRouter,
   health: healthRouter,
   uploads: uploadsRouter,
 };

@@ -20,14 +20,16 @@
   - Accepting the invite doesn't automatically load the new organization on the home page
   - Have to allow no organization and have a signup for a demo or something
 
-# CHAT SDK
+# AI
 
-- ~~Connect chat SDK~~
-- ~~Build chat UI for web-app~~
+- Fix deep type in mcp/server
+- Determine if we're using oRPC right
+- Verify we are handling errors appropriately from MCP / AI-SDK
+- Verify MCP still works
+- Check out and test Chat UI
+- Clean up any generated code
 - Create slack app
-
-## AI
-
+- Consider moving to REST API for increased timeouts + streaming support (urls are uglier)
 - Add Daytona setup to init script (sign up at daytona.io, get API key, `sst secret set DAYTONA_API_KEY <value>`)
 - Add CloudFront key pair setup to init script:
   - Create a CloudFront key pair in AWS (IAM > Public keys)

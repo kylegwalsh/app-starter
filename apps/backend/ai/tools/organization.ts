@@ -10,6 +10,8 @@ export const listOrganizations = createTool({
   description:
     'Lists all organizations you belong to and shows which one is currently active for MCP tool calls.',
   annotations: { readOnlyHint: true, destructiveHint: false },
+  // Chat runs in the context of a single org (doesn't need this tool)
+  chatSupported: false,
   handler: async (_args, session) => {
     // Get all organizations the user belongs to
     const memberships = await db.member.findMany({
@@ -19,7 +21,7 @@ export const listOrganizations = createTool({
 
     // Handle edge case where the user belongs to no organizations
     if (memberships.length === 0) {
-      return { content: [{ type: 'text', text: 'You are not a member of any organizations.' }] };
+      return 'You are not a member of any organizations.';
     }
 
     // Format the organizations into a list of lines
@@ -28,14 +30,7 @@ export const listOrganizations = createTool({
       return `${isActive ? '→ ' : '  '}${m.organization.name} (${m.organizationId})`;
     });
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Organizations:\n${lines.join('\n')}`,
-        },
-      ],
-    };
+    return `Organizations:\n${lines.join('\n')}`;
   },
 });
 
@@ -45,6 +40,8 @@ export const switchOrganization = createTool({
   description: 'Changes the active organization (by organization ID).',
   inputSchema: { organizationId: z.string().describe('The ID of the organization to switch to') },
   annotations: { readOnlyHint: false, destructiveHint: false },
+  // Chat runs in the context of a single org (doesn't need this tool)
+  chatSupported: false,
   handler: async (args, session) => {
     // Verify the user is a member of this organization
     const membership = await db.member.findFirst({
@@ -54,15 +51,9 @@ export const switchOrganization = createTool({
 
     // Handle edge case where the user is not a member of the organization
     if (!membership) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: 'You are not a member of that organization. Use list-organizations to see your options.',
-          },
-        ],
-        isError: true,
-      };
+      throw new Error(
+        'You are not a member of that organization. Use list-organizations to see your options.',
+      );
     }
 
     // Update the MCP session's active organization
@@ -71,13 +62,6 @@ export const switchOrganization = createTool({
       data: { organizationId: args.organizationId },
     });
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Active organization set to "${membership.organization.name}" (${membership.organizationId}).`,
-        },
-      ],
-    };
+    return `Active organization set to "${membership.organization.name}" (${membership.organizationId}).`;
   },
 });

@@ -1,13 +1,6 @@
-import type { Organization, User } from '@prisma/client';
-
 import { db } from '@/db';
 
-/** The type representing an authenticated MCP session */
-export type McpSession = {
-  id: string;
-  user: User;
-  organization: Organization;
-};
+import { ToolSession } from '../utils';
 
 /** Resolve an MCP session from the session ID and authenticated user */
 export const resolveMcpSession = async ({
@@ -16,7 +9,7 @@ export const resolveMcpSession = async ({
 }: {
   sessionId: string;
   userId: string;
-}): Promise<McpSession> => {
+}): Promise<ToolSession> => {
   // ---------- EXISTING SESSION (HAPPY PATH) ----------
   // Find the session and verify the user still belongs to the organization
   const existing = await db.mcpSession.findUnique({

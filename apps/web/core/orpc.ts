@@ -17,8 +17,8 @@ const link = new RPCLink({
   fetch: (input, init) => fetch(input, { ...init, credentials: 'include' }),
 });
 
-/** Typed oRPC client */
-const client: RouterClient<AppRouter> = createORPCClient(link);
+/** Typed oRPC client — use directly for streaming procedures */
+export const client: RouterClient<AppRouter> = createORPCClient(link);
 
 /** TanStack Query utilities for oRPC — use with useQuery/useMutation */
 export const orpc = createTanstackQueryUtils(client);

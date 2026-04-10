@@ -10,7 +10,6 @@ import { internalDocsPlugin, internalDocsLoginHTML } from './docs';
 import { handleHonoError } from './error';
 import { cdnCookiesMiddleware, corsMiddleware, timingMiddleware } from './middleware';
 import { router } from './routes';
-import { chatApp } from './routes/chat';
 
 // ---------- CONFIGURATION ----------
 // Our global configuration for the hono wrapper
@@ -35,9 +34,6 @@ app.on(['GET', 'POST'], ['/api/auth/*'], (c) => {
 // MCP routes + OAuth discovery endpoints
 app.route('/mcp', mcpAdapter);
 app.route('/.well-known', mcpDiscovery);
-
-// Chat streaming route (direct Hono — not oRPC — because useChat expects a specific streaming format)
-app.route('/api/chat', chatApp);
 
 // A dedicated login for our Swagger docs to authenticate users and set the session cookie
 app.get('/api/login', (c) => c.html(internalDocsLoginHTML));

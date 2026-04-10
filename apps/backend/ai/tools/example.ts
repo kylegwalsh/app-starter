@@ -17,6 +17,6 @@ export const tellMeAJoke = createTool({
     // Consume the stream and collect the full text
     const text = await result.text;
 
-    return { content: [{ type: 'text', text }] };
+    return text;
   },
 });
