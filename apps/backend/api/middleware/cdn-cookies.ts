@@ -1,8 +1,9 @@
 import { createSign } from 'node:crypto';
 
-import { config, env } from '@repo/config';
+import { config } from '@repo/config';
 import { log } from '@repo/logs';
 import type { MiddlewareHandler } from 'hono';
+import { Resource } from 'sst';
 
 import { getBaseDomain, getCdnDomain } from '@/core/cdn';
 
@@ -26,8 +27,11 @@ export const cdnCookiesMiddleware: MiddlewareHandler = async (c, next) => {
   }
 
   try {
-    const keyPairId = (env as Record<string, string>).CLOUDFRONT_KEY_PAIR_ID;
-    const privateKey = (env as Record<string, string>).CLOUDFRONT_PRIVATE_KEY;
+    // Key pair is generated in Pulumi state and linked via sst.Linkable.
+    // Types for uploadsCdnKeyPair are generated after the first deploy.
+    type KeyPair = { id: string; privateKey: string };
+    const { id: keyPairId, privateKey } = (Resource as unknown as { uploadsCdnKeyPair: KeyPair })
+      .uploadsCdnKeyPair;
 
     if (!keyPairId || !privateKey) {
       return;

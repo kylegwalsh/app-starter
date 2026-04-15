@@ -20,7 +20,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from '@repo/design';
-import { ChevronRight, LayoutDashboard, Settings } from 'lucide-react';
+import { ChevronRight, LayoutDashboard, MessageSquare, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ComponentType, SVGProps } from 'react';
@@ -58,6 +58,11 @@ export const AppSidebar: FC = ({ children }) => {
                   title: 'Dashboard',
                   url: '/',
                   icon: LayoutDashboard,
+                },
+                {
+                  title: 'Chat',
+                  url: '/chat',
+                  icon: MessageSquare,
                 },
               ]}
             />
@@ -129,7 +134,11 @@ const AppSidebarGroup = ({ navItems, label }: { navItems: NavItem[]; label?: str
             </Collapsible>
           ) : (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild isActive={pathname === item.url} tooltip={item.title}>
+              <SidebarMenuButton
+                asChild
+                isActive={item.url === '/' ? pathname === item.url : pathname.startsWith(item.url)}
+                tooltip={item.title}
+              >
                 <Link href={item.url}>
                   {Icon ? <Icon /> : null}
                   <span>{item.title}</span>

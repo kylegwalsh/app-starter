@@ -20,10 +20,12 @@
   - Accepting the invite doesn't automatically load the new organization on the home page
   - Have to allow no organization and have a signup for a demo or something
 
-# AI
+## AI
 
+- Ensure that unhandled mcp/tool errors bubble up and get reported to Posthog
+- Add new storybook stories for new design system files
 - Fix deep type in mcp/server
-- Determine if we're using oRPC right
+- Determine if we're using oRPC chat streaming right
 - Verify we are handling errors appropriately from MCP / AI-SDK
 - Verify MCP still works
 - Check out and test Chat UI
@@ -31,15 +33,9 @@
 - Create slack app
 - Consider moving to REST API for increased timeouts + streaming support (urls are uglier)
 - Add Daytona setup to init script (sign up at daytona.io, get API key, `sst secret set DAYTONA_API_KEY <value>`)
-- Add CloudFront key pair setup to init script:
-  - Create a CloudFront key pair in AWS (IAM > Public keys)
-  - `sst secret set CLOUDFRONT_PUBLIC_KEY <pem-encoded-public-key>`
-  - `sst secret set CLOUDFRONT_PRIVATE_KEY <pem-encoded-private-key>`
-  - `sst secret set CLOUDFRONT_KEY_PAIR_ID <key-pair-id>`
-- Make storage infra (S3 + CloudFront) conditional — only deploy when CloudFront secrets are set, so `bun dev` works without them
+- Ensure the bot doesn't focus on data analysis (maybe give it a basic prompt)
 - Make Daytona sandbox manager fail gracefully when API key is not configured (return tool error, don't crash)
 - Disable chat routes / MCP server if AI is not set up during init (skip importing infra/storage, skip chat route mounting, etc.)
-- Auto-generate CloudFront RSA key pair in init script (`openssl genrsa 2048` + `openssl rsa -pubout`)
 
 ## Worktree
 

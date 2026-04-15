@@ -45,7 +45,7 @@
     "@repo/utils": "workspace:*",
     "better-auth": "1.5.4",
     "hono": "4.8.4",
-    "nanoid": "3.3.11",
+    "nanoid": "5.1.7",
     "prisma": "6.7.0",
     "stripe": "18.4.0",
     "zod": "3.25.49"

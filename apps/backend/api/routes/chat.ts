@@ -29,18 +29,28 @@ export const chatRouter = orpc.prefix('/chat').router({
       // Cast to UIMessage[] — the SDK's full part union can't be expressed in Zod
       const messages = input.messages as unknown as UIMessage[];
 
-      // Load existing conversation or create a new one
+      // Load existing conversation or create a new one.
+      // When conversationId is provided, upsert — this supports the optimistic pattern
+      // where the client generates an ID before navigating to /chat/[id].
       let conversation;
       if (conversationId) {
-        conversation = await db.conversation.findFirst({
-          where: { id: conversationId, userId: user.id, organizationId: organization.id },
+        conversation = await db.conversation.upsert({
+          where: { id: conversationId },
+          update: {},
+          create: {
+            id: conversationId,
+            userId: user.id,
+            organizationId: organization.id,
+            lastMessageAt: new Date(),
+          },
         });
-        if (!conversation) {
+        // Verify ownership (handles case where ID was guessed and belongs to another user)
+        if (conversation.userId !== user.id || conversation.organizationId !== organization.id) {
           throw new ORPCError('NOT_FOUND', { message: 'Conversation not found' });
         }
       } else {
         conversation = await db.conversation.create({
-          data: { userId: user.id, organizationId: organization.id },
+          data: { userId: user.id, organizationId: organization.id, lastMessageAt: new Date() },
         });
       }
 
@@ -106,6 +116,29 @@ When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.
       });
       const existingMessageIds = new Set(existingMessages.map((m) => m.id));
 
+      // Persist new user messages immediately — fire and forget so the stream isn't blocked.
+      // (onFinish only receives assistant messages, so user messages must be saved here.)
+      const newUserMessages = messages.filter(
+        (m) => m.role === 'user' && !existingMessageIds.has(m.id),
+      );
+      if (newUserMessages.length > 0) {
+        const now = new Date();
+        void Promise.all([
+          db.message.createMany({
+            data: newUserMessages.map((msg) => ({
+              id: msg.id,
+              conversationId: conversation.id,
+              role: msg.role,
+              parts: msg.parts as Prisma.InputJsonValue,
+            })),
+          }),
+          db.conversation.update({
+            where: { id: conversation.id },
+            data: { lastMessageAt: now },
+          }),
+        ]).catch((error) => log.error({ error }, 'Failed to persist user messages'));
+      }
+
       // Get the Langfuse trace ID so we can pass it to the client for feedback scoring
       const traceId = ai.getRequestTraceId();
 
@@ -166,7 +199,7 @@ When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.
     .handler(async ({ context, input }) => {
       const conversations = await db.conversation.findMany({
         where: { userId: context.user.id, organizationId: context.organization.id },
-        orderBy: { updatedAt: 'desc' },
+        orderBy: [{ lastMessageAt: 'desc' }, { createdAt: 'desc' }],
         take: input.limit + 1,
         ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
         select: {
@@ -174,6 +207,7 @@ When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.
           title: true,
           createdAt: true,
           updatedAt: true,
+          lastMessageAt: true,
         },
       });
 

@@ -13,9 +13,19 @@ export default function ChatConversationPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const { data, isLoading } = useQuery(orpc.chat.get.queryOptions({ input: { id } }));
+  const { data, isFetched } = useQuery({
+    ...orpc.chat.get.queryOptions({ input: { id } }),
+    // A client-generated ID won't exist in the DB until the first message is sent.
+    // Treat 404 as "new conversation" rather than an error state.
+    retry: (_, error) => {
+      const e = error as { code?: string };
+      return e.code !== 'NOT_FOUND';
+    },
+  });
 
-  if (isLoading) {
+  // Use isFetched (not isLoading) so navigating away and back doesn't re-show
+  // the skeleton when the data is already cached in the QueryClient.
+  if (!isFetched) {
     return (
       <div className="flex h-full flex-col gap-4 p-6">
         <Skeleton className="h-8 w-48" />

@@ -10,18 +10,6 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "CLOUDFRONT_KEY_PAIR_ID": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "CLOUDFRONT_PRIVATE_KEY": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "CLOUDFRONT_PUBLIC_KEY": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
     "DATABASE_URL": {
       "type": "sst.sst.Secret"
       "value": string
@@ -57,6 +45,11 @@ declare module "sst" {
     "uploads": {
       "name": string
       "type": "sst.aws.Bucket"
+    }
+    "uploadsCdnKeyPair": {
+      "id": string
+      "privateKey": string
+      "type": "sst.sst.Linkable"
     }
     "web": {
       "type": "sst.aws.Nextjs"

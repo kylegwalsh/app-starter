@@ -309,6 +309,7 @@ model Conversation {
   sandboxId      String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  lastMessageAt  DateTime?
   messages       Message[]
 
   @@index([userId])

@@ -1,4 +1,5 @@
-import { CLOUDFRONT_PUBLIC_KEY } from './secrets';
+import { PrivateKey } from '@pulumi/tls';
+
 import { domain } from './utils';
 
 // Private S3 bucket for chat file uploads
@@ -6,15 +7,31 @@ export const uploadsBucket = new sst.aws.Bucket('uploads', {
   access: 'cloudfront',
 });
 
-// CloudFront key group for signed cookies
+// Generate the RSA key pair in Pulumi state — no manual key management needed.
+// The private key is encrypted in SST's S3 state backend. Rotating means running
+// `sst state delete uploadsCdnKeyPair` then redeploying to generate a fresh pair.
+const keyPair = new PrivateKey('uploadsCdnKeyPair', {
+  algorithm: 'RSA',
+  rsaBits: 2048,
+});
+
 const cloudfrontPublicKey = new aws.cloudfront.PublicKey('uploadsCdnPublicKey', {
-  encodedKey: CLOUDFRONT_PUBLIC_KEY.value,
+  encodedKey: keyPair.publicKeyPem,
   name: `uploads-cdn-public-key-${$app.stage}`,
 });
 
 const keyGroup = new aws.cloudfront.KeyGroup('uploadsCdnKeyGroup', {
   items: [cloudfrontPublicKey.id],
   name: `uploads-cdn-key-group-${$app.stage}`,
+});
+
+// Link the key pair ID and private key to the backend so it can sign cookies.
+// Both values are injected at runtime via Resource.uploadsCdnKeyPair.
+export const uploadsCdnKeyPair = new sst.Linkable('uploadsCdnKeyPair', {
+  properties: {
+    id: cloudfrontPublicKey.id,
+    privateKey: $util.secret(keyPair.privateKeyPem),
+  },
 });
 
 // CloudFront distribution serving uploaded files with signed cookie auth

@@ -2,9 +2,13 @@
 
 import { useChat } from '@ai-sdk/react';
 import { eventIteratorToUnproxiedDataStream } from '@orpc/client';
-import { CHAT_ALLOWED_FILE_TYPES, CHAT_MAX_FILE_SIZE } from '@repo/constants';
+import { CHAT_ALLOWED_FILE_TYPES } from '@repo/constants';
+import type { PromptInputMessage } from '@repo/design/components/ai-elements/prompt-input';
 import { chatSchema } from '@repo/schemas';
-import type { UIMessage } from 'ai';
+import { useQueryClient } from '@tanstack/react-query';
+import type { ChatStatus, UIMessage } from 'ai';
+import { nanoid } from 'nanoid';
+import { useRouter } from 'next/navigation';
 import {
   createContext,
   use,
@@ -12,7 +16,6 @@ import {
   useEffect,
   useMemo,
   useState,
-  type FormEvent,
   type ReactNode,
 } from 'react';
 import type { z } from 'zod';
@@ -23,32 +26,24 @@ import { client, orpc } from '@/core/orpc';
 type ChatMessageMetadata = z.infer<typeof chatSchema.messageMetadata>;
 type ChatMessage = UIMessage<ChatMessageMetadata>;
 
-/** A file attached to a message before sending */
-type AttachedFile = {
-  file: File;
-  previewUrl: string;
-};
-
 type ChatContextValue = {
   messages: ChatMessage[];
-  status: string;
+  status: ChatStatus;
   error: Error | undefined;
-  input: string;
-  setInput: (value: string) => void;
-  handleSubmit: (e: FormEvent) => void;
   stop: () => void;
   regenerate: () => void;
   isLoading: boolean;
   isUploading: boolean;
   uploadError: string | null;
   conversationId: string | undefined;
-  attachedFiles: AttachedFile[];
-  addFiles: (files: File[]) => void;
-  removeFile: (index: number) => void;
+  handleSubmit: (message: PromptInputMessage) => Promise<void>;
   submitFeedback: (messageId: string, rating: 'up' | 'down', comment?: string) => void;
 };
 
 const ChatContext = createContext<ChatContextValue | null>(null);
+
+/** sessionStorage key for a pending first message on a new conversation */
+const pendingKey = (id: string) => `chat:pending:${id}`;
 
 type ChatProviderProps = {
   /** Existing conversation ID (for loading a saved conversation) */
@@ -58,29 +53,49 @@ type ChatProviderProps = {
   children: ReactNode;
 };
 
+/** Uploads a FileUIPart's blob URL to S3 and returns a CDN file descriptor */
+const uploadFilePart = async (
+  filePart: PromptInputMessage['files'][number],
+): Promise<{ type: 'file'; url: string; mediaType: string }> => {
+  const resp = await fetch(filePart.url);
+  const blob = await resp.blob();
+  const file = new File([blob], filePart.filename ?? 'upload', { type: filePart.mediaType });
+
+  const result = await orpc.uploads.createUploadUrl.call({
+    fileName: file.name,
+    fileType: file.type as (typeof CHAT_ALLOWED_FILE_TYPES)[number],
+    fileSize: file.size,
+  });
+
+  const formData = new FormData();
+  for (const [k, v] of Object.entries(result.uploadFields)) {
+    formData.append(k, String(v));
+  }
+  formData.append('file', file);
+
+  const res = await fetch(result.uploadUrl, { method: 'POST', body: formData });
+  if (!res.ok) {
+    throw new Error(`Failed to upload ${file.name}`);
+  }
+
+  return { type: 'file', url: result.cdnUrl, mediaType: file.type };
+};
+
 /** Provides chat state via useChat to all child components */
 function ChatProvider({ conversationId, initialMessages, children }: ChatProviderProps) {
-  const [input, setInput] = useState('');
-  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
-
-  // Clean up object URLs on unmount to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      for (const file of attachedFiles) {
-        if (file.previewUrl) {
-          URL.revokeObjectURL(file.previewUrl);
-        }
-      }
-    };
-  }, [attachedFiles]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const { messages, status, error, sendMessage, stop, regenerate } = useChat<ChatMessage>({
     transport: {
       async sendMessages(options) {
+        // Use the prop conversationId, not options.chatId — the AI SDK generates
+        // a random chatId when id is undefined, which the backend would reject as NOT_FOUND.
         const iterator = await client.chat.send(
           {
-            id: options.chatId,
+            id: conversationId,
             messages: options.messages as z.input<typeof chatSchema.chatMessage>['messages'],
           },
           { signal: options.abortSignal ?? undefined },
@@ -98,113 +113,98 @@ function ChatProvider({ conversationId, initialMessages, children }: ChatProvide
 
   const isLoading = status === 'streaming' || status === 'submitted';
 
-  const addFiles = useCallback((files: File[]) => {
-    const allowedTypes = new Set<string>(CHAT_ALLOWED_FILE_TYPES);
+  // On mount, auto-send any pending message stored by the new-conversation flow.
+  // The [id] page stores the user's first message in sessionStorage before navigating.
+  useEffect(() => {
+    if (!conversationId) {
+      return;
+    }
+    const raw = sessionStorage.getItem(pendingKey(conversationId));
+    if (!raw) {
+      return;
+    }
+    sessionStorage.removeItem(pendingKey(conversationId));
+    const { text, fileUrls } = JSON.parse(raw) as {
+      text: string;
+      fileUrls: { type: 'file'; url: string; mediaType: string }[];
+    };
+    if (fileUrls.length > 0) {
+      sendMessage({ text, files: fileUrls });
+    } else {
+      sendMessage({ text });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount only
+  }, [conversationId]);
 
-    const validFiles: AttachedFile[] = [];
-    for (const file of files) {
-      if (!allowedTypes.has(file.type)) {
-        setUploadError(`"${file.name}" is not a supported file type.`);
-        continue;
-      }
-      if (file.size > CHAT_MAX_FILE_SIZE) {
-        setUploadError(`"${file.name}" exceeds the 10MB size limit.`);
-        continue;
-      }
-      validFiles.push({
-        file,
-        previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : '',
+  // After the first message is sent, invalidate the sidebar conversation list
+  useEffect(() => {
+    if (status === 'ready' && messages.length > 0) {
+      void queryClient.invalidateQueries({
+        queryKey: orpc.chat.list.queryOptions({ input: { limit: 50 } }).queryKey,
       });
     }
-
-    if (validFiles.length > 0) {
-      setAttachedFiles((prev) => [...prev, ...validFiles]);
-    }
-  }, []);
-
-  const removeFile = useCallback((index: number) => {
-    setAttachedFiles((prev) => {
-      const file = prev[index];
-      if (file?.previewUrl) {
-        URL.revokeObjectURL(file.previewUrl);
-      }
-      return prev.filter((_, i) => i !== index);
-    });
-  }, []);
-
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  }, [status, messages.length, queryClient]);
 
   const handleSubmit = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault();
+    async (message: PromptInputMessage) => {
       setUploadError(null);
 
-      if ((!input.trim() && attachedFiles.length === 0) || isLoading || isUploading) {
+      if ((!message.text.trim() && message.files.length === 0) || isLoading || isUploading) {
         return;
       }
 
-      // Upload files if any are attached
+      // Upload files if any (common to both new and existing conversation paths)
       let fileUrls: { type: 'file'; url: string; mediaType: string }[] = [];
-      if (attachedFiles.length > 0) {
+      if (message.files.length > 0) {
         setIsUploading(true);
         try {
-          fileUrls = await Promise.all(
-            attachedFiles.map(async (attached) => {
-              const result = await orpc.uploads.createUploadUrl.call({
-                fileName: attached.file.name,
-                // Safe cast — file type was validated in addFiles
-                fileType: attached.file.type as (typeof CHAT_ALLOWED_FILE_TYPES)[number],
-                fileSize: attached.file.size,
-              });
-
-              // Upload via presigned POST (FormData) — enforces content-length-range at S3 level
-              const formData = new FormData();
-              for (const [fieldKey, fieldValue] of Object.entries(result.uploadFields)) {
-                formData.append(fieldKey, String(fieldValue));
-              }
-              formData.append('file', attached.file);
-
-              const uploadResponse = await fetch(result.uploadUrl, {
-                method: 'POST',
-                body: formData,
-              });
-
-              if (!uploadResponse.ok) {
-                throw new Error(`Failed to upload ${attached.file.name}`);
-              }
-
-              return {
-                type: 'file' as const,
-                url: result.cdnUrl,
-                mediaType: attached.file.type,
-              };
-            }),
-          );
+          fileUrls = await Promise.all(message.files.map(uploadFilePart));
         } catch {
           setIsUploading(false);
           setUploadError('Failed to upload files. Please try again.');
-          return; // Don't clear files — let user retry
+          // Re-throw so PromptInput knows not to clear the form
+          throw new Error('Upload failed');
         }
         setIsUploading(false);
       }
 
-      // Clean up preview URLs
-      for (const attached of attachedFiles) {
-        if (attached.previewUrl) {
-          URL.revokeObjectURL(attached.previewUrl);
-        }
-      }
-      setAttachedFiles([]);
+      // New conversation: generate an ID, stash the message, navigate to /chat/[id].
+      // The [id] page reads the stashed message and auto-sends it on mount.
+      if (!conversationId) {
+        const id = nanoid();
 
-      // Send message with optional file attachments
-      if (fileUrls.length > 0) {
-        sendMessage({ text: input, files: fileUrls });
-      } else {
-        sendMessage({ text: input });
+        sessionStorage.setItem(pendingKey(id), JSON.stringify({ text: message.text, fileUrls }));
+
+        // Optimistically add the new conversation to the sidebar list so it appears immediately
+        queryClient.setQueryData(
+          orpc.chat.list.queryOptions({ input: { limit: 50 } }).queryKey,
+          (old) => ({
+            items: [
+              {
+                id,
+                title: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                lastMessageAt: null,
+              },
+              ...(old?.items ?? []),
+            ],
+            nextCursor: old?.nextCursor,
+          }),
+        );
+
+        router.push(`/chat/${id}`);
+        return;
       }
-      setInput('');
+
+      // Existing conversation: send message with any uploaded file URLs
+      if (fileUrls.length > 0) {
+        sendMessage({ text: message.text, files: fileUrls });
+      } else {
+        sendMessage({ text: message.text });
+      }
     },
-    [input, attachedFiles, isLoading, isUploading, sendMessage],
+    [conversationId, isLoading, isUploading, sendMessage, router, queryClient],
   );
 
   const submitFeedback = useCallback(
@@ -221,35 +221,26 @@ function ChatProvider({ conversationId, initialMessages, children }: ChatProvide
       messages,
       status,
       error,
-      input,
-      setInput,
-      handleSubmit,
       stop,
       regenerate,
       isLoading,
       isUploading,
       uploadError,
       conversationId,
-      attachedFiles,
-      addFiles,
-      removeFile,
+      handleSubmit,
       submitFeedback,
     }),
     [
       messages,
       status,
       error,
-      input,
-      handleSubmit,
       stop,
       regenerate,
       isLoading,
       isUploading,
       uploadError,
       conversationId,
-      attachedFiles,
-      addFiles,
-      removeFile,
+      handleSubmit,
       submitFeedback,
     ],
   );
@@ -266,4 +257,4 @@ const useChatContext = () => {
   return context;
 };
 
-export { ChatProvider, useChatContext, type ChatProviderProps };
+export { ChatProvider, useChatContext, type ChatProviderProps, pendingKey };

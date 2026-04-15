@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@posthog/cli": "0.3.3",
+    "@pulumi/tls": "5.3.1",
     "@repo/tsconfig": "workspace:*",
     "@types/aws-lambda": "8.10.149",
     "@types/inquirer": "9.0.9",

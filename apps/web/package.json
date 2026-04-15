@@ -35,16 +35,16 @@
     "@repo/seo": "workspace:*",
     "@repo/utils": "workspace:*",
     "@tanstack/react-query": "5.79.0",
-    "ai": "6.0.146",
+    "ai": "6.0.158",
     "better-auth": "1.5.4",
     "jotai": "2.12.4",
     "lucide-react": "0.475.0",
+    "nanoid": "5.1.7",
     "next": "15.3.6",
     "next-themes": "0.4.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-markdown": "10.1.0",
-    "remark-gfm": "4.0.1"
+    "react-medium-image-zoom": "5.2.12"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "15.3.6",
