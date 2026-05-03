@@ -1,12 +1,12 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
-import { CHAT_FILE_TYPE_EXTENSIONS, CHAT_MAX_FILE_SIZE } from '@repo/constants';
+import { CHAT_MAX_FILE_SIZE } from '@repo/constants';
 import { chatSchema } from '@repo/schemas';
 import { nanoid } from 'nanoid';
 import { Resource } from 'sst';
 
 import { orpc } from '@/core';
-import { getCdnUrl } from '@/core/cdn';
+import { storage } from '@/core/storage';
 
 import { protectedProcedure } from '../procedures';
 
@@ -24,15 +24,15 @@ export const uploadsRouter = orpc.prefix('/uploads').router({
     })
     .input(chatSchema.uploadInput)
     .handler(async ({ context, input }) => {
-      const extension = CHAT_FILE_TYPE_EXTENSIONS[input.fileType];
-
-      // Generate a unique S3 key scoped to the organization
-      // Security boundary is the org (CloudFront cookies are org-scoped), not the conversation
+      // Unique S3 key scoped to the organization. The org prefix is the
+      // security boundary — only members can request a signed read URL.
+      // The nanoid prefix dedupes re-uploads of the same name; including the
+      // original filename keeps debugging/S3 browsing legible.
       const fileId = nanoid();
-      const key = `${context.organization.id}/${fileId}.${extension}`;
+      const key = `${context.organization.id}/${fileId}-${input.fileName}`;
 
-      // Create a presigned POST with content-length-range enforcement
-      // This ensures S3 rejects uploads exceeding MAX_FILE_SIZE, even if the client lies about fileSize
+      // Presigned POST with content-length-range — S3 rejects oversize uploads
+      // even if the client lies about fileSize.
       const { url: uploadUrl, fields } = await createPresignedPost(s3, {
         Bucket: Resource.uploads.name,
         Key: key,
@@ -46,16 +46,18 @@ export const uploadsRouter = orpc.prefix('/uploads').router({
         Expires: 300, // 5 min
       });
 
-      // Build the permanent CDN URL for this file
-      const cdnUrl = getCdnUrl(key);
+      // Mint an initial signed GET URL for the just-uploaded file. `chat.get`
+      // re-signs on read, so the stored URL doesn't need to live forever.
+      // Override the download name so browsers don't show the nanoid-prefixed key.
+      const viewUrl = await storage.signUrl({ key, downloadFilename: input.fileName });
 
       return {
         /** Presigned POST URL */
         uploadUrl,
         /** Form fields to include with the POST */
         uploadFields: fields,
-        /** Permanent CDN URL to store in the message parts */
-        cdnUrl,
+        /** Signed GET URL — store this in the message part */
+        viewUrl,
         /** The S3 object key */
         key,
       };

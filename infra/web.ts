@@ -5,7 +5,7 @@ import { domain } from './utils';
 // const password = 'password';
 // const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');
 
-// Our main web app
+/** Main web app */
 export const web = new sst.aws.Nextjs('web', {
   domain: domain ? `app.${domain}` : undefined,
   link: [gateway],

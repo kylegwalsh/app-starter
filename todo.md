@@ -22,11 +22,16 @@
 
 ## AI
 
-- Ensure that unhandled mcp/tool errors bubble up and get reported to Posthog
+- Fix conversation element not loading and getting stuck when errors occur in chat
+- Fix errors breaking chats (they also don't stay showing after you refresh)
+- Verify we are handling errors appropriately from MCP / AI-SDK
+  - Ensure that unhandled mcp/tool errors bubble up and get reported to Posthog
+- Ensure we handle cancelling gracefully (wait for tools to resolve)
 - Add new storybook stories for new design system files
+- Ensure unsupported files are sent to Daytona for code exec
 - Fix deep type in mcp/server
 - Determine if we're using oRPC chat streaming right
-- Verify we are handling errors appropriately from MCP / AI-SDK
+- Prefix chat routes
 - Verify MCP still works
 - Check out and test Chat UI
 - Clean up any generated code

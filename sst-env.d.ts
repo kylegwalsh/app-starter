@@ -46,11 +46,6 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Bucket"
     }
-    "uploadsCdnKeyPair": {
-      "id": string
-      "privateKey": string
-      "type": "sst.sst.Linkable"
-    }
     "web": {
       "type": "sst.aws.Nextjs"
       "url": string

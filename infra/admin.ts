@@ -2,7 +2,7 @@ import { gateway } from './gateway';
 import { domain } from './utils';
 import { web } from './web';
 
-// Admin dashboard for managing users and organizations
+/** Admin dashboard for managing users and organizations */
 export const admin = new sst.aws.Nextjs('admin', {
   domain: domain ? `admin.${domain}` : undefined,
   link: [gateway],

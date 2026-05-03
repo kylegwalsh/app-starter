@@ -3,14 +3,83 @@ import type { Prisma } from '@prisma/client';
 import { ai } from '@repo/ai';
 import { log } from '@repo/logs';
 import { chatSchema } from '@repo/schemas';
-import { type UIMessage, convertToModelMessages, createIdGenerator, stepCountIs } from 'ai';
+import {
+  type UIMessage,
+  convertToModelMessages,
+  createIdGenerator,
+  createUIMessageStream,
+  stepCountIs,
+} from 'ai';
 import { z } from 'zod';
 
 import { toAiSdkTools } from '@/ai/sdk';
 import { orpc } from '@/core';
+import { storage } from '@/core/storage';
 import { db } from '@/db';
 
 import { protectedProcedure } from '../procedures';
+
+/**
+ * Stored file URLs sometimes expire (signed presigned URLs) before the AI SDK
+ * tries to download them. Intercept any URL that points at our bucket and read
+ * the bytes directly via the Lambda's IAM creds instead of trusting the URL.
+ */
+const downloadUploadsFromS3 = async (
+  requested: ReadonlyArray<{ url: URL; isUrlSupportedByModel: boolean }>,
+) =>
+  Promise.all(
+    requested.map(async (req) => {
+      if (req.isUrlSupportedByModel) {
+        return null;
+      }
+      const key = storage.keyFromUrl({ url: req.url });
+      if (!key) {
+        return null;
+      }
+      try {
+        const result = await storage.read({ key });
+        if (!result) {
+          throw new Error(`Empty body for uploads object: ${key}`);
+        }
+        return result;
+      } catch (error) {
+        log.error({ error, key }, 'chat.send: failed to read uploads object');
+        throw error;
+      }
+    }),
+  );
+
+/**
+ * Bedrock's Converse API restricts document file names to alphanumeric, whitespace,
+ * hyphens, parentheses, and square brackets, with no consecutive whitespace. User
+ * uploads routinely contain dots, underscores, and other characters, so strip them
+ * here before the AI SDK forwards the name to Bedrock.
+ */
+const sanitiseBedrockFilename = (name: string): string => {
+  const cleaned = name
+    .replaceAll(/[^a-zA-Z0-9\s\-()[\]]/g, ' ')
+    .replaceAll(/\s+/g, ' ')
+    .trim();
+  return cleaned.length > 0 ? cleaned : 'file';
+};
+
+/**
+ * Returns a copy of the messages with file-part filenames sanitised for Bedrock
+ * and unique within the payload (Bedrock rejects duplicate filenames).
+ */
+const sanitiseFileFilenames = (messages: UIMessage[]): UIMessage[] => {
+  let index = 0;
+  return messages.map((m) => ({
+    ...m,
+    parts: m.parts.map((p) => {
+      if (p.type !== 'file' || !p.filename) {
+        return p;
+      }
+      index += 1;
+      return { ...p, filename: `${sanitiseBedrockFilename(p.filename)} (${index})` };
+    }),
+  }));
+};
 
 /** The chat router — streaming AI chat, conversation CRUD, and feedback */
 export const chatRouter = orpc.prefix('/chat').router({
@@ -61,35 +130,50 @@ export const chatRouter = orpc.prefix('/chat').router({
         conversationId: conversation.id,
       });
 
-      // If this is a new conversation, generate an AI title in parallel with the chat stream
+      // If this is a new conversation, generate an AI title in parallel with the
+      // chat stream. We hold onto the promise so the stream can emit a
+      // `data-conversation-title` event when it resolves; the frontend updates
+      // the sidebar cache directly without a follow-up fetch.
       const isNewConversation = !conversation.title;
-      if (isNewConversation) {
-        const firstUserText = messages
-          .filter((m) => m.role === 'user')
-          .flatMap((m) => m.parts)
-          .find((p): p is { type: 'text'; text: string } => p.type === 'text')?.text;
+      const firstUserText = messages
+        .filter((m) => m.role === 'user')
+        .flatMap((m) => m.parts)
+        .find((p): p is { type: 'text'; text: string } => p.type === 'text')?.text;
+      const titlePromise: Promise<string | null> | null =
+        isNewConversation && firstUserText
+          ? (async () => {
+              try {
+                const result = await ai.generateObject({
+                  name: 'generate-title',
+                  schema: z.object({ title: z.string().max(80) }),
+                  prompt: `Generate a short, descriptive title (3-8 words) for a chat conversation that starts with this message:\n\n"${firstUserText.slice(0, 500)}"`,
+                });
+                await db.conversation.update({
+                  where: { id: conversation.id },
+                  data: { title: result.object.title },
+                });
+                return result.object.title;
+              } catch (titleError) {
+                log.warn(
+                  { error: titleError, conversationId: conversation.id },
+                  'Failed to generate conversation title',
+                );
+                return null;
+              }
+            })()
+          : null;
 
-        if (firstUserText) {
-          // Fire and forget — runs in parallel with the stream, don't block the response
-          void (async () => {
-            try {
-              const result = await ai.generateObject({
-                name: 'generate-title',
-                schema: z.object({ title: z.string().max(80) }),
-                prompt: `Generate a short, descriptive title (3-8 words) for a chat conversation that starts with this message:\n\n"${firstUserText.slice(0, 500)}"`,
-              });
-              await db.conversation.update({
-                where: { id: conversation.id },
-                data: { title: result.object.title },
-              });
-            } catch (titleError) {
-              log.warn(
-                { error: titleError, conversationId: conversation.id },
-                'Failed to generate conversation title',
-              );
-            }
-          })();
-        }
+      // Prepare messages for the model. convertToModelMessages invokes our experimental_download
+      // hook, so any S3 download failure surfaces here — log it separately from stream errors.
+      let modelMessages;
+      try {
+        modelMessages = await convertToModelMessages(sanitiseFileFilenames(messages));
+      } catch (error) {
+        log.error(
+          { error, conversationId: conversation.id },
+          'chat.send: failed to convert UI messages to model messages',
+        );
+        throw error;
       }
 
       // Stream the response using our traced wrapper
@@ -104,9 +188,10 @@ When you need to analyze data, perform calculations, or generate visualizations:
 
 Files persist across messages in this conversation. You can build on previous work.
 When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.png')).`,
-        messages: await convertToModelMessages(messages),
+        messages: modelMessages,
         tools,
         stopWhen: stepCountIs(5),
+        experimental_download: downloadUploadsFromS3,
       });
 
       // Get existing message IDs for deduplication (avoids race conditions vs index-based slicing)
@@ -142,40 +227,85 @@ When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.
       // Get the Langfuse trace ID so we can pass it to the client for feedback scoring
       const traceId = ai.getRequestTraceId();
 
-      // Stream the AI response as oRPC event iterator
+      // Stream the AI response as oRPC event iterator. Merge in a tail event
+      // for the conversation title so the sidebar can update without polling.
       yield* streamToEventIterator(
-        streamResult.toUIMessageStream({
-          generateMessageId: createIdGenerator({ prefix: 'msg', size: 16 }),
-          // Attach the Langfuse trace ID to the assistant message metadata
-          messageMetadata: ({ part }) => {
-            if (part.type === 'finish') {
-              return { traceId };
-            }
-            return;
-          },
-          onFinish: async ({ messages: allMessages }) => {
-            try {
-              // Only persist messages that don't already exist in the DB
-              const newMessages = allMessages.filter((msg) => !existingMessageIds.has(msg.id));
-              if (newMessages.length === 0) {
-                return;
+        createUIMessageStream({
+          execute: async ({ writer }) => {
+            writer.merge(
+              streamResult.toUIMessageStream({
+                generateMessageId: createIdGenerator({ prefix: 'msg', size: 16 }),
+                // Attach the Langfuse trace ID to the assistant message metadata
+                messageMetadata: ({ part }) => {
+                  if (part.type === 'finish') {
+                    return { traceId };
+                  }
+                  return;
+                },
+                onError: (error) => {
+                  // Surface the real cause in Lambda logs so we can diagnose stream failures
+                  // (Bedrock validation errors, S3 download failures, tool errors, etc.).
+                  const err = error as {
+                    name?: string;
+                    message?: string;
+                    statusCode?: number;
+                    data?: unknown;
+                  };
+                  log.error(
+                    {
+                      error,
+                      name: err.name,
+                      message: err.message,
+                      statusCode: err.statusCode,
+                      data: err.data,
+                      conversationId: conversation.id,
+                    },
+                    'chat.send: stream error',
+                  );
+                  return err.message ?? 'An error occurred while generating the response.';
+                },
+                onFinish: async ({ messages: allMessages }) => {
+                  try {
+                    // Only persist messages that don't already exist in the DB
+                    const newMessages = allMessages.filter(
+                      (msg) => !existingMessageIds.has(msg.id),
+                    );
+                    if (newMessages.length === 0) {
+                      return;
+                    }
+
+                    const messageData: Prisma.MessageCreateManyInput[] = newMessages.map((msg) => ({
+                      id: msg.id,
+                      conversationId: conversation.id,
+                      role: msg.role,
+                      parts: msg.parts as Prisma.InputJsonValue,
+                      // Store trace ID on assistant messages for feedback scoring
+                      traceId: msg.role === 'assistant' ? traceId : undefined,
+                    }));
+
+                    await db.message.createMany({ data: messageData });
+                  } catch (error) {
+                    log.error(
+                      { error, conversationId: conversation.id },
+                      'Failed to persist chat messages',
+                    );
+                  }
+                },
+              }),
+            );
+
+            // Wait for the title to resolve, then emit a transient data event.
+            // The connection stays open until execute() returns, so the merged
+            // chat stream will already have flushed by the time we get here.
+            if (titlePromise) {
+              const title = await titlePromise;
+              if (title) {
+                writer.write({
+                  type: 'data-conversation-title',
+                  data: { title },
+                  transient: true,
+                });
               }
-
-              const messageData: Prisma.MessageCreateManyInput[] = newMessages.map((msg) => ({
-                id: msg.id,
-                conversationId: conversation.id,
-                role: msg.role,
-                parts: msg.parts as Prisma.InputJsonValue,
-                // Store trace ID on assistant messages for feedback scoring
-                traceId: msg.role === 'assistant' ? traceId : undefined,
-              }));
-
-              await db.message.createMany({ data: messageData });
-            } catch (error) {
-              log.error(
-                { error, conversationId: conversation.id },
-                'Failed to persist chat messages',
-              );
             }
           },
         }),
@@ -241,17 +371,45 @@ When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.
         throw new ORPCError('NOT_FOUND', { message: 'Conversation not found' });
       }
 
+      // Re-sign each file URL on the way out. Runs after the ownership check
+      // above, so only conversation members receive working URLs. The stored
+      // URL may have expired since it was first signed; we extract the key
+      // and mint a fresh presigned URL.
+      const signParts = async (parts: UIMessage['parts']): Promise<UIMessage['parts']> =>
+        Promise.all(
+          parts.map(async (p) => {
+            if (p.type !== 'file' || typeof (p as { url?: unknown }).url !== 'string') {
+              return p;
+            }
+            const stored = (p as { url: string }).url;
+            try {
+              const key = storage.keyFromUrl({ url: new URL(stored) });
+              if (!key) {
+                return p;
+              }
+              return {
+                ...p,
+                url: await storage.signUrl({ key, downloadFilename: p.filename }),
+              };
+            } catch {
+              return p;
+            }
+          }),
+        );
+
       // Reconstruct UIMessages with metadata (traceId + feedback)
-      const messages = conversation.messages.map((msg) => ({
-        id: msg.id,
-        role: msg.role as UIMessage['role'],
-        parts: msg.parts as unknown as UIMessage['parts'],
-        createdAt: msg.createdAt,
-        metadata: {
-          traceId: msg.traceId ?? undefined,
-          feedback: msg.feedback ?? undefined,
-        },
-      }));
+      const messages = await Promise.all(
+        conversation.messages.map(async (msg) => ({
+          id: msg.id,
+          role: msg.role as UIMessage['role'],
+          parts: await signParts(msg.parts as unknown as UIMessage['parts']),
+          createdAt: msg.createdAt,
+          metadata: {
+            traceId: msg.traceId ?? undefined,
+            feedback: msg.feedback ?? undefined,
+          },
+        })),
+      );
 
       return {
         id: conversation.id,

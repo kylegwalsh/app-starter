@@ -8,7 +8,7 @@ import { auth } from '@/core';
 import { mcpAdapter, mcpDiscovery } from './adapters';
 import { internalDocsPlugin, internalDocsLoginHTML } from './docs';
 import { handleHonoError } from './error';
-import { cdnCookiesMiddleware, corsMiddleware, timingMiddleware } from './middleware';
+import { corsMiddleware, timingMiddleware } from './middleware';
 import { router } from './routes';
 
 // ---------- CONFIGURATION ----------
@@ -37,9 +37,6 @@ app.route('/.well-known', mcpDiscovery);
 
 // A dedicated login for our Swagger docs to authenticate users and set the session cookie
 app.get('/api/login', (c) => c.html(internalDocsLoginHTML));
-
-// CDN signed cookies — sets CloudFront cookies for file access on auth'd requests
-app.use('/rpc/*', cdnCookiesMiddleware);
 
 // ---------- MAIN API (oRPC) ----------
 // We use oRPC to benefit from e2e type safety, validation, and auto-generated react hooks

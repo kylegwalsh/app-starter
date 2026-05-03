@@ -218,7 +218,7 @@ function ConversationItem({ conversation, isActive }: ConversationItemProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive hover:bg-destructive/90 text-white"
               onClick={() => deleteMutation.mutate({ id: conversation.id })}
             >
               Delete
@@ -232,8 +232,7 @@ function ConversationItem({ conversation, isActive }: ConversationItemProps) {
 
 /** Sidebar listing all conversations with create/delete actions */
 function ChatSidebar() {
-  const params = useParams();
-  const activeId = params?.id as string | undefined;
+  const { id: activeId } = useParams<{ id?: string }>();
   const { data, isPending } = useQuery(listQueryOptions);
 
   return (

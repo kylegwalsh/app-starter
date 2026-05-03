@@ -5,8 +5,6 @@ import type { NextConfig } from 'next';
 let nextConfig: NextConfig = {
   // Transpile the packages so we can use them in the web app
   transpilePackages: ['@repo/design', '@repo/config'],
-  // Prevent bundling better-auth-ui server-side to avoid lucide-react ESM icon resolution issues
-  serverExternalPackages: ['@daveyplate/better-auth-ui'],
   // We validate the types manually, so we'll just skip it here
   typescript: {
     ignoreBuildErrors: true,
