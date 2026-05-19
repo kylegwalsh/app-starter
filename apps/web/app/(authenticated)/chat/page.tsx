@@ -4,10 +4,12 @@ import { ChatProvider } from '@/components/chat/chat-provider';
 import { ChatView } from '@/components/chat/chat-view';
 
 /** New conversation page */
-export default function ChatPage() {
+const ChatPage = () => {
   return (
     <ChatProvider>
       <ChatView />
     </ChatProvider>
   );
-}
+};
+
+export default ChatPage;

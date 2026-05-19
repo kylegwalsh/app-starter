@@ -13,8 +13,16 @@ export type User = BaseUser & {
   role: string | null;
 };
 
-/** The base URL for the auth API */
-const AUTH_API_URL = process.env.NEXT_PUBLIC_API_URL;
+/**
+ * The base URL for the auth API.
+ *
+ * Better Auth's `withPath` skips appending the default `/api/auth` whenever the
+ * baseURL already has any path. When there's no custom domain, our API URL
+ * already carries a `/${stage}` path, so we must spell out `/api/auth`
+ * explicitly — otherwise the client posts to `${baseURL}/<action>` directly
+ * and misses the Hono `/api/auth/*` mount on the backend.
+ */
+const AUTH_API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/auth`;
 
 /** The auth client is used to interact with better auth */
 export const authClient = createAuthClient({

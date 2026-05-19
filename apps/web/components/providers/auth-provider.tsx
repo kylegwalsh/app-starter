@@ -4,12 +4,11 @@ import { AuthUIProvider } from '@daveyplate/better-auth-ui';
 import { config } from '@repo/config';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { ReactNode } from 'react';
 
 import { auth } from '@/core';
 
 /** The provider for our Better Auth authentication */
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider: FC = ({ children }) => {
   const router = useRouter();
 
   return (
@@ -28,7 +27,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }}
       // Add some custom paths for our auth routes because we manage our own settings pages
       account={{ basePath: '/' }}
-      organization={{ basePath: '/settings', viewPaths: { SETTINGS: 'organization' } }}>
+      organization={{ basePath: '/settings', viewPaths: { SETTINGS: 'organization' } }}
+    >
       {children}
     </AuthUIProvider>
   );

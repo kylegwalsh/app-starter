@@ -4,13 +4,22 @@ import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
 /** Shared error handler — decides whether to log and report based on the error + status */
-export const handleError = async ({ error }: { error: unknown }) => {
+export const handleError = async ({
+  error,
+  properties,
+}: {
+  error: unknown;
+  properties?: Record<string, unknown>;
+}) => {
   /** Determine the status code from the error */
   const status = error instanceof HTTPException || error instanceof ORPCError ? error.status : 500;
 
   // If the server error is 5xx, we will track and log it
   if (status >= 500) {
-    await analytics.captureException(error instanceof Error ? (error.cause ?? error) : error);
+    await analytics.captureException(
+      error instanceof Error ? (error.cause ?? error) : error,
+      properties,
+    );
   }
 };
 

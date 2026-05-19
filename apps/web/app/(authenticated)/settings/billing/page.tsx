@@ -8,7 +8,7 @@ import { BillingHistory, DashboardLayout } from '@/components';
 import { useSubscription } from '@/hooks';
 
 /** The payment and billing settings page */
-export default function BillingPage() {
+const BillingPage = () => {
   const { openBillingPortal, isOpeningBillingPortal } = useSubscription();
 
   return (
@@ -50,4 +50,6 @@ export default function BillingPage() {
       </div>
     </DashboardLayout>
   );
-}
+};
+
+export default BillingPage;

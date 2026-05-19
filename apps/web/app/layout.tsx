@@ -4,7 +4,6 @@ import { config } from '@repo/config';
 import { Toaster } from '@repo/design';
 import { createMetadata } from '@repo/seo';
 import Script from 'next/script';
-import type { ReactNode } from 'react';
 
 import { ErrorBoundary, Providers, UserInitializer } from '@/components';
 
@@ -12,11 +11,7 @@ import { ErrorBoundary, Providers, UserInitializer } from '@/components';
 export const metadata = createMetadata();
 
 /** Our primary layout wrapping the entire app */
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: ReactNode;
-}>) {
+const RootLayout: FC = ({ children }) => {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="flex h-svh flex-col overflow-hidden antialiased">
@@ -37,4 +32,6 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
+};
+
+export default RootLayout;

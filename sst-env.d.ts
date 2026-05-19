@@ -35,12 +35,16 @@ declare module "sst" {
       "url": string
     }
     "api": {
-      "type": "sst.aws.ApiGatewayV2"
+      "type": "sst.aws.ApiGatewayV1"
       "url": string
     }
     "apiHandler": {
       "name": string
       "type": "sst.aws.Function"
+    }
+    "apiUrl": {
+      "type": "sst.sst.Linkable"
+      "url": string
     }
     "uploads": {
       "name": string
@@ -52,7 +56,6 @@ declare module "sst" {
     }
   }
 }
-/// <reference path="sst-env.d.ts" />
 
 import "sst"
 export {}

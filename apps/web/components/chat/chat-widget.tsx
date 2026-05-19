@@ -15,7 +15,7 @@ import { ChatProvider } from './chat-provider';
 import { ChatView } from './chat-view';
 
 /** Floating chat widget — renders as a sheet on the right side */
-function ChatWidget() {
+export const ChatWidget = () => {
   const [open, setOpen] = useState(false);
   // Increment session key on each open to reset chat state
   const [sessionKey, setSessionKey] = useState(0);
@@ -47,6 +47,4 @@ function ChatWidget() {
       </SheetContent>
     </Sheet>
   );
-}
-
-export { ChatWidget };
+};

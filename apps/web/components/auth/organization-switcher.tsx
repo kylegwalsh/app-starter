@@ -2,15 +2,14 @@
 
 import { OrganizationSwitcher as BaseOrganizationSwitcher } from '@daveyplate/better-auth-ui';
 import { cn } from '@repo/design/lib/utils';
-import type { ComponentProps } from 'react';
 
 import { useUser } from '@/hooks';
 
 /** Organization switcher with shared configuration for hiding personal org details */
-export const OrganizationSwitcher = ({
+export const OrganizationSwitcher: FC<typeof BaseOrganizationSwitcher> = ({
   classNames,
   ...props
-}: ComponentProps<typeof BaseOrganizationSwitcher>) => {
+}) => {
   const { organization } = useUser();
 
   return (

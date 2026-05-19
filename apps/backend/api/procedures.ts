@@ -34,7 +34,7 @@ const baseProcedure = orpc.use(async ({ context, next }) => {
         }
       }
     } catch (error) {
-      log.warn({ error }, 'Failed to get session');
+      log.warn({ err: error }, 'Failed to get session');
     }
 
     // Add some metadata to our logs
@@ -52,7 +52,7 @@ const baseProcedure = orpc.use(async ({ context, next }) => {
         output: result.output,
       });
     } catch (error) {
-      log.error({ error }, 'Error updating AI trace');
+      log.error({ err: error }, 'Error updating AI trace');
     }
 
     return result;

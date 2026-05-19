@@ -13,6 +13,7 @@
     "nextjs",
     "oxc"
   ],
+  "jsPlugins": ["oxlint-plugin-eslint"],
   "ignorePatterns": ["**/sst-env.d.ts"],
   "rules": {
     // --- ESLint rules ---
@@ -31,6 +32,16 @@
     "no-constant-binary-expression": "error",
     "no-useless-rename": "error",
     "no-useless-call": "error",
+
+    // Pino expects `err` (it has a built-in serializer for that field).
+    // Passing `error` silently bypasses the serializer.
+    "eslint-js/no-restricted-syntax": [
+      "error",
+      {
+        "selector": "CallExpression[callee.object.name='log'][callee.property.name=/^(trace|debug|info|warn|error|fatal)$/] > ObjectExpression > Property[key.name='error']",
+        "message": "Use `err` instead of `error` when logging — pino's serializer only picks up the `err` field."
+      }
+    ],
 
     // --- Oxlint rules ---
     "approx-constant": "warn",

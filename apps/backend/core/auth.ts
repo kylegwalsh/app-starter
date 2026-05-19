@@ -18,8 +18,18 @@ import { stripePluginInstance } from './stripe';
  */
 const SUPPORT_PERSONAL_ORGANIZATIONS = true;
 
-/** Extract the base domain from the API URL */
-const baseDomain = new URL(config.api.url).hostname.split('.').slice(-2).join('.');
+/**
+ * Extract the base domain from the API URL (e.g. `api.example.com` → `example.com`).
+ * Falls back to an empty string when the URL is missing — happens transiently
+ * during SST live mode before the gateway link finishes resolving.
+ */
+const baseDomain = (() => {
+  try {
+    return new URL(config.api.url).hostname.split('.').slice(-2).join('.');
+  } catch {
+    return '';
+  }
+})();
 
 /** Get or create a personal organization for a user */
 const getOrCreatePersonalOrganization = async ({ userId }: { userId: string }) => {
@@ -117,7 +127,11 @@ const getActiveOrganization = async ({
 /** The config for our Better Auth instance (defined separately to avoid TypeScript issues) */
 const authConfig = {
   secret: env.BETTER_AUTH_SECRET,
-  baseURL: config.api.url,
+  // Use the bare origin + `/api/auth` so Better Auth's router basePath matches
+  // the path Lambda receives (API Gateway v1 strips the stage segment before
+  // invoking us). The frontend still posts to `${config.api.url}/api/auth/...`
+  // so requests reach the right stage.
+  baseURL: URL.canParse(config.api.url) ? new URL(config.api.url).origin : '',
   appName: config.app.name,
   // Disable the JWT plugin's /token endpoint to avoid conflict with oauth-provider's /oauth2/token
   disabledPaths: ['/token'],
@@ -238,22 +252,23 @@ const authConfig = {
       });
     },
   },
-  // Share cookies across subdomains (app.*, admin.*, api.*) when on a custom domain.
-  // When no custom domain is set (e.g. *.amazonaws.com), fall back to sameSite: 'none' for cross-origin access.
+  // Share cookies across subdomains (app.*, admin.*, api.*) when using a custom domain for a deployment.
+  // When no custom domain is set (e.g. *.amazonaws.com) or running locally, fall back to sameSite: 'none' for cross-origin access.
   advanced: {
     cookiePrefix: config.isProd ? 'better-auth' : `better-auth-${config.stage}`,
-    defaultCookieAttributes: config.hasCustomDomain
-      ? {
-          // Scope the cookie to be restricted to the correct subdomain
-          domain: config.isProd ? `.${baseDomain}` : `.${config.stage}.${baseDomain}`,
-          sameSite: 'lax' as const,
-          secure: true,
-        }
-      : {
-          sameSite: 'none' as const,
-          secure: true,
-          partitioned: true,
-        },
+    defaultCookieAttributes:
+      config.isDeployment && config.hasCustomDomain
+        ? {
+            // Scope the cookie to be restricted to the correct subdomain
+            domain: config.isProd ? `.${baseDomain}` : `.${config.stage}.${baseDomain}`,
+            sameSite: 'lax' as const,
+            secure: true,
+          }
+        : {
+            sameSite: 'none' as const,
+            secure: true,
+            partitioned: true,
+          },
   },
   // Cache the cookie for 5 minutes on the frontend
   session: {

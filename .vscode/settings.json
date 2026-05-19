@@ -29,7 +29,7 @@
   "editor.suggest.showReferences": false,
   "editor.suggest.showCustomcolors": false,
   "editor.suggest.shareSuggestSelections": false,
-  "editor.suggest.showVariables": false,
+  // "editor.suggest.showVariables": false,
   "editor.suggest.showWords": false,
   "emmet.showExpandedAbbreviation": "never",
   // Prevent auto-accepting suggestions on commit characters like comma
@@ -59,6 +59,7 @@
   // Spell checker settings
   "cSpell.words": [
     "activedescendant",
+    "agentic",
     "authed",
     "autocapture",
     "autodocs",
@@ -116,6 +117,7 @@
     "unauthed",
     "uninvoked",
     "unproxied",
+    "upserts",
     "vaul",
     "worktree",
     "worktrees"

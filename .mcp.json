@@ -1,5 +1,9 @@
 {
   "mcpServers": {
+    "my-app": {
+      "type": "http",
+      "url": "https://api.kwalsh.odinlabs.dev/mcp"
+    },
     "posthog": {
       "type": "http",
       "url": "https://mcp.posthog.com/mcp"

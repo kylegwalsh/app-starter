@@ -22,8 +22,8 @@ export const runCode = createTool({
     timeout: z.number().optional().describe('Timeout in seconds (default 30)'),
   },
   annotations: { readOnlyHint: false, destructiveHint: false },
-  // MCPs manage their own code execution (doesn't need this tool)
-  mcpSupported: false,
+  // MCPs manage their own code execution (don't need this tool)
+  consumers: ['chat'],
   handler: async (args, session) => {
     const sandbox = await requireSandbox(session.conversationId);
     const response = await sandbox.process.codeRun(args.code, undefined, args.timeout ?? 30);
@@ -60,8 +60,8 @@ export const sandboxWriteFile = createTool({
     content: z.string().describe('File content to write'),
   },
   annotations: { readOnlyHint: false, destructiveHint: false },
-  // MCPs manage their own code execution (doesn't need this tool)
-  mcpSupported: false,
+  // MCPs manage their own code execution (don't need this tool)
+  consumers: ['chat'],
   handler: async (args, session) => {
     const sandbox = await requireSandbox(session.conversationId);
     await sandbox.fs.uploadFile(Buffer.from(args.content, 'utf8'), args.path);
@@ -79,7 +79,7 @@ export const sandboxReadFile = createTool({
   },
   annotations: { readOnlyHint: true, destructiveHint: false },
   // MCPs manage their own code execution (doesn't need this tool)
-  mcpSupported: false,
+  consumers: ['chat'],
   handler: async (args, session) => {
     const sandbox = await requireSandbox(session.conversationId);
     const content = await sandbox.fs.downloadFile(args.path);
@@ -120,8 +120,8 @@ export const sandboxExecuteCommand = createTool({
     timeout: z.number().optional().describe('Timeout in seconds (default 30)'),
   },
   annotations: { readOnlyHint: false, destructiveHint: false },
-  // MCPs manage their own code execution (doesn't need this tool)
-  mcpSupported: false,
+  // MCPs manage their own code execution (don't need this tool)
+  consumers: ['chat'],
   handler: async (args, session) => {
     // Block shell metacharacters to prevent command chaining via prompt injection
     const SHELL_META = /[;|&`$><]/;

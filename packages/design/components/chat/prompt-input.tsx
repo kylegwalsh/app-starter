@@ -1092,12 +1092,18 @@ export const PromptInputSubmit = ({
   onStop,
   onClick,
   children,
+  disabled,
   ...props
 }: PromptInputSubmitProps) => {
-  const isGenerating = status === 'submitted' || status === 'streaming';
+  // Only `streaming` lets the user cancel — `submitted` means the request is
+  // in flight but no chunks have landed yet, so there's nothing useful to
+  // cancel against (the partial-message-on-cancel path would have nothing to
+  // persist and the title may not be back). The button shows a non-interactive
+  // spinner during that window.
+  const canStop = status === 'streaming' && onStop != null;
+  const isSubmitting = status === 'submitted';
 
   let Icon = <CornerDownLeftIcon className="size-4" />;
-
   if (status === 'submitted') {
     Icon = <Spinner />;
   } else if (status === 'streaming') {
@@ -1108,23 +1114,24 @@ export const PromptInputSubmit = ({
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (isGenerating && onStop) {
+      if (canStop) {
         e.preventDefault();
-        onStop();
+        onStop?.();
         return;
       }
       onClick?.(e);
     },
-    [isGenerating, onStop, onClick],
+    [canStop, onStop, onClick],
   );
 
   return (
     <InputGroupButton
-      aria-label={isGenerating ? 'Stop' : 'Submit'}
+      aria-label={canStop ? 'Stop' : 'Submit'}
       className={cn(className)}
+      disabled={disabled || isSubmitting}
       onClick={handleClick}
       size={size}
-      type={isGenerating && onStop ? 'button' : 'submit'}
+      type={canStop ? 'button' : 'submit'}
       variant={variant}
       {...props}
     >

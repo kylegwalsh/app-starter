@@ -301,16 +301,20 @@ model McpSession {
 
 /// Conversation with the AI chat agent
 model Conversation {
-  id             String    @id @default(cuid())
-  title          String?
-  userId         String
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organizationId String?
-  sandboxId      String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  lastMessageAt  DateTime?
-  messages       Message[]
+  id              String    @id @default(cuid())
+  title           String?
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId  String?
+  sandboxId       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  lastMessageAt   DateTime?
+  /// While a `chat.send` is generating a response, this is set to `now + LOCK_TTL`
+  /// and bumped by a heartbeat. Non-null implies the conversation needs a reconnect
+  /// (the producer is alive, or it died and the lock will expire on its own).
+  generatingUntil DateTime?
+  messages        Message[]
 
   @@index([userId])
   @@index([organizationId])
@@ -326,6 +330,13 @@ model Message {
   parts          Json
   traceId        String?
   feedback       Boolean?
+  /// True if the assistant message was stopped by the user mid-stream. Set by
+  /// `chat.cancel`; the frontend renders a "Stopped" badge for these rows.
+  cancelled      Boolean?
+  /// True if the assistant response errored out before persisting normally.
+  /// Persisted as an empty shell so reloads still surface "something went wrong"
+  /// where the response should have been.
+  errored        Boolean?
   createdAt      DateTime     @default(now())
 
   @@index([conversationId])

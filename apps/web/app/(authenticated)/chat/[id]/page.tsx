@@ -3,7 +3,7 @@
 import { Skeleton } from '@repo/design/components/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { ChatProvider, pendingKey } from '@/components/chat/chat-provider';
@@ -11,15 +11,23 @@ import { ChatView } from '@/components/chat/chat-view';
 import { orpc } from '@/core/orpc';
 
 /** Existing conversation page — loads messages from the database */
-export default function ChatConversationPage() {
+const ChatConversationPage = () => {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
 
+  // Snapshot at mount: if /chat staged a pending message under this id, the
+  // row won't exist in the DB until that message lands. Skip the fetch so we
+  // don't emit a guaranteed-404 right before sendMessage creates the row.
+  const [hasPendingMessage] = useState(
+    () => typeof window !== 'undefined' && sessionStorage.getItem(pendingKey(id)) !== null,
+  );
+
   const { data, isFetched, error } = useQuery({
     ...orpc.chat.get.queryOptions({ input: { id } }),
-    // A client-generated ID won't exist in the DB until the first message is sent.
-    // Treat 404 as "new conversation" rather than an error state.
+    enabled: !hasPendingMessage,
+    // Late-typed IDs (existing conversations) shouldn't auto-retry on 404 —
+    // we treat it as a stale URL and bounce below.
     retry: (_, retryError) => {
       const e = retryError as { code?: string };
       return e.code !== 'NOT_FOUND';
@@ -30,8 +38,6 @@ export default function ChatConversationPage() {
   // wrong stage, hand-typed bad ID). Show a toast and bounce to /chat.
   const errorCode = (error as { code?: string } | null)?.code;
   const isNotFound = errorCode === 'NOT_FOUND';
-  const hasPendingMessage =
-    typeof window !== 'undefined' && sessionStorage.getItem(pendingKey(id)) !== null;
   const shouldRedirect = isFetched && isNotFound && !hasPendingMessage;
 
   useEffect(() => {
@@ -44,20 +50,71 @@ export default function ChatConversationPage() {
 
   // Use isFetched (not isLoading) so navigating away and back doesn't re-show
   // the skeleton when the data is already cached in the QueryClient.
-  if (!isFetched || shouldRedirect) {
+  // Pending-message mounts go straight to ChatProvider — there's nothing to fetch.
+  if ((!hasPendingMessage && !isFetched) || shouldRedirect) {
     return (
-      <div className="flex h-full flex-col gap-4 p-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-16 w-full" />
-        <Skeleton className="h-16 w-3/4" />
-        <Skeleton className="h-16 w-full" />
+      // Mirrors the real conversation layout: outer flex column matches
+      // <Conversation>, inner column matches <ConversationContent>'s padding +
+      // gap, then alternating user-bubble (right) and assistant-text (left)
+      // skeletons. Widths are varied to read as natural prose rather than a
+      // uniform stack.
+      <div className="flex h-full w-full flex-col">
+        <div className="flex flex-1 flex-col gap-4 px-4 py-6">
+          {/* User — multi-line question */}
+          <div className="flex justify-end">
+            <Skeleton className="h-14 w-[22rem] max-w-[80%] rounded-2xl rounded-br-lg" />
+          </div>
+
+          {/* Assistant — multi-paragraph response */}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-[94%]" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-[82%]" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-5 w-[88%]" />
+              <Skeleton className="h-5 w-2/3" />
+            </div>
+          </div>
+
+          {/* User — short follow-up */}
+          <div className="flex justify-end">
+            <Skeleton className="h-9 w-44 rounded-2xl rounded-br-lg" />
+          </div>
+
+          {/* Assistant — medium response */}
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-[91%]" />
+            <Skeleton className="h-5 w-3/4" />
+          </div>
+
+          {/* User — medium question */}
+          <div className="flex justify-end">
+            <Skeleton className="h-9 w-60 rounded-2xl rounded-br-lg" />
+          </div>
+
+          {/* Assistant — short response */}
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-1/2" />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <ChatProvider conversationId={id} initialMessages={data?.messages}>
+    <ChatProvider
+      conversationId={id}
+      initialMessages={data?.messages}
+      initialGeneratingUntil={data?.generatingUntil}
+    >
       <ChatView />
     </ChatProvider>
   );
-}
+};
+
+export default ChatConversationPage;

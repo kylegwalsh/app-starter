@@ -11,7 +11,7 @@ export const listOrganizations = createTool({
     'Lists all organizations you belong to and shows which one is currently active for MCP tool calls.',
   annotations: { readOnlyHint: true, destructiveHint: false },
   // Chat runs in the context of a single org (doesn't need this tool)
-  chatSupported: false,
+  consumers: ['mcp'],
   handler: async (_args, session) => {
     // Get all organizations the user belongs to
     const memberships = await db.member.findMany({
@@ -41,7 +41,7 @@ export const switchOrganization = createTool({
   inputSchema: { organizationId: z.string().describe('The ID of the organization to switch to') },
   annotations: { readOnlyHint: false, destructiveHint: false },
   // Chat runs in the context of a single org (doesn't need this tool)
-  chatSupported: false,
+  consumers: ['mcp'],
   handler: async (args, session) => {
     // Verify the user is a member of this organization
     const membership = await db.member.findFirst({

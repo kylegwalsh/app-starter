@@ -101,7 +101,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/setup-worktree-on-enter.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/setup-worktree-on-enter.sh\""
           }
         ]
       }
@@ -112,7 +112,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/format-on-save.sh"
+            "command": "bash  \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-on-save.sh\""
           }
         ]
       },
@@ -121,7 +121,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/setup-worktree-on-enter.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/setup-worktree-on-enter.sh\""
           }
         ]
       }

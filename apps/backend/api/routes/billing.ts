@@ -112,7 +112,7 @@ export const billingRouter = orpc.prefix('/billing').router({
 
         return { history };
       } catch (error) {
-        log.error({ error }, 'Error fetching Stripe billing history');
+        log.error({ err: error }, 'Error fetching Stripe billing history');
         return { history: [] };
       }
     }),

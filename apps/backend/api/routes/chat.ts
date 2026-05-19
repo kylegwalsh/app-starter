@@ -1,13 +1,15 @@
 import { ORPCError, streamToEventIterator } from '@orpc/server';
-import type { Prisma } from '@prisma/client';
-import { ai } from '@repo/ai';
+import type { Message as DbMessage, Prisma } from '@prisma/client';
+import { ai, models } from '@repo/ai';
 import { log } from '@repo/logs';
 import { chatSchema } from '@repo/schemas';
 import {
   type UIMessage,
+  type UIMessageChunk,
   convertToModelMessages,
   createIdGenerator,
   createUIMessageStream,
+  smoothStream,
   stepCountIs,
 } from 'ai';
 import { z } from 'zod';
@@ -18,6 +20,15 @@ import { storage } from '@/core/storage';
 import { db } from '@/db';
 
 import { protectedProcedure } from '../procedures';
+
+/** How long a `chat.send` claim survives without a heartbeat before another caller can take over. */
+const LOCK_TTL_MS = 30_000;
+
+/** Heartbeat cadence — must be comfortably under {@link LOCK_TTL_MS}. */
+const HEARTBEAT_INTERVAL_MS = 20_000;
+
+/** Poll cadence used by `chat.reconnect` while waiting for the lock to clear. */
+const RECONNECT_POLL_MS = 5000;
 
 /**
  * Stored file URLs sometimes expire (signed presigned URLs) before the AI SDK
@@ -43,7 +54,7 @@ const downloadUploadsFromS3 = async (
         }
         return result;
       } catch (error) {
-        log.error({ error, key }, 'chat.send: failed to read uploads object');
+        log.error({ err: error, key }, 'chat.send: failed to read uploads object');
         throw error;
       }
     }),
@@ -67,7 +78,7 @@ const sanitiseBedrockFilename = (name: string): string => {
  * Returns a copy of the messages with file-part filenames sanitised for Bedrock
  * and unique within the payload (Bedrock rejects duplicate filenames).
  */
-const sanitiseFileFilenames = (messages: UIMessage[]): UIMessage[] => {
+const sanitizeFileFilenames = (messages: UIMessage[]): UIMessage[] => {
   let index = 0;
   return messages.map((m) => ({
     ...m,
@@ -80,6 +91,86 @@ const sanitiseFileFilenames = (messages: UIMessage[]): UIMessage[] => {
     }),
   }));
 };
+
+/**
+ * Replay a persisted assistant message as a UIMessageChunk stream so the
+ * client's `useChat` sees something indistinguishable from a fresh generation.
+ * Used by `chat.reconnect` when a stream was started in another tab or Lambda.
+ *
+ * The persisted `parts` are the post-merge shape produced by `onFinish`, so we
+ * just need to emit `start` → per-part chunks → `finish`. Text and reasoning
+ * get synthetic IDs because they're stream-scoped identifiers the client uses
+ * to thread deltas; the persisted shape doesn't carry them.
+ */
+function* streamFromMessage(message: DbMessage): Generator<UIMessageChunk> {
+  yield { type: 'start', messageId: message.id };
+
+  const parts = (Array.isArray(message.parts) ? message.parts : []) as Array<
+    Record<string, unknown> & { type: string }
+  >;
+  let textCounter = 0;
+  let reasoningCounter = 0;
+  for (const part of parts) {
+    if (part.type === 'text' && typeof part.text === 'string') {
+      const id = `replay-text-${textCounter++}`;
+      yield { type: 'text-start', id };
+      yield { type: 'text-delta', id, delta: part.text };
+      yield { type: 'text-end', id };
+      continue;
+    }
+    if (part.type === 'reasoning' && typeof part.text === 'string') {
+      const id = `replay-reasoning-${reasoningCounter++}`;
+      yield { type: 'reasoning-start', id };
+      yield { type: 'reasoning-delta', id, delta: part.text };
+      yield { type: 'reasoning-end', id };
+      continue;
+    }
+    if (part.type === 'step-start') {
+      yield { type: 'start-step' };
+      continue;
+    }
+    if (part.type === 'file' && typeof part.url === 'string') {
+      yield {
+        type: 'file',
+        url: part.url,
+        mediaType: typeof part.mediaType === 'string' ? part.mediaType : '',
+      };
+      continue;
+    }
+    if (part.type.startsWith('tool-') || part.type === 'dynamic-tool') {
+      const dynamic = part.type === 'dynamic-tool';
+      let toolName = part.type.slice('tool-'.length);
+      if (dynamic) {
+        toolName = typeof part.toolName === 'string' ? part.toolName : 'unknown';
+      }
+      const toolCallId = typeof part.toolCallId === 'string' ? part.toolCallId : '';
+      yield {
+        type: 'tool-input-available',
+        toolCallId,
+        toolName,
+        input: part.input,
+        dynamic,
+      };
+      if (part.state === 'output-available' || 'output' in part) {
+        yield {
+          type: 'tool-output-available',
+          toolCallId,
+          output: part.output,
+          dynamic,
+        };
+      } else if (part.state === 'output-error' || typeof part.errorText === 'string') {
+        yield {
+          type: 'tool-output-error',
+          toolCallId,
+          errorText: typeof part.errorText === 'string' ? part.errorText : 'Tool execution failed',
+          dynamic,
+        };
+      }
+    }
+  }
+
+  yield { type: 'finish' };
+}
 
 /** The chat router — streaming AI chat, conversation CRUD, and feedback */
 export const chatRouter = orpc.prefix('/chat').router({
@@ -98,87 +189,192 @@ export const chatRouter = orpc.prefix('/chat').router({
       // Cast to UIMessage[] — the SDK's full part union can't be expressed in Zod
       const messages = input.messages as unknown as UIMessage[];
 
-      // Load existing conversation or create a new one.
-      // When conversationId is provided, upsert — this supports the optimistic pattern
-      // where the client generates an ID before navigating to /chat/[id].
-      let conversation;
-      if (conversationId) {
-        conversation = await db.conversation.upsert({
-          where: { id: conversationId },
-          update: {},
-          create: {
-            id: conversationId,
-            userId: user.id,
-            organizationId: organization.id,
-            lastMessageAt: new Date(),
-          },
-        });
-        // Verify ownership (handles case where ID was guessed and belongs to another user)
-        if (conversation.userId !== user.id || conversation.organizationId !== organization.id) {
-          throw new ORPCError('NOT_FOUND', { message: 'Conversation not found' });
-        }
-      } else {
-        conversation = await db.conversation.create({
-          data: { userId: user.id, organizationId: organization.id, lastMessageAt: new Date() },
-        });
-      }
-
-      // Convert tools to AI SDK format (in-process, zero network overhead)
-      const tools = toAiSdkTools({
-        user,
-        organization,
-        conversationId: conversation.id,
-      });
-
-      // If this is a new conversation, generate an AI title in parallel with the
-      // chat stream. We hold onto the promise so the stream can emit a
-      // `data-conversation-title` event when it resolves; the frontend updates
-      // the sidebar cache directly without a follow-up fetch.
-      const isNewConversation = !conversation.title;
-      const firstUserText = messages
+      // Seed a title from the first user text part so the row never appears
+      // as "untitled" in the sidebar. AI title generation runs in parallel
+      // and overwrites this seed when it lands.
+      const titleSeed = messages
         .filter((m) => m.role === 'user')
         .flatMap((m) => m.parts)
         .find((p): p is { type: 'text'; text: string } => p.type === 'text')?.text;
-      const titlePromise: Promise<string | null> | null =
-        isNewConversation && firstUserText
-          ? (async () => {
-              try {
-                const result = await ai.generateObject({
-                  name: 'generate-title',
-                  schema: z.object({ title: z.string().max(80) }),
-                  prompt: `Generate a short, descriptive title (3-8 words) for a chat conversation that starts with this message:\n\n"${firstUserText.slice(0, 500)}"`,
-                });
-                await db.conversation.update({
-                  where: { id: conversation.id },
-                  data: { title: result.object.title },
-                });
-                return result.object.title;
-              } catch (titleError) {
-                log.warn(
-                  { error: titleError, conversationId: conversation.id },
-                  'Failed to generate conversation title',
-                );
-                return null;
-              }
-            })()
-          : null;
+      const truncateTitle = (s: string) => {
+        const trimmed = s.trim().replaceAll(/\s+/g, ' ');
+        return trimmed.length > 60 ? `${trimmed.slice(0, 60).trimEnd()}…` : trimmed;
+      };
+      const seededTitle = titleSeed ? truncateTitle(titleSeed) : 'New chat';
 
-      // Prepare messages for the model. convertToModelMessages invokes our experimental_download
-      // hook, so any S3 download failure surfaces here — log it separately from stream errors.
-      let modelMessages;
-      try {
-        modelMessages = await convertToModelMessages(sanitiseFileFilenames(messages));
-      } catch (error) {
-        log.error(
-          { error, conversationId: conversation.id },
-          'chat.send: failed to convert UI messages to model messages',
-        );
-        throw error;
+      // Look the row up first so we can tell whether this send creates the
+      // conversation (the optimistic-ID pattern means the client navigates to
+      // /chat/[id] before the row exists). Only the create path applies the
+      // seeded title, and only the create path schedules AI title generation
+      // later — so a follow-up send never re-titles an existing row.
+      const existing = conversationId
+        ? await db.conversation.findUnique({ where: { id: conversationId } })
+        : null;
+      if (
+        existing &&
+        (existing.userId !== user.id || existing.organizationId !== organization.id)
+      ) {
+        throw new ORPCError('NOT_FOUND', { message: 'Conversation not found' });
+      }
+      const conversation =
+        existing ??
+        (await db.conversation.create({
+          data: {
+            ...(conversationId ? { id: conversationId } : {}),
+            userId: user.id,
+            organizationId: organization.id,
+            lastMessageAt: new Date(),
+            title: seededTitle,
+          },
+        }));
+
+      // Atomic claim of the generation lock. The conditional update only succeeds
+      // if no other producer is currently active (either no lock or a stale one).
+      // A 0-row result means another tab/session is already generating — the
+      // client should reconnect to that stream instead of starting a new one.
+      const claimed = await db.conversation.updateMany({
+        where: {
+          id: conversation.id,
+          OR: [{ generatingUntil: null }, { generatingUntil: { lt: new Date() } }],
+        },
+        data: { generatingUntil: new Date(Date.now() + LOCK_TTL_MS) },
+      });
+      if (claimed.count === 0) {
+        throw new ORPCError('CONFLICT', {
+          message: 'This conversation is already generating a response',
+        });
       }
 
-      // Stream the response using our traced wrapper
-      const streamResult = await ai.streamText({
-        system: `You are a helpful AI assistant with access to a persistent code execution environment.
+      // Heartbeat — push the lock forward every interval so it only expires if
+      // we actually die (OOM, Lambda timeout, SIGKILL). The `not: null` guard
+      // means a heartbeat that fires while/after cleanup ran is a no-op
+      // instead of resurrecting the lock.
+      const heartbeat = setInterval(() => {
+        db.conversation
+          .updateMany({
+            where: { id: conversation.id, generatingUntil: { not: null } },
+            data: { generatingUntil: new Date(Date.now() + LOCK_TTL_MS) },
+          })
+          .catch((error) =>
+            log.warn({ err: error, conversationId: conversation.id }, 'Lock heartbeat failed'),
+          );
+      }, HEARTBEAT_INTERVAL_MS);
+
+      // Flipped to true inside `onFinish` once the assistant message lands in
+      // the DB. If it's still false in `finally`, the run errored before
+      // persisting — we write a placeholder errored shell so reloads can
+      // surface "something went wrong" instead of just dropping the response.
+      let assistantPersisted = false;
+
+      try {
+        // Retry-only cleanup: when the client explicitly asks for a retry,
+        // drop just the most recent errored shell so it doesn't pile up next
+        // to the new response on reload. Non-retry sends leave older errored
+        // rows intact — they're history the user didn't act on.
+        if (input.isRetry) {
+          const latestErrored = await db.message.findFirst({
+            where: { conversationId: conversation.id, errored: true },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true },
+          });
+          if (latestErrored) {
+            await db.message
+              .delete({ where: { id: latestErrored.id } })
+              .catch((error) =>
+                log.warn(
+                  { err: error, conversationId: conversation.id },
+                  'Failed to clear retried errored shell',
+                ),
+              );
+          }
+        }
+
+        // Persist user messages up front so a reload mid-stream still sees
+        // them and a Lambda death before streaming doesn't drop the input.
+        // `skipDuplicates` covers regenerate-style retries that re-send an
+        // existing id, so we don't need a pre-flight existence check.
+        const userMessages = messages.filter((m) => m.role === 'user');
+        if (userMessages.length > 0) {
+          await Promise.all([
+            db.message.createMany({
+              data: userMessages.map((msg) => ({
+                id: msg.id,
+                conversationId: conversation.id,
+                role: msg.role,
+                parts: msg.parts as Prisma.InputJsonValue,
+              })),
+              skipDuplicates: true,
+            }),
+            // Bump the row to the top of the sidebar. New conversations already
+            // have `lastMessageAt` set by the create, but follow-up sends to an
+            // existing conversation need this nudge.
+            existing
+              ? db.conversation.update({
+                  where: { id: conversation.id },
+                  data: { lastMessageAt: new Date() },
+                })
+              : Promise.resolve(),
+          ]).catch((error) =>
+            log.error(
+              { err: error, conversationId: conversation.id },
+              'Failed to persist user messages',
+            ),
+          );
+        }
+
+        // Convert tools to AI SDK format (in-process, zero network overhead)
+        const tools = toAiSdkTools({
+          user,
+          organization,
+          conversationId: conversation.id,
+        });
+
+        // If this is a new conversation, generate an AI title in parallel with the
+        // chat stream. We hold onto the promise so the stream can emit a
+        // `data-conversation-title` event when it resolves; the frontend updates
+        // the sidebar cache directly without a follow-up fetch. On failure the
+        // seeded title (already on the row) stands in as the fallback — we just
+        // skip the overwrite.
+        const titlePromise: Promise<string | null> | null =
+          !existing && titleSeed
+            ? (async () => {
+                try {
+                  const result = await ai.generateObject({
+                    name: 'generate-title',
+                    schema: z.object({ title: z.string().max(80) }),
+                    prompt: `Generate a short, descriptive title (3-6 words) for a chat conversation that starts with this message. Aim to keep it under 35 characters so it fits comfortably in a sidebar — slightly longer is fine if needed for clarity.\n\n"${titleSeed.slice(0, 500)}"`,
+                  });
+                  const title = result.object.title;
+                  if (!title) {
+                    return null;
+                  }
+                  await db.conversation.update({
+                    where: { id: conversation.id },
+                    data: { title },
+                  });
+                  return title;
+                } catch (titleError) {
+                  log.warn(
+                    { err: titleError, conversationId: conversation.id },
+                    'Failed to generate conversation title — keeping seeded title',
+                  );
+                  return null;
+                }
+              })()
+            : null;
+
+        // Prepare messages for the model. convertToModelMessages invokes our experimental_download
+        // hook, so any S3 download failure surfaces here — log it separately from stream errors.
+        const modelMessages = await convertToModelMessages(sanitizeFileFilenames(messages), {
+          // Drop any tool call left without a paired result from a cancelled
+          // run — without this Claude rejects the request with "Tool results
+          // are missing for tool calls X, Y, Z".
+          ignoreIncompleteToolCalls: true,
+        });
+
+        // Stream the response using our traced wrapper
+        const streamResult = await ai.streamText({
+          system: `You are a helpful AI assistant with access to a persistent code execution environment.
 
 When you need to analyze data, perform calculations, or generate visualizations:
 - Use the run-code tool to execute Python code
@@ -188,128 +384,311 @@ When you need to analyze data, perform calculations, or generate visualizations:
 
 Files persist across messages in this conversation. You can build on previous work.
 When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.png')).`,
-        messages: modelMessages,
-        tools,
-        stopWhen: stepCountIs(5),
-        experimental_download: downloadUploadsFromS3,
-      });
+          messages: modelMessages,
+          // Give chat access to all our tools
+          tools,
+          // Allow the model to generate up to 10 steps
+          stopWhen: stepCountIs(10),
+          // Enable reasoning (up to 2000 tokens)
+          model: models.bedrock['claude-4-6-sonnet'],
+          providerOptions: {
+            bedrock: {
+              reasoningConfig: {
+                type: 'enabled',
+                budgetTokens: 2000,
+              },
+            },
+          },
+          // Allow the model to download files from S3
+          experimental_download: downloadUploadsFromS3,
+          // Smooth the token-by-token output into word-sized chunks with a small
+          // delay so the UI renders typing-like text instead of jittery bursts.
+          experimental_transform: smoothStream({ delayInMs: 25, chunking: 'word' }),
+        });
 
-      // Get existing message IDs for deduplication (avoids race conditions vs index-based slicing)
-      const existingMessages = await db.message.findMany({
-        where: { conversationId: conversation.id },
+        // Get the Langfuse trace ID so we can pass it to the client for feedback scoring
+        const traceId = ai.getRequestTraceId();
+
+        // Stream the AI response as oRPC event iterator. Merge in a tail event
+        // for the conversation title so the sidebar can update without polling.
+        yield* streamToEventIterator(
+          createUIMessageStream({
+            execute: async ({ writer }) => {
+              writer.merge(
+                streamResult.toUIMessageStream({
+                  generateMessageId: createIdGenerator({ prefix: 'msg', size: 16 }),
+                  // Attach the Langfuse trace ID to the assistant message metadata
+                  messageMetadata: ({ part }) => {
+                    if (part.type === 'finish') {
+                      return { traceId };
+                    }
+                    return;
+                  },
+                  onError: (error) => {
+                    // Surface the real cause in Lambda logs so we can diagnose stream failures
+                    // (Bedrock validation errors, S3 download failures, tool errors, etc.).
+                    const err = error as {
+                      name?: string;
+                      message?: string;
+                      statusCode?: number;
+                      data?: unknown;
+                    };
+                    log.error(
+                      {
+                        err: error,
+                        name: err.name,
+                        message: err.message,
+                        statusCode: err.statusCode,
+                        data: err.data,
+                        conversationId: conversation.id,
+                      },
+                      'chat.send: stream error',
+                    );
+                    return err.message ?? 'An error occurred while generating the response.';
+                  },
+                  onFinish: async ({ messages: allMessages }) => {
+                    try {
+                      // Re-bump the lock as a single-query cancel probe — a
+                      // count of 0 means `chat.cancel` already cleared it (and
+                      // wrote its own marker), so we should bail before
+                      // persisting on top of that cancellation.
+                      const stillActive = await db.conversation.updateMany({
+                        where: { id: conversation.id, generatingUntil: { not: null } },
+                        data: { generatingUntil: new Date(Date.now() + LOCK_TTL_MS) },
+                      });
+                      if (stillActive.count === 0) {
+                        log.info(
+                          { conversationId: conversation.id },
+                          'chat.send: lock cleared mid-stream, skipping persistence',
+                        );
+                        return;
+                      }
+
+                      // `skipDuplicates` covers any input messages we already
+                      // wrote up-front (or that the client re-sent from history),
+                      // so we can pass `allMessages` through without filtering.
+                      await db.message.createMany({
+                        data: allMessages.map((msg) => ({
+                          id: msg.id,
+                          conversationId: conversation.id,
+                          role: msg.role,
+                          parts: msg.parts as Prisma.InputJsonValue,
+                          // Store trace ID on assistant messages for feedback scoring
+                          traceId: msg.role === 'assistant' ? traceId : undefined,
+                        })),
+                        skipDuplicates: true,
+                      });
+                      assistantPersisted = true;
+                    } catch (error) {
+                      log.error(
+                        { err: error, conversationId: conversation.id },
+                        'Failed to persist chat messages',
+                      );
+                    }
+                  },
+                }),
+              );
+
+              // Wait for the title to resolve, then emit a transient data event.
+              // The connection stays open until execute() returns, so the merged
+              // chat stream will already have flushed by the time we get here.
+              if (titlePromise) {
+                const title = await titlePromise;
+                if (title) {
+                  writer.write({
+                    type: 'data-conversation-title',
+                    data: { title },
+                    transient: true,
+                  });
+                }
+              }
+            },
+          }),
+        );
+      } finally {
+        // Release the lock atomically and use the row count as the cancel
+        // signal: 0 means `chat.cancel` already cleared it (and wrote its own
+        // marker), 1 means we cleared our own active lock. The TTL covers the
+        // edge case where the Lambda died before reaching this block.
+        clearInterval(heartbeat);
+        const cleared = await db.conversation
+          .updateMany({
+            where: { id: conversation.id, generatingUntil: { not: null } },
+            data: { generatingUntil: null },
+          })
+          .catch((error) => {
+            log.warn({ err: error, conversationId: conversation.id }, 'Failed to clear lock');
+            return { count: 0 };
+          });
+        const wasCancelled = cleared.count === 0;
+
+        // The stream errored before `onFinish` persisted anything — write an
+        // empty assistant shell with `errored: true` so reloads can render the
+        // error inline where the response should have been.
+        if (!assistantPersisted && !wasCancelled) {
+          await db.message
+            .create({
+              data: {
+                conversationId: conversation.id,
+                role: 'assistant',
+                parts: [],
+                errored: true,
+              },
+            })
+            .catch((error) =>
+              log.warn(
+                { err: error, conversationId: conversation.id },
+                'Failed to persist errored marker',
+              ),
+            );
+        }
+      }
+    }),
+
+  /**
+   * Cancel an in-progress chat response. The frontend calls this on Stop to
+   * clear the generation lock and persist a visible "cancelled" marker as the
+   * assistant's response. AWS Lambda response streaming doesn't propagate
+   * client disconnects back to the producer Lambda's signal, so we can't
+   * cancel the model itself — but the producer's `onFinish` checks the lock
+   * before persisting, so its (possibly complete) response is discarded once
+   * the cancel marker is in place.
+   */
+  cancel: protectedProcedure
+    .route({
+      method: 'POST',
+      path: '/conversations/{id}/cancel',
+      summary: 'Cancel an in-progress chat response',
+      tags: ['Chat'],
+    })
+    .input(chatSchema.cancel)
+    .handler(async ({ context, input }) => {
+      // Verify ownership.
+      const conversation = await db.conversation.findFirst({
+        where: { id: input.id, userId: context.user.id, organizationId: context.organization.id },
         select: { id: true },
       });
-      const existingMessageIds = new Set(existingMessages.map((m) => m.id));
-
-      // Persist new user messages immediately — fire and forget so the stream isn't blocked.
-      // (onFinish only receives assistant messages, so user messages must be saved here.)
-      const newUserMessages = messages.filter(
-        (m) => m.role === 'user' && !existingMessageIds.has(m.id),
-      );
-      if (newUserMessages.length > 0) {
-        const now = new Date();
-        void Promise.all([
-          db.message.createMany({
-            data: newUserMessages.map((msg) => ({
-              id: msg.id,
-              conversationId: conversation.id,
-              role: msg.role,
-              parts: msg.parts as Prisma.InputJsonValue,
-            })),
-          }),
-          db.conversation.update({
-            where: { id: conversation.id },
-            data: { lastMessageAt: now },
-          }),
-        ]).catch((error) => log.error({ error }, 'Failed to persist user messages'));
+      if (!conversation) {
+        throw new ORPCError('NOT_FOUND', { message: 'Conversation not found' });
       }
 
-      // Get the Langfuse trace ID so we can pass it to the client for feedback scoring
-      const traceId = ai.getRequestTraceId();
+      // Conditional clear — if `generatingUntil` is already null, the producer
+      // finished naturally before the user hit Stop; nothing to cancel.
+      const released = await db.conversation.updateMany({
+        where: { id: input.id, generatingUntil: { not: null } },
+        data: { generatingUntil: null },
+      });
+      if (released.count === 0) {
+        return { cancelled: false };
+      }
 
-      // Stream the AI response as oRPC event iterator. Merge in a tail event
-      // for the conversation title so the sidebar can update without polling.
-      yield* streamToEventIterator(
-        createUIMessageStream({
-          execute: async ({ writer }) => {
-            writer.merge(
-              streamResult.toUIMessageStream({
-                generateMessageId: createIdGenerator({ prefix: 'msg', size: 16 }),
-                // Attach the Langfuse trace ID to the assistant message metadata
-                messageMetadata: ({ part }) => {
-                  if (part.type === 'finish') {
-                    return { traceId };
+      // Persist the in-progress assistant message (if the frontend sent one)
+      // marked as cancelled, so post-reload renders the same partial content
+      // + badge that the user saw before navigating away. Fall back to an
+      // empty parts array if no partial was supplied.
+      await db.message.create({
+        data: {
+          id: input.partial?.id,
+          conversationId: input.id,
+          role: 'assistant',
+          parts: (input.partial?.parts ?? []) as Prisma.InputJsonValue,
+          cancelled: true,
+        },
+      });
+      return { cancelled: true };
+    }),
+
+  /**
+   * Reconnect to an in-progress chat response. Used when a tab loads a
+   * conversation whose `generatingUntil` is non-null (another tab or a now-dead
+   * Lambda was producing a response). The handler long-polls until the lock
+   * clears, then either replays the resulting assistant message or emits an
+   * error chunk that surfaces in the UI exactly like a failed `send`.
+   */
+  reconnect: protectedProcedure
+    .route({
+      method: 'POST',
+      path: '/conversations/{id}/reconnect',
+      summary: 'Reconnect to an in-progress chat response',
+      tags: ['Chat'],
+    })
+    .input(z.object({ id: z.string() }))
+    .handler(async function* ({ context, input }) {
+      // Ownership check up-front so a malicious client can't make us poll on
+      // a conversation it doesn't own.
+      const owned = await db.conversation.findFirst({
+        where: { id: input.id, userId: context.user.id, organizationId: context.organization.id },
+        select: { id: true },
+      });
+      if (!owned) {
+        throw new ORPCError('NOT_FOUND', { message: 'Conversation not found' });
+      }
+
+      try {
+        yield* streamToEventIterator(
+          createUIMessageStream({
+            execute: async ({ writer }) => {
+              while (true) {
+                const conversation = await db.conversation.findUnique({
+                  where: { id: input.id },
+                  select: { generatingUntil: true },
+                });
+                const stillLocked =
+                  conversation?.generatingUntil && conversation.generatingUntil > new Date();
+                if (!stillLocked) {
+                  // Find the most recent message. If it's an assistant message
+                  // it's the response we want to replay. Otherwise the producer
+                  // died before persisting anything — emit an error chunk so
+                  // the UI surfaces it the same way a failed `send` would.
+                  const latest = await db.message.findFirst({
+                    where: { conversationId: input.id },
+                    orderBy: { createdAt: 'desc' },
+                  });
+                  if (latest?.role === 'assistant') {
+                    for (const chunk of streamFromMessage(latest)) {
+                      writer.write(chunk);
+                    }
+                  } else {
+                    writer.write({
+                      type: 'error',
+                      errorText: 'The previous response was interrupted. Please retry.',
+                    });
                   }
                   return;
-                },
-                onError: (error) => {
-                  // Surface the real cause in Lambda logs so we can diagnose stream failures
-                  // (Bedrock validation errors, S3 download failures, tool errors, etc.).
-                  const err = error as {
-                    name?: string;
-                    message?: string;
-                    statusCode?: number;
-                    data?: unknown;
-                  };
-                  log.error(
-                    {
-                      error,
-                      name: err.name,
-                      message: err.message,
-                      statusCode: err.statusCode,
-                      data: err.data,
-                      conversationId: conversation.id,
-                    },
-                    'chat.send: stream error',
-                  );
-                  return err.message ?? 'An error occurred while generating the response.';
-                },
-                onFinish: async ({ messages: allMessages }) => {
-                  try {
-                    // Only persist messages that don't already exist in the DB
-                    const newMessages = allMessages.filter(
-                      (msg) => !existingMessageIds.has(msg.id),
-                    );
-                    if (newMessages.length === 0) {
-                      return;
-                    }
-
-                    const messageData: Prisma.MessageCreateManyInput[] = newMessages.map((msg) => ({
-                      id: msg.id,
-                      conversationId: conversation.id,
-                      role: msg.role,
-                      parts: msg.parts as Prisma.InputJsonValue,
-                      // Store trace ID on assistant messages for feedback scoring
-                      traceId: msg.role === 'assistant' ? traceId : undefined,
-                    }));
-
-                    await db.message.createMany({ data: messageData });
-                  } catch (error) {
-                    log.error(
-                      { error, conversationId: conversation.id },
-                      'Failed to persist chat messages',
-                    );
-                  }
-                },
-              }),
-            );
-
-            // Wait for the title to resolve, then emit a transient data event.
-            // The connection stays open until execute() returns, so the merged
-            // chat stream will already have flushed by the time we get here.
-            if (titlePromise) {
-              const title = await titlePromise;
-              if (title) {
+                }
+                // Keepalive — flushes a transient chunk so the response stream
+                // keeps trickling bytes while we long-poll. Without it AWS
+                // sees a stalled connection and tears it down before the
+                // producer finishes. `transient: true` keeps it out of the
+                // rendered message; the client's `onData` already ignores
+                // any data part it doesn't recognize.
                 writer.write({
-                  type: 'data-conversation-title',
-                  data: { title },
+                  type: 'data-keepalive',
+                  data: { at: Date.now() },
                   transient: true,
                 });
+                await new Promise((resolve) => setTimeout(resolve, RECONNECT_POLL_MS));
               }
-            }
-          },
-        }),
-      );
+            },
+          }),
+        );
+      } finally {
+        // The orphaned lock has now been "resolved" (either replayed or errored).
+        // Clear it so future reloads don't re-trigger reconnect. The `lt` guard
+        // ensures we never stomp on an actively-heartbeating producer's claim —
+        // we only sweep up locks that have already expired.
+        await db.conversation
+          .updateMany({
+            where: { id: input.id, generatingUntil: { lt: new Date() } },
+            data: { generatingUntil: null },
+          })
+          .catch((error) =>
+            log.warn(
+              { err: error, conversationId: input.id },
+              'Failed to clear lock from reconnect',
+            ),
+          );
+      }
     }),
 
   /** List the current user's conversations (most recent first) */
@@ -323,7 +702,7 @@ When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.
     .input(
       z.object({
         cursor: z.string().optional(),
-        limit: z.number().int().min(1).max(50).default(20),
+        limit: z.number().int().min(1).max(200).default(50),
       }),
     )
     .handler(async ({ context, input }) => {
@@ -407,6 +786,8 @@ When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.
           metadata: {
             traceId: msg.traceId ?? undefined,
             feedback: msg.feedback ?? undefined,
+            cancelled: msg.cancelled ?? undefined,
+            errored: msg.errored ?? undefined,
           },
         })),
       );
@@ -416,6 +797,10 @@ When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.
         title: conversation.title,
         createdAt: conversation.createdAt,
         updatedAt: conversation.updatedAt,
+        // Non-null when a `chat.send` is generating a response (or recently
+        // died without clearing the lock). The frontend reads this to decide
+        // whether to call `reconnectToStream` instead of starting fresh.
+        generatingUntil: conversation.generatingUntil,
         messages,
       };
     }),
@@ -526,7 +911,7 @@ When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.
           });
           await ai.flush();
         } catch (error) {
-          log.warn({ error, traceId: message.traceId }, 'Failed to score Langfuse trace');
+          log.warn({ err: error, traceId: message.traceId }, 'Failed to score Langfuse trace');
         }
       }
 

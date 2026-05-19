@@ -13,7 +13,12 @@ import type { auth as backendAuth } from '../../backend/core/auth';
 
 /** The config for our Better Auth client (defined separately to avoid TypeScript issues) */
 const authConfig = {
-  baseURL: config.api.url,
+  // Better Auth's `withPath` skips appending the default `/api/auth` whenever
+  // baseURL already has any path. When there's no custom domain, our API URL
+  // already carries a `/${stage}` path, so we must spell out `/api/auth`
+  // explicitly — otherwise the client posts to `${baseURL}/<action>` directly
+  // (e.g. `/kwalsh/get-session`) and misses the Hono `/api/auth/*` mount.
+  baseURL: `${config.api.url}/api/auth`,
   // We must set the accept header to application/json to ensure the browser
   // redirects the user correctly during the OAuth consent flow
   fetchOptions: {

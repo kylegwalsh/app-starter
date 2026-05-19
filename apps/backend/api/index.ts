@@ -8,7 +8,7 @@ import { auth } from '@/core';
 import { mcpAdapter, mcpDiscovery } from './adapters';
 import { internalDocsPlugin, internalDocsLoginHTML } from './docs';
 import { handleHonoError } from './error';
-import { corsMiddleware, timingMiddleware } from './middleware';
+import { corsMiddleware, timeoutMiddleware, timingMiddleware } from './middleware';
 import { router } from './routes';
 
 // ---------- CONFIGURATION ----------
@@ -22,12 +22,13 @@ app.onError(handleHonoError);
 // Global middleware
 app.use('*', corsMiddleware);
 app.use('*', timingMiddleware);
+app.use('*', timeoutMiddleware);
 
 // ---------- SPECIAL ROUTES ----------
 // These routes expect raw requests and different transport protocols than the main API (oRPC)
 
 // Authentication routes (handled by Better Auth)
-app.on(['GET', 'POST'], ['/api/auth/*'], (c) => {
+app.on(['GET', 'POST'], ['/api/auth/*'], async (c) => {
   return auth.handler(c.req.raw);
 });
 

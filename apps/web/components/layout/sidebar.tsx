@@ -19,11 +19,12 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
+  useSidebar,
 } from '@repo/design';
 import { ChevronRight, LayoutDashboard, MessageSquare, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ComponentType, SVGProps } from 'react';
+import { useEffect, useRef, type ComponentType, type SVGProps } from 'react';
 
 import { OrganizationSwitcher, UserButton } from '@/components';
 
@@ -41,8 +42,41 @@ type NavItem = {
   items?: NavItem[];
 };
 
+/**
+ * Route prefixes that should auto-collapse the app sidebar on entry
+ * (usually used when the page would otherwise feel cramped)
+ */
+const AUTO_COLLAPSE_ROUTES = ['/chat'];
+
 /** The sidebar for the application */
 export const AppSidebar: FC = ({ children }) => {
+  const pathname = usePathname();
+  const { open, setOpen } = useSidebar();
+
+  // Close on entry only if currently open, and re-open on exit only if we
+  // were the one who closed it — so a manually-collapsed sidebar stays
+  // collapsed on return.
+  const shouldAutoCollapse = AUTO_COLLAPSE_ROUTES.some((prefix) => pathname.startsWith(prefix));
+  const openRef = useRef(open);
+  openRef.current = open;
+  const lastAutoCollapse = useRef<boolean | null>(null);
+  const autoCollapsedByUs = useRef(false);
+  useEffect(() => {
+    if (lastAutoCollapse.current === shouldAutoCollapse) {
+      return;
+    }
+    lastAutoCollapse.current = shouldAutoCollapse;
+    if (shouldAutoCollapse) {
+      if (openRef.current) {
+        autoCollapsedByUs.current = true;
+        setOpen(false);
+      }
+    } else if (autoCollapsedByUs.current) {
+      autoCollapsedByUs.current = false;
+      setOpen(true);
+    }
+  }, [shouldAutoCollapse, setOpen]);
+
   return (
     <>
       <Sidebar collapsible="icon">
@@ -93,7 +127,7 @@ export const AppSidebar: FC = ({ children }) => {
 };
 
 /** Renders a group of navigation items in the sidebar */
-const AppSidebarGroup = ({ navItems, label }: { navItems: NavItem[]; label?: string }) => {
+const AppSidebarGroup: FC<{ navItems: NavItem[]; label?: string }> = ({ navItems, label }) => {
   const pathname = usePathname();
 
   return (

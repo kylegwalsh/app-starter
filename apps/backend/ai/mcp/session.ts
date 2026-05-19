@@ -32,6 +32,7 @@ export const resolveMcpSession = async ({
       id: sessionId,
       user: existing.user,
       organization,
+      consumer: 'mcp',
     };
   }
 
@@ -81,5 +82,6 @@ export const resolveMcpSession = async ({
     id: sessionId,
     user,
     organization: membership.organization,
+    consumer: 'mcp',
   };
 };

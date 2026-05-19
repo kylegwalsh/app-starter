@@ -128,7 +128,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
       }
     } catch (error) {
       // Catch any errors
-      log.error({ error }, '[analytics] Error invoking analytics');
+      log.error({ err: error }, '[analytics] Error invoking analytics');
     }
   };
 
@@ -234,7 +234,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         try {
           onIdentify?.({ userId, traits });
         } catch (error) {
-          log.error({ error }, '[analytics] Error on identify');
+          log.error({ err: error }, '[analytics] Error on identify');
         }
       });
     },
@@ -415,7 +415,10 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
       /** Any additional properties to attach to the error */
       properties?: Record<string, unknown>,
     ) => {
-      log.error(error);
+      log.error(
+        { ...properties, err: error },
+        error instanceof Error ? error.message : 'Unknown error',
+      );
 
       await safeInvoke(() => {
         // Track the error differently based on platform

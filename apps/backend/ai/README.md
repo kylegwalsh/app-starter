@@ -35,9 +35,11 @@ export const myTool = createTool({
     param: z.string().describe('Description of the parameter'),
   },
   annotations: { readOnlyHint: true, destructiveHint: false },
-  // By default, tools are supported in both chat and MCP
-  // mcpSupported: false,
-  // chatSupported: false,
+  // Surfaces the tool is exposed through — explicit so we never accidentally
+  // ship a chat-only helper over MCP (or vice versa).
+  // Use ['chat'] for tools that don't make sense to external agents, or
+  // ['mcp'] for the inverse.
+  consumers: ['chat', 'mcp'],
   handler: async (args, session) => {
     const result = doSomething(args.param);
     return result;

@@ -19,7 +19,7 @@ import { AuthorizeSkeleton } from '@/components';
 import { auth } from '@/core';
 
 /** OAuth consent page for MCP and third-party clients */
-export default function AuthorizePage() {
+const AuthorizePage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientId = searchParams.get('client_id');
@@ -156,4 +156,6 @@ export default function AuthorizePage() {
       </Card>
     </main>
   );
-}
+};
+
+export default AuthorizePage;

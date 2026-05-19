@@ -3,10 +3,9 @@
 import { UserButton as BaseUserButton } from '@daveyplate/better-auth-ui';
 import { cn } from '@repo/design/lib/utils';
 import { Settings } from 'lucide-react';
-import type { ComponentProps } from 'react';
 
 /** User button with shared default styling and links */
-export const UserButton = ({ classNames, ...props }: ComponentProps<typeof BaseUserButton>) => {
+export const UserButton: FC<typeof BaseUserButton> = ({ classNames, ...props }) => {
   return (
     <BaseUserButton
       classNames={{

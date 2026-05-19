@@ -39,7 +39,7 @@ export const internalDocsLoginHTML = `<!doctype html>
       const err = document.getElementById('error');
       err.style.display = 'none';
       try {
-        const res = await fetch('/api/auth/sign-in/email', {
+        const res = await fetch('./auth/sign-in/email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -49,7 +49,7 @@ export const internalDocsLoginHTML = `<!doctype html>
           }),
         });
         if (!res.ok) throw new Error('Invalid credentials');
-        window.location.href = '/api';
+        window.location.href = './';
       } catch (ex) {
         err.textContent = ex.message;
         err.style.display = 'block';
@@ -103,7 +103,11 @@ const internalDocsHead = `
     if (!target) return;
     clearInterval(interval);
     const btn = document.createElement('a');
-    btn.href = '/api/login';
+    // Build from window.location so this works under any stage/path prefix
+    // (e.g. /api/login on a custom domain, /stage/api/login on the default API Gateway URL).
+    // We can't use './login' because the page is served at /api (no trailing slash),
+    // so the relative base is the root and './login' would resolve to /login.
+    btn.href = window.location.pathname.replace(/[/]+$/, '') + '/login';
     btn.className = 'auth-btn';
     btn.innerHTML = 'Authenticate <svg width="15" height="17" viewBox="0 0 20 20" fill="#49cc90"><use href="#locked" xlink:href="#locked"></use></svg>';
     target.appendChild(btn);

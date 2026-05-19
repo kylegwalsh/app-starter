@@ -17,22 +17,19 @@ import {
   Input,
   Skeleton,
 } from '@repo/design/components/ui';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  Loader2Icon,
-  MessageSquarePlusIcon,
-  MoreHorizontalIcon,
-  PencilIcon,
-  TrashIcon,
-} from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Loader2Icon, PlusIcon, MoreHorizontalIcon, PencilIcon, TrashIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { orpc } from '@/core/orpc';
-
-const listQueryOptions = orpc.chat.list.queryOptions({ input: { limit: 50 } });
+import {
+  chatListInfiniteOptions,
+  useConversations,
+  type ConversationListInfiniteData,
+} from '@/hooks/use-conversations';
 
 type Conversation = {
   id: string;
@@ -46,8 +43,15 @@ type ConversationItemProps = {
   isActive: boolean;
 };
 
+/** Placeholder row shown while the title is generating or the whole list is loading */
+const ConversationItemSkeleton = () => (
+  <div className="h-9 w-full shrink-0">
+    <Skeleton className="h-8 shrink-0 rounded-md" />
+  </div>
+);
+
 /** Single conversation row with inline rename and delete via ellipsis menu */
-function ConversationItem({ conversation, isActive }: ConversationItemProps) {
+const ConversationItem: FC<ConversationItemProps> = ({ conversation, isActive }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isRenaming, setIsRenaming] = useState(false);
@@ -55,21 +59,27 @@ function ConversationItem({ conversation, isActive }: ConversationItemProps) {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  type ListData = Awaited<ReturnType<typeof listQueryOptions.queryFn>>;
-
   const renameMutation = useMutation({
     ...orpc.chat.updateTitle.mutationOptions(),
     onMutate: async ({ id, title }) => {
-      await queryClient.cancelQueries({ queryKey: listQueryOptions.queryKey });
-      const previous = queryClient.getQueryData(listQueryOptions.queryKey);
-      queryClient.setQueryData<ListData>(listQueryOptions.queryKey, (old) =>
-        old ? { ...old, items: old.items.map((c) => (c.id === id ? { ...c, title } : c)) } : old,
+      await queryClient.cancelQueries({ queryKey: chatListInfiniteOptions.queryKey });
+      const previous = queryClient.getQueryData(chatListInfiniteOptions.queryKey);
+      queryClient.setQueryData<ConversationListInfiniteData>(chatListInfiniteOptions.queryKey, (old) =>
+        old
+          ? {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                items: page.items.map((c) => (c.id === id ? { ...c, title } : c)),
+              })),
+            }
+          : old,
       );
       return { previous };
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous !== undefined) {
-        queryClient.setQueryData(listQueryOptions.queryKey, ctx.previous);
+        queryClient.setQueryData(chatListInfiniteOptions.queryKey, ctx.previous);
       }
       toast.error('Failed to rename conversation');
     },
@@ -80,10 +90,18 @@ function ConversationItem({ conversation, isActive }: ConversationItemProps) {
   const deleteMutation = useMutation({
     ...orpc.chat.delete.mutationOptions(),
     onMutate: async ({ id }) => {
-      await queryClient.cancelQueries({ queryKey: listQueryOptions.queryKey });
-      const previous = queryClient.getQueryData(listQueryOptions.queryKey);
-      queryClient.setQueryData<ListData>(listQueryOptions.queryKey, (old) =>
-        old ? { ...old, items: old.items.filter((c) => c.id !== id) } : old,
+      await queryClient.cancelQueries({ queryKey: chatListInfiniteOptions.queryKey });
+      const previous = queryClient.getQueryData(chatListInfiniteOptions.queryKey);
+      queryClient.setQueryData<ConversationListInfiniteData>(chatListInfiniteOptions.queryKey, (old) =>
+        old
+          ? {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                items: page.items.filter((c) => c.id !== id),
+              })),
+            }
+          : old,
       );
       if (isActive) {
         router.push('/chat');
@@ -92,12 +110,12 @@ function ConversationItem({ conversation, isActive }: ConversationItemProps) {
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous !== undefined) {
-        queryClient.setQueryData(listQueryOptions.queryKey, ctx.previous);
+        queryClient.setQueryData(chatListInfiniteOptions.queryKey, ctx.previous);
       }
       toast.error('Failed to delete conversation');
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: listQueryOptions.queryKey });
+      queryClient.invalidateQueries({ queryKey: chatListInfiniteOptions.queryKey });
     },
   });
 
@@ -132,10 +150,15 @@ function ConversationItem({ conversation, isActive }: ConversationItemProps) {
 
   const isWorking = deleteMutation.isPending || renameMutation.isPending;
 
+  // Stay loading until the title is generated
+  if (!conversation.title) {
+    return <ConversationItemSkeleton />;
+  }
+
   return (
     <>
       <div
-        className={`group flex h-9 items-center gap-1 rounded-md px-2 text-sm transition-colors ${
+        className={`group flex h-9 shrink-0 items-center gap-1 rounded-md px-2 text-sm transition-colors ${
           isActive ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'
         }`}
       >
@@ -157,21 +180,18 @@ function ConversationItem({ conversation, isActive }: ConversationItemProps) {
           />
         ) : (
           <Link className="min-w-0 flex-1" href={`/chat/${conversation.id}`}>
-            {conversation.title ? (
-              <span className="block truncate">{conversation.title}</span>
-            ) : (
-              <Skeleton className="h-3.5 w-3/4" />
-            )}
+            <span className="block truncate">{conversation.title}</span>
           </Link>
         )}
 
-        {isWorking ? (
+        {isWorking && (
           <Loader2Icon className="text-muted-foreground size-3 shrink-0 animate-spin" />
-        ) : (
+        )}
+        {!isWorking && !isRenaming && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                className="size-6 shrink-0 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100"
+                className="hidden size-6 shrink-0 group-hover:inline-flex data-[state=open]:inline-flex"
                 size="icon"
                 variant="ghost"
               >
@@ -181,8 +201,7 @@ function ConversationItem({ conversation, isActive }: ConversationItemProps) {
             <DropdownMenuContent
               align="end"
               onCloseAutoFocus={(e) => {
-                // When entering rename mode, prevent Radix from restoring focus to
-                // the trigger button — the input will capture focus instead.
+                // Stop Radix from focusing the trigger — the input will take focus instead.
                 if (isRenaming) {
                   e.preventDefault();
                 }
@@ -228,12 +247,32 @@ function ConversationItem({ conversation, isActive }: ConversationItemProps) {
       </AlertDialog>
     </>
   );
-}
+};
+
+/** Scroll-progress threshold (0–1) at which to fetch the next page — 0.75 = 25% remaining */
+const NEXT_PAGE_TRIGGER_RATIO = 0.75;
 
 /** Sidebar listing all conversations with create/delete actions */
-function ChatSidebar() {
+export const ChatSidebar = () => {
   const { id: activeId } = useParams<{ id?: string }>();
-  const { data, isPending } = useQuery(listQueryOptions);
+  const { data, isPending, hasNextPage, isFetchingNextPage, fetchNextPage } = useConversations();
+
+  // Flatten paginated results into a single list for rendering
+  const conversations = useMemo(
+    () => data?.pages.flatMap((page) => page.items) ?? [],
+    [data?.pages],
+  );
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (!hasNextPage || isFetchingNextPage) {
+      return;
+    }
+    const el = e.currentTarget;
+    // Trigger when the user has scrolled past 90% of the content (only 10% remains below)
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight * NEXT_PAGE_TRIGGER_RATIO) {
+      void fetchNextPage();
+    }
+  };
 
   return (
     <div className="bg-muted/30 flex h-full w-64 flex-col border-r">
@@ -242,21 +281,16 @@ function ChatSidebar() {
         <h2 className="text-sm font-semibold">Chats</h2>
         <Button asChild size="icon" variant="ghost">
           <Link href="/chat">
-            <MessageSquarePlusIcon className="size-4" />
+            <PlusIcon className="size-4" />
           </Link>
         </Button>
       </div>
 
       {/* Conversation list */}
-      <div className="flex-1 overflow-y-auto p-2">
-        {isPending &&
-          ['a', 'b', 'c', 'd'].map((k) => (
-            <div className="px-2 py-1.5" key={k}>
-              <Skeleton className="h-8 w-full rounded-md" />
-            </div>
-          ))}
+      <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2" onScroll={handleScroll}>
+        {isPending && Array.from({ length: 10 }, (_, i) => <ConversationItemSkeleton key={i} />)}
 
-        {data?.items?.map((conversation) => (
+        {conversations.map((conversation) => (
           <ConversationItem
             conversation={conversation}
             isActive={activeId === conversation.id}
@@ -264,7 +298,11 @@ function ChatSidebar() {
           />
         ))}
 
-        {data?.items?.length === 0 && (
+        {/* Loading placeholders while fetching the next page */}
+        {isFetchingNextPage &&
+          Array.from({ length: 3 }, (_, i) => <ConversationItemSkeleton key={`next-${i}`} />)}
+
+        {!isPending && conversations.length === 0 && (
           <p className="text-muted-foreground px-2 py-4 text-center text-xs">
             No conversations yet
           </p>
@@ -272,6 +310,4 @@ function ChatSidebar() {
       </div>
     </div>
   );
-}
-
-export { ChatSidebar };
+};

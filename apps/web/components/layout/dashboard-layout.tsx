@@ -11,7 +11,13 @@ type Props = {
 };
 
 /** Generic dashboard page layout with a title and description */
-export function DashboardLayout({ title, description, actions, className, children }: Props) {
+export const DashboardLayout: FC<Props> = ({
+  title,
+  description,
+  actions,
+  className,
+  children,
+}) => {
   return (
     <div className={cn('w-full space-y-6 px-4', className)}>
       <div className="flex items-end justify-between gap-4">
@@ -27,4 +33,4 @@ export function DashboardLayout({ title, description, actions, className, childr
       {children}
     </div>
   );
-}
+};

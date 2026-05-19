@@ -2,11 +2,9 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { config } from '@repo/config';
 
-import { handleError } from '@/api/error';
-
 // oxlint-disable-next-line no-namespace: Namespace import used to auto-register all exported tools
 import * as tools from '../tools';
-import type { AiTool, ToolSession } from '../utils';
+import { runTool, type AiTool, type ToolSession } from '../utils';
 
 /**
  * Create a transport that reconstitutes sessions across Lambda invocations.
@@ -41,8 +39,8 @@ export const createMcpServer = ({ session }: { session?: ToolSession }) => {
       continue;
     }
 
-    // Skip tools that are chat-only (not MCP supported)
-    if (tool.mcpSupported === false) {
+    // Skip tools that aren't exposed via MCP
+    if (!tool.consumers.includes('mcp')) {
       continue;
     }
 
@@ -55,14 +53,11 @@ export const createMcpServer = ({ session }: { session?: ToolSession }) => {
         annotations: tool.annotations,
       },
       async (args) => {
-        try {
-          const text = await tool.handler(args, session!);
-          return { content: [{ type: 'text' as const, text }] };
-        } catch (error) {
-          await handleError({ error });
-          const message = error instanceof Error ? error.message : 'Tool execution failed';
-          return { content: [{ type: 'text' as const, text: message }], isError: true };
+        const outcome = await runTool({ tool, args, session: session! });
+        if (outcome.ok) {
+          return { content: [{ type: 'text' as const, text: outcome.result }] };
         }
+        return { content: [{ type: 'text' as const, text: outcome.message }], isError: true };
       },
     );
   }

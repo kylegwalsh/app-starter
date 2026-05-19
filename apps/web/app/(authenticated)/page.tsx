@@ -137,7 +137,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 /** Our main dashboard page */
-export default function DashboardPage() {
+const DashboardPage = () => {
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = useState('90d');
   useEffect(() => {
@@ -360,4 +360,6 @@ export default function DashboardPage() {
       </div>
     </>
   );
-}
+};
+
+export default DashboardPage;

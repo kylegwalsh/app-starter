@@ -16,7 +16,7 @@ import { DashboardLayout } from '@/components';
 import { useUser } from '@/hooks';
 
 /** The organization settings page */
-export default function OrganizationSettingsPage() {
+const OrganizationSettingsPage = () => {
   const { isLoading, organization } = useUser();
   const router = useRouter();
 
@@ -46,4 +46,6 @@ export default function OrganizationSettingsPage() {
       <DeleteOrganizationCard />
     </DashboardLayout>
   );
-}
+};
+
+export default OrganizationSettingsPage;

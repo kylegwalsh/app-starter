@@ -10,7 +10,7 @@ import {
 import { DashboardLayout } from '@/components';
 
 /** The account settings page */
-export default function AccountSettingsPage() {
+const AccountSettingsPage = () => {
   return (
     <DashboardLayout
       className="px-0"
@@ -23,4 +23,6 @@ export default function AccountSettingsPage() {
       <ChangePasswordCard />
     </DashboardLayout>
   );
-}
+};
+
+export default AccountSettingsPage;

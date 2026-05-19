@@ -149,8 +149,9 @@ const bedrock = createAmazonBedrock({
 /** Our available AI models */
 export const models = {
   bedrock: {
+    'claude-4-7-opus': bedrock('us.anthropic.claude-opus-4-7'),
+    'claude-4-6-sonnet': bedrock('us.anthropic.claude-sonnet-4-6'),
     'claude-4-5-haiku': bedrock('us.anthropic.claude-haiku-4-5-20251001-v1:0'),
-    'claude-4-5-sonnet': bedrock('us.anthropic.claude-sonnet-4-5-20250929-v1:0'),
   },
   // anthropic: {
   //   'claude-haiku-4-5': anthropic('claude-haiku-4-5'),

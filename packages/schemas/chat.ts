@@ -27,6 +27,21 @@ export const chatSchema = {
   messageMetadata: z.object({
     traceId: z.string().optional(),
     feedback: z.boolean().optional(),
+    /** True if this assistant message was stopped by the user mid-stream. */
+    cancelled: z.boolean().optional(),
+    /** True if the assistant response errored out before persisting normally. */
+    errored: z.boolean().optional(),
+  }),
+
+  /** Schema for cancelling a chat — `partial` is the in-progress assistant message to persist alongside the cancellation marker */
+  cancel: z.object({
+    id: z.string(),
+    partial: z
+      .object({
+        id: z.string(),
+        parts: z.array(z.object({ type: z.string() }).passthrough()),
+      })
+      .optional(),
   }),
 
   /** Schema for the chat message input (validated on the backend) */
@@ -41,5 +56,12 @@ export const chatSchema = {
         })
         .passthrough(),
     ),
+    /**
+     * When true, signals that this send is a "Try again" on a prior errored
+     * response. The backend deletes only the latest errored shell so a reload
+     * after a successful retry doesn't show the dead-end alongside the new
+     * response.
+     */
+    isRetry: z.boolean().optional(),
   }),
 };

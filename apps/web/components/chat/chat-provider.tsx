@@ -3,11 +3,7 @@
 import { useChat } from '@ai-sdk/react';
 import { eventIteratorToUnproxiedDataStream } from '@orpc/client';
 import { CHAT_ALLOWED_FILE_TYPES } from '@repo/constants';
-import {
-  PromptInputProvider,
-  useProviderAttachments,
-  type PromptInputMessage,
-} from '@repo/design/components/ai-elements/prompt-input';
+import { PromptInputProvider, useProviderAttachments, type PromptInputMessage } from '@repo/design';
 import { chatSchema } from '@repo/schemas';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ChatStatus, UIMessage } from 'ai';
@@ -26,6 +22,10 @@ import {
 import type { z } from 'zod';
 
 import { client, orpc } from '@/core/orpc';
+import {
+  chatListInfiniteOptions,
+  type ConversationListInfiniteData,
+} from '@/hooks/use-conversations';
 
 /** Our chat message type with typed metadata (traceId, feedback) */
 type ChatMessageMetadata = z.infer<typeof chatSchema.messageMetadata>;
@@ -48,6 +48,8 @@ type ChatContextValue = {
   error: Error | undefined;
   stop: () => void;
   regenerate: () => void;
+  /** Like `regenerate`, but also purges any errored shells from view first. */
+  retry: () => void;
   isLoading: boolean;
   isUploading: boolean;
   uploadError: string | null;
@@ -55,6 +57,10 @@ type ChatContextValue = {
   attachmentUploads: ReadonlyMap<string, AttachmentUploadState>;
   /** CDN URL → local blob URL, derived from attachmentUploads for instant render of just-sent files. */
   localPreviews: ReadonlyMap<string, string>;
+  /** Assistant message IDs that were stopped by the user mid-stream. */
+  cancelledMessageIds: ReadonlySet<string>;
+  /** Assistant message IDs that errored during streaming (in-memory mirror of the persisted `errored` flag). */
+  erroredMessageIds: ReadonlySet<string>;
   handleSubmit: (message: PromptInputMessage) => void;
   submitFeedback: (messageId: string, rating: 'up' | 'down', comment?: string) => void;
 };
@@ -62,13 +68,20 @@ type ChatContextValue = {
 const ChatContext = createContext<ChatContextValue | null>(null);
 
 /** sessionStorage key for a pending first message on a new conversation */
-const pendingKey = (id: string) => `chat:pending:${id}`;
+export const pendingKey = (id: string) => `chat:pending:${id}`;
 
-type ChatProviderProps = {
+export type ChatProviderProps = {
   /** Existing conversation ID (for loading a saved conversation) */
   conversationId?: string;
   /** Pre-loaded messages from the database */
   initialMessages?: ChatMessage[];
+  /**
+   * If non-null when the provider mounts, another tab (or a Lambda that died
+   * before clearing the lock) is producing the next assistant message. The
+   * provider will call `resumeStream()` so the result flows in through the
+   * normal `useChat` rendering path.
+   */
+  initialGeneratingUntil?: Date | string | null;
   children: ReactNode;
 };
 
@@ -156,18 +169,32 @@ const uploadFilePart = async (
 };
 
 /** Outer wrapper — lifts the prompt input's attachments state so we can upload eagerly. */
-function ChatProvider({ conversationId, initialMessages, children }: ChatProviderProps) {
+export const ChatProvider: FC<ChatProviderProps> = ({
+  conversationId,
+  initialMessages,
+  initialGeneratingUntil,
+  children,
+}) => {
   return (
     <PromptInputProvider>
-      <ChatProviderInner conversationId={conversationId} initialMessages={initialMessages}>
+      <ChatProviderInner
+        conversationId={conversationId}
+        initialMessages={initialMessages}
+        initialGeneratingUntil={initialGeneratingUntil}
+      >
         {children}
       </ChatProviderInner>
     </PromptInputProvider>
   );
-}
+};
 
 /** Inner provider — owns chat state plus the per-attachment upload map. */
-function ChatProviderInner({ conversationId, initialMessages, children }: ChatProviderProps) {
+const ChatProviderInner: FC<ChatProviderProps> = ({
+  conversationId,
+  initialMessages,
+  initialGeneratingUntil,
+  children,
+}) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -278,22 +305,40 @@ function ChatProviderInner({ conversationId, initialMessages, children }: ChatPr
     [attachmentUploads],
   );
 
-  const { messages, status, error, sendMessage, stop, regenerate } = useChat<ChatMessage>({
+  const {
+    messages,
+    status,
+    error,
+    sendMessage,
+    stop: rawStop,
+    regenerate,
+    resumeStream,
+    setMessages,
+  } = useChat<ChatMessage>({
     transport: {
       async sendMessages(options) {
         // Use the prop conversationId, not options.chatId — the AI SDK generates
         // a random chatId when id is undefined, which the backend would reject as NOT_FOUND.
+        const body = options.body as { isRetry?: boolean } | undefined;
         const iterator = await client.chat.send(
           {
             id: conversationId,
             messages: options.messages as z.input<typeof chatSchema.chatMessage>['messages'],
+            isRetry: body?.isRetry,
           },
           { signal: options.abortSignal ?? undefined },
         );
         return eventIteratorToUnproxiedDataStream(iterator);
       },
       async reconnectToStream() {
-        return null;
+        // Called by `resumeStream()` when another producer is generating the
+        // next assistant message. The backend long-polls and either replays
+        // the persisted message or emits an error chunk if the producer died.
+        if (!conversationId) {
+          return null;
+        }
+        const iterator = await client.chat.reconnect({ id: conversationId });
+        return eventIteratorToUnproxiedDataStream(iterator);
       },
     },
     id: conversationId,
@@ -307,13 +352,16 @@ function ChatProviderInner({ conversationId, initialMessages, children }: ChatPr
         return;
       }
       const { title } = (dataPart as { data: { title: string } }).data;
-      queryClient.setQueryData(
-        orpc.chat.list.queryOptions({ input: { limit: 50 } }).queryKey,
+      queryClient.setQueryData<ConversationListInfiniteData>(
+        chatListInfiniteOptions.queryKey,
         (old) =>
           old
             ? {
                 ...old,
-                items: old.items.map((c) => (c.id === conversationId ? { ...c, title } : c)),
+                pages: old.pages.map((page) => ({
+                  ...page,
+                  items: page.items.map((c) => (c.id === conversationId ? { ...c, title } : c)),
+                })),
               }
             : old,
       );
@@ -321,6 +369,122 @@ function ChatProviderInner({ conversationId, initialMessages, children }: ChatPr
   });
 
   const isLoading = status === 'streaming' || status === 'submitted';
+
+  const [cancelledMessageIds, setCancelledMessageIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  const [erroredMessageIds, setErroredMessageIds] = useState<ReadonlySet<string>>(() => new Set());
+
+  // When the stream errors, tag the latest assistant message so it renders the
+  // ChatError block inline (same component the backend's persisted shell will
+  // render on reload — keeps the UI identical across live and reload).
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+  useEffect(() => {
+    if (status !== 'error') {
+      return;
+    }
+    // Only tag the *very last* message, and only if it's an assistant — that's
+    // the stub useChat created for this failed attempt. If the last message is
+    // a user message, no stub was created (error before any chunks), and the
+    // fallback ChatError will render at the bottom. Tagging an older assistant
+    // would place the error UI before the latest user message.
+    const last = messagesRef.current.at(-1);
+    if (last?.role !== 'assistant') {
+      return;
+    }
+    setErroredMessageIds((prev) => (prev.has(last.id) ? prev : new Set([...prev, last.id])));
+  }, [status]);
+
+  // "Try again" — `regenerate` already drops the last assistant message and
+  // re-fetches a fresh response for the preceding user message, so we don't
+  // need to setMessages ourselves (doing so would race regenerate and end up
+  // nuking a prior, successful message). We only signal `isRetry` so the
+  // backend deletes the matching persisted errored row.
+  const retry = useCallback(() => {
+    regenerate({ body: { isRetry: true } });
+  }, [regenerate]);
+
+  // Wrap `stop` so that cancelling mid-stream also neutralises any in-flight
+  // tool calls on the partial assistant message. Bedrock requires a tool_result
+  // for every tool_use block, so an unresolved `input-available` tool part
+  // would break the next request. Partial text parts are safe to leave as-is.
+  const stop = useCallback(() => {
+    void rawStop();
+
+    // Compute the patched partial assistant message once — we both update
+    // local state with it AND send it to the backend so post-reload renders
+    // the same content + Stopped badge.
+    type MessagePart = ChatMessage['parts'][number];
+    const lastAssistant = [...messages].toReversed().find((m) => m.role === 'assistant');
+    if (!lastAssistant) {
+      return;
+    }
+    const patchedParts = lastAssistant.parts.flatMap((p): MessagePart[] => {
+      if (p.type !== 'dynamic-tool') {
+        return [p];
+      }
+      // Terminal states are valid as-is for the next request.
+      if (
+        p.state === 'output-available' ||
+        p.state === 'output-error' ||
+        p.state === 'output-denied'
+      ) {
+        return [p];
+      }
+      // Partial-input tool calls have invalid JSON — drop them entirely so
+      // the next request doesn't carry a malformed tool_use block.
+      if (p.state === 'input-streaming') {
+        return [];
+      }
+      // input-available / approval-requested / approval-responded: input is
+      // complete but no tool_result was produced. Mark errored so the next
+      // request carries a valid tool_result block.
+      // Cast: the spread builds a structurally valid output-error variant,
+      // but TS can't narrow across the dynamic-tool discriminated union to
+      // verify it.
+      return [{ ...p, state: 'output-error', errorText: 'Cancelled by user' } as MessagePart];
+    });
+
+    setMessages((current) =>
+      current.map((m) => (m.id === lastAssistant.id ? { ...m, parts: patchedParts } : m)),
+    );
+    setCancelledMessageIds((prev) =>
+      prev.has(lastAssistant.id) ? prev : new Set([...prev, lastAssistant.id]),
+    );
+
+    // Persist the partial alongside the cancellation marker. Best-effort —
+    // if it fails the lock TTL eventually clears the conversation; the
+    // cancellation just won't be reflected post-reload.
+    if (conversationId) {
+      void client.chat
+        .cancel({
+          id: conversationId,
+          partial: {
+            id: lastAssistant.id,
+            parts: patchedParts as NonNullable<
+              z.input<typeof chatSchema.cancel>['partial']
+            >['parts'],
+          },
+        })
+        .catch(() => {});
+    }
+  }, [conversationId, messages, rawStop, setMessages]);
+
+  // If the conversation is mid-generation when we load it (another tab is
+  // streaming, or a Lambda died without clearing the lock), hook into that
+  // stream via `resumeStream`. The backend long-polls and either replays the
+  // resulting assistant message or surfaces an error chunk. The ref guard
+  // keeps StrictMode's double-effect in dev from firing two reconnects.
+  const resumeFiredRef = useRef(false);
+  useEffect(() => {
+    if (initialGeneratingUntil == null || resumeFiredRef.current) {
+      return;
+    }
+    resumeFiredRef.current = true;
+    void resumeStream();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once based on mount-time lock state
+  }, []);
 
   // On mount, auto-send any pending message stored by the new-conversation flow.
   // The [id] page stores the user's first message in sessionStorage before navigating.
@@ -345,12 +509,11 @@ function ChatProviderInner({ conversationId, initialMessages, children }: ChatPr
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount only
   }, [conversationId]);
 
-  // After the first message is sent, invalidate the sidebar conversation list
+  // Reconcile the optimistic sidebar item once the stream settles — error
+  // too, otherwise the placeholder's null title stays as a permanent skeleton.
   useEffect(() => {
-    if (status === 'ready' && messages.length > 0) {
-      void queryClient.invalidateQueries({
-        queryKey: orpc.chat.list.queryOptions({ input: { limit: 50 } }).queryKey,
-      });
+    if ((status === 'ready' || status === 'error') && messages.length > 0) {
+      void queryClient.invalidateQueries({ queryKey: chatListInfiniteOptions.queryKey });
     }
   }, [status, messages.length, queryClient]);
 
@@ -387,22 +550,31 @@ function ChatProviderInner({ conversationId, initialMessages, children }: ChatPr
 
         sessionStorage.setItem(pendingKey(id), JSON.stringify({ text: message.text, fileUrls }));
 
-        // Optimistically add the new conversation to the sidebar list so it appears immediately
-        queryClient.setQueryData(
-          orpc.chat.list.queryOptions({ input: { limit: 50 } }).queryKey,
-          (old) => ({
-            items: [
-              {
-                id,
-                title: null,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                lastMessageAt: null,
-              },
-              ...(old?.items ?? []),
-            ],
-            nextCursor: old?.nextCursor,
-          }),
+        // Optimistically prepend the new conversation onto the first page of the
+        // infinite list so it appears immediately. The follow-up invalidation on
+        // `status === 'ready'` will refetch and reconcile against the real row.
+        queryClient.setQueryData<ConversationListInfiniteData>(
+          chatListInfiniteOptions.queryKey,
+          (old) => {
+            const newItem = {
+              id,
+              title: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              lastMessageAt: null,
+            };
+            if (!old || old.pages.length === 0) {
+              return {
+                pages: [{ items: [newItem], nextCursor: undefined }],
+                pageParams: [undefined],
+              };
+            }
+            const [firstPage, ...rest] = old.pages;
+            return {
+              ...old,
+              pages: [{ ...firstPage, items: [newItem, ...firstPage.items] }, ...rest],
+            };
+          },
         );
 
         router.push(`/chat/${id}`);
@@ -435,12 +607,15 @@ function ChatProviderInner({ conversationId, initialMessages, children }: ChatPr
       error,
       stop,
       regenerate,
+      retry,
       isLoading,
       isUploading,
       uploadError,
       conversationId,
       attachmentUploads,
       localPreviews,
+      cancelledMessageIds,
+      erroredMessageIds,
       handleSubmit,
       submitFeedback,
     }),
@@ -450,27 +625,28 @@ function ChatProviderInner({ conversationId, initialMessages, children }: ChatPr
       error,
       stop,
       regenerate,
+      retry,
       isLoading,
       isUploading,
       uploadError,
       conversationId,
       attachmentUploads,
       localPreviews,
+      cancelledMessageIds,
+      erroredMessageIds,
       handleSubmit,
       submitFeedback,
     ],
   );
 
   return <ChatContext value={value}>{children}</ChatContext>;
-}
+};
 
 /** Access chat state from any child component */
-const useChatContext = () => {
+export const useChatContext = () => {
   const context = use(ChatContext);
   if (!context) {
     throw new Error('useChatContext must be used within a ChatProvider');
   }
   return context;
 };
-
-export { ChatProvider, useChatContext, type ChatProviderProps, pendingKey };

@@ -22,25 +22,24 @@
 
 ## AI
 
-- Fix conversation element not loading and getting stuck when errors occur in chat
-- Fix errors breaking chats (they also don't stay showing after you refresh)
-- Verify we are handling errors appropriately from MCP / AI-SDK
-  - Ensure that unhandled mcp/tool errors bubble up and get reported to Posthog
-- Ensure we handle cancelling gracefully (wait for tools to resolve)
-- Add new storybook stories for new design system files
 - Ensure unsupported files are sent to Daytona for code exec
-- Fix deep type in mcp/server
-- Determine if we're using oRPC chat streaming right
-- Prefix chat routes
-- Verify MCP still works
-- Check out and test Chat UI
-- Clean up any generated code
+- Ensure we don't overly use Daytona (seems to want to save TODOs there or something)
 - Create slack app
-- Consider moving to REST API for increased timeouts + streaming support (urls are uglier)
 - Add Daytona setup to init script (sign up at daytona.io, get API key, `sst secret set DAYTONA_API_KEY <value>`)
 - Ensure the bot doesn't focus on data analysis (maybe give it a basic prompt)
 - Make Daytona sandbox manager fail gracefully when API key is not configured (return tool error, don't crash)
 - Disable chat routes / MCP server if AI is not set up during init (skip importing infra/storage, skip chat route mounting, etc.)
+- Clean up any generated code
+- Add new storybook stories for new design system files
+
+## MCP
+
+- Verify MCP streams long text
+- Make a note in onboarding that MCP only works with custom domains (along with anything else that requires it?)
+- Add MCP tracing to Langfuse
+- Fix deep type in mcp/server
+- Add submit_feedback tool to MCP and score in Langfuse
+- Get MCP working with local API somehow (so we don't hardcode it)
 
 ## Worktree
 
@@ -50,7 +49,7 @@
 
 - Rethink how we trace for Langfuse and how we can support evals (input must be easily replayed against functions)
 
-## Marketing site
+## MARKETING SITE
 
 - Consider adding marketing site to repo
 
@@ -64,6 +63,8 @@
 
 ## OTHER
 
+- Pass PostHog build number through with the source maps
+- NextJS does not reliably kill port and reload when making infra changes (and sometimes dies and has to restart when AI makes a lot of edits)
 - Add superset config file
 - Add SST debug launch file
 - Create good "clean" command to remove node_modules
@@ -72,7 +73,7 @@
 - On Windows, editing a monorepo package (like config) doesn't cause the backend to hot reload
 - Debug why first stripe invocation causes SST proxy to die on Windows (could be related to below issue) - https://github.com/sst/sst/issues/6051
 - Update migrations once we finish updating schema
-- When pushing final starter: Remove posthog settings from config / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
+- When pushing final starter: Remove posthog settings from config / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend / custom domain
 
 ## MINOR IMPROVEMENTS
 
