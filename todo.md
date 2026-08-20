@@ -63,6 +63,8 @@
 
 ## OTHER
 
+- See if we can drop the database urls as part of github CI and just leverage SST secrets directly
+- Add new Posthog error trace support
 - Pass PostHog build number through with the source maps
 - NextJS does not reliably kill port and reload when making infra changes (and sometimes dies and has to restart when AI makes a lot of edits)
 - Add superset config file
