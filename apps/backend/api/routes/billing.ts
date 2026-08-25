@@ -1,25 +1,83 @@
-import { ORPCError } from '@orpc/server';
+import type { Organization } from '@prisma/client';
 import { log } from '@repo/logs';
+import { Hono } from 'hono';
+import { describeRoute, validator } from 'hono-openapi';
+import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 
-import { stripe, orpc } from '@/core';
+import { stripe } from '@/core';
 
-import { protectedProcedure } from '../procedures';
+import { type ProtectedEnv, requireAuth } from '../middleware';
+
+/** A single invoice or payment row in the billing history */
+type BillingHistoryItem = {
+  id: string | undefined;
+  amount: number;
+  status: string | null;
+  description: string;
+  date: Date;
+  receiptUrl: string | null | undefined;
+  type: 'invoice' | 'payment';
+};
+
+/**
+ * Loads the organization's combined Stripe invoices and charges, newest first.
+ * Returns an empty list when Stripe isn't configured, the organization has no
+ * customer yet, or the Stripe lookup fails — billing history is informational,
+ * so a failure shouldn't take the settings page down.
+ */
+const loadBillingHistory = async (organization: Organization): Promise<BillingHistoryItem[]> => {
+  if (!stripe || !organization.stripeCustomerId) {
+    return [];
+  }
+
+  try {
+    const [invoices, charges] = await Promise.all([
+      stripe.invoices.list({ customer: organization.stripeCustomerId, limit: 100 }),
+      stripe.charges.list({ customer: organization.stripeCustomerId, limit: 100 }),
+    ]);
+
+    return [
+      ...invoices.data.map((invoice) => ({
+        id: invoice.id,
+        amount: invoice.amount_paid / 100, // Convert from cents
+        status: invoice.status,
+        description: invoice.description || 'Invoice',
+        date: new Date(invoice.created * 1000),
+        receiptUrl: invoice.hosted_invoice_url,
+        type: 'invoice' as const,
+      })),
+      ...charges.data.map((charge) => ({
+        id: charge.id,
+        amount: charge.amount / 100, // Convert from cents
+        status: charge.status,
+        description: charge.description || 'Payment',
+        date: new Date(charge.created * 1000),
+        receiptUrl: charge.receipt_url,
+        type: 'payment' as const,
+      })),
+    ].toSorted((a, b) => b.date.getTime() - a.date.getTime());
+  } catch (error) {
+    log.error({ err: error }, 'Error fetching Stripe billing history');
+    return [];
+  }
+};
 
 /** The billing router */
-export const billingRouter = orpc.prefix('/billing').router({
+export const billingRouter = new Hono<ProtectedEnv>()
+  .use(requireAuth)
   /**
    * Creates a one-time Stripe Checkout session for a fixed amount.
    * Returns a checkout URL to redirect the user to.
    */
-  charge: protectedProcedure
-    .route({
-      method: 'POST',
-      path: '/charge',
+  .post(
+    '/billing/charge',
+    describeRoute({
       summary: 'Create a Stripe checkout session',
       tags: ['Billing'],
-    })
-    .input(
+    }),
+    validator(
+      'json',
       z.object({
         /** Amount in dollars (will be converted to cents) */
         amount: z.number().positive(),
@@ -30,14 +88,14 @@ export const billingRouter = orpc.prefix('/billing').router({
         /** URL to redirect to if the user cancels */
         cancelUrl: z.string().url(),
       }),
-    )
-    .handler(async ({ context, input }) => {
+    ),
+    async (c) => {
       if (!stripe) {
-        throw new ORPCError('NOT_FOUND', { message: 'Billing is not configured' });
+        throw new HTTPException(404, { message: 'Billing is not configured' });
       }
 
-      const { organization } = context;
-      const { amount, description, successUrl, cancelUrl } = input;
+      const organization = c.get('organization');
+      const { amount, description, successUrl, cancelUrl } = c.req.valid('json');
 
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
@@ -56,64 +114,18 @@ export const billingRouter = orpc.prefix('/billing').router({
         cancel_url: cancelUrl,
       });
 
-      return { url: session.url };
-    }),
-
+      return c.json({ url: session.url });
+    },
+  )
   /** Gets a list of all the organization's invoices */
-  getHistory: protectedProcedure
-    .route({
-      method: 'GET',
-      path: '/history',
+  .get(
+    '/billing/history',
+    describeRoute({
       summary: 'Get billing history',
       tags: ['Billing'],
-    })
-    .handler(async ({ context }) => {
-      const { organization } = context;
-
-      // If Stripe isn't configured or the organization doesn't have a customer ID, return empty
-      if (!stripe || !organization.stripeCustomerId) {
-        return { history: [] };
-      }
-
-      try {
-        // Get billing history from Stripe
-        const [invoices, charges] = await Promise.all([
-          stripe.invoices.list({
-            customer: organization.stripeCustomerId,
-            limit: 100,
-          }),
-          stripe.charges.list({
-            customer: organization.stripeCustomerId,
-            limit: 100,
-          }),
-        ]);
-
-        /** Combine and format the billing history */
-        const history = [
-          ...invoices.data.map((invoice) => ({
-            id: invoice.id,
-            amount: invoice.amount_paid / 100, // Convert from cents
-            status: invoice.status,
-            description: invoice.description || 'Invoice',
-            date: new Date(invoice.created * 1000),
-            receiptUrl: invoice.hosted_invoice_url,
-            type: 'invoice',
-          })),
-          ...charges.data.map((charge) => ({
-            id: charge.id,
-            amount: charge.amount / 100, // Convert from cents
-            status: charge.status,
-            description: charge.description || 'Payment',
-            date: new Date(charge.created * 1000),
-            receiptUrl: charge.receipt_url,
-            type: 'payment',
-          })),
-        ].toSorted((a, b) => b.date.getTime() - a.date.getTime());
-
-        return { history };
-      } catch (error) {
-        log.error({ err: error }, 'Error fetching Stripe billing history');
-        return { history: [] };
-      }
     }),
-});
+    async (c) => {
+      const history = await loadBillingHistory(c.get('organization'));
+      return c.json({ history });
+    },
+  );

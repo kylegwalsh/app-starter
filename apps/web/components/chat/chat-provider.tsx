@@ -1,12 +1,11 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { eventIteratorToUnproxiedDataStream } from '@orpc/client';
 import { CHAT_ALLOWED_FILE_TYPES } from '@repo/constants';
 import { PromptInputProvider, useProviderAttachments, type PromptInputMessage } from '@repo/design';
 import { chatSchema } from '@repo/schemas';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ChatStatus, UIMessage } from 'ai';
+import { DefaultChatTransport, type ChatStatus, type UIMessage } from 'ai';
 import { nanoid } from 'nanoid';
 import { useRouter } from 'next/navigation';
 import {
@@ -21,15 +20,12 @@ import {
 } from 'react';
 import type { z } from 'zod';
 
-import { client, orpc } from '@/core/orpc';
-import {
-  chatListInfiniteOptions,
-  type ConversationListInfiniteData,
-} from '@/hooks/use-conversations';
+import { api, apiUrl, client } from '@/core/api';
+import { chatListQueryKey, type ConversationListInfiniteData } from '@/hooks/use-conversations';
 
 /** Our chat message type with typed metadata (traceId, feedback) */
 type ChatMessageMetadata = z.infer<typeof chatSchema.messageMetadata>;
-type ChatMessage = UIMessage<ChatMessageMetadata>;
+export type ChatMessage = UIMessage<ChatMessageMetadata>;
 
 /**
  * Per-attachment upload status, keyed by the blob URL of the staged file.
@@ -108,7 +104,7 @@ class UploadError extends Error {
 }
 
 /**
- * Single-attempt upload: fetch the staged blob, presign via oRPC, POST to S3.
+ * Single-attempt upload: fetch the staged blob, presign via the API, POST to S3.
  * Throws `UploadError` with the parsed S3 code on failure so callers (or
  * `useMutation`'s retry) can react to specific codes.
  */
@@ -123,11 +119,21 @@ const uploadFilePart = async (
   const localPreviewUrl = URL.createObjectURL(blob);
 
   try {
-    const presigned = await orpc.uploads.createUploadUrl.call({
-      fileName: file.name,
-      fileType: file.type as (typeof CHAT_ALLOWED_FILE_TYPES)[number],
-      fileSize: file.size,
+    const presignedRes = await api.uploads['create-upload-url'].$post.call({
+      json: {
+        fileName: file.name,
+        fileType: file.type as (typeof CHAT_ALLOWED_FILE_TYPES)[number],
+        fileSize: file.size,
+      },
     });
+    if (!presignedRes.ok) {
+      throw new UploadError({
+        status: presignedRes.status,
+        code: undefined,
+        message: `Failed to presign upload for ${file.name}`,
+      });
+    }
+    const presigned = await presignedRes.json();
 
     const formData = new FormData();
     for (const [k, v] of Object.entries(presigned.uploadFields)) {
@@ -305,6 +311,31 @@ const ChatProviderInner: FC<ChatProviderProps> = ({
     [attachmentUploads],
   );
 
+  // The chat endpoints stream SSE over plain HTTP, so the SDK's own transport
+  // handles parsing. We only override request shaping: the body uses the prop
+  // `conversationId` (not options.chatId — the SDK invents a random one when
+  // `id` is undefined, which the backend would reject as NOT_FOUND), and
+  // reconnect targets the per-conversation resume endpoint.
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport<ChatMessage>({
+        api: `${apiUrl}/chat`,
+        credentials: 'include',
+        prepareSendMessagesRequest: ({ messages: outgoing, body }) => ({
+          body: {
+            id: conversationId,
+            messages: outgoing as z.input<typeof chatSchema.chatMessage>['messages'],
+            isRetry: (body as { isRetry?: boolean } | undefined)?.isRetry,
+          },
+        }),
+        prepareReconnectToStreamRequest: () => ({
+          api: `${apiUrl}/chat/conversations/${conversationId}/reconnect`,
+          credentials: 'include',
+        }),
+      }),
+    [conversationId],
+  );
+
   const {
     messages,
     status,
@@ -315,32 +346,7 @@ const ChatProviderInner: FC<ChatProviderProps> = ({
     resumeStream,
     setMessages,
   } = useChat<ChatMessage>({
-    transport: {
-      async sendMessages(options) {
-        // Use the prop conversationId, not options.chatId — the AI SDK generates
-        // a random chatId when id is undefined, which the backend would reject as NOT_FOUND.
-        const body = options.body as { isRetry?: boolean } | undefined;
-        const iterator = await client.chat.send(
-          {
-            id: conversationId,
-            messages: options.messages as z.input<typeof chatSchema.chatMessage>['messages'],
-            isRetry: body?.isRetry,
-          },
-          { signal: options.abortSignal ?? undefined },
-        );
-        return eventIteratorToUnproxiedDataStream(iterator);
-      },
-      async reconnectToStream() {
-        // Called by `resumeStream()` when another producer is generating the
-        // next assistant message. The backend long-polls and either replays
-        // the persisted message or emits an error chunk if the producer died.
-        if (!conversationId) {
-          return null;
-        }
-        const iterator = await client.chat.reconnect({ id: conversationId });
-        return eventIteratorToUnproxiedDataStream(iterator);
-      },
-    },
+    transport,
     id: conversationId,
     messages: initialMessages,
     messageMetadataSchema: chatSchema.messageMetadata,
@@ -352,18 +358,16 @@ const ChatProviderInner: FC<ChatProviderProps> = ({
         return;
       }
       const { title } = (dataPart as { data: { title: string } }).data;
-      queryClient.setQueryData<ConversationListInfiniteData>(
-        chatListInfiniteOptions.queryKey,
-        (old) =>
-          old
-            ? {
-                ...old,
-                pages: old.pages.map((page) => ({
-                  ...page,
-                  items: page.items.map((c) => (c.id === conversationId ? { ...c, title } : c)),
-                })),
-              }
-            : old,
+      queryClient.setQueryData<ConversationListInfiniteData>(chatListQueryKey, (old) =>
+        old
+          ? {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                items: page.items.map((c) => (c.id === conversationId ? { ...c, title } : c)),
+              })),
+            }
+          : old,
       );
     },
   });
@@ -457,14 +461,16 @@ const ChatProviderInner: FC<ChatProviderProps> = ({
     // if it fails the lock TTL eventually clears the conversation; the
     // cancellation just won't be reflected post-reload.
     if (conversationId) {
-      void client.chat
-        .cancel({
-          id: conversationId,
-          partial: {
-            id: lastAssistant.id,
-            parts: patchedParts as NonNullable<
-              z.input<typeof chatSchema.cancel>['partial']
-            >['parts'],
+      void client.chat.conversations[':id'].cancel
+        .$post({
+          param: { id: conversationId },
+          json: {
+            partial: {
+              id: lastAssistant.id,
+              parts: patchedParts as NonNullable<
+                z.input<typeof chatSchema.cancel>['partial']
+              >['parts'],
+            },
           },
         })
         .catch(() => {});
@@ -513,7 +519,7 @@ const ChatProviderInner: FC<ChatProviderProps> = ({
   // too, otherwise the placeholder's null title stays as a permanent skeleton.
   useEffect(() => {
     if ((status === 'ready' || status === 'error') && messages.length > 0) {
-      void queryClient.invalidateQueries({ queryKey: chatListInfiniteOptions.queryKey });
+      void queryClient.invalidateQueries({ queryKey: chatListQueryKey });
     }
   }, [status, messages.length, queryClient]);
 
@@ -553,29 +559,29 @@ const ChatProviderInner: FC<ChatProviderProps> = ({
         // Optimistically prepend the new conversation onto the first page of the
         // infinite list so it appears immediately. The follow-up invalidation on
         // `status === 'ready'` will refetch and reconcile against the real row.
-        queryClient.setQueryData<ConversationListInfiniteData>(
-          chatListInfiniteOptions.queryKey,
-          (old) => {
-            const newItem = {
-              id,
-              title: null,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-              lastMessageAt: null,
-            };
-            if (!old || old.pages.length === 0) {
-              return {
-                pages: [{ items: [newItem], nextCursor: undefined }],
-                pageParams: [undefined],
-              };
-            }
-            const [firstPage, ...rest] = old.pages;
+        queryClient.setQueryData<ConversationListInfiniteData>(chatListQueryKey, (old) => {
+          // Timestamps are ISO strings on the wire, so match that shape here —
+          // the refetch that reconciles this row returns the same format.
+          const now = new Date().toISOString();
+          const newItem = {
+            id,
+            title: null,
+            createdAt: now,
+            updatedAt: now,
+            lastMessageAt: null,
+          };
+          if (!old || old.pages.length === 0) {
             return {
-              ...old,
-              pages: [{ ...firstPage, items: [newItem, ...firstPage.items] }, ...rest],
+              pages: [{ items: [newItem], nextCursor: undefined }],
+              pageParams: [undefined],
             };
-          },
-        );
+          }
+          const [firstPage, ...rest] = old.pages;
+          return {
+            ...old,
+            pages: [{ ...firstPage, items: [newItem, ...firstPage.items] }, ...rest],
+          };
+        });
 
         router.push(`/chat/${id}`);
         return;
@@ -593,7 +599,7 @@ const ChatProviderInner: FC<ChatProviderProps> = ({
 
   const submitFeedback = useCallback(
     (messageId: string, rating: 'up' | 'down', comment?: string) => {
-      orpc.chat.submitFeedback.call({ messageId, rating, comment }).catch(() => {
+      api.chat.feedback.$post.call({ json: { messageId, rating, comment } }).catch(() => {
         // Silent failure — feedback is non-critical
       });
     },

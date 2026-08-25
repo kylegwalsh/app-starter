@@ -43,14 +43,17 @@ describe('Billing Router', () => {
         url: 'https://checkout.stripe.com/test-session',
       });
 
-      const result = await api.billing.charge({
-        amount: 49.99,
-        description: 'One-time setup fee',
-        successUrl: 'https://example.com/success',
-        cancelUrl: 'https://example.com/cancel',
+      const res = await api.billing.charge.$post({
+        json: {
+          amount: 49.99,
+          description: 'One-time setup fee',
+          successUrl: 'https://example.com/success',
+          cancelUrl: 'https://example.com/cancel',
+        },
       });
 
-      expect(result).toEqual({ url: 'https://checkout.stripe.com/test-session' });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ url: 'https://checkout.stripe.com/test-session' });
       expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(
         expect.objectContaining({
           mode: 'payment',
@@ -80,11 +83,13 @@ describe('Billing Router', () => {
         url: 'https://checkout.stripe.com/test-session',
       });
 
-      await apiNoCustomer.billing.charge({
-        amount: 10,
-        description: 'Test',
-        successUrl: 'https://example.com/success',
-        cancelUrl: 'https://example.com/cancel',
+      await apiNoCustomer.billing.charge.$post({
+        json: {
+          amount: 10,
+          description: 'Test',
+          successUrl: 'https://example.com/success',
+          cancelUrl: 'https://example.com/cancel',
+        },
       });
 
       expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(
@@ -97,11 +102,13 @@ describe('Billing Router', () => {
         url: 'https://checkout.stripe.com/x',
       });
 
-      await api.billing.charge({
-        amount: 1.5,
-        description: 'Test',
-        successUrl: 'https://example.com/success',
-        cancelUrl: 'https://example.com/cancel',
+      await api.billing.charge.$post({
+        json: {
+          amount: 1.5,
+          description: 'Test',
+          successUrl: 'https://example.com/success',
+          cancelUrl: 'https://example.com/cancel',
+        },
       });
 
       expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(
@@ -115,25 +122,27 @@ describe('Billing Router', () => {
     });
 
     it('throws for non-positive amounts', async () => {
-      await expect(
-        api.billing.charge({
+      const res = await api.billing.charge.$post({
+        json: {
           amount: 0,
           description: 'Test',
           successUrl: 'https://example.com/success',
           cancelUrl: 'https://example.com/cancel',
-        }),
-      ).rejects.toThrow('Input validation failed');
+        },
+      });
+      expect(res.status).toBe(400);
     });
 
     it('throws for invalid urls', async () => {
-      await expect(
-        api.billing.charge({
+      const res = await api.billing.charge.$post({
+        json: {
           amount: 10,
           description: 'Test',
           successUrl: '/relative/path',
           cancelUrl: 'https://example.com/cancel',
-        }),
-      ).rejects.toThrow('Input validation failed');
+        },
+      });
+      expect(res.status).toBe(400);
     });
   });
 
@@ -142,8 +151,9 @@ describe('Billing Router', () => {
       const { router: apiNoCustomer } = await routerFactory.createRouter({
         organization: { stripeCustomerId: null },
       });
-      const result = await apiNoCustomer.billing.getHistory();
-      expect(result).toEqual({ history: [] });
+      const res = await apiNoCustomer.billing.history.$get();
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ history: [] });
     });
 
     it('returns combined and sorted history from invoices and charges', async () => {
@@ -172,7 +182,9 @@ describe('Billing Router', () => {
         ],
       });
 
-      const { history } = await api.billing.getHistory();
+      const res = await api.billing.history.$get();
+      expect(res.status).toBe(200);
+      const { history } = await res.json();
       expect(history).toHaveLength(2);
       // Should be sorted desc by date, so invoice (created 200) first
       expect(history[0]).toMatchObject({
@@ -190,8 +202,9 @@ describe('Billing Router', () => {
     it('returns empty history if Stripe APIs throw', async () => {
       mockStripe.invoices.list.mockRejectedValueOnce(new Error('stripe down'));
 
-      const result = await api.billing.getHistory();
-      expect(result).toEqual({ history: [] });
+      const res = await api.billing.history.$get();
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ history: [] });
     });
   });
 });

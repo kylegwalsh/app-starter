@@ -12,7 +12,7 @@ const webPatterns = [/^apps\/web\//];
 const hasWebChanges = stagedFiles.some((file) => webPatterns.some((pattern) => pattern.test(file)));
 
 // If we are committing web files, we need to generate the backend types
-// first because the web relies on backend routes for oRPC
+// first because the web relies on backend route types for its typed API client
 if (hasWebChanges) {
   console.log('Web files detected in commit, generating backend types...');
   execSync('bun backend types:generate', {

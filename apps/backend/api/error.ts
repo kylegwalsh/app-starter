@@ -1,4 +1,3 @@
-import { ORPCError } from '@orpc/client';
 import { analytics } from '@repo/analytics';
 import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -12,7 +11,7 @@ export const handleError = async ({
   properties?: Record<string, unknown>;
 }) => {
   /** Determine the status code from the error */
-  const status = error instanceof HTTPException || error instanceof ORPCError ? error.status : 500;
+  const status = error instanceof HTTPException ? error.status : 500;
 
   // If the server error is 5xx, we will track and log it
   if (status >= 500) {

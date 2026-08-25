@@ -1,6 +1,6 @@
-import { OpenAPIReferencePlugin } from '@orpc/openapi/plugins';
-import { ZodToJsonSchemaConverter } from '@orpc/zod';
 import { config } from '@repo/config';
+import type { Env, Hono, Schema } from 'hono';
+import { openAPIRouteHandler } from 'hono-openapi';
 
 /**
  * The HTML for the login page served at /api/login for Swagger authentication.
@@ -114,17 +114,57 @@ const internalDocsHead = `
   }, 100);
 </script>`;
 
-/** OpenAPI reference plugin configured with Swagger UI, auth button, and spec options */
-export const internalDocsPlugin = new OpenAPIReferencePlugin({
-  docsProvider: 'swagger',
-  schemaConverters: [new ZodToJsonSchemaConverter()],
-  docsHead: internalDocsHead,
-  specGenerateOptions: {
-    info: {
-      title: config.app.name,
-      version: '1.0.0',
-      description: 'Sign in to authenticate your session before using protected endpoints.',
-    },
-    servers: [{ url: `${config.api.url}/api` }],
-  },
-});
+/** Path the generated OpenAPI document is served from */
+const SPEC_PATH = '/api/openapi.json';
+
+/** Swagger UI shell — loads the spec above and injects our Authenticate button */
+const internalDocsHTML = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${config.app.name} API</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+  ${internalDocsHead}
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js" crossorigin></script>
+  <script>
+    window.onload = () => {
+      window.ui = SwaggerUIBundle({
+        url: '${SPEC_PATH}',
+        dom_id: '#swagger-ui',
+        // Send the Better Auth session cookie so protected endpoints work once signed in
+        requestInterceptor: (req) => { req.credentials = 'include'; return req; },
+      });
+    };
+  </script>
+</body>
+</html>`;
+
+/**
+ * Mounts the OpenAPI spec and Swagger UI for local development. The UI lives at
+ * `/api` (a bare GET, so it doesn't shadow any API route) and reads the spec
+ * generated from the router's `describeRoute`/`validator` definitions.
+ */
+export const mountInternalDocs = <E extends Env, S extends Schema, P extends string>(
+  app: Hono,
+  router: Hono<E, S, P>,
+) => {
+  app.get(
+    SPEC_PATH,
+    openAPIRouteHandler(router, {
+      documentation: {
+        info: {
+          title: config.app.name,
+          version: '1.0.0',
+          description: 'Sign in to authenticate your session before using protected endpoints.',
+        },
+        servers: [{ url: `${config.api.url}/api` }],
+      },
+    }),
+  );
+
+  app.get('/api', (c) => c.html(internalDocsHTML));
+};

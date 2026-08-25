@@ -1,9 +1,8 @@
 # Backend
 
-This app provides the serverless backend for the monorepo. It is built with SST (AWS), Hono, oRPC, Prisma/Postgres, and Better Auth. It exposes:
+This app provides the serverless backend for the monorepo. It is built with SST (AWS), Hono, Prisma/Postgres, and Better Auth. It exposes:
 
-- oRPC endpoints via **RPCHandler** at `/rpc` (typed frontend client)
-- oRPC endpoints via **OpenAPIHandler** at `/api` (external consumers, Postman)
+- REST endpoints under `/api`, consumed by the frontend through Hono's typed `hc` client
 - Swagger UI for the generated OpenAPI spec at `/api` (local dev only)
 - Auth routes handled by Better Auth under `/api/auth`
 - AI chat streaming at `/api/chat` (Vercel AI SDK `useChat` compatible)
@@ -34,8 +33,8 @@ This app provides the serverless backend for the monorepo. It is built with SST 
 ## Overview
 
 - **Runtime/Infra**: SST deploys AWS Lambda + API Gateway. Common Lambda concerns (logging, analytics, AI tracing) are wrapped via `withLambdaContext`.
-- **HTTP Layer**: Hono is the unified HTTP entry point. It handles non-API concerns (auth, MCP, etc) then delegates to oRPC handlers.
-- **API**: oRPC is where almost all API logic lives. A central `router` composes feature routers (e.g., `billing`). Two handlers serve the same router: RPCHandler for the typed frontend client and OpenAPIHandler for external consumers and Swagger docs.
+- **HTTP Layer**: Hono is the unified HTTP entry point. It handles non-API concerns (auth, MCP, etc) then mounts the API router under `/api`.
+- **API**: A central `router` composes feature routers (e.g., `billing`) as chained Hono routes. The same routes serve both the frontend's typed `hc` client and the generated OpenAPI spec — `hono-openapi`'s `validator` validates requests and documents them in one step.
 - **Auth**: [Better Auth](https://better-auth.com/) with Prisma adapter. Organizations are first-class; each user maintains a default/active organization. Optional personal organizations are supported and auto-provisioned.
 - **DB**: Prisma client against Postgres. Schema lives in `db/schema.prisma`.
 
@@ -46,13 +45,12 @@ apps/backend/
 ├── lambda/            # Lambda entrypoints (api, crons)
 │   ├── api.ts         # Main Lambda handler
 │   └── crons/         # Scheduled Lambda functions
-├── api/               # All API code (Hono + oRPC)
-│   ├── index.ts       # Hono app, oRPC handlers, route mounting
-│   ├── procedures.ts  # oRPC procedures (public, protected)
-│   ├── error.ts       # Shared error handling (Hono + oRPC)
+├── api/               # All API code (Hono)
+│   ├── index.ts       # Hono app, route mounting
+│   ├── error.ts       # Shared error handling
 │   ├── docs.ts        # Swagger UI config, login page
-│   ├── routes/        # oRPC routers (most new work happens here)
-│   ├── middleware/    # Hono middleware (CORS, timing)
+│   ├── routes/        # Feature routers (most new work happens here)
+│   ├── middleware/    # Hono middleware (auth, CORS, timing, timeout)
 │   └── adapters/      # Protocol adapters (MCP)
 ├── mcp/               # MCP server and tools
 ├── core/              # Core services (auth, stripe, etc)
@@ -128,7 +126,7 @@ Authentication is managed by Better Auth.
 
 - `core/auth.ts`: Central config for Better Auth (Prisma adapter, secrets, cookie settings) plus auth-event webhooks (e.g., user/org lifecycle, password reset email hooks, analytics).
 - Routes: Auth HTTP routes are exposed under `/api/auth` (handled via Hono and forwarded to `auth.handler`).
-- Context: `api/procedures.ts` parses the Better Auth cookie from request headers to populate `user` and the active `organization` for oRPC procedures.
+- Context: `api/middleware/auth.ts` parses the Better Auth cookie from request headers to populate `user` and the active `organization` on the Hono context. Routers that require a signed-in user apply `requireAuth`.
 
 ## Database
 
@@ -163,7 +161,7 @@ Additional commands:
 
 ## Testing
 
-We use Vitest for testing. We focus on integration-style testing by running requests against the actual oRPC router.
+We use Vitest for testing. We focus on integration-style testing by dispatching requests in-process against the actual Hono router.
 
 - **Runner**: Vitest
 - **DB boundary**: `@/db` is swapped to a SQLite-backed client during tests

@@ -16,7 +16,7 @@ ai/
 
 Tools are defined once in `tools/` and automatically available in two contexts:
 
-1. **Chat** — the oRPC chat procedure (`api/routes/chat.ts`) converts tools to AI SDK format via `adapter.ts` and passes them to `streamText`
+1. **Chat** — the chat route (`api/routes/chat.ts`) converts tools to AI SDK format via `adapter.ts` and passes them to `streamText`
 2. **MCP** — the MCP server (`mcp/server.ts`) registers tools for external clients (e.g., Claude Desktop, Cursor)
 
 ### Adding a New Tool
@@ -57,7 +57,7 @@ That's it — the tool auto-registers in both chat and MCP.
 
 ## Chat Streaming
 
-The chat endpoint is a standard oRPC `protectedProcedure` (`api/routes/chat.ts`). It uses the [Vercel AI SDK](https://ai-sdk.dev) for streaming (`streamText`) and the [oRPC AI SDK integration](https://orpc.dev/docs/integrations/ai-sdk) to stream responses as event iterators. The frontend consumes the stream via `eventIteratorToUnproxiedDataStream` in the `useChat` transport.
+The chat endpoint is a protected Hono route (`api/routes/chat.ts`). It uses the [Vercel AI SDK](https://ai-sdk.dev) for streaming (`streamText`) and returns the result through `createUIMessageStreamResponse()`. The frontend consumes it with the SDK's own `DefaultChatTransport` in `useChat`.
 
 ## MCP Server
 

@@ -50,7 +50,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Authentication:** Built-in authentication powered by Better Auth.
 - **Payments:** Stripe integration for subscriptions and one-time payments.
 - **Database:** Supabase for scalable, hosted Postgres and real-time data.
-- **Backend:** Serverless backend managed with SST, deployed to AWS. Hono as the HTTP layer, oRPC for typed API endpoints.
+- **Backend:** Serverless backend managed with SST, deployed to AWS. Hono as the HTTP layer, with typed API endpoints consumed via Hono's `hc` client.
 - **Web Frontend:** Next.js for fast, modern web applications.
 - **Admin Panel:** Internal admin dashboard for managing users and organizations, powered by Better Auth's admin plugin.
 - **Documentation:** [Fumadocs](https://fumadocs.org/) for building a documentation site (optional, see below).
@@ -323,7 +323,7 @@ This monorepo is set up for robust testing of both backend and frontend applicat
 
 - **Test Runner:** [Vitest](https://vitest.dev/)
 - **Database:** In-memory SQLite
-- **Purpose:** We use Vitest to run integration tests against the actual oRPC router. The backend is tested with a real in-memory SQLite database (serves as a mock database), so you can verify the full behavior of your API with minimal mocking. This approach ensures that your tests are as close to production as possible, catching issues that might be missed with heavy mocking.
+- **Purpose:** We use Vitest to run integration tests against the actual Hono router. The backend is tested with a real in-memory SQLite database (serves as a mock database), so you can verify the full behavior of your API with minimal mocking. This approach ensures that your tests are as close to production as possible, catching issues that might be missed with heavy mocking.
 
 **How to run backend tests:**
 

@@ -2,15 +2,15 @@
 
 ## Stack
 
-Node.js + TypeScript, SST (AWS Lambda), Hono, oRPC, Prisma (Postgres), Better Auth, Stripe, Vitest
+Node.js + TypeScript, SST (AWS Lambda), Hono (+ hono-openapi), Prisma (Postgres), Better Auth, Stripe, Vitest
 
 ## Directory Layout
 
 ```text
 lambda/         Lambda entrypoints (api, crons)
-api/            All of our API code (hono + oRPC)
-api/routes/     oRPC routers (most new API work happens here)
-api/middleware/ Hono middleware (CORS, timing)
+api/            All of our API code (hono)
+api/routes/     Feature routers (most new API work happens here)
+api/middleware/ Hono middleware (auth, CORS, timing, timeout)
 api/adapters/   Protocol adapters (MCP)
 ai/             AI tools, MCP server, and tool adapter
 core/           Core services (auth, stripe, re-usable business logic helpers)
@@ -33,9 +33,12 @@ tests/          Vitest setup, factories, mocks (not test files — those live ne
 
 ## API & Routing
 
-- **Hono** is the unified HTTP entry point (`api/index.ts`). It handles non-API concerns first (auth, MCP, etc) then delegates to oRPC handlers.
-- **oRPC** is where almost all API logic lives. New endpoints go in `api/routes/` using `protectedProcedure` or `publicProcedure` from `api/procedures.ts`. Do not add business logic in Hono routes directly.
-- Two oRPC handlers serve the same router: **RPCHandler** (`/rpc/*`) for the typed frontend client, and **OpenAPIHandler** (`/api/*`) for external consumers and Swagger docs.
+- **Hono** is the unified HTTP entry point (`api/index.ts`). It handles non-API concerns first (auth, MCP, etc) then mounts the API router under `/api`.
+- New endpoints go in `api/routes/`. Chain them off a single `new Hono<ProtectedEnv>().use(requireAuth)` expression — chaining is what lets the frontend's `hc` client infer types, so never split a router into separate statements.
+- Each route takes `describeRoute({ summary, tags })` for the OpenAPI spec, then `validator('json' | 'query' | 'param', schema)` (from `hono-openapi`) which both validates and documents the input. Read validated input with `c.req.valid('json')`.
+- Read auth context with `c.get('user')` / `c.get('organization')` — non-optional on routers that applied `requireAuth`.
+- Throw `HTTPException` from `hono/http-exception` for errors (404 not found, 409 conflict, etc). The global `onError` handler reports them.
+- The same routes serve both the typed frontend client and the Swagger docs — there is no second handler to keep in sync.
 
 ## Database
 

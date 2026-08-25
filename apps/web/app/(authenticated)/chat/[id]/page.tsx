@@ -6,9 +6,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { ChatProvider, pendingKey } from '@/components/chat/chat-provider';
+import { ChatProvider, pendingKey, type ChatMessage } from '@/components/chat/chat-provider';
 import { ChatView } from '@/components/chat/chat-view';
-import { orpc } from '@/core/orpc';
+import { api } from '@/core/api';
 
 /** Existing conversation page — loads messages from the database */
 const ChatConversationPage = () => {
@@ -24,21 +24,16 @@ const ChatConversationPage = () => {
   );
 
   const { data, isFetched, error } = useQuery({
-    ...orpc.chat.get.queryOptions({ input: { id } }),
+    ...api.chat.conversations[':id'].$get.queryOptions({ param: { id } }),
     enabled: !hasPendingMessage,
     // Late-typed IDs (existing conversations) shouldn't auto-retry on 404 —
     // we treat it as a stale URL and bounce below.
-    retry: (_, retryError) => {
-      const e = retryError as { code?: string };
-      return e.code !== 'NOT_FOUND';
-    },
+    retry: (_, retryError) => !retryError.isNotFound(),
   });
 
   // 404 with no pending message means the URL is stale (conversation deleted,
   // wrong stage, hand-typed bad ID). Show a toast and bounce to /chat.
-  const errorCode = (error as { code?: string } | null)?.code;
-  const isNotFound = errorCode === 'NOT_FOUND';
-  const shouldRedirect = isFetched && isNotFound && !hasPendingMessage;
+  const shouldRedirect = isFetched && Boolean(error?.isNotFound()) && !hasPendingMessage;
 
   useEffect(() => {
     if (!shouldRedirect) {
@@ -106,10 +101,15 @@ const ChatConversationPage = () => {
     );
   }
 
+  // The wire type can't express the AI SDK's `UIMessage` part union (the same
+  // reason the backend casts when validating it with Zod), and asking TypeScript
+  // to reconcile the two blows the instantiation depth limit. The shapes match.
+  const initialMessages = data?.messages as ChatMessage[] | undefined;
+
   return (
     <ChatProvider
       conversationId={id}
-      initialMessages={data?.messages}
+      initialMessages={initialMessages}
       initialGeneratingUntil={data?.generatingUntil}
     >
       <ChatView />

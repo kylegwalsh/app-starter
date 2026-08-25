@@ -9,7 +9,8 @@ describe('Health Router', () => {
   });
 
   it('returns ok status', async () => {
-    const result = await api.health.check();
-    expect(result).toEqual({ status: 'ok' });
+    const res = await api.health.$get();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ status: 'ok' });
   });
 });

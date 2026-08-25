@@ -1,15 +1,24 @@
+import { Hono } from 'hono';
+
+import { authMiddleware } from '../middleware';
+
 import { billingRouter } from './billing';
 import { chatRouter } from './chat';
 import { healthRouter } from './health';
 import { uploadsRouter } from './uploads';
 
-/** The router used to handle all API traffic */
-export const router = {
-  billing: billingRouter,
-  chat: chatRouter,
-  health: healthRouter,
-  uploads: uploadsRouter,
-};
+/**
+ * The router used to handle all API traffic. Routes are chained in a single
+ * expression so Hono can infer the full route map for the typed `hc` client.
+ * `authMiddleware` populates the user/organization context for every route;
+ * individual routers add `requireAuth` where a signed-in user is mandatory.
+ */
+export const router = new Hono()
+  .use(authMiddleware)
+  .route('/', healthRouter)
+  .route('/', billingRouter)
+  .route('/', chatRouter)
+  .route('/', uploadsRouter);
 
 /**
  * The type of our backend router

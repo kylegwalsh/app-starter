@@ -1,6 +1,6 @@
 # Web
 
-This app is a Next.js (App Router) frontend for the monorepo. It integrates Better Auth, oRPC (TanStack Query), Tailwind v4 via `@repo/design`, analytics, and an AI chat interface. It pairs with the backend for typed APIs and shared config.
+This app is a Next.js (App Router) frontend for the monorepo. It integrates Better Auth, Hono `hc` + TanStack Query, Tailwind v4 via `@repo/design`, analytics, and an AI chat interface. It pairs with the backend for typed APIs and shared config.
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@ This app is a Next.js (App Router) frontend for the monorepo. It integrates Bett
 ## Overview
 
 - Next.js App Router with server and client components
-- Type-safe API calls with oRPC TanStack Query bound to the backend `AppRouter`
+- Type-safe API calls with Hono `hc` + TanStack Query bound to the backend `AppRouter`
 - Better Auth UI integration and session-aware layouts
 - Shared design system and global styles from `@repo/design`
 - AI chat with streaming, file uploads, feedback, and code execution (see `app/(authenticated)/chat/README.md`)
@@ -41,7 +41,7 @@ apps/web/
 ├── components/            # UI building blocks and providers directly related to this app
 ├── core/                  # App-level singletons & clients
 │   ├── auth.ts            # Better Auth client (plugins configured)
-│   ├── orpc.ts            # oRPC React client bound to backend AppRouter
+│   ├── api.ts             # Typed Hono client bound to backend AppRouter
 │   └── ...
 ├── hooks/                 # React hooks for reusable state
 ├── tests/                 # Web tests
@@ -90,10 +90,13 @@ Better Auth powers authentication and provides hooks/UI for user and organizatio
 
 ## APIs
 
-The app communicates with the backend via oRPC and TanStack Query for fetching and mutations.
+The app communicates with the backend via Hono's typed `hc` client, bound to TanStack Query by `hono-tanstack-query`.
 
-- Types: We import the backend `AppRouter` and create a typed client in `core/orpc.ts`.
-- Usage: `useQuery(orpc.<router>.<procedure>.queryOptions())` for reads, `useMutation(orpc.<router>.<procedure>.mutationOptions())` for writes; TanStack Query manages caching and invalidation.
+- Types: We import the backend `AppRouter` and create a typed client in `core/api.ts`.
+- Usage: `useQuery(api.<path>.$get.queryOptions())` for reads, `useMutation(api.<path>.$post.mutationOptions())` for writes; TanStack Query manages caching and invalidation.
+- Inputs mirror the HTTP request: `{ json }` for bodies, `{ query }` for query strings (values must be strings), `{ param }` for path params — e.g. `api.chat.conversations[':id'].$patch.mutationOptions()` takes `{ param: { id }, json: { title } }`.
+- Mutations do **not** auto-invalidate (the client is configured with `invalidation: 'none'`), so cache updates are explicit.
+- Timestamps arrive as ISO strings, not `Date` objects — plain JSON has no date type.
 
 ## State
 

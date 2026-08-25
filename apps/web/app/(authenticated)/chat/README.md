@@ -20,9 +20,9 @@ AI-powered chat with tool calling, conversation persistence, and file uploads.
 ┌─────────────────────────────────────────────────────────┐
 │  Backend (apps/backend)                                 │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │ Hono /api/   │  │ oRPC /rpc/   │  │ MCP tools    │  │
-│  │ chat (stream)│  │ conversations│  │ (in-process)  │  │
-│  │              │  │ (CRUD)       │  │              │  │
+│  │ Hono /api/   │  │ Hono /api/   │  │ MCP tools    │  │
+│  │ chat (stream)│  │ chat/convers-│  │ (in-process)  │  │
+│  │              │  │ ations (CRUD)│  │              │  │
 │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
 │         │                 │                  │          │
 │         │    ┌────────────┴──────────────────┘          │
@@ -40,9 +40,9 @@ AI-powered chat with tool calling, conversation persistence, and file uploads.
 
 ## Key Design Decisions
 
-### Streaming Route (Hono, not oRPC)
+### Streaming Route
 
-The chat endpoint is a direct Hono route at `POST /api/chat`, not an oRPC procedure. This is because the Vercel AI SDK's `useChat` hook expects a specific streaming response format (`toUIMessageStreamResponse()`), which doesn't fit oRPC's RPC protocol. Conversation CRUD (list, get, delete, rename) uses oRPC as normal.
+The chat endpoint is a Hono route at `POST /api/chat` that returns the AI SDK's SSE stream via `createUIMessageStreamResponse()`, which is exactly what `useChat`'s `DefaultChatTransport` consumes. Conversation CRUD (list, get, delete, rename) uses the same router, reached through the typed `hc` client + TanStack Query.
 
 ### MCP Tool Adapter (In-Process)
 
@@ -96,13 +96,16 @@ Conversations can be shared via a share link (`/chat/shared/{shareToken}`):
 
 ## Routes
 
-| Route                                  | Type             | Description                                 |
-| -------------------------------------- | ---------------- | ------------------------------------------- |
-| `POST /api/chat`                       | Hono (streaming) | Send messages, receive streamed AI response |
-| `GET /rpc/conversations.list`          | oRPC             | List user's conversations (paginated)       |
-| `GET /rpc/conversations.get`           | oRPC             | Get conversation with all messages          |
-| `PATCH /rpc/conversations.updateTitle` | oRPC             | Rename a conversation                       |
-| `DELETE /rpc/conversations.delete`     | oRPC             | Delete a conversation                       |
+| Route                                        | Type      | Description                                   |
+| -------------------------------------------- | --------- | --------------------------------------------- |
+| `POST /api/chat`                             | Streaming | Send messages, receive streamed AI response   |
+| `POST /api/chat/conversations/:id/cancel`    | JSON      | Stop generation, persist the partial response |
+| `POST /api/chat/conversations/:id/reconnect` | Streaming | Resume a generation started elsewhere         |
+| `GET /api/chat/conversations`                | JSON      | List user's conversations (paginated)         |
+| `GET /api/chat/conversations/:id`            | JSON      | Get conversation with all messages            |
+| `PATCH /api/chat/conversations/:id`          | JSON      | Rename a conversation                         |
+| `DELETE /api/chat/conversations/:id`         | JSON      | Delete a conversation                         |
+| `POST /api/chat/feedback`                    | JSON      | Submit thumbs up/down on an assistant message |
 
 ## Pages
 

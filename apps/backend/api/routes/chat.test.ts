@@ -10,13 +10,25 @@ const userMessage = (id: string, text: string) => ({
   parts: [{ type: 'text' as const, text }],
 });
 
-/** Drive an oRPC async-iterable response to completion and collect every event. */
-const consume = async <T>(stream: AsyncIterable<T>): Promise<T[]> => {
-  const out: T[] = [];
-  for await (const event of stream) {
-    out.push(event);
+/** Drain an SSE `Response` (from `createUIMessageStreamResponse`) into an array of parsed chunks. */
+const consume = async (res: Response): Promise<Array<Record<string, unknown>>> => {
+  const chunks: Array<Record<string, unknown>> = [];
+  if (!res.body) {
+    return chunks;
   }
-  return out;
+  const text = await new Response(res.body).text();
+  for (const block of text.split('\n\n')) {
+    const line = block.split('\n').find((l) => l.startsWith('data: '));
+    if (!line) {
+      continue;
+    }
+    const payload = line.slice(6).trim();
+    if (!payload || payload === '[DONE]') {
+      continue;
+    }
+    chunks.push(JSON.parse(payload));
+  }
+  return chunks;
 };
 
 // ---------- Tests ----------
@@ -38,19 +50,21 @@ describe('Chat Router', () => {
 
   describe('send', () => {
     it('creates a conversation when no id is provided', async () => {
-      const stream = await api.chat.send({ messages: [userMessage('m1', 'Hello')] });
-      await consume(stream);
+      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
+      await consume(res);
 
       const conversations = await db.conversation.findMany({ where: { userId: user.id } });
       expect(conversations).toHaveLength(1);
     });
 
     it('upserts an existing optimistic id from the client', async () => {
-      const stream = await api.chat.send({
-        id: 'optimistic-cuid',
-        messages: [userMessage('m1', 'Hello')],
+      const res = await api.chat.$post({
+        json: {
+          id: 'optimistic-cuid',
+          messages: [userMessage('m1', 'Hello')],
+        },
       });
-      await consume(stream);
+      await consume(res);
 
       const conv = await db.conversation.findUnique({ where: { id: 'optimistic-cuid' } });
       expect(conv).not.toBeNull();
@@ -63,11 +77,14 @@ describe('Chat Router', () => {
         data: { id: 'foreign-id', userId: otherUser.id, organizationId: organization.id },
       });
 
-      const stream = await api.chat.send({
-        id: conv.id,
-        messages: [userMessage('m1', 'hi')],
+      // Ownership is checked before the stream begins, so this is a real HTTP status.
+      const res = await api.chat.$post({
+        json: {
+          id: conv.id,
+          messages: [userMessage('m1', 'hi')],
+        },
       });
-      await expect(consume(stream)).rejects.toThrow('Conversation not found');
+      expect(res.status).toBe(404);
     });
 
     it('persists user messages before the model is invoked', async () => {
@@ -81,8 +98,8 @@ describe('Chat Router', () => {
         return fakeStreamResult();
       });
 
-      const stream = await api.chat.send({ messages: [userMessage('m1', 'Hello')] });
-      await consume(stream);
+      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
+      await consume(res);
     });
 
     it('claims the generation lock by setting generatingUntil', async () => {
@@ -93,8 +110,8 @@ describe('Chat Router', () => {
         return fakeStreamResult();
       });
 
-      const stream = await api.chat.send({ messages: [userMessage('m1', 'Hello')] });
-      await consume(stream);
+      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
+      await consume(res);
 
       expect(lockSnapshot).not.toBeNull();
       // Lock should expire some time in the (near) future.
@@ -102,8 +119,8 @@ describe('Chat Router', () => {
     });
 
     it('clears the lock after the stream completes successfully', async () => {
-      const stream = await api.chat.send({ messages: [userMessage('m1', 'Hello')] });
-      await consume(stream);
+      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
+      await consume(res);
 
       const conv = await db.conversation.findFirst({ where: { userId: user.id } });
       expect(conv?.generatingUntil).toBeNull();
@@ -112,8 +129,11 @@ describe('Chat Router', () => {
     it('clears the lock even when the stream throws', async () => {
       mockAi.streamText.mockRejectedValueOnce(new Error('boom'));
 
-      const stream = await api.chat.send({ messages: [userMessage('m1', 'Hello')] });
-      await expect(consume(stream)).rejects.toThrow('boom');
+      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
+      const chunks = await consume(res);
+      expect(chunks.some((c) => c.type === 'error' && String(c.errorText).includes('boom'))).toBe(
+        true,
+      );
 
       const conv = await db.conversation.findFirst({ where: { userId: user.id } });
       expect(conv?.generatingUntil).toBeNull();
@@ -124,8 +144,11 @@ describe('Chat Router', () => {
       // wrong" inline — that requires an assistant row with `errored: true`.
       mockAi.streamText.mockRejectedValueOnce(new Error('boom'));
 
-      const stream = await api.chat.send({ messages: [userMessage('m1', 'Hello')] });
-      await expect(consume(stream)).rejects.toThrow('boom');
+      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
+      const chunks = await consume(res);
+      expect(chunks.some((c) => c.type === 'error' && String(c.errorText).includes('boom'))).toBe(
+        true,
+      );
 
       const conv = await db.conversation.findFirst({ where: { userId: user.id } });
       const assistantMessages = await db.message.findMany({
@@ -161,8 +184,8 @@ describe('Chat Router', () => {
           }),
       }));
 
-      const stream = await api.chat.send({ messages: [userMessage('m1', 'Hello')] });
-      await consume(stream);
+      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
+      await consume(res);
 
       const assistantMessages = await db.message.findMany({
         where: { conversationId, role: 'assistant' },
@@ -182,11 +205,14 @@ describe('Chat Router', () => {
         },
       });
 
-      const stream = await api.chat.send({
-        id: conv.id,
-        messages: [userMessage('m1', 'Hello')],
+      // The lock is claimed before the stream begins, so this is a real HTTP status.
+      const res = await api.chat.$post({
+        json: {
+          id: conv.id,
+          messages: [userMessage('m1', 'Hello')],
+        },
       });
-      await expect(consume(stream)).rejects.toThrow(/generating/i);
+      expect(res.status).toBe(409);
 
       // Original lock must be untouched.
       const after = await db.conversation.findUnique({ where: { id: conv.id } });
@@ -202,11 +228,13 @@ describe('Chat Router', () => {
         },
       });
 
-      const stream = await api.chat.send({
-        id: conv.id,
-        messages: [userMessage('m1', 'Hello')],
+      const res = await api.chat.$post({
+        json: {
+          id: conv.id,
+          messages: [userMessage('m1', 'Hello')],
+        },
       });
-      await consume(stream);
+      await consume(res);
 
       const after = await db.conversation.findUnique({ where: { id: conv.id } });
       expect(after?.generatingUntil).toBeNull();
@@ -215,10 +243,10 @@ describe('Chat Router', () => {
     it('uses the user message as the title when AI title generation fails', async () => {
       mockAi.generateObject.mockRejectedValueOnce(new Error('model unavailable'));
 
-      const stream = await api.chat.send({
-        messages: [userMessage('m1', 'Hello world')],
+      const res = await api.chat.$post({
+        json: { messages: [userMessage('m1', 'Hello world')] },
       });
-      await consume(stream);
+      await consume(res);
 
       const conv = await db.conversation.findFirst({ where: { userId: user.id } });
       expect(conv?.title).toBe('Hello world');
@@ -228,8 +256,8 @@ describe('Chat Router', () => {
       mockAi.generateObject.mockRejectedValueOnce(new Error('boom'));
 
       const longText = 'a'.repeat(100);
-      const stream = await api.chat.send({ messages: [userMessage('m1', longText)] });
-      await consume(stream);
+      const res = await api.chat.$post({ json: { messages: [userMessage('m1', longText)] } });
+      await consume(res);
 
       const conv = await db.conversation.findFirst({ where: { userId: user.id } });
       expect(conv?.title).toMatch(/…$/);
@@ -246,8 +274,11 @@ describe('Chat Router', () => {
       mockAi.streamText.mockRejectedValueOnce(new Error('boom'));
       mockAi.generateObject.mockRejectedValueOnce(new Error('title boom'));
 
-      const stream = await api.chat.send({ messages: [userMessage('m1', 'Hello world')] });
-      await expect(consume(stream)).rejects.toThrow('boom');
+      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello world')] } });
+      const chunks = await consume(res);
+      expect(chunks.some((c) => c.type === 'error' && String(c.errorText).includes('boom'))).toBe(
+        true,
+      );
 
       const conv = await db.conversation.findFirst({ where: { userId: user.id } });
       expect(conv?.title).toBe('Hello world');
@@ -256,22 +287,24 @@ describe('Chat Router', () => {
     it('seeds "New chat" when the first user message has no text part', async () => {
       // File-only first message — no text to seed from, so the placeholder
       // stands in. The AI title IIFE is skipped (no seed to prompt with).
-      const stream = await api.chat.send({
-        messages: [
-          {
-            id: 'm1',
-            role: 'user',
-            parts: [
-              {
-                type: 'file' as const,
-                url: 'https://example.com/x.pdf',
-                mediaType: 'application/pdf',
-              },
-            ],
-          },
-        ],
+      const res = await api.chat.$post({
+        json: {
+          messages: [
+            {
+              id: 'm1',
+              role: 'user',
+              parts: [
+                {
+                  type: 'file' as const,
+                  url: 'https://example.com/x.pdf',
+                  mediaType: 'application/pdf',
+                },
+              ],
+            },
+          ],
+        },
       });
-      await consume(stream);
+      await consume(res);
 
       const conv = await db.conversation.findFirst({ where: { userId: user.id } });
       expect(conv?.title).toBe('New chat');
@@ -283,11 +316,13 @@ describe('Chat Router', () => {
         data: { userId: user.id, organizationId: organization.id, title: 'Existing title' },
       });
 
-      const stream = await api.chat.send({
-        id: conv.id,
-        messages: [userMessage('m1', 'Follow-up')],
+      const res = await api.chat.$post({
+        json: {
+          id: conv.id,
+          messages: [userMessage('m1', 'Follow-up')],
+        },
       });
-      await consume(stream);
+      await consume(res);
 
       expect(mockAi.generateObject).not.toHaveBeenCalled();
       const after = await db.conversation.findUnique({ where: { id: conv.id } });
@@ -308,11 +343,13 @@ describe('Chat Router', () => {
         },
       });
 
-      const stream = await api.chat.send({
-        id: conv.id,
-        messages: [userMessage('m1', 'Hello')],
+      const res = await api.chat.$post({
+        json: {
+          id: conv.id,
+          messages: [userMessage('m1', 'Hello')],
+        },
       });
-      await consume(stream);
+      await consume(res);
 
       const userMessages = await db.message.findMany({
         where: { conversationId: conv.id, role: 'user' },
@@ -344,8 +381,8 @@ describe('Chat Router', () => {
           }),
       }));
 
-      const stream = await api.chat.send({ messages: [userMessage('m1', 'Hello')] });
-      await consume(stream);
+      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
+      await consume(res);
 
       const assistantMessages = await db.message.findMany({
         where: { conversationId, role: 'assistant' },
@@ -364,8 +401,12 @@ describe('Chat Router', () => {
         },
       });
 
-      const result = await api.chat.cancel({ id: conv.id });
-      expect(result).toEqual({ cancelled: true });
+      const res = await api.chat.conversations[':id'].cancel.$post({
+        param: { id: conv.id },
+        json: {},
+      });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ cancelled: true });
 
       const refreshed = await db.conversation.findUnique({ where: { id: conv.id } });
       expect(refreshed?.generatingUntil).toBeNull();
@@ -387,11 +428,13 @@ describe('Chat Router', () => {
         },
       });
 
-      await api.chat.cancel({
-        id: conv.id,
-        partial: {
-          id: 'partial-msg-id',
-          parts: [{ type: 'text', text: 'Half of what I was about to say…' }],
+      await api.chat.conversations[':id'].cancel.$post({
+        param: { id: conv.id },
+        json: {
+          partial: {
+            id: 'partial-msg-id',
+            parts: [{ type: 'text', text: 'Half of what I was about to say…' }],
+          },
         },
       });
 
@@ -411,8 +454,11 @@ describe('Chat Router', () => {
         data: { userId: user.id, organizationId: organization.id, generatingUntil: null },
       });
 
-      const result = await api.chat.cancel({ id: conv.id });
-      expect(result).toEqual({ cancelled: false });
+      const res = await api.chat.conversations[':id'].cancel.$post({
+        param: { id: conv.id },
+        json: {},
+      });
+      expect(await res.json()).toEqual({ cancelled: false });
 
       const assistantMessages = await db.message.findMany({
         where: { conversationId: conv.id, role: 'assistant' },
@@ -430,7 +476,11 @@ describe('Chat Router', () => {
         },
       });
 
-      await expect(api.chat.cancel({ id: conv.id })).rejects.toThrow('Conversation not found');
+      const res = await api.chat.conversations[':id'].cancel.$post({
+        param: { id: conv.id },
+        json: {},
+      });
+      expect(res.status).toBe(404);
     });
   });
 
@@ -441,8 +491,9 @@ describe('Chat Router', () => {
         data: { userId: otherUser.id, organizationId: organization.id },
       });
 
-      const stream = await api.chat.reconnect({ id: conv.id });
-      await expect(consume(stream)).rejects.toThrow('Conversation not found');
+      // Ownership is checked before the stream begins, so this is a real HTTP status.
+      const res = await api.chat.conversations[':id'].reconnect.$post({ param: { id: conv.id } });
+      expect(res.status).toBe(404);
     });
 
     it('replays the latest assistant message when the conversation is not locked', async () => {
@@ -457,7 +508,8 @@ describe('Chat Router', () => {
         },
       });
 
-      const events = (await consume(await api.chat.reconnect({ id: conv.id }))) as Array<{
+      const res = await api.chat.conversations[':id'].reconnect.$post({ param: { id: conv.id } });
+      const events = (await consume(res)) as Array<{
         type?: string;
         delta?: string;
       }>;
@@ -478,7 +530,8 @@ describe('Chat Router', () => {
         },
       });
 
-      const events = (await consume(await api.chat.reconnect({ id: conv.id }))) as Array<{
+      const res = await api.chat.conversations[':id'].reconnect.$post({ param: { id: conv.id } });
+      const events = (await consume(res)) as Array<{
         type?: string;
         errorText?: string;
       }>;
@@ -503,7 +556,8 @@ describe('Chat Router', () => {
         },
       });
 
-      await consume(await api.chat.reconnect({ id: conv.id }));
+      const res = await api.chat.conversations[':id'].reconnect.$post({ param: { id: conv.id } });
+      await consume(res);
 
       const after = await db.conversation.findUnique({ where: { id: conv.id } });
       expect(after?.generatingUntil).toBeNull();
@@ -529,7 +583,8 @@ describe('Chat Router', () => {
         },
       });
 
-      const events = (await consume(await api.chat.reconnect({ id: conv.id }))) as Array<{
+      const res = await api.chat.conversations[':id'].reconnect.$post({ param: { id: conv.id } });
+      const events = (await consume(res)) as Array<{
         type?: string;
         toolCallId?: string;
         toolName?: string;
@@ -571,18 +626,23 @@ describe('Chat Router', () => {
         ],
       });
 
-      const result = await api.chat.get({ id: conv.id });
+      const res = await api.chat.conversations[':id'].$get({ param: { id: conv.id } });
+      expect(res.status).toBe(200);
+      const result = await res.json();
 
       expect(result.id).toBe(conv.id);
       expect(result.title).toBe('A saved chat');
-      expect(result.generatingUntil).toEqual(lockTime);
-      expect(result.messages).toHaveLength(2);
-      expect(result.messages.map((m) => m.role)).toEqual(['user', 'assistant']);
-      expect(result.messages.map((m) => m.id)).toEqual(['u1', 'a1']);
+      // JSON transport serializes dates to ISO strings.
+      expect(result.generatingUntil).toEqual(lockTime.toISOString());
+      const messages: Array<{ id: string; role: string }> = result.messages;
+      expect(messages).toHaveLength(2);
+      expect(messages.map((m) => m.role)).toEqual(['user', 'assistant']);
+      expect(messages.map((m) => m.id)).toEqual(['u1', 'a1']);
     });
 
     it('throws NOT_FOUND for a conversation that does not exist', async () => {
-      await expect(api.chat.get({ id: 'nonexistent' })).rejects.toThrow('Conversation not found');
+      const res = await api.chat.conversations[':id'].$get({ param: { id: 'nonexistent' } });
+      expect(res.status).toBe(404);
     });
   });
 
@@ -605,7 +665,8 @@ describe('Chat Router', () => {
         },
       });
 
-      const result = await api.chat.list({ limit: 20 });
+      const res = await api.chat.conversations.$get({ query: { limit: '20' } });
+      const result = await res.json();
       expect(result.items.map((c) => c.id)).toEqual([newer.id, older.id]);
       expect(result.nextCursor).toBeUndefined();
     });
@@ -619,7 +680,8 @@ describe('Chat Router', () => {
         data: { userId: user.id, organizationId: organization.id, title: 'Mine' },
       });
 
-      const result = await api.chat.list({ limit: 20 });
+      const res = await api.chat.conversations.$get({ query: { limit: '20' } });
+      const result = await res.json();
       expect(result.items).toHaveLength(1);
       expect(result.items[0]?.title).toBe('Mine');
     });
@@ -639,11 +701,15 @@ describe('Chat Router', () => {
         ),
       );
 
-      const page1 = await api.chat.list({ limit: 2 });
+      const page1Res = await api.chat.conversations.$get({ query: { limit: '2' } });
+      const page1 = await page1Res.json();
       expect(page1.items).toHaveLength(2);
       expect(page1.nextCursor).toBe(convs[1]?.id); // second-newest = b
 
-      const page2 = await api.chat.list({ limit: 2, cursor: page1.nextCursor });
+      const page2Res = await api.chat.conversations.$get({
+        query: { limit: '2', cursor: page1.nextCursor },
+      });
+      const page2 = await page2Res.json();
       expect(page2.items).toHaveLength(1);
       expect(page2.items[0]?.id).toBe(convs[2]?.id); // oldest = c
       expect(page2.nextCursor).toBeUndefined();
@@ -656,8 +722,11 @@ describe('Chat Router', () => {
         data: { userId: user.id, organizationId: organization.id, title: 'Old' },
       });
 
-      const result = await api.chat.updateTitle({ id: conv.id, title: 'Renamed' });
-      expect(result).toEqual({ id: conv.id, title: 'Renamed' });
+      const res = await api.chat.conversations[':id'].$patch({
+        param: { id: conv.id },
+        json: { title: 'Renamed' },
+      });
+      expect(await res.json()).toEqual({ id: conv.id, title: 'Renamed' });
 
       const persisted = await db.conversation.findUnique({ where: { id: conv.id } });
       expect(persisted?.title).toBe('Renamed');
@@ -669,9 +738,11 @@ describe('Chat Router', () => {
         data: { userId: otherUser.id, organizationId: organization.id, title: 'Theirs' },
       });
 
-      await expect(api.chat.updateTitle({ id: conv.id, title: 'Hijacked' })).rejects.toThrow(
-        'Conversation not found',
-      );
+      const res = await api.chat.conversations[':id'].$patch({
+        param: { id: conv.id },
+        json: { title: 'Hijacked' },
+      });
+      expect(res.status).toBe(404);
     });
 
     it('rejects empty titles via input validation', async () => {
@@ -679,9 +750,11 @@ describe('Chat Router', () => {
         data: { userId: user.id, organizationId: organization.id, title: 'Old' },
       });
 
-      await expect(api.chat.updateTitle({ id: conv.id, title: '' })).rejects.toThrow(
-        /input validation/i,
-      );
+      const res = await api.chat.conversations[':id'].$patch({
+        param: { id: conv.id },
+        json: { title: '' },
+      });
+      expect(res.status).toBe(400);
     });
   });
 
@@ -698,8 +771,8 @@ describe('Chat Router', () => {
         },
       });
 
-      const result = await api.chat.delete({ id: conv.id });
-      expect(result).toEqual({ success: true });
+      const res = await api.chat.conversations[':id'].$delete({ param: { id: conv.id } });
+      expect(await res.json()).toEqual({ success: true });
 
       const remaining = await db.conversation.findUnique({ where: { id: conv.id } });
       expect(remaining).toBeNull();
@@ -714,7 +787,8 @@ describe('Chat Router', () => {
         data: { userId: otherUser.id, organizationId: organization.id },
       });
 
-      await expect(api.chat.delete({ id: conv.id })).rejects.toThrow('Conversation not found');
+      const res = await api.chat.conversations[':id'].$delete({ param: { id: conv.id } });
+      expect(res.status).toBe(404);
       // Conversation must still be there.
       const stillThere = await db.conversation.findUnique({ where: { id: conv.id } });
       expect(stillThere).not.toBeNull();
@@ -734,8 +808,10 @@ describe('Chat Router', () => {
         },
       });
 
-      const result = await api.chat.submitFeedback({ messageId: message.id, rating: 'up' });
-      expect(result).toEqual({ success: true });
+      const res = await api.chat.feedback.$post({
+        json: { messageId: message.id, rating: 'up' },
+      });
+      expect(await res.json()).toEqual({ success: true });
 
       const updated = await db.message.findUnique({ where: { id: message.id } });
       expect(updated?.feedback).toBe(true);
@@ -754,7 +830,9 @@ describe('Chat Router', () => {
         },
       });
 
-      await api.chat.submitFeedback({ messageId: message.id, rating: 'down', comment: 'meh' });
+      await api.chat.feedback.$post({
+        json: { messageId: message.id, rating: 'down', comment: 'meh' },
+      });
 
       expect(mockAi.scoreTrace).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -778,7 +856,7 @@ describe('Chat Router', () => {
         },
       });
 
-      await api.chat.submitFeedback({ messageId: message.id, rating: 'up' });
+      await api.chat.feedback.$post({ json: { messageId: message.id, rating: 'up' } });
       expect(mockAi.scoreTrace).not.toHaveBeenCalled();
     });
 
@@ -795,15 +873,15 @@ describe('Chat Router', () => {
         },
       });
 
-      await expect(
-        api.chat.submitFeedback({ messageId: message.id, rating: 'up' }),
-      ).rejects.toThrow('Message not found');
+      const res = await api.chat.feedback.$post({ json: { messageId: message.id, rating: 'up' } });
+      expect(res.status).toBe(404);
     });
 
     it('throws NOT_FOUND for a non-existent message', async () => {
-      await expect(
-        api.chat.submitFeedback({ messageId: 'no-such-id', rating: 'up' }),
-      ).rejects.toThrow('Message not found');
+      const res = await api.chat.feedback.$post({
+        json: { messageId: 'no-such-id', rating: 'up' },
+      });
+      expect(res.status).toBe(404);
     });
   });
 });

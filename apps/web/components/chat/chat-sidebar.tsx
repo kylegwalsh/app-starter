@@ -24,19 +24,16 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { orpc } from '@/core/orpc';
+import { api } from '@/core/api';
 import {
-  chatListInfiniteOptions,
+  chatListQueryKey,
   useConversations,
   type ConversationListInfiniteData,
+  type ConversationListPage,
 } from '@/hooks/use-conversations';
 
-type Conversation = {
-  id: string;
-  title: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+/** A conversation row as returned by the list endpoint (dates arrive as ISO strings) */
+type Conversation = ConversationListPage['items'][number];
 
 type ConversationItemProps = {
   conversation: Conversation;
@@ -60,17 +57,17 @@ const ConversationItem: FC<ConversationItemProps> = ({ conversation, isActive })
   const inputRef = useRef<HTMLInputElement>(null);
 
   const renameMutation = useMutation({
-    ...orpc.chat.updateTitle.mutationOptions(),
-    onMutate: async ({ id, title }) => {
-      await queryClient.cancelQueries({ queryKey: chatListInfiniteOptions.queryKey });
-      const previous = queryClient.getQueryData(chatListInfiniteOptions.queryKey);
-      queryClient.setQueryData<ConversationListInfiniteData>(chatListInfiniteOptions.queryKey, (old) =>
+    ...api.chat.conversations[':id'].$patch.mutationOptions(),
+    onMutate: async ({ param, json }) => {
+      await queryClient.cancelQueries({ queryKey: chatListQueryKey });
+      const previous = queryClient.getQueryData(chatListQueryKey);
+      queryClient.setQueryData<ConversationListInfiniteData>(chatListQueryKey, (old) =>
         old
           ? {
               ...old,
               pages: old.pages.map((page) => ({
                 ...page,
-                items: page.items.map((c) => (c.id === id ? { ...c, title } : c)),
+                items: page.items.map((c) => (c.id === param.id ? { ...c, title: json.title } : c)),
               })),
             }
           : old,
@@ -79,7 +76,7 @@ const ConversationItem: FC<ConversationItemProps> = ({ conversation, isActive })
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous !== undefined) {
-        queryClient.setQueryData(chatListInfiniteOptions.queryKey, ctx.previous);
+        queryClient.setQueryData(chatListQueryKey, ctx.previous);
       }
       toast.error('Failed to rename conversation');
     },
@@ -88,17 +85,17 @@ const ConversationItem: FC<ConversationItemProps> = ({ conversation, isActive })
   });
 
   const deleteMutation = useMutation({
-    ...orpc.chat.delete.mutationOptions(),
-    onMutate: async ({ id }) => {
-      await queryClient.cancelQueries({ queryKey: chatListInfiniteOptions.queryKey });
-      const previous = queryClient.getQueryData(chatListInfiniteOptions.queryKey);
-      queryClient.setQueryData<ConversationListInfiniteData>(chatListInfiniteOptions.queryKey, (old) =>
+    ...api.chat.conversations[':id'].$delete.mutationOptions(),
+    onMutate: async ({ param }) => {
+      await queryClient.cancelQueries({ queryKey: chatListQueryKey });
+      const previous = queryClient.getQueryData(chatListQueryKey);
+      queryClient.setQueryData<ConversationListInfiniteData>(chatListQueryKey, (old) =>
         old
           ? {
               ...old,
               pages: old.pages.map((page) => ({
                 ...page,
-                items: page.items.filter((c) => c.id !== id),
+                items: page.items.filter((c) => c.id !== param.id),
               })),
             }
           : old,
@@ -110,12 +107,12 @@ const ConversationItem: FC<ConversationItemProps> = ({ conversation, isActive })
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous !== undefined) {
-        queryClient.setQueryData(chatListInfiniteOptions.queryKey, ctx.previous);
+        queryClient.setQueryData(chatListQueryKey, ctx.previous);
       }
       toast.error('Failed to delete conversation');
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: chatListInfiniteOptions.queryKey });
+      queryClient.invalidateQueries({ queryKey: chatListQueryKey });
     },
   });
 
@@ -144,7 +141,7 @@ const ConversationItem: FC<ConversationItemProps> = ({ conversation, isActive })
     setIsRenaming(false);
     const trimmed = renameValue.trim();
     if (trimmed && trimmed !== conversation.title) {
-      renameMutation.mutate({ id: conversation.id, title: trimmed });
+      renameMutation.mutate({ param: { id: conversation.id }, json: { title: trimmed } });
     }
   };
 
@@ -238,7 +235,7 @@ const ConversationItem: FC<ConversationItemProps> = ({ conversation, isActive })
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90 text-white"
-              onClick={() => deleteMutation.mutate({ id: conversation.id })}
+              onClick={() => deleteMutation.mutate({ param: { id: conversation.id } })}
             >
               Delete
             </AlertDialogAction>
