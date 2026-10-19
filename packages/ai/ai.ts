@@ -1,222 +1,75 @@
-import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
-// import { createAnthropic } from '@ai-sdk/anthropic';
-// import { createGoogleGenerativeAI } from '@ai-sdk/google';
-// import { createOpenAI } from '@ai-sdk/openai';
-import type { LanguageModelV2 } from '@ai-sdk/provider';
-import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
-import { LangfuseClient } from '@langfuse/client';
-import { LangfuseSpanProcessor } from '@langfuse/otel';
+import type { LanguageModelV4 } from '@ai-sdk/provider';
 import {
-  createTraceId,
-  getActiveSpanId,
   getActiveTraceId,
-  startActiveObservation,
-  updateActiveTrace,
+  observe,
+  type ObserveOptions,
+  propagateAttributes,
 } from '@langfuse/tracing';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { config, env } from '@repo/config';
-import { addLogMetadata, getLogMetadata } from '@repo/logs';
-import {
-  type GenerateObjectResult,
-  generateObject,
-  generateText,
-  streamText,
-  type Prompt,
-} from 'ai';
-import type { z } from 'zod';
+import { config } from '@repo/config';
+import { getLogMetadata } from '@repo/logs';
+import { generateText, type OutputInterface, streamText, type ToolSet } from 'ai';
 
-// ---------- LANGFUSE ----------
-/** Langfuse client */
-let langfuse: LangfuseClient | undefined;
-/** Langfuse telemetry exporter */
-let langfuseSpanProcessor: LangfuseSpanProcessor | undefined;
+import { langfuse, langfuseSpanProcessor } from './langfuse';
+import { defaultModel, models } from './models';
 
-/** Check if Langfuse is enabled */
-const langfuseEnabled =
-  (env as Record<string, string>).LANGFUSE_SECRET_KEY &&
-  (env as Record<string, string>).LANGFUSE_PUBLIC_KEY;
-
-// Only initialize Langfuse if it's setup
-if (langfuseEnabled) {
-  /** Config for Langfuse */
-  const langfuseConfig: ConstructorParameters<typeof LangfuseClient>[0] = {
-    secretKey: (env as Record<string, string>).LANGFUSE_SECRET_KEY,
-    publicKey: (env as Record<string, string>).LANGFUSE_PUBLIC_KEY,
-    baseUrl: 'https://us.cloud.langfuse.com',
-  };
-
-  // Initialize everything needed for Langfuse
-  langfuse = new LangfuseClient(langfuseConfig);
-  langfuseSpanProcessor = new LangfuseSpanProcessor({
-    ...langfuseConfig,
-    environment: config.stage,
-    exportMode: 'immediate',
-  });
-  const tracerProvider = new NodeTracerProvider({
-    spanProcessors: [langfuseSpanProcessor],
-  });
-  tracerProvider.register();
-}
-
-/** Automatically trace a generation in Langfuse by wrapping the generation function */
-const traceGeneration = <TArgs extends unknown[], TReturn>(
-  fn: (...args: TArgs) => Promise<TReturn>,
-): ((...args: TArgs) => Promise<TReturn>) => {
-  return async (...args: TArgs): Promise<TReturn> => {
-    // If Langfuse is not enabled, just skip the tracing
-    if (!langfuseEnabled) {
-      return await fn(...args);
+// ---------- TRACING ----------
+/**
+ * Wraps a function so every observation created inside it carries the current request's details
+ * (trace name, route, user and request ID). Calls already inside an observation keep that
+ * observation's details instead.
+ */
+const withRequestDetails = <TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => TReturn,
+  traceName?: string,
+) => {
+  return (...args: TArgs): TReturn => {
+    if (getActiveTraceId()) {
+      return fn(...args);
     }
 
-    // Get our log data (indicates if we have a top-level request trace)
-    const { langfuseTraceId, userId, awsRequestId, request } = getLogMetadata();
-    // See if we have an active trace wrapping this invocation (indicates we're inside another observation)
-    const activeTraceId = getActiveTraceId();
-    const activeSpanId = getActiveSpanId();
-    // See if our current observation has any specific settings
-    const observationName = (args[0] as { name?: string })?.name ?? 'generation';
-    const parentTraceId = (args[0] as { parentTraceId?: string })?.parentTraceId;
-
-    // Our active trace will be one of the following (in order):
-    // 1. Manually provided as a parent trace id (parentTraceId)
-    // 2. Inferred from a wrapping observation (activeTraceId)
-    // 3. Default to a route-level trace (langfuseTraceId)
-    let traceId = parentTraceId ?? activeTraceId ?? langfuseTraceId;
-    // If we haven't created a parent trace yet, we'll create one and make note of it
-    let createdTrace = false;
-    if (!traceId) {
-      traceId = await createTraceId(awsRequestId);
-      createdTrace = true;
-    }
-
-    // Observe our generation
-    const result = await startActiveObservation(
-      observationName,
-      async () => {
-        // If we are creating a fresh trace, we need to set the metadata for the top-level trace
-        if (createdTrace) {
-          // This top level trace will refer to the entire request (so we'll include the method and path)
-          const topLevelObservationName = request?.path
-            ? `${request?.method} ${request?.path}`
-            : observationName;
-
-          // Set the metadata for our top-level trace
-          updateActiveTrace({
-            name: topLevelObservationName,
-            userId,
-            metadata: {
-              awsRequestId,
-            },
-          });
-
-          // Ensure the trace id is added to the log metadata so we can re-use it and log it
-          addLogMetadata({ langfuseTraceId: traceId });
-        }
-
-        // Invoke our actual AI method
-        return await fn(...args);
-      },
-      // Ensure all observations are attached to the same trace (unless overridden)
-      {
-        parentSpanContext: {
-          traceId,
-          spanId: activeSpanId ?? '0123456789abcdef',
-          traceFlags: 1,
-        },
-      },
+    const { userId, awsRequestId, request } = getLogMetadata();
+    const route = request?.path ? `${request.method} ${request.path}` : undefined;
+    return propagateAttributes(
+      { traceName: traceName ?? route, userId, metadata: { route, awsRequestId } },
+      () => fn(...args),
     );
-
-    return result;
   };
 };
 
-// ---------- MODELS ----------
-const bedrock = createAmazonBedrock({
-  // We can inherit our AWS function permissions using this method
-  credentialProvider: fromNodeProviderChain(),
-  region: 'us-east-1',
-});
-// const anthropic = createAnthropic({
-//   apiKey: env.ANTHROPIC_API_KEY,
-// });
-// const openai = createOpenAI({
-//   apiKey: env.OPENAI_API_KEY,
-// });
-// const google = createGoogleGenerativeAI({
-//   apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
-// });
+// ---------- TYPES ----------
+type RuntimeContext = NonNullable<Parameters<typeof generateText>[0]['runtimeContext']>;
 
-/** Our available AI models */
-export const models = {
-  bedrock: {
-    'claude-4-5-haiku': bedrock('us.anthropic.claude-haiku-4-5-20251001-v1:0'),
-    'claude-4-5-sonnet': bedrock('us.anthropic.claude-sonnet-4-5-20250929-v1:0'),
-  },
-  // anthropic: {
-  //   'claude-haiku-4-5': anthropic('claude-haiku-4-5'),
-  //   'claude-sonnet-4-5': anthropic('claude-sonnet-4-5'),
-  // },
-  // openai: {
-  //   'gpt-5': openai('gpt-5'),
-  //   'gpt-5-mini': openai('gpt-5-mini'),
-  // },
-  // google: {
-  //   'gemini-2.5-flash': google('gemini-2.5-flash'),
-  // },
-};
-/** The default model to use for AI generation */
-const defaultModel = models.bedrock['claude-4-5-haiku'];
+type WithDefaultModel<OPTIONS> = OPTIONS extends unknown
+  ? Omit<OPTIONS, 'model'> & {
+      /** The model to use for the generation (defaults to our default model) */
+      model?: LanguageModelV4;
+    }
+  : never;
+
+type GenerateTextOptions<TOOLS extends ToolSet, OUTPUT extends OutputInterface> = WithDefaultModel<
+  Parameters<typeof generateText<TOOLS, RuntimeContext, OUTPUT>>[0]
+>;
+
+type StreamTextOptions<TOOLS extends ToolSet, OUTPUT extends OutputInterface> = WithDefaultModel<
+  Parameters<typeof streamText<TOOLS, RuntimeContext, OUTPUT>>[0]
+>;
 
 // ---------- METHODS ----------
-/** It's pretty painful to match and extend the type of the generateObject method, but this gets close */
-// oxlint-disable no-explicit-any: We need type any to allow for flexible extensions
-type GenerateObjectWithTelemetryInput<SCHEMA extends z.ZodType<any, any, any>> = Omit<
-  Parameters<typeof generateObject<SCHEMA>>[0],
-  'experimental_telemetry' | 'model'
-> &
-  Prompt & {
-    /** The schema to use for the generation */
-    schema: SCHEMA;
-    /** The model to use for the generation */
-    model?: LanguageModelV2;
-    /** The name of the method to show in Langfuse */
-    name?: string;
-    /** The parent trace ID to attach this generation to in Langfuse (defaults to trace for entire route) */
-    parentTraceId?: string;
-  };
-
 /** Export methods related to AI */
 export const ai = {
   /** Our available AI models */
   models,
-  /** Start a new active observation (can wrap other observations in Langfuse) */
-  startActiveObservation,
-  /** Gets the ID of the current trace */
-  getRequestTraceId: () => {
-    const { langfuseTraceId } = getLogMetadata();
-    return langfuseTraceId;
-  },
-  /** Update our top-level request's trace metadata */
-  updateRequestTrace: (update: Parameters<typeof updateActiveTrace>[0]) => {
-    const { langfuseTraceId } = getLogMetadata();
-    if (!langfuseTraceId) {
-      return;
-    }
-
-    startActiveObservation(
-      'Update Metadata',
-      () => {
-        updateActiveTrace(update);
-      },
-      {
-        parentSpanContext: {
-          traceId: langfuseTraceId,
-          spanId: '0123456789abcdef',
-          traceFlags: 1,
-        },
-      },
-    );
-  },
+  /**
+   * Wraps a function as a named Langfuse observation that records its input and output.
+   * Use it around each AI task so it can be found, replayed or converted into evals.
+   */
+  observe: <TArgs extends unknown[], TReturn>(
+    name: string,
+    fn: (...args: TArgs) => TReturn,
+    options?: Omit<ObserveOptions, 'name'>,
+  ) => withRequestDetails(observe(fn, { name, ...options }), name),
+  /** Gets the ID of the active trace so it can be scored later */
+  getTraceId: getActiveTraceId,
   /** Scores a trace */
   scoreTrace: ({
     traceId,
@@ -257,72 +110,33 @@ export const ai = {
       value: typeof score === 'boolean' ? Number(score) : score,
       dataType,
       comment,
+      environment: config.stage,
     });
   },
   /** Ensure all traces get flushed to Langfuse */
   flush: async () => {
     await Promise.all([langfuse?.flush(), langfuseSpanProcessor?.forceFlush()]);
   },
-  /** Generate text using an LLM */
-  generateText: traceGeneration(
-    async ({
+  /** Generate text (or structured data via `output: Output.object(...)`) using an LLM */
+  generateText: withRequestDetails(
+    async <
+      TOOLS extends ToolSet,
+      OUTPUT extends OutputInterface = OutputInterface<string, string>,
+    >({
       model = defaultModel,
-      name,
-      parentTraceId,
       ...rest
-    }: Omit<Parameters<typeof generateText>[0], 'model'> &
-      Prompt & {
-        /** The model to use for the generation */
-        model?: LanguageModelV2;
-        /** The name of the method to show in Langfuse */
-        name?: string;
-        /** The parent trace ID to attach this generation to in Langfuse (defaults to trace for entire route) */
-        parentTraceId?: string;
-      }) =>
-      await generateText({
-        model,
-        maxRetries: 3,
-        ...rest,
-        experimental_telemetry: { isEnabled: true },
-      } satisfies Parameters<typeof generateText>[0]),
+    }: GenerateTextOptions<TOOLS, OUTPUT>) =>
+      await generateText<TOOLS, RuntimeContext, OUTPUT>({ model, maxRetries: 3, ...rest }),
   ),
-  /** Stream text using an LLM */
-  streamText: traceGeneration(
-    async ({
+  /** Stream text (or structured data via `output: Output.object(...)`) using an LLM */
+  streamText: withRequestDetails(
+    async <
+      TOOLS extends ToolSet,
+      OUTPUT extends OutputInterface = OutputInterface<string, string>,
+    >({
       model = defaultModel,
-      name,
-      parentTraceId,
       ...rest
-    }: Omit<Parameters<typeof streamText>[0], 'model'> &
-      Prompt & {
-        /** The model to use for the generation */
-        model?: LanguageModelV2;
-        /** The name of the method to show in Langfuse */
-        name?: string;
-        /** The parent trace ID to attach this generation to in Langfuse (defaults to trace for entire route) */
-        parentTraceId?: string;
-      }) =>
-      streamText({
-        model,
-        maxRetries: 3,
-        ...rest,
-        experimental_telemetry: { isEnabled: true },
-      } satisfies Parameters<typeof streamText>[0]),
-  ),
-  /** Generate an object using an LLM */
-  generateObject: traceGeneration(
-    // oxlint-disable no-explicit-any: We need type any to allow for flexible extensions
-    async <SCHEMA extends z.ZodType<any, any, any>>({
-      model = defaultModel,
-      name,
-      parentTraceId,
-      ...rest
-    }: GenerateObjectWithTelemetryInput<SCHEMA>): Promise<GenerateObjectResult<z.infer<SCHEMA>>> =>
-      await generateObject({
-        model,
-        maxRetries: 3,
-        ...rest,
-        experimental_telemetry: { isEnabled: true },
-      }),
+    }: StreamTextOptions<TOOLS, OUTPUT>) =>
+      streamText<TOOLS, RuntimeContext, OUTPUT>({ model, maxRetries: 3, ...rest }),
   ),
 };

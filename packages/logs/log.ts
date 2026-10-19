@@ -58,7 +58,7 @@ const prettyDest = pretty({
   translateTime: 'SYS:HH:mm:ss',
   // Ignore some params that we don't care about locally
   ignore:
-    'userId,organizationId,sessionId,request,langfuseTraceId,awsRequestId,apiRequestId,x-correlation-id,x-correlation-trace-id',
+    'userId,organizationId,sessionId,request,awsRequestId,apiRequestId,x-correlation-id,x-correlation-trace-id',
 });
 
 // ---------- HELPERS ----------
@@ -66,7 +66,6 @@ const prettyDest = pretty({
 export const addLambdaRequestContext = lambdaRequestTracker();
 
 type LogMetadata = {
-  langfuseTraceId?: string;
   userId?: string;
   awsRequestId?: string;
   sessionId?: string;
@@ -114,34 +113,33 @@ const customDestination = {
         prettyDest.write(payload);
       }
 
-        // Ship logs to PostHog via OpenTelemetry if it's enabled
-        if (config.posthog.isEnabled && otelLogger) {
-          const {
-            time,
-            level,
-            msg,
-            'x-correlation-id': correlationId,
-            'x-correlation-trace-id': traceId,
-            ...context
-          } = JSON.parse(payload) as PinoLog;
+      // Ship logs to PostHog via OpenTelemetry if it's enabled
+      if (config.posthog.isEnabled && otelLogger) {
+        const {
+          time,
+          level,
+          msg,
+          'x-correlation-id': correlationId,
+          'x-correlation-trace-id': traceId,
+          ...context
+        } = JSON.parse(payload) as PinoLog;
 
-          otelLogger.emit({
-            severityNumber: pinoLevelToSeverity[level] ?? SeverityNumber.INFO,
-            severityText: level,
-            body: msg,
-            timestamp: time ? new Date(time as string | number) : undefined,
-            attributes: {
-              ...context,
-              // PostHog session replay linking
-              ...(context.sessionId ? { sessionId: context.sessionId as string } : {}),
-              ...(context.userId ? { posthogDistinctId: context.userId as string } : {}),
-              // Correlation IDs
-              ...(correlationId ? { 'x-correlation-id': correlationId as string } : {}),
-              ...(traceId ? { 'x-correlation-trace-id': traceId as string } : {}),
-            },
-          });
-        }
-
+        otelLogger.emit({
+          severityNumber: pinoLevelToSeverity[level] ?? SeverityNumber.INFO,
+          severityText: level,
+          body: msg,
+          timestamp: time ? new Date(time as string | number) : undefined,
+          attributes: {
+            ...context,
+            // PostHog session replay linking
+            ...(context.sessionId ? { sessionId: context.sessionId as string } : {}),
+            ...(context.userId ? { posthogDistinctId: context.userId as string } : {}),
+            // Correlation IDs
+            ...(correlationId ? { 'x-correlation-id': correlationId as string } : {}),
+            ...(traceId ? { 'x-correlation-trace-id': traceId as string } : {}),
+          },
+        });
+      }
     } catch (error) {
       console.error('[log] Failed to handle log:', error);
     }

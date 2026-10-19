@@ -1,6 +1,5 @@
 import { ORPCError } from '@orpc/server';
 import type { Organization } from '@prisma/client';
-import { ai } from '@repo/ai';
 import { addLogMetadata, log } from '@repo/logs';
 
 import { type AuthUser, auth, orpc } from '@/core';
@@ -8,7 +7,7 @@ import { db } from '@/db';
 
 import { handleError } from './error';
 
-/** Our base procedure used by all endpoints (populates auth context and updates AI traces) */
+/** Our base procedure used by all endpoints (populates auth context) */
 const baseProcedure = orpc.use(async ({ context, next }) => {
   try {
     let user: AuthUser | undefined;
@@ -43,19 +42,7 @@ const baseProcedure = orpc.use(async ({ context, next }) => {
       organizationId: organization?.id,
     });
 
-    // Wait for our endpoint to complete before we perform some post-processing
-    const result = await next({ context: { user, organization } });
-
-    // Update the AI trace with the output of our request (don't fail the request if this fails)
-    try {
-      ai.updateRequestTrace({
-        output: result.output,
-      });
-    } catch (error) {
-      log.error({ error }, 'Error updating AI trace');
-    }
-
-    return result;
+    return await next({ context: { user, organization } });
   } catch (error) {
     // Handle and report any errors
     await handleError({ error });

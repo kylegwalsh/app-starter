@@ -27,10 +27,6 @@
 - Create slack app
 - Build chat UI for web-app
 
-# EVALS
-
-- Rethink how we trace for Langfuse and how we can support evals (input must be easily replayed against functions)
-
 ## Marketing site
 
 - Consider adding marketing site to repo
