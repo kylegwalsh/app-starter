@@ -58,8 +58,8 @@ Global styles are imported from `@repo/design/globals.css` and the `ThemeProvide
 Example (CSF):
 
 ```tsx
-import type { Meta, StoryObj } from '@storybook/react';
 import { Button } from '@repo/design';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta: Meta<typeof Button> = {
   title: 'Design/Button',

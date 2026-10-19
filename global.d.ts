@@ -1,5 +1,8 @@
 /// <reference types="react" />
 
+/** Allow side-effect CSS imports (e.g. `import './globals.css'`), which are handled by the bundler */
+declare module '*.css';
+
 /**
  * Flexible React.FC type with overloads:
  * - FC - just standard component type + children

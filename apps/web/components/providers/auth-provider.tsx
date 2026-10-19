@@ -28,7 +28,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }}
       // Add some custom paths for our auth routes because we manage our own settings pages
       account={{ basePath: '/' }}
-      organization={{ basePath: '/settings', viewPaths: { SETTINGS: 'organization' } }}>
+      organization={{ basePath: '/settings', viewPaths: { SETTINGS: 'organization' } }}
+    >
       {children}
     </AuthUIProvider>
   );

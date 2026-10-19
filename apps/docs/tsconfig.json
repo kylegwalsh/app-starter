@@ -7,6 +7,6 @@
     },
     "strictNullChecks": true
   },
-  "include": ["**/*", ".next/types/**/*.ts"],
+  "include": ["**/*", "../../global.d.ts", ".next/types/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

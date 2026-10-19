@@ -55,4 +55,3 @@
 
 - Disable autoplay of storybook stories when supported: https://github.com/storybookjs/storybook/discussions/25011
 - Potentially remove separate authConfig after issue is resolved - https://github.com/better-auth/better-auth/issues/3408
-- Once oxlint/tsgolint is updated, see if we can remove the oxlint ts-ignore rules we added to the backend auth file

@@ -1,6 +1,5 @@
-import { db } from '@/db';
-
 import { withLambdaContext } from '@/core';
+import { db } from '@/db';
 
 /** Regularly pings database to keep it awake */
 export const handler = withLambdaContext(async () => {

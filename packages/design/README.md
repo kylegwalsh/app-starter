@@ -29,6 +29,7 @@ Shared design system: standardized components, Tailwind v4, theming, and global 
 
 ```tsx
 import '@repo/design/globals.css';
+
 import { ThemeProvider, Button } from '@repo/design';
 
 export default function App({ children }) {

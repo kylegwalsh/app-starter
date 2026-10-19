@@ -53,6 +53,6 @@
     "@types/react-dom": "19.1.5",
     "jsdom": "26.1.0",
     "tailwindcss": "4.1.7",
-    "typescript": "5.9.3"
+    "typescript": "7.0.2"
   }
 }
