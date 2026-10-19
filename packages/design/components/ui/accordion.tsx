@@ -1,4 +1,4 @@
-// oxlint-disable no-namespace-import: This won't impact performance
+// oxlint-disable no-namespace-import -- This won't impact performance
 import * as AccordionPrimitive from '@radix-ui/react-accordion';
 import { cn } from '@repo/design/lib/utils';
 import { ChevronDownIcon } from 'lucide-react';

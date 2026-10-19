@@ -1,4 +1,4 @@
-// oxlint-disable no-namespace-import: This won't impact performance
+// oxlint-disable no-namespace-import -- This won't impact performance
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { cn } from '@repo/design/lib/utils';
 import type { ComponentProps } from 'react';

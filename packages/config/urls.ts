@@ -1,6 +1,6 @@
 import { resources } from './cloud-resources';
 
-// oxlint-disable no-explicit-any: We need the backend to build and ignore the window
+// oxlint-disable no-explicit-any -- We need the backend to build and ignore the window
 declare const window: any;
 
 // Extract only resource keys that have a `url` property (e.g. 'web', 'admin', 'api')
@@ -27,7 +27,7 @@ const resolveWebAppUrl = ({
 }) => {
   let url: string | undefined;
   if (typeof window !== 'undefined') {
-    // oxlint-disable no-unsafe-assignment, no-unsafe-member-access: The window is not typed here
+    // oxlint-disable no-unsafe-assignment, no-unsafe-member-access -- The window is not typed here
     url = dedicatedUrl ?? window.location.origin;
   }
   if (!url) {

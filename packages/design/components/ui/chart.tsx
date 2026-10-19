@@ -172,7 +172,7 @@ function ChartTooltipContent({
         {payload.map((item, index) => {
           const key = `${nameKey || item.name || item.dataKey || 'value'}`;
           const itemConfig = getPayloadConfigFromPayload(config, item, key);
-          // oxlint-disable no-unsafe-member-access: The payload can contain fill
+          // oxlint-disable no-unsafe-member-access -- The payload can contain fill
           const indicatorColor = (color || item.payload.fill || item.color) as string;
 
           return (
@@ -267,7 +267,7 @@ function ChartLegendContent({
       )}
     >
       {payload.map((item) => {
-        // oxlint-disable restrict-template-expressions: The dataKey is a valid string
+        // oxlint-disable restrict-template-expressions -- The dataKey is a valid string
         const key = `${nameKey || item.dataKey || 'value'}`;
         const itemConfig = getPayloadConfigFromPayload(config, item, key);
 

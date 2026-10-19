@@ -1,4 +1,4 @@
-// oxlint-disable no-namespace-import: This won't impact performance
+// oxlint-disable no-namespace-import -- This won't impact performance
 import * as NavigationMenuPrimitive from '@radix-ui/react-navigation-menu';
 import { cn } from '@repo/design/lib/utils';
 import { cva } from 'class-variance-authority';

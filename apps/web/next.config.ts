@@ -31,7 +31,7 @@ let nextConfig: NextConfig = {
   // Override the webpack config for custom functionality
   webpack: (config) => {
     // Ensure the web always grabs the .web files over the normal files (so it can share directories with the backend)
-    // oxlint-disable no-unsafe-assignment, no-unsafe-member-access: The config is not fully typed
+    // oxlint-disable no-unsafe-assignment, no-unsafe-member-access -- The config is not fully typed
     config.resolve.extensions = config.resolve.extensions.flatMap((ext: string) => [
       `.web${ext}`,
       ext,

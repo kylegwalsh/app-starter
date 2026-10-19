@@ -1,6 +1,6 @@
 'use client';
 
-// oxlint-disable no-namespace-import: This won't impact performance
+// oxlint-disable no-namespace-import -- This won't impact performance
 import * as RadioGroupPrimitive from '@radix-ui/react-radio-group';
 import { cn } from '@repo/design/lib/utils';
 import { CircleIcon } from 'lucide-react';

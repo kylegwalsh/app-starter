@@ -5,7 +5,7 @@ import { config } from '@repo/config';
 import { handleError } from '@/api/error';
 
 import type { McpSession } from './session';
-// oxlint-disable-next-line no-namespace: Namespace import used to auto-register all exported tools
+// oxlint-disable-next-line no-namespace -- Namespace import used to auto-register all exported tools
 import * as tools from './tools';
 import type { McpTool } from './utils';
 

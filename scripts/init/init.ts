@@ -1,4 +1,4 @@
-// oxlint-disable no-await-in-loop, no-unsafe-member-access, no-unsafe-assignment: We allow certain patterns in this script
+// oxlint-disable no-await-in-loop, no-unsafe-member-access, no-unsafe-assignment -- We allow certain patterns in this script
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
