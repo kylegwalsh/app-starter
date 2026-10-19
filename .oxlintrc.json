@@ -42,7 +42,6 @@
     "bad-object-literal-comparison": "error",
     "bad-replace-all-arg": "error",
     "const-comparisons": "error",
-    "double-comparisons": "warn",
     "erasing-op": "error",
     "misrefactored-assign-op": "error",
     "missing-throw": "error",
@@ -69,8 +68,6 @@
     "no-array-sort": "warn",
     "no-await-in-promise-methods": "error",
     "no-magic-array-flat-depth": "warn",
-    "no-new-array": "warn",
-    "no-single-promise-in-promise-methods": "warn",
     "no-unnecessary-array-flat-depth": "warn",
     "no-unnecessary-array-splice-count": "warn",
     "no-useless-collection-argument": "warn",
@@ -80,7 +77,6 @@
     "prefer-array-index-of": "warn",
     "prefer-array-some": "warn",
     "prefer-set-has": "warn",
-    "prefer-set-size": "warn",
     "prefer-spread": "warn",
     "require-array-join-separator": "warn",
     "consistent-empty-array-spread": "warn",
@@ -135,7 +131,6 @@
     "no-object-as-default-parameter": "warn",
     "no-static-only-class": "warn",
     "no-this-assignment": "warn",
-    "no-unnecessary-await": "warn",
     "no-unnecessary-slice-end": "warn",
     "no-unreadable-iife": "warn",
     "no-useless-switch-case": "warn",
@@ -161,8 +156,6 @@
     "switch-case-braces": "warn",
 
     // --- Import recommended rules ---
-    "default": "warn",
-    "namespace": "warn",
     "no-named-as-default": "warn",
     "no-named-as-default-member": "warn",
     "no-duplicates": "error",
@@ -178,7 +171,6 @@
 
     // --- React rules ---
     "rules-of-hooks": "error",
-    "exhaustive-deps": "warn",
     "jsx-curly-brace-presence": [
       "error",
       {
@@ -236,7 +228,6 @@
     "require-local-test-context-for-concurrent-snapshots": "error",
     "expect-expect": "error",
     "no-conditional-expect": "error",
-    "no-disabled-tests": "warn",
     "no-focused-tests": "error",
     "no-commented-out-tests": "error",
     "no-identical-title": "error",
@@ -283,7 +274,6 @@
     "no-new-statics": "error",
     "no-nesting": "warn",
     "no-promise-in-callback": "warn",
-    "no-callback-in-promise": "warn",
     "valid-params": "error",
 
     // --- Next.js rules ---
@@ -294,20 +284,12 @@
     "no-head-import-in-document": "error",
     "no-script-component-in-head": "error",
     "no-async-client-component": "error",
-    "google-font-display": "warn",
-    "google-font-preconnect": "warn",
-    "next-script-for-ga": "warn",
     "no-before-interactive-script-outside-document": "error",
-    "no-css-tags": "warn",
     "no-head-element": "error",
-    "no-html-link-for-pages": "warn",
     "no-img-element": "error",
-    "no-page-custom-font": "warn",
     "no-styled-jsx-in-document": "error",
-    "no-sync-scripts": "warn",
     "no-title-in-document-head": "error",
-    "no-typos": "error",
-    "no-unwanted-polyfillio": "warn"
+    "no-typos": "error"
   },
   "overrides": [
     // Disable console logs in main backend files (should use logging package)

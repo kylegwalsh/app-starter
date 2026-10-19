@@ -1,17 +1,20 @@
+import type { Stripe } from 'stripe';
+
 import { routerFactory } from '@/tests/factories';
+import type { PartialMock } from '@/tests/mocks/partial-mock';
 
 // Mock stripe
 const { mockStripe } = vi.hoisted(() => ({
   mockStripe: {
     invoices: {
-      list: vi.fn(),
+      list: vi.fn<PartialMock<Stripe['invoices']['list']>>(),
     },
     charges: {
-      list: vi.fn(),
+      list: vi.fn<PartialMock<Stripe['charges']['list']>>(),
     },
     checkout: {
       sessions: {
-        create: vi.fn(),
+        create: vi.fn<PartialMock<Stripe['checkout']['sessions']['create']>>(),
       },
     },
   },
