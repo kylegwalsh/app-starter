@@ -60,6 +60,7 @@ function InputOTPSlot({
 
 function InputOTPSeparator({ ...props }: ComponentProps<'div'>) {
   return (
+    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- shadcn renders the separator as an icon inside a div
     <div data-slot="input-otp-separator" role="separator" {...props}>
       <MinusIcon />
     </div>

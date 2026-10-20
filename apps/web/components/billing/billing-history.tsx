@@ -21,7 +21,7 @@ import { format } from '@repo/utils';
 import { useQuery } from '@tanstack/react-query';
 import { Download } from 'lucide-react';
 import Link from 'next/link';
-import { type FC, useEffect, useMemo, useState } from 'react';
+import { type FC, useMemo, useState } from 'react';
 
 import { orpc } from '@/core';
 
@@ -35,18 +35,13 @@ export const BillingHistory: FC = () => {
 
   // Mobile "show more" state
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, []);
   const mobileVisibleItems = useMemo(() => history.slice(0, visibleCount), [history, visibleCount]);
   const hasMoreMobile = visibleCount < history.length;
 
   // Desktop pagination state
-  const [page, setPage] = useState(1);
+  const [selectedPage, setPage] = useState(1);
   const pageCount = Math.max(1, Math.ceil(history.length / PAGE_SIZE));
-  useEffect(() => {
-    setPage((p) => Math.min(p, pageCount));
-  }, [pageCount]);
+  const page = Math.min(selectedPage, pageCount);
   const desktopPageItems = useMemo(() => {
     const startIndex = (page - 1) * PAGE_SIZE;
     return history.slice(startIndex, startIndex + PAGE_SIZE);
@@ -229,7 +224,7 @@ export const BillingHistory: FC = () => {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    setPage((p) => Math.max(1, p - 1));
+                    setPage(Math.max(1, page - 1));
                   }}
                 />
               </PaginationItem>
@@ -252,7 +247,7 @@ export const BillingHistory: FC = () => {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    setPage((p) => Math.min(pageCount, p + 1));
+                    setPage(Math.min(pageCount, page + 1));
                   }}
                 />
               </PaginationItem>

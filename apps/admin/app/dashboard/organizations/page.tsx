@@ -26,7 +26,7 @@ import {
   SearchIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { OrganizationDialog } from '@/components/organizations/organization-dialog';
@@ -49,9 +49,6 @@ type OrganizationWithMemberCount = Organization & {
  */
 export default function OrganizationsListPage() {
   const [organizations, setOrganizations] = useState<OrganizationWithMemberCount[]>([]);
-  const [filteredOrganizations, setFilteredOrganizations] = useState<OrganizationWithMemberCount[]>(
-    [],
-  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -102,8 +99,8 @@ export default function OrganizationsListPage() {
     fetchOrganizations();
   }, [fetchOrganizations]);
 
-  // Re-derive the displayed list whenever source data, search query, or sort state changes
-  useEffect(() => {
+  // Derive the displayed list from source data, search query, and sort state
+  const filteredOrganizations = useMemo(() => {
     let result = [...organizations];
 
     if (searchQuery) {
@@ -144,12 +141,18 @@ export default function OrganizationsListPage() {
       return 0;
     });
 
-    setFilteredOrganizations(result);
-    setCurrentPage(1);
+    return result;
   }, [organizations, searchQuery, sortField, sortOrder]);
+
+  // Update the search and jump back to the first page of results
+  const updateSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
 
   // Toggle sort direction when clicking the same column, or switch to ascending on a new column
   const toggleSort = (field: SortField) => {
+    setCurrentPage(1);
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -254,7 +257,7 @@ export default function OrganizationsListPage() {
         <Input
           placeholder="Search by name or slug..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => updateSearch(e.target.value)}
           className="pl-9"
         />
       </div>
@@ -307,7 +310,7 @@ export default function OrganizationsListPage() {
                     <BuildingIcon className="text-muted-foreground/50 size-12" />
                     <p className="text-muted-foreground">No organizations found</p>
                     {searchQuery && (
-                      <Button variant="link" size="sm" onClick={() => setSearchQuery('')}>
+                      <Button variant="link" size="sm" onClick={() => updateSearch('')}>
                         Clear search
                       </Button>
                     )}

@@ -597,7 +597,8 @@ function SidebarMenuSkeleton({
 }: ComponentProps<'div'> & {
   showIcon?: boolean;
 }) {
-  // Random width between 50 to 90%.
+  // Random width between 50 to 90%
+  // oxlint-disable-next-line react/purity -- shadcn uses a random width for skeleton placeholders
   const width = useMemo(() => `${Math.floor(Math.random() * 40) + 50}%`, []);
 
   return (

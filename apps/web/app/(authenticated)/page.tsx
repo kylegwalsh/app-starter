@@ -23,7 +23,7 @@ import {
   useIsMobile,
 } from '@repo/design';
 import { TrendingDown, TrendingUp } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 
 import { Header } from '@/components';
@@ -139,12 +139,8 @@ const chartConfig = {
 /** Our main dashboard page */
 export default function DashboardPage() {
   const isMobile = useIsMobile();
-  const [timeRange, setTimeRange] = useState('90d');
-  useEffect(() => {
-    if (isMobile) {
-      setTimeRange('7d');
-    }
-  }, [isMobile]);
+  const [selectedTimeRange, setTimeRange] = useState<string>();
+  const timeRange = selectedTimeRange ?? (isMobile ? '7d' : '90d');
 
   const filteredData = useMemo(
     () =>

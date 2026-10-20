@@ -15,6 +15,7 @@ export function useIsMobile() {
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     };
     mql.addEventListener('change', onChange);
+    // oxlint-disable-next-line react/set-state-in-effect -- Syncs the initial viewport width on mount
     setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     return () => mql.removeEventListener('change', onChange);
   }, []);
