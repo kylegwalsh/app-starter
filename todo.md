@@ -42,7 +42,6 @@
 ## OTHER
 
 - Upgrade oxlint and see if it removes the warnings for react/set-state-in-effect
-- Add superset config file
 - Add SST debug launch file
 - Create good "clean" command to remove node_modules
 - test whether we need the hacky minimal env anymore or if SST supports running without a deployed stage
