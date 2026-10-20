@@ -126,8 +126,7 @@ jobs:
           job-name: test
 
       # SST fails to run `sst shell` against a stage that was never deployed, so tests run against
-      # a minimal stage (see sst.config.ts) instead of dev/prod. This lets the first CI run succeed
-      # before dev/prod exist. We deploy it only when it's missing, so it's usually a quick no-op
+      # a minimal stage (see sst.config.ts). We only deploy it when it's missing, so it's usually a quick no-op
       - name: Ensure minimal stage exists
         run: |
           bun sst shell --stage minimal -- true || {
@@ -198,8 +197,11 @@ jobs:
           bun sst unlock --stage ci || true
           SKIP_SOURCEMAPS=true bun sst deploy --stage ci
 
+      # Run against the ci stage we just deployed
       - name: Run E2E tests
         run: bun web test:e2e
+        env:
+          SST_STAGE: ci
 
       # Upload artifacts to see results
       - name: Upload Playwright report

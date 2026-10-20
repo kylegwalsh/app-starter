@@ -128,10 +128,10 @@ export default $config({
     });
 
     // ---------- MAIN ----------
-    // SST fails if you run `sst shell` without a corresponding stage being deployed (still true
-    // as of SST 4.17.2). CI runs tests against this minimal stage so they work before dev/prod
-    // are deployed. To keep it speedy (and it should only deploy once), the minimal stage only
-    // deploys our secrets and skips the rest of the deployment.
+    // SST fails if you run `sst shell` without a corresponding stage being deployed.
+    // This causes our CI to fail unless we deploy something first. To ensure we keep it
+    // speedy the first time (and this should only deploy once), we create a minimal stage
+    // and just skip the rest of the deployment.
     if ($app.stage === 'minimal') {
       return;
     }
