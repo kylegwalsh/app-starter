@@ -125,8 +125,20 @@ jobs:
         with:
           job-name: test
 
+      # SST fails to run `sst shell` against a stage that was never deployed, so tests run against
+      # a minimal stage (see sst.config.ts) instead of dev/prod. This lets the first CI run succeed
+      # before dev/prod exist. We deploy it only when it's missing, so it's usually a quick no-op
+      - name: Ensure minimal stage exists
+        run: |
+          bun sst shell --stage minimal -- true || {
+            bun sst unlock --stage minimal || true
+            SKIP_SOURCEMAPS=true bun sst deploy --stage minimal
+          }
+
       - name: Run tests
         run: bun run test:silent
+        env:
+          SST_STAGE: minimal
 
   # Run our standard tests
   verify-migrations:

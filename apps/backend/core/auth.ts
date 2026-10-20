@@ -18,8 +18,14 @@ import { stripePluginInstance } from './stripe';
  */
 const SUPPORT_PERSONAL_ORGANIZATIONS = true;
 
+/**
+ * The URL better-auth runs on. Stages without an API (e.g. the minimal stage CI runs tests
+ * against) have no API URL, so we fall back to a placeholder that better-auth can parse
+ */
+const authUrl = config.api.url || 'http://localhost';
+
 /** Extract the base domain from the API URL */
-const baseDomain = new URL(config.api.url).hostname.split('.').slice(-2).join('.');
+const baseDomain = new URL(authUrl).hostname.split('.').slice(-2).join('.');
 
 /** Get or create a personal organization for a user */
 const getOrCreatePersonalOrganization = async ({ userId }: { userId: string }) => {
@@ -117,7 +123,7 @@ const getActiveOrganization = async ({
 /** The config for our Better Auth instance (defined separately to avoid TypeScript issues) */
 const authConfig = {
   secret: env.BETTER_AUTH_SECRET,
-  baseURL: config.api.url,
+  baseURL: authUrl,
   appName: config.app.name,
   // Disable the JWT plugin's /token endpoint to avoid conflict with oauth-provider's /oauth2/token
   disabledPaths: ['/token'],
@@ -276,7 +282,7 @@ const authConfig = {
       allowDynamicClientRegistration: true,
       allowUnauthenticatedClientRegistration: true,
       // We need to include a trailing slash because some MCP clients expect it
-      validAudiences: [config.api.url, `${config.api.url}/`],
+      validAudiences: [authUrl, `${authUrl}/`],
       // Silence the setup guidance from the oauth plugin
       silenceWarnings: {
         oauthAuthServerConfig: true,

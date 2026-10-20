@@ -44,7 +44,6 @@
 - Upgrade oxlint and see if it removes the warnings for react/set-state-in-effect
 - Add SST debug launch file
 - Create good "clean" command to remove node_modules
-- test whether we need the hacky minimal env anymore or if SST supports running without a deployed stage
 - Once API Gateway v2 supports response streaming, add it and test that the MCP and general AI apis stream output
 - On Windows, editing a monorepo package (like config) doesn't cause the backend to hot reload
 - Debug why first stripe invocation causes SST proxy to die on Windows (could be related to below issue) - https://github.com/sst/sst/issues/6051
