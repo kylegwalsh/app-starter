@@ -1,3 +1,5 @@
+'use client';
+
 import { cn } from '@repo/design/lib/utils';
 import { GripVerticalIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';

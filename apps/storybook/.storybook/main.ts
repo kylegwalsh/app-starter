@@ -1,4 +1,17 @@
+import { registerHooks } from 'node:module';
+
 import type { StorybookConfig } from '@storybook/nextjs-vite';
+
+// TS 7 no longer ships the JS compiler API, so point react-docgen-typescript at the TS 6 compatibility package
+// (Storybook plans to do this natively: https://github.com/storybookjs/storybook/pull/36771)
+registerHooks({
+  resolve: (specifier, context, nextResolve) => {
+    if (specifier === 'typescript' && context.parentURL?.includes('react-docgen-typescript')) {
+      return nextResolve('@typescript/typescript6', context);
+    }
+    return nextResolve(specifier, context);
+  },
+});
 
 const config: StorybookConfig = {
   stories: ['../stories/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],

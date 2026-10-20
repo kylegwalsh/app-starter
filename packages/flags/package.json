@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@repo/analytics": "workspace:*",
-    "posthog-js": "1.261.0"
+    "posthog-js": "1.438.12"
   },
   "devDependencies": {
     "@repo/tsconfig": "workspace:*",

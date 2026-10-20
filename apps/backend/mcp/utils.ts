@@ -17,7 +17,7 @@ export type McpTool<TInput extends z.ZodRawShape | undefined = undefined> = {
   annotations?: ToolAnnotations;
   isTool: true;
   handler: (
-    args: TInput extends z.ZodRawShape ? z.objectOutputType<TInput, z.ZodTypeAny> : unknown,
+    args: TInput extends z.ZodRawShape ? z.infer<z.ZodObject<TInput>> : unknown,
     session: McpSession,
   ) => Promise<McpToolResult>;
 };

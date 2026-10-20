@@ -3,6 +3,10 @@
     "posthog": {
       "type": "http",
       "url": "https://mcp.posthog.com/mcp"
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?read_only=true&features=database,debugging,docs,account"
     }
   }
 }

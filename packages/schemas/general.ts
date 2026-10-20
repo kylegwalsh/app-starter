@@ -7,7 +7,7 @@ export const generalSchema = {
   booleanString: z.enum(['true', 'false']),
   /** Schema for a phone number */
   phoneNumber: ({ optional = false }: { optional?: boolean } = {}) =>
-    z.string({ required_error: 'Please enter a phone number' }).refine((val) => {
+    z.string({ error: 'Please enter a phone number' }).refine((val) => {
       // If it's optional, just return true
       if (!val && optional) {
         return true;
@@ -35,24 +35,18 @@ export const generalSchema = {
   domain: z
     .string()
     .regex(/^(?!:\/\/)([a-zA-Z0-9-_]+\.)*[a-zA-Z0-9][a-zA-Z0-9-_]+\.[a-zA-Z]{2,11}?$/, {
-      message: 'Please enter a valid domain',
+      error: 'Please enter a valid domain',
     }),
   /** Schema for a URL */
   url: z.string().regex(/^(https?:\/\/)?([a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+.*)$/, {
-    message: 'Please enter a valid URL',
+    error: 'Please enter a valid URL',
   }),
   /** An address object (required fields) */
   address: z.object({
-    street: z
-      .string({ required_error: 'Please enter your address' })
-      .min(1, 'Please enter your address'),
-    city: z.string({ required_error: 'Please enter your city' }).min(1, 'Please enter your city'),
-    stateCode: z
-      .string({ required_error: 'Please select your state' })
-      .min(1, 'Please select your state'),
-    zipCode: z
-      .string({ required_error: 'Please enter your zip code' })
-      .min(1, 'Please enter your zip code'),
+    street: z.string({ error: 'Please enter your address' }).min(1, 'Please enter your address'),
+    city: z.string({ error: 'Please enter your city' }).min(1, 'Please enter your city'),
+    stateCode: z.string({ error: 'Please select your state' }).min(1, 'Please select your state'),
+    zipCode: z.string({ error: 'Please enter your zip code' }).min(1, 'Please enter your zip code'),
     street2: z.string().optional(),
   }),
 };

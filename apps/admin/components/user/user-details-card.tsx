@@ -43,7 +43,7 @@ export const UserDetailsCard = ({ user }: { user: User }) => {
             <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
               <div>
                 <p className="text-muted-foreground">User ID</p>
-                <p className="font-mono">{user.id}</p>
+                <p className="font-mono break-all">{user.id}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Email Verified</p>

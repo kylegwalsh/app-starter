@@ -2,7 +2,6 @@
   "extends": "@repo/tsconfig/nextjs.json",
   "compilerOptions": {
     "paths": {
-      "@/.source": ["./.source/index.ts"],
       "@/*": ["./*"]
     },
     "strictNullChecks": true

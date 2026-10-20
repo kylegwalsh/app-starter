@@ -1,5 +1,5 @@
 import { OpenAPIReferencePlugin } from '@orpc/openapi/plugins';
-import { ZodToJsonSchemaConverter } from '@orpc/zod';
+import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4';
 import { config } from '@repo/config';
 
 /**

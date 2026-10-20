@@ -16,7 +16,7 @@
     "@repo/config": "workspace:*",
     "@repo/logs": "workspace:*",
     "@repo/utils": "workspace:*",
-    "posthog-js": "1.261.0",
+    "posthog-js": "1.438.12",
     "posthog-node": "5.8.1"
   },
   "devDependencies": {

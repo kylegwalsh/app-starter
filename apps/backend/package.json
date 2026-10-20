@@ -28,9 +28,9 @@
     "@better-auth/prisma-adapter": "1.5.4",
     "@better-auth/stripe": "1.5.4",
     "@modelcontextprotocol/sdk": "1.27.1",
-    "@orpc/openapi": "1.13.8",
-    "@orpc/server": "1.13.8",
-    "@orpc/zod": "1.13.8",
+    "@orpc/openapi": "1.15.7",
+    "@orpc/server": "1.15.7",
+    "@orpc/zod": "1.15.7",
     "@prisma/client": "6.7.0",
     "@repo/ai": "workspace:*",
     "@repo/analytics": "workspace:*",
@@ -44,7 +44,7 @@
     "nanoid": "3.3.11",
     "prisma": "6.7.0",
     "stripe": "18.4.0",
-    "zod": "3.25.49"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.15",
