@@ -42,13 +42,10 @@ execSync('bun install', { stdio: 'inherit' });
 
 // 2. Link .sst/platform
 if (!existsSync(platformSrc)) {
-  console.error(
-    `\n.sst/platform not found at: ${platformSrc}\nRun 'sst dev' or 'bun dev' in the main repo first to generate SST types.\n`,
+  console.warn(
+    `\n.sst/platform not found at: ${platformSrc}\nRun 'sst dev' or 'bun dev' in the main repo first to generate SST types.\nSkipping symlink for now — rerun 'bun setup-worktree' once it exists.\n`,
   );
-  process.exit(1);
-}
-
-if (existsSync(platformDest)) {
+} else if (existsSync(platformDest)) {
   console.log('.sst/platform already linked, skipping.');
 } else {
   if (!existsSync(sstDir)) {
