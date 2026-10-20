@@ -42,7 +42,6 @@
 ## OTHER
 
 - Upgrade oxlint and see if it removes the warnings for react/set-state-in-effect
-- Add SST debug launch file
 - Create good "clean" command to remove node_modules
 - Once API Gateway v2 supports response streaming, add it and test that the MCP and general AI apis stream output
 - On Windows, editing a monorepo package (like config) doesn't cause the backend to hot reload
