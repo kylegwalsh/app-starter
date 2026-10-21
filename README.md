@@ -177,7 +177,6 @@ This interactive script will guide you through configuring all the services and 
 - Configures GitHub environments and secrets for CI/CD
 - Sets up documentation site
 - Sets up Slack integration for CI notifications and error alerts
-- Sets up Crisp Chat for customer support
 - Sets up AI features and Langfuse
 - Sets up Stripe for payments
 

@@ -58,11 +58,6 @@ export const config = {
       ? 'phc_LE5qHtqyJtBrzG4vRkfTY5OKmc3bBhEf7u8OEPyneCD'
       : 'phc_xKfOXqc9QAqX5E1KIepSG9EcG2FddQWvupGTvogQ0AH',
   },
-  /** The configuration for crisp (our chat system) */
-  crisp: {
-    /** The crisp chat website ID */
-    websiteId: '',
-  },
   /** The configuration for our Loops (our email system) */
   loops: {
     /** The transactional emails we support */

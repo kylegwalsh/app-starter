@@ -1111,55 +1111,6 @@ const setupSlack = async ({ githubUrl }: { githubUrl: string }) => {
   console.log('✔ Slack setup step complete.\n');
 };
 
-// ---------- CRISP CHAT HELPERS ----------
-/** Guides the user through setting up Crisp chat for their site */
-const setupCrispChat = async () => {
-  console.log('Setting up Crisp Chat...');
-
-  const configPath = path.resolve('packages/config/config.ts');
-  let configContent = fs.readFileSync(configPath, 'utf8');
-
-  // Check if Crisp is already set up
-  const websiteIdMatch = configContent.match(/crisp:\s*{[^}]*websiteId:\s*['"]([^'"]*)['"]/);
-  const websiteId = websiteIdMatch ? websiteIdMatch[1] : undefined;
-  if (websiteId && websiteId !== '') {
-    console.log('✔ Crisp Chat already configured.\n');
-    return;
-  }
-
-  // Ask if they want to set up Crisp Chat
-  const doSetup = await promptYesNo('Would you like to set up Crisp live chat support? (y/n) ');
-  if (!doSetup) {
-    console.log('Crisp Chat setup skipped.\n');
-    return;
-  }
-
-  // Guide the user through the setup steps
-  console.log('\nSign up or log in at: https://app.crisp.chat/initiate/login/');
-  console.log('1. Create a new workspace and enter your site details.');
-  console.log('2. Click "Install on website" > "HTML".');
-  console.log('3. Copy the CRISP_WEBSITE_ID value from the code snippet.\n');
-
-  // Prompt for the websiteId
-  let newWebsiteId = '';
-  while (!newWebsiteId) {
-    const input = await promptUser('Enter your CRISP_WEBSITE_ID: ');
-    newWebsiteId = input.trim();
-    if (!/^[a-zA-Z0-9-]+$/.test(newWebsiteId)) {
-      console.log('Please enter a valid CRISP_WEBSITE_ID (alphanumeric and hyphens only).');
-      newWebsiteId = '';
-    }
-  }
-
-  // Save the websiteId to config.ts
-  configContent = configContent.replace(
-    /websiteId:\s*['"][^'"]*['"]/, // match both single and double quotes
-    `websiteId: '${newWebsiteId}'`,
-  );
-  fs.writeFileSync(configPath, configContent);
-  console.log('✔ Crisp Chat websiteId saved to config.\n');
-};
-
 // ---------- DOCS SITE HELPER ----------
 /** Sets up the docs site if the user wants it */
 const setupDocsSite = async ({ domain }: { domain?: string }) => {
@@ -1851,9 +1802,6 @@ const init = async () => {
 
   // Setup Slack
   await setupSlack({ githubUrl: githubConfig.url });
-
-  // Setup Crisp Chat
-  await setupCrispChat();
 
   // Setup docs site
   await setupDocsSite({ domain });

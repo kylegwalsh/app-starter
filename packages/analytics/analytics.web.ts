@@ -5,13 +5,6 @@ import { posthog } from 'posthog-js';
 
 import { createAnalyticsEvents } from './events';
 
-// Type declaration for Crisp chat
-declare global {
-  const $crisp: {
-    push(command: unknown): void;
-  };
-}
-
 // Only initialize PostHog if we're on the client and PostHog is enabled
 if (typeof window !== 'undefined' && config.posthog.isEnabled && config.posthog.apiKey) {
   // Initialize our PostHog instance
@@ -32,24 +25,4 @@ if (typeof window !== 'undefined' && config.posthog.isEnabled && config.posthog.
 export const analytics = createAnalyticsEvents<'web'>({
   platformAnalytics: posthog,
   platform: 'web',
-  // We also identify the user in other platforms
-  onIdentify: ({ userId, traits }) => {
-    // Identify the user in Crisp chat
-    if (typeof $crisp !== 'undefined') {
-      $crisp.push(['set', 'session:data', ['user-id', userId]]);
-      if (traits?.email) {
-        $crisp.push(['set', 'user:email', [traits.email]]);
-      }
-      if (traits?.name) {
-        $crisp.push(['set', 'user:nickname', [traits.name]]);
-      }
-    }
-  },
-  // We need to sign the user out of other platforms
-  onSignOut: () => {
-    // Sign the user out of Crisp chat
-    if (typeof $crisp !== 'undefined') {
-      $crisp.push(['do', 'session:reset']);
-    }
-  },
 });
