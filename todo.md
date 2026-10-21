@@ -41,11 +41,11 @@
 
 ## OTHER
 
+- Don't render billing page if no stripe
 - Upgrade oxlint and see if it removes the warnings for react/set-state-in-effect
 - Create good "clean" command to remove node_modules
 - Once API Gateway v2 supports response streaming, add it and test that the MCP and general AI apis stream output
-- On Windows, editing a monorepo package (like config) doesn't cause the backend to hot reload
-- Debug why first stripe invocation causes SST proxy to die on Windows (could be related to below issue) - https://github.com/sst/sst/issues/6051
+- Debug why first stripe invocation causes SST proxy to die on Windows - https://github.com/sst/sst/issues/6051
 - Update migrations once we finish updating schema
 - When pushing final starter: Remove posthog settings from config / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
 - Add verification tool to record videos of changes
@@ -55,3 +55,4 @@
 - Disable autoplay of storybook stories when supported: https://github.com/storybookjs/storybook/discussions/25011
 - Potentially remove separate authConfig after issue is resolved - https://github.com/better-auth/better-auth/issues/3408
 - Once Storybook natively supports react-docgen-typescript on TS 7 (https://github.com/storybookjs/storybook/pull/36771), run `storybook upgrade` and remove the `registerHooks` TypeScript redirect in `apps/storybook/.storybook/main.ts` (keep `@typescript/typescript6`)
+- Once SST fixes the issue with hot reloading a monorepo package (like config) on Windows, remove the "bun dev" GODEBUG flag - https://github.com/anomalyco/sst/issues/7036

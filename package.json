@@ -8,7 +8,7 @@
   ],
   "type": "module",
   "scripts": {
-    "dev": "sst dev",
+    "dev": "cross-env GODEBUG=winsymlink=0 sst dev",
     "backend": "cd apps/backend && bun",
     "web": "cd apps/web && bun",
     "admin": "cd apps/admin && bun",
