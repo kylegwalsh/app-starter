@@ -8,9 +8,13 @@
     - Add the DNS records in your domain host
     - TBD
 
-## POSTHOG MESSAGING
+## POSTHOG SUPPORT
 
-- They are rolling out a new messaging system that will replace crisp
+- Posthog added a support feature that could replace crisp once it's further along
+  - Add identity verification so users can recover conversations via email
+  - Set up workflows (hopefully it's built in at some point) to handle emailing customers and us when replies happen
+    - We wouldn't want to email if the customer already saw the reply (maybe delay and add a condition)
+  - Update onboarding script to use Posthog support
 
 ## USER INVITES
 
@@ -41,14 +45,13 @@
 
 ## OTHER
 
-- Don't render billing page if no stripe
-- Upgrade oxlint and see if it removes the warnings for react/set-state-in-effect
-- Create good "clean" command to remove node_modules
-- Once API Gateway v2 supports response streaming, add it and test that the MCP and general AI apis stream output
 - Debug why first stripe invocation causes SST proxy to die on Windows - https://github.com/sst/sst/issues/6051
+- Create good "clean" command to remove node_modules
+- Add verification tool to record videos of changes
+- Upgrade oxlint and see if it removes the warnings for react/set-state-in-effect
+- Once API Gateway v2 supports response streaming, add it and test that the MCP and general AI apis stream output
 - Update migrations once we finish updating schema
 - When pushing final starter: Remove posthog settings from config / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
-- Add verification tool to record videos of changes
 
 ## MINOR IMPROVEMENTS
 
