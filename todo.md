@@ -45,7 +45,6 @@
 
 ## OTHER
 
-- Debug why first stripe invocation causes SST proxy to die on Windows - https://github.com/sst/sst/issues/6051
 - Create good "clean" command to remove node_modules
 - Add verification tool to record videos of changes
 - Upgrade oxlint and see if it removes the warnings for react/set-state-in-effect
