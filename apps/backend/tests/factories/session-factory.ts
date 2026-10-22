@@ -7,10 +7,10 @@ import { auth } from '@/core';
 import { organizationFactory } from './organization-factory';
 import { userFactory } from './user-factory';
 
-/** Exports a factory for creating a test-based oRPC router client */
-export const routerFactory = {
-  /** Creates a test-based router client with a user and organization */
-  createRouter: async ({
+/** Exports a factory for creating authenticated test sessions */
+export const sessionFactory = {
+  /** Creates a user and organization, signs them in, and returns an API client acting as them */
+  createSession: async ({
     user: userFields,
     organization: organizationFields,
   }: {
@@ -40,10 +40,13 @@ export const routerFactory = {
     const headers = new Headers();
     headers.set('cookie', 'better-auth.session_token=test-session');
 
-    const client = createRouterClient(router, {
+    const api = createRouterClient(router, {
       context: { headers },
     });
 
-    return { user, organization, router: client };
+    return { user, organization, api };
   },
 };
+
+/** A signed-in test session (user + org + api client) */
+export type TestSession = Awaited<ReturnType<typeof sessionFactory.createSession>>;

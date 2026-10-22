@@ -1,5 +1,5 @@
 import { env } from './env';
-import { adminUrl, apiUrl, appUrl } from './urls';
+import { adminUrl, apiUrl, appUrl, marketingUrl } from './urls';
 
 // ---------- HELPERS ----------
 /** Determine which stage (environment the app is running in) */
@@ -36,18 +36,25 @@ export const config = {
   app: {
     /** The name of the project */
     name: 'My App',
-    /** The url of the project (found differently for frontend and backend) */
+    /** The url of the project */
     url: appUrl,
+    /** The inbox that receives contact form submissions (and is shown to users as a fallback) */
+    supportEmail: '',
   },
   /** Details for our backend API */
   api: {
-    /** The URL of our own API (found differently for frontend and backend) */
+    /** The URL of our own API */
     url: apiUrl,
   },
   /** Details for our admin dashboard */
   admin: {
     /** The URL of the admin dashboard */
     url: adminUrl,
+  },
+  /** Details for our marketing site */
+  marketing: {
+    /** The URL of the marketing site */
+    url: marketingUrl,
   },
   /** The configuration for PostHog (our analytics system) */
   posthog: {
@@ -69,6 +76,8 @@ export const config = {
     transactional: {
       /** The transactional email for reset password */
       resetPassword: 'cmddvjz0v1hmexb0inad4bz0h',
+      /** The transactional email sent to our support inbox for contact form submissions */
+      contactFormSubmission: '',
     },
   },
   /** The configuration for Stripe (our payment system) */

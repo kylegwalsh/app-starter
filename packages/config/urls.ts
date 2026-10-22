@@ -66,5 +66,21 @@ export const appUrl = resolveWebAppUrl({
 /** The URL of our admin dashboard */
 export const adminUrl = resolveWebAppUrl({ resource: 'admin', localUrl: 'http://localhost:3001' });
 
+/**
+ * Resolve the marketing site URL. The site is optional, so its resource only exists (and is
+ * linked to the backend) when `infra/marketing.ts` is enabled. Only the backend needs this.
+ */
+const resolveMarketingUrl = () => {
+  try {
+    // The resource is missing from the generated SST types if not enabled in `sst.config.ts`
+    return (resources as typeof resources & { marketing?: { url: string } }).marketing?.url;
+  } catch {
+    return;
+  }
+};
+
 /** The URL of our API */
 export const apiUrl = resolveApiUrl();
+
+/** The URL of our marketing site */
+export const marketingUrl = resolveMarketingUrl();
