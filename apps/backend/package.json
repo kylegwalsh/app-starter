@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "sst shell -- vitest run",
-    "test:ui": "sst shell -- vitest --ui",
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
     "auth:generate": "sst shell -- bunx @better-auth/cli generate --config ./core/auth.ts --output ./db/schema.prisma",
     "db:start": "bun db:get-url \"prisma db push && prisma studio --browser none\"",
     "db:push": "bun db:get-url \"prisma db push\"",
