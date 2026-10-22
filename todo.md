@@ -31,10 +31,6 @@
 - Create slack app
 - Build chat UI for web-app
 
-## Marketing site
-
-- Consider adding marketing site to repo
-
 ## PRISMA V7
 
 - Wait a bit for it to stabilize, then move to Prisma v7 for large speed up

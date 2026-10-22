@@ -53,7 +53,8 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Backend:** Serverless backend managed with SST, deployed to AWS. Hono as the HTTP layer, oRPC for typed API endpoints.
 - **Web Frontend:** Next.js for fast, modern web applications.
 - **Admin Panel:** Internal admin dashboard for managing users and organizations, powered by Better Auth's admin plugin.
-- **Documentation:** [Fumadocs](https://fumadocs.org/) for building a documentation site (optional, see below).
+- **Marketing Site:** A static Next.js marketing site (optional).
+- **Documentation:** [Fumadocs](https://fumadocs.org/) for building a documentation site (optional).
 - **Continuous Integration:** Automated testing and deployment via GitHub Actions.
 - **Alerts:** Slack integration for real-time notifications and alerts.
 - **Logging:** Shared logging package (Pino) with pretty local output, and production integration with Posthog and CloudWatch.
@@ -94,6 +95,7 @@ _All packages and apps are written in TypeScript for consistency and type safety
 │   ├── web/           # Next.js frontend app
 │   ├── admin/         # Admin panel (Next.js App Router, Better Auth admin)
 │   ├── backend/       # Serverless backend (SST)
+│   ├── marketing/     # (Optional) Marketing site shell, static Next.js export (deployment disabled by default)
 │   ├── storybook/     # Storybook documentation and testing for components
 │   └── docs/          # (Optional) Fumadocs-powered documentation app (deployment disabled by default)
 ├── packages/          # Shared packages and utilities
@@ -107,6 +109,7 @@ _All packages and apps are written in TypeScript for consistency and type safety
 │   ├── api.ts         # Backend API infrastructure
 │   ├── web.ts         # Web-app deployment infrastructure
 │   ├── secrets.ts     # Backend environment secrets
+│   ├── marketing.ts   # (Optional) Marketing site deployment infrastructure
 │   ├── docs.ts        # (Optional) Documentation site deployment infrastructure
 │   ├── ping-db.ts     # Simple function to keep free database awake
 │   ├── utils.ts       # Shared utils (domain helpers, etc.)
@@ -175,6 +178,7 @@ This interactive script will guide you through configuring all the services and 
 - Configures Loops for email (e.g., password reset, onboarding, user campaigns)
 - Optionally sets up PostHog for analytics, logging, and error tracking
 - Configures GitHub environments and secrets for CI/CD
+- Sets up marketing site
 - Sets up documentation site
 - Sets up Slack integration for CI notifications and error alerts
 - Sets up Crisp Chat for customer support

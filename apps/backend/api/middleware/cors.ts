@@ -4,7 +4,7 @@ import { cors } from 'hono/cors';
 
 /** CORS middleware — allows requests from our frontend apps */
 export const corsMiddleware = cors({
-  origin: [config.app.url, config.admin.url].filter(Boolean) as string[],
+  origin: [config.app.url, config.admin.url, config.marketing.url].filter(Boolean) as string[],
   credentials: true,
   allowHeaders: [...CORS_ALLOW_HEADERS],
   exposeHeaders: [...CORS_EXPOSE_HEADERS],

@@ -1,0 +1,16 @@
+{
+  "extends": "@repo/tsconfig/nextjs.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "strictNullChecks": true
+  },
+  "references": [
+    {
+      "path": "../backend"
+    }
+  ],
+  "include": ["**/*", "../../global.d.ts", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", "dist", "out"]
+}

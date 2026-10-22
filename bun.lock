@@ -71,6 +71,7 @@
         "@repo/constants": "workspace:*",
         "@repo/email": "workspace:*",
         "@repo/logs": "workspace:*",
+        "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
         "better-auth": "1.5.4",
         "hono": "4.8.4",
@@ -105,6 +106,33 @@
         "@types/react": "19.3.0",
         "@types/react-dom": "19.3.0",
         "postcss": "8.5.4",
+        "tailwindcss": "4.3.3",
+        "typescript": "7.0.2",
+      },
+    },
+    "apps/marketing": {
+      "name": "@repo/marketing",
+      "version": "0.0.1",
+      "dependencies": {
+        "@hookform/resolvers": "5.9.2",
+        "@orpc/client": "1.15.7",
+        "@repo/config": "workspace:*",
+        "@repo/design": "workspace:*",
+        "@repo/schemas": "workspace:*",
+        "@repo/seo": "workspace:*",
+        "lucide-react": "0.475.0",
+        "next": "16.4.2",
+        "react": "19.3.1",
+        "react-dom": "19.3.1",
+        "react-hook-form": "7.56.4",
+        "zod": "4.6.7",
+      },
+      "devDependencies": {
+        "@repo/backend": "workspace:*",
+        "@repo/tsconfig": "workspace:*",
+        "@types/node": "24.10.1",
+        "@types/react": "19.3.0",
+        "@types/react-dom": "19.3.0",
         "tailwindcss": "4.3.3",
         "typescript": "7.0.2",
       },
@@ -1265,6 +1293,8 @@
     "@repo/flags": ["@repo/flags@workspace:packages/flags"],
 
     "@repo/logs": ["@repo/logs@workspace:packages/logs"],
+
+    "@repo/marketing": ["@repo/marketing@workspace:apps/marketing"],
 
     "@repo/schemas": ["@repo/schemas@workspace:packages/schemas"],
 

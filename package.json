@@ -13,6 +13,7 @@
     "web": "cd apps/web && bun",
     "admin": "cd apps/admin && bun",
     "docs": "cd apps/docs && bun",
+    "marketing": "cd apps/marketing && bun",
     "storybook": "cd apps/storybook && bun",
     "design": "cd packages/design && bun",
     "build": "sst build",
