@@ -31,6 +31,16 @@
     "no-constant-binary-expression": "error",
     "no-useless-rename": "error",
     "no-useless-call": "error",
+    // enforces camelCase/PascalCase names, or SCREAMING_SNAKE_CASE constants
+    "id-match": [
+      "warn",
+      "^(_{0,2}[a-zA-Z$][a-zA-Z0-9$]*|[A-Z][A-Z0-9]*(_[A-Z0-9]+)*|_)$",
+      {
+        "properties": false,
+        "onlyDeclarations": true,
+        "ignoreDestructuring": true
+      }
+    ],
 
     // --- Oxlint rules ---
     "approx-constant": "warn",

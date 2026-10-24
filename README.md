@@ -61,7 +61,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **AI Tracing & Evaluation:** Integrated with Langfuse for tracing, monitoring, and evaluating AI generations.
 - **MCP Server:** Built-in [Model Context Protocol](https://modelcontextprotocol.io/) server with OAuth authentication, allowing AI assistants (Claude, Cursor, etc.) to interact with your app's backend tools.
 - **AI-Assisted Development:** Pre-configured with Cursor rules for AI-powered workflows.
-- **Email:** Transactional and marketing/engagement email system powered by Loops (for password resets, onboarding, and user communications).
+- **Email:** Transactional emails (password resets, organization invitations, contact form messages) sent through PostHog, with templates kept in code and uploaded by `bun run init`.
 
 ---
 
@@ -78,10 +78,9 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Oxfmt/Oxlint:** Fast, zero-config code formatter and linter (Rust-based) for consistent code quality.
 - **GitHub Actions:** CI/CD pipelines for automated testing and deployment.
 - **Slack:** Integration for deployment and error alerts.
-- **Posthog:** Analytics, logging, and error tracking.
+- **PostHog:** Analytics, logging, error tracking, and transactional emails.
 - **Stripe:** Payment processing platform for subscriptions and one-time payments.
 - **Langfuse:** Open-source platform for AI tracing, monitoring, and evaluation.
-- **Loops:** Email platform for transactional (e.g., password reset) and user engagement emails.
 
 _All packages and apps are written in TypeScript for consistency and type safety._
 
@@ -175,8 +174,7 @@ This interactive script will guide you through configuring all the services and 
 - Initializes AWS credentials and profile for deployment
 - Guides you through setting up Supabase projects (production and development)
 - Configures Better Auth for authentication
-- Configures Loops for email (e.g., password reset, onboarding, user campaigns)
-- Optionally sets up PostHog for analytics, logging, and error tracking
+- Optionally sets up PostHog for analytics, logging, error tracking, and emails (strongly recommended for customer-facing apps)
 - Configures GitHub environments and secrets for CI/CD
 - Sets up marketing site
 - Sets up documentation site

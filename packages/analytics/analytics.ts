@@ -10,8 +10,8 @@ let posthog: PostHog | undefined;
 try {
   // We only enable posthog if we have an api key
   posthog =
-    config.posthog.isEnabled && config.posthog.apiKey
-      ? new PostHog(config.posthog.apiKey, {
+    config.posthog.analytics.isEnabled && config.posthog.analytics.apiKey
+      ? new PostHog(config.posthog.analytics.apiKey, {
           // We run in a serverless environment, so we need to flush immediately
           flushAt: 1,
           flushInterval: 0,

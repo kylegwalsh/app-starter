@@ -123,7 +123,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
   const safeInvoke = async (func: () => Promise<void> | void) => {
     try {
       // Only send analytics events if posthog is enabled
-      if (config.posthog.isEnabled && config.posthog.apiKey) {
+      if (config.posthog.analytics.isEnabled && config.posthog.analytics.apiKey) {
         await func();
       }
     } catch (error) {

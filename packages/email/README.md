@@ -1,6 +1,6 @@
 # @repo/email
 
-Email helpers (Loops) for transactional emails.
+Transactional emails (password resets, invitations, and contact form messages), sent through PostHog.
 
 ## Table of Contents
 
@@ -9,19 +9,33 @@ Email helpers (Loops) for transactional emails.
 
 - [Overview](#overview)
 - [Structure](#structure)
+- [Setup](#setup)
 - [Usage](#usage)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Overview
 
-- Templates live in Loops and messages are triggered from application code
-- Optionally configure Loops flows in the Loops UI based on analytics events (via PostHog), e.g., sign-up/onboarding campaigns
-- Simple functions to send password resets and other notifications
+- Emails are PostHog email templates, sent through PostHog's transactional email API
+- `config.posthog.email.templates` maps each email the app sends to its PostHog template ID
+- `templates/` holds starter designs that `bun run init` (and `bun run init:email`) uploads, so new projects have working emails on day one (after that, edit them in PostHog)
+- To add an email, build it in PostHog, add its ID to config, and add a send helper
 
 ## Structure
 
-- `email.ts`: Helper functions (e.g., `sendResetPasswordEmail`)
+- `email.ts`: Send helpers (`sendResetPasswordEmail`, `sendInvitationEmail`, etc)
+- `posthog.ts`: The PostHog API client emails are sent through
+- `templates/`: The starter templates `bun run init` uploads
+
+## Setup
+
+`bun run init` sets emails up, and `bun run init:email` re-runs it (e.g. once you have a domain). For each PostHog project (dev and prod) it:
+
+1. Finds the project's email sender, or walks you through adding one in PostHog
+2. Uploads the starter templates and saves their IDs to config
+3. Creates a project secret key that can only send emails
+
+Emails only send once the sender's domain is verified in PostHog (Workflows → Channels). New projects can send 50 emails an hour and 100 a day at first.
 
 ## Usage
 
@@ -31,9 +45,10 @@ import { email } from '@repo/email';
 await email.sendResetPasswordEmail({
   email: 'a@b.com',
   resetLink: 'https://app/reset?token=...',
+  userId: user.id,
 });
 ```
 
 Notes:
 
-- Automated campaigns can be orchestrated in Loops using PostHog-driven events (e.g., `User Signed Up`). Ensure relevant events are emitted from the app (see `@repo/analytics`).
+- Automated campaigns (like onboarding emails) live entirely in PostHog Workflows, triggered by analytics events such as `User Signed Up` (see `@repo/analytics`), so they need no code here.
