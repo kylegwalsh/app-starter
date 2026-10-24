@@ -52,7 +52,7 @@
   "prisma.pinToPrisma6": true,
   // Tailwind settings
   "tailwindCSS.experimental.configFile": "packages/design/styles/globals.css",
-  // Open CSS files in Tailwind's language mode, so its @-rules aren't flagged
+  "tailwindCSS.lint.suggestCanonicalClasses": "ignore",
   "files.associations": {
     "*.css": "tailwindcss"
   },

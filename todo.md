@@ -8,14 +8,6 @@
     - We wouldn't want to email if the customer already saw the reply (maybe delay and add a condition)
   - Update onboarding script to use Posthog support
 
-## USER INVITES
-
-- Ensure starter supports sending invites
-  - Add new routes / logic
-  - Ensure creating an account works for the redirect to accept-invite
-  - Accepting the invite doesn't automatically load the new organization on the home page
-  - Have to allow no organization and have a signup for a demo or something
-
 # CHAT SDK
 
 - Consider moving to REST API for increased timeouts + streaming support (urls are uglier)
@@ -46,6 +38,5 @@
 ## MINOR IMPROVEMENTS
 
 - Disable autoplay of storybook stories when supported: https://github.com/storybookjs/storybook/discussions/25011
-- Potentially remove separate authConfig after issue is resolved - https://github.com/better-auth/better-auth/issues/3408
 - Once Storybook natively supports react-docgen-typescript on TS 7 (https://github.com/storybookjs/storybook/pull/36771), run `storybook upgrade` and remove the `registerHooks` TypeScript redirect in `apps/storybook/.storybook/main.ts` (keep `@typescript/typescript6`)
 - Once SST fixes the issue with hot reloading a monorepo package (like config) on Windows, remove the "bun dev" GODEBUG flag - https://github.com/anomalyco/sst/issues/7036

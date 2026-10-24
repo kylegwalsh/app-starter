@@ -26,7 +26,7 @@ tests/e2e/    Playwright end-to-end tests
 - **Typography**: 4–5 font sizes/weights max. `text-xs` for captions. Avoid `text-xl` unless hero/major headings.
 - **Color**: 1 neutral base (e.g., `zinc`) + up to 2 accents.
 - **Spacing**: Multiples of 4 for padding/margins. Fixed height containers with internal scrolling for long content.
-- **Loading states**: Skeleton placeholders or `animate-pulse` during fetches.
+- **Loading states**: Skeleton placeholders or `animate-pulse` during fetches. Use `Button`'s built-in `loading` prop (spinner + disabled) instead of ternaries on button text.
 - **Interactivity**: Hover transitions (`hover:bg-*`, `hover:shadow-md`) for clickable elements.
 - **Accessibility**: Semantic HTML, ARIA roles. Prefer Radix/shadcn components (accessibility built in).
 

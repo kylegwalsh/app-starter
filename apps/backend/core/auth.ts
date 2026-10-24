@@ -5,6 +5,8 @@ import { analytics } from '@repo/analytics';
 import { config, env } from '@repo/config';
 import { email } from '@repo/email';
 import { type BetterAuthOptions, betterAuth } from 'better-auth';
+import { createAuthMiddleware, getSessionFromCtx, isAPIError } from 'better-auth/api';
+import { setSessionCookie } from 'better-auth/cookies';
 import { admin as adminPlugin, jwt, organization as organizationPlugin } from 'better-auth/plugins';
 
 import { db } from '@/db';
@@ -56,7 +58,17 @@ const getOrCreatePersonalOrganization = async ({ userId }: { userId: string }) =
   return personalOrg;
 };
 
-/** Get the active organization for a user, attempt to use the  */
+/**
+ * Organization routes that change which organizations a user belongs to. Better Auth updates the
+ * session row for these but not the cached session cookie, so we re-sync it afterwards.
+ */
+const MEMBERSHIP_CHANGE_PATHS = new Set([
+  '/organization/accept-invitation',
+  '/organization/delete',
+  '/organization/leave',
+]);
+
+/** Get the active organization for a user */
 const getActiveOrganization = async ({
   userId,
   defaultOrganizationId,
@@ -105,13 +117,51 @@ const getActiveOrganization = async ({
       });
     }
   }
-  // If we STILL don't have an active organization, then we'll err
-  if (!activeOrganization) {
-    throw new Error('No organizations found for user');
-  }
-
   return activeOrganization;
 };
+
+/**
+ * After membership changes, make sure the session points at an organization the user belongs to and
+ * refresh the session cookie, so the frontend sees the change now instead of when the cookie cache expires.
+ */
+const syncActiveOrganization = createAuthMiddleware(async (ctx) => {
+  // Only run this if it's one of the paths that triggers membership change
+  if (!MEMBERSHIP_CHANGE_PATHS.has(ctx.path) || isAPIError(ctx.context.returned)) {
+    return;
+  }
+
+  // The session in the request context is stale, so re-read it from the database
+  const requestSession = await getSessionFromCtx(ctx);
+  if (!requestSession) {
+    return;
+  }
+  const { token } = requestSession.session;
+  const current = await ctx.context.internalAdapter.findSession(token);
+  if (!current) {
+    return;
+  }
+
+  // Leaving or deleting the active organization clears it, so fall back to another one
+  let { session } = current;
+  if (!session.activeOrganizationId) {
+    const user = await db.user.findUnique({
+      where: { id: current.user.id },
+      select: { defaultOrganizationId: true },
+    });
+    const activeOrganization = await getActiveOrganization({
+      userId: current.user.id,
+      defaultOrganizationId: user?.defaultOrganizationId,
+    });
+    if (activeOrganization) {
+      session =
+        (await ctx.context.internalAdapter.updateSession(token, {
+          activeOrganizationId: activeOrganization.id,
+        })) ?? session;
+    }
+  }
+
+  await setSessionCookie(ctx, { session, user: current.user });
+});
 
 // ---------- CONFIG ----------
 /** The config for our Better Auth instance (defined separately to avoid TypeScript issues) */
@@ -197,8 +247,8 @@ const authConfig = {
             return {
               data: {
                 ...session,
-                // Add the active organization to the session
-                activeOrganizationId: activeOrganization.id,
+                // Add the active organization to the session (if they have one)
+                activeOrganizationId: activeOrganization?.id,
               },
             };
           }
@@ -227,6 +277,10 @@ const authConfig = {
         },
       },
     },
+  },
+  // Keep the session cookie in sync with organization membership changes
+  hooks: {
+    after: syncActiveOrganization,
   },
   // Enable email and password authentication
   emailAndPassword: {
@@ -295,6 +349,16 @@ const authConfig = {
           },
         },
       },
+      // Enable organization invite emails
+      sendInvitationEmail: config.posthog.email.templates.inviteToOrganization
+        ? async ({ email: recipient, organization, invitation }) => {
+            await email.sendInvitationEmail({
+              email: recipient,
+              organizationName: organization.name,
+              invitationId: invitation.id,
+            });
+          }
+        : undefined,
       // Whenever we create a new organization, we'll track it
       organizationHooks: {
         afterCreateOrganization: async ({ organization, user }) => {

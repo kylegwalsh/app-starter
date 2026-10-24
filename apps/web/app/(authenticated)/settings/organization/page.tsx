@@ -13,12 +13,18 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { DashboardLayout } from '@/components';
+import { auth } from '@/core';
 import { useUser } from '@/hooks';
 
 /** The organization settings page */
 export default function OrganizationSettingsPage() {
   const { isLoading, organization } = useUser();
+  const { data: sessionData } = auth.useSession();
   const router = useRouter();
+
+  // After leaving or deleting an organization, the session switches before the cached organization
+  // catches up. Wait for them to match so the cards don't query/error for the old one.
+  const isSwitchingOrganization = organization?.id !== sessionData?.session.activeOrganizationId;
 
   // If the user is not logged into an organization, redirect to the main settings page
   useEffect(() => {
@@ -28,7 +34,7 @@ export default function OrganizationSettingsPage() {
   }, [isLoading, organization, router]);
 
   // Show loading or nothing while redirecting
-  if (isLoading || organization?.isPersonal) {
+  if (isLoading || isSwitchingOrganization || organization?.isPersonal) {
     return <LoadingLayout />;
   }
 

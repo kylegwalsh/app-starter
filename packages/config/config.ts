@@ -38,7 +38,7 @@ export const config = {
     name: 'My App',
     /** The url of the project */
     url: appUrl,
-    /** The inbox that receives contact form submissions (and is shown to users as a fallback) */
+    /** The inbox that receives contact form submissions */
     supportEmail: '',
   },
   /** Details for our backend API */

@@ -1,6 +1,9 @@
 import { AuthView } from '@daveyplate/better-auth-ui';
 import { authViewPaths } from '@daveyplate/better-auth-ui/server';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
+
+import { AuthPageView } from '@/components';
 
 export const dynamicParams = false;
 
@@ -17,7 +20,10 @@ export default async function AuthPage({ params }: { params: Promise<{ path: str
   }
   return (
     <main className="container flex grow flex-col items-center justify-center gap-3 self-center p-0">
-      <AuthView pathname={path} />
+      {/* Reading search params requires a suspense boundary (the plain view renders statically meanwhile) */}
+      <Suspense fallback={<AuthView pathname={path} />}>
+        <AuthPageView path={path} />
+      </Suspense>
     </main>
   );
 }
