@@ -23,9 +23,9 @@
 - Create slack app
 - Build chat UI for web-app
 
-## PRISMA V7
+## PRISMA V8
 
-- Wait a bit for it to stabilize, then move to Prisma v7 for large speed up
+- Wait a bit for it to stabilize, then move to Prisma V8 for large speed up
 - Drop custom lambda layer stuff
 - See if we should store generated types in client and remove generate step in postinstall + ci if possible
 - See if they changed the way migrations are handled
@@ -33,12 +33,11 @@
 
 ## OTHER
 
-- Create good "clean" command to remove node_modules
+- Update migrations once we finish updating schema (chat feature)
 - Add verification tool to record videos of changes
 - Upgrade oxlint and see if it removes the warnings for react/set-state-in-effect
 - Once API Gateway v2 supports response streaming, add it and test that the MCP and general AI apis stream output
 - Once Posthog adds transactional email to their SDK, replace the api call in the email package
-- Update migrations once we finish updating schema
 - When pushing final starter: Remove posthog settings from config / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
 
 ## MINOR IMPROVEMENTS
