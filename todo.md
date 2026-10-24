@@ -1,13 +1,5 @@
 # TODO
 
-## POSTHOG WORKFLOWS
-
-- Deprecate Loops in favor of PostHog workflows once it's further along
-  - Update onboarding script
-    - Go to posthog workflows > click "New channel" > add a domain like account@mail.DOMAIN.com
-    - Add the DNS records in your domain host
-    - TBD
-
 ## POSTHOG SUPPORT
 
 - Posthog added a support feature that could replace crisp once it's further along
