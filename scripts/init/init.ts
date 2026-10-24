@@ -5,9 +5,14 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, type AxiosInstance } from 'axios';
 
+import {
+  type EmailTemplateDefinition,
+  initialEmailTemplates,
+} from '../../packages/email/templates/index.js';
 import { promptSelect, promptUser, promptYesNo } from '../utils/input.js';
+import { log } from '../utils/log.js';
 
 // ---------- CLI HELPERS ----------
 /** The CLIs we require to run the initialization script */
@@ -39,7 +44,7 @@ const checkGhAuth = () => {
   try {
     execSync('gh auth status');
   } catch {
-    console.log("❌ GitHub CLI is not authenticated. Please run 'gh auth login' and try again.\n");
+    log.error("GitHub CLI is not authenticated. Please run 'gh auth login' and try again.\n");
     process.exit(1);
   }
 };
@@ -49,16 +54,14 @@ const installSstProviders = () => {
   try {
     execSync('bun sst install', { stdio: 'inherit' });
   } catch {
-    console.log(
-      "❌ Failed to install SST providers. Please run 'bun sst install' and try again.\n",
-    );
+    log.error("Failed to install SST providers. Please run 'bun sst install' and try again.\n");
     process.exit(1);
   }
 };
 
 /** Check if required CLIs are installed */
 export const checkCLIs = () => {
-  console.log('Checking CLI tools...');
+  log.step('Checking CLI tools...');
 
   // Check to ensure the user has all the CLI tools installed
   const missing: { name: string; url: string }[] = [];
@@ -83,7 +86,7 @@ export const checkCLIs = () => {
 
   installSstProviders();
 
-  console.log('✔ All CLI tools are installed\n');
+  log.success('All CLI tools are installed\n');
 };
 
 // ---------- GIT HELPERS ----------
@@ -139,20 +142,20 @@ const configureGithubUrl = async () => {
         // Check whether it's a valid repo
         execSync(`git ls-remote ${newUrl}`);
 
-        console.log('✔ Updated repo\n');
+        log.success('Updated repo\n');
         urlToUse = newUrl;
       } else {
         if (!currentUrl) {
-          console.log('❌ No GitHub URL available. Please provide a GitHub repo URL.\n');
+          log.error('No GitHub URL available. Please provide a GitHub repo URL.\n');
           continue;
         }
-        console.log('✔ Using current repo\n');
+        log.success('Using current repo\n');
         urlToUse = currentUrl;
       }
 
       // Validate that we can parse the repo from the URL
       if (!urlToUse) {
-        console.log('❌ Unable to configure GitHub URL. Please try again.\n');
+        log.error('Unable to configure GitHub URL. Please try again.\n');
         continue;
       }
 
@@ -160,16 +163,14 @@ const configureGithubUrl = async () => {
       const match = urlToUse.match(/[:/]([^/]+\/[^/.]+)(?:\.git)?$/);
       const repo = match ? match[1] : '';
       if (!repo) {
-        console.log(
-          '❌ Unable to parse GitHub repo from remote URL. Please verify the URL format.\n',
-        );
+        log.error('Unable to parse GitHub repo from remote URL. Please verify the URL format.\n');
         continue;
       }
 
       return { url: urlToUse, repo };
     } catch {
-      console.log(
-        '❌ Unable to connect to the provided GitHub URL. Please verify the URL and try again.\n',
+      log.error(
+        'Unable to connect to the provided GitHub URL. Please verify the URL and try again.\n',
       );
     }
   }
@@ -185,13 +186,13 @@ const setupGithub = async ({
   dbConfig: Awaited<ReturnType<typeof setupSupabase>>;
   posthogConfig: Awaited<ReturnType<typeof setupPosthog>>;
 }) => {
-  console.log('Setting up GitHub...');
+  log.step('Setting up GitHub...');
 
   // Configure the GitHub URL and extract the repo path
   const githubConfig = await configureGithubUrl();
   const { repo } = githubConfig;
 
-  console.log('Setting up GitHub environments and secrets...');
+  log.step('Setting up GitHub environments and secrets...');
 
   // Create environments (idempotent)
   execSync(
@@ -224,15 +225,54 @@ const setupGithub = async ({
     execSync(`gh variable set POSTHOG_CLI_ENV_ID -b "${posthogConfig.prodProjectId}" -e prod`);
   }
 
-  console.log('✔ GitHub environments and secrets have been set up.\n');
+  log.success('GitHub environments and secrets have been set up.\n');
 
   return githubConfig;
 };
 
 // ---------- PROJECT DETAIL HELPERS ----------
+/** Matches a `key: isProd ? 'prod value' : 'dev value'` pair in the config file */
+const configPairRegex = (key: string) =>
+  new RegExp(String.raw`${key}:\s*isProd\s*\?\s*['"]([^'"]*)['"]\s*:\s*['"]([^'"]*)['"]`);
+
+/** Reads a `key: isProd ? 'prod' : 'dev'` pair from the config file */
+const readConfigPair = (content: string, key: string) => {
+  const match = content.match(configPairRegex(key));
+  return { prod: match?.[1] ?? '', dev: match?.[2] ?? '' };
+};
+
+/** Writes one or both values of a `key: isProd ? 'prod' : 'dev'` pair in the config file */
+const writeConfigPair = (
+  content: string,
+  key: string,
+  values: Partial<ReturnType<typeof readConfigPair>>,
+) => {
+  const pair = { ...readConfigPair(content, key), ...values };
+  return content.replace(configPairRegex(key), `${key}: isProd ? '${pair.prod}' : '${pair.dev}'`);
+};
+
+/** Uncomments lines in files to enable features */
+const uncommentLines = (targets: { filePath: string; line: RegExp }[]) => {
+  const contents = new Map<string, string>();
+  for (const { filePath, line } of targets) {
+    const content = contents.get(filePath) ?? fs.readFileSync(filePath, 'utf8');
+    // Only match whitespace within the line, so surrounding blank lines and line endings are kept
+    const regex = new RegExp(String.raw`^([ \t]*)//[ \t]*(${line.source})(?=[ \t]*\r?$)`, 'm');
+    if (!regex.test(content)) {
+      return false;
+    }
+    contents.set(filePath, content.replace(regex, '$1$2'));
+  }
+
+  for (const [filePath, content] of contents) {
+    fs.writeFileSync(filePath, content);
+  }
+  return true;
+};
+
 /** Prompt for and update the project name if still default */
 const getProjectName = async () => {
-  console.log('Checking for the project name...');
+  log.step('Checking for the project name...');
   // Check for the app name in the config file
   const configPath = path.resolve('packages/config/config.ts');
   let configContent = fs.readFileSync(configPath, 'utf8');
@@ -279,16 +319,16 @@ const getProjectName = async () => {
     fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, undefined, 2)}\n`);
     appName = newName;
 
-    console.log(`✔ Project name updated to: ${newName}\n`);
+    log.success(`Project name updated to: ${newName}\n`);
   } else {
-    console.log(`✔ Project name already configured: ${appName}\n`);
+    log.success(`Project name already configured: ${appName}\n`);
   }
   return appName;
 };
 
 /** Prompt for and update the website domain if still default */
 export const getDomain = async () => {
-  console.log('Checking for the website domain...');
+  log.step('Checking for the website domain...');
   const utilsPath = path.resolve('infra/utils.ts');
   let utilsContent = fs.readFileSync(utilsPath, 'utf8');
 
@@ -298,7 +338,7 @@ export const getDomain = async () => {
 
   // If we don't find a match, we are missing something important in the utils file
   if (!match) {
-    console.log('❌ Could not find the baseDomain assignment in infra/utils.ts.');
+    log.error('Could not find the baseDomain assignment in infra/utils.ts.');
     process.exit(1);
   }
 
@@ -307,7 +347,7 @@ export const getDomain = async () => {
 
   // If baseDomain is set, we'll use that
   if (currentValue) {
-    console.log(`✔ Web domain already configured: ${currentValue}\n`);
+    log.success(`Web domain already configured: ${currentValue}\n`);
     return currentValue;
   }
   // If we don't find a value, we'll prompt the user for a custom domain
@@ -327,8 +367,8 @@ export const getDomain = async () => {
     const trimmed = input.trim().toLowerCase();
     // Validate: must be a valid domain, no protocol, no subdomain, no trailing dot
     if (!/^[a-z0-9-]+\.[a-z]{2,}$/.test(trimmed)) {
-      console.log(
-        '\n❌ Please enter a valid domain (e.g., example.com). Do not include subdomains or protocols (e.g., https://).',
+      log.error(
+        '\nPlease enter a valid domain (e.g., example.com). Do not include subdomains or protocols (e.g., https://).',
       );
       continue;
     }
@@ -338,13 +378,13 @@ export const getDomain = async () => {
   // Replace only the empty string at the end of the baseDomain line
   utilsContent = utilsContent.replace(baseDomainRegex, `const baseDomain = '${baseDomain}'`);
   fs.writeFileSync(utilsPath, utilsContent);
-  console.log(`✔ Web base domain set to: ${baseDomain}\n`);
+  log.success(`Web base domain set to: ${baseDomain}\n`);
   return baseDomain;
 };
 
 /** Get or create the user's personal environment stage */
 export const getOrCreateStage = async () => {
-  console.log("Checking for the user's personal environment stage...");
+  log.step("Checking for the user's personal environment stage...");
 
   // Check if the user has a .sst/stage file
   const stagePath = path.resolve('.sst/stage');
@@ -360,7 +400,7 @@ export const getOrCreateStage = async () => {
 
     // If we locate the stage value, we'll use that and skip this step
     if (stage) {
-      console.log(`✔ Using existing stage '${stage}'!\n`);
+      log.success(`Using existing stage '${stage}'!\n`);
       return stage;
     }
   }
@@ -380,7 +420,7 @@ export const getOrCreateStage = async () => {
 
   // Write the final result to the .sst/stage file
   fs.writeFileSync(stagePath, `${stage}\n`);
-  console.log(`✔ Created .sst/stage with value '${stage}'!\n`);
+  log.success(`Created .sst/stage with value '${stage}'!\n`);
   return stage;
 };
 
@@ -434,7 +474,7 @@ const getAllSecrets = (stage: string) => {
 };
 
 /** Script for adding secrets to SST */
-const addEnvScript = path.resolve('apps/backend/scripts/env:add.ts');
+const addEnvScript = path.resolve('apps/backend/scripts/add-env.ts');
 /** SST secrets for dev environment */
 let devSecrets: Record<string, string> = {};
 /** SST secrets for prod environment */
@@ -457,7 +497,7 @@ export const selectOrCreateAwsProfile = async ({
 }: {
   existing?: boolean;
 } = {}) => {
-  console.log('Setting up AWS profile...');
+  log.step('Setting up AWS profile...');
 
   const homedir = os.homedir();
   const credPath = path.join(homedir, '.aws/credentials');
@@ -575,7 +615,7 @@ export const selectOrCreateAwsProfile = async ({
       const credentials = readProfileCredentials(profile);
       accessKey = credentials.accessKey;
       secretKey = credentials.secretKey;
-      console.log(`✔ Using existing AWS profile: ${profile}\n`);
+      log.success(`Using existing AWS profile: ${profile}\n`);
     }
     // If the profile from settings doesn't exist in credentials, we need to create it
     else if (!locatedProfile) {
@@ -596,7 +636,7 @@ export const selectOrCreateAwsProfile = async ({
         accessKey = config.accessKey;
         secretKey = config.secretKey;
 
-        console.log(`✔ Created new AWS profile: ${profile}\n`);
+        log.success(`Created new AWS profile: ${profile}\n`);
       }
       // If they want to use an existing profile, read the credentials from the selected profile
       else {
@@ -604,7 +644,7 @@ export const selectOrCreateAwsProfile = async ({
         const credentials = readProfileCredentials(sourceProfile);
 
         if (!(credentials.accessKey && credentials.secretKey)) {
-          console.log(`❌ Failed to read credentials from profile: ${sourceProfile}`);
+          log.error(`Failed to read credentials from profile: ${sourceProfile}`);
           process.exit(1);
         }
 
@@ -618,7 +658,7 @@ export const selectOrCreateAwsProfile = async ({
         accessKey = config.accessKey;
         secretKey = config.secretKey;
 
-        console.log(`✔ Created AWS profile "${profile}" using credentials from "${sourceProfile}"`);
+        log.success(`Created AWS profile "${profile}" using credentials from "${sourceProfile}"`);
       }
     }
   }
@@ -651,7 +691,7 @@ export const selectOrCreateAwsProfile = async ({
       accessKey = config.accessKey;
       secretKey = config.secretKey;
 
-      console.log(`✔ Created new AWS profile: ${profile}`);
+      log.success(`Created new AWS profile: ${profile}`);
     }
     // If they want to use an existing profile, just read the credentials
     else {
@@ -684,7 +724,7 @@ export const selectOrCreateAwsProfile = async ({
         `$1${profile}$2`,
       );
       fs.writeFileSync(vscodeSettingsPath, settings);
-      console.log(`✔ Updated .vscode/settings.json to use AWS profile: ${profile}`);
+      log.success(`Updated .vscode/settings.json to use AWS profile: ${profile}`);
     }
 
     // Make sure we update our .zed/settings.json so it defaults to this AWS profile in the future
@@ -695,7 +735,7 @@ export const selectOrCreateAwsProfile = async ({
         `$1${profile}$2`,
       );
       fs.writeFileSync(zedSettingsPath, settings);
-      console.log(`✔ Updated .zed/settings.json to use AWS profile: ${profile}\n`);
+      log.success(`Updated .zed/settings.json to use AWS profile: ${profile}\n`);
     }
 
     // Ask if they want to use the same credentials for Github Actions CI
@@ -723,7 +763,7 @@ export const selectOrCreateAwsProfile = async ({
       }
     }
 
-    console.log('✔ Configured AWS credentials for CI.\n');
+    log.success('Configured AWS credentials for CI.\n');
   }
 
   return {
@@ -776,7 +816,7 @@ const promptValidSupabaseUrl = async (promptMsg: string): Promise<string> => {
  * for dev and prod, and calls the env:add script to store them.
  */
 const setupSupabase = async ({ projectName }: { projectName: string }) => {
-  console.log('Setting up Supabase...');
+  log.step('Setting up Supabase...');
 
   const databaseConfig = {
     prod: {
@@ -859,7 +899,7 @@ const setupSupabase = async ({ projectName }: { projectName: string }) => {
     `bun tsx ${addEnvScript} DIRECT_DATABASE_URL "${devUrls.directUrl}" "${prodUrls.directUrl}"`,
   );
   execSync(`bun tsx ${addEnvScript} DATABASE_URL "${devUrls.dbUrl}" "${prodUrls.dbUrl}"`);
-  console.log('✔ Supabase secrets have been set in SST.\n');
+  log.success('Supabase secrets have been set in SST.\n');
 
   // Update the config object with the new values
   databaseConfig.prod = prodUrls;
@@ -880,7 +920,7 @@ const applyExistingMigrations = () => {
     // Get all migration directories
     const migrationsPath = path.resolve('apps/backend/db/migrations');
     if (!fs.existsSync(migrationsPath)) {
-      console.log('✔ No existing migrations to apply.\n');
+      log.success('No existing migrations to apply.\n');
       return;
     }
 
@@ -891,7 +931,7 @@ const applyExistingMigrations = () => {
       .toSorted();
 
     if (migrationDirs.length === 0) {
-      console.log('✔ No existing migrations to apply.\n');
+      log.success('No existing migrations to apply.\n');
       return;
     }
 
@@ -914,7 +954,7 @@ const applyExistingMigrations = () => {
       throw new Error(`Failed to apply ${failedMigrations.length} migration(s)`);
     }
 
-    console.log('✔ Database migrations have been marked as applied.\n');
+    log.success('Database migrations have been marked as applied.\n');
   } catch {
     // Print the failed migrations with dashes
     if (failedMigrations.length > 0) {
@@ -924,8 +964,8 @@ const applyExistingMigrations = () => {
       }
     }
 
-    console.log(
-      '\n⚠️ Could not mark existing migrations as applied. You may need to manually apply them.\n',
+    log.warn(
+      '\nCould not mark existing migrations as applied. You may need to manually apply them.\n',
     );
   }
 };
@@ -933,7 +973,7 @@ const applyExistingMigrations = () => {
 // ---------- BETTER AUTH HELPERS ----------
 /** Guides the user through setting up Better Auth */
 const setupBetterAuth = () => {
-  console.log('Setting up Better Auth...');
+  log.step('Setting up Better Auth...');
 
   // If the secrets haven't been setup yet, let's try to init them
   if (Object.keys(devSecrets).length === 0) {
@@ -942,7 +982,7 @@ const setupBetterAuth = () => {
 
   // Check if BETTER_AUTH_SECRET is already configured in SST secrets
   if (devSecrets.BETTER_AUTH_SECRET && prodSecrets.BETTER_AUTH_SECRET) {
-    console.log('✔ Better Auth secret already configured.\n');
+    log.success('Better Auth secret already configured.\n');
     return true;
   }
 
@@ -954,7 +994,7 @@ const setupBetterAuth = () => {
   // Add secret to SST
   console.log('Adding Better Auth secret to SST...');
   execSync(`bun tsx ${addEnvScript} BETTER_AUTH_SECRET "${randomString}" "${randomString}"`);
-  console.log('✔ Better Auth secret has been set in SST.\n');
+  log.success('Better Auth secret has been set in SST.\n');
 
   return true;
 };
@@ -964,52 +1004,145 @@ const setupBetterAuth = () => {
 type PosthogOrg = { id: string; name: string };
 type PosthogProject = { id: string; api_token: string };
 
+/** A personal API key, as PostHog returns it to the key itself */
+type PosthogPersonalApiKey = {
+  scopes: string[];
+  /** The projects the key is limited to (empty means every project) */
+  scoped_teams?: number[] | null;
+};
+
+/**
+ * Checks a setup key by reading its own scopes (any personal key can look itself up). Prints
+ * what's wrong and returns undefined, or returns an API client for a key with everything setup needs.
+ */
+const checkPosthogSetupKey = async ({
+  setupKey,
+  scopes,
+  projectIds,
+}: {
+  setupKey: string;
+  scopes: SetupKeyScope[];
+  /** Our project IDs, or undefined when they don't exist yet (so the key needs every project) */
+  projectIds?: string[];
+}) => {
+  const posthogApi = axios.create({
+    baseURL: `${POSTHOG_APP_HOST}/api/`,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${setupKey}` },
+  });
+
+  let key: PosthogPersonalApiKey;
+  try {
+    ({ data: key } = await posthogApi.get<PosthogPersonalApiKey>('personal_api_keys/@current/'));
+  } catch (error) {
+    // An invalid key can't look itself up
+    if (error instanceof AxiosError && error.response?.status === 401) {
+      log.error("That key isn't valid.");
+      return;
+    }
+    throw error;
+  }
+
+  // "All access" keys carry `*`, otherwise every scope (or its write version) has to be there
+  const keyScopes = new Set(key.scopes);
+  const missingScopes = keyScopes.has('*')
+    ? []
+    : scopes.filter(
+        (scope) => !keyScopes.has(scope) && !keyScopes.has(`${scope.split(':')[0]}:write`),
+      );
+  if (missingScopes.length > 0) {
+    log.error(
+      `That key is missing these scopes: ${missingScopes.map((scope) => SETUP_KEY_SCOPE_LABELS[scope]).join(', ')}.`,
+    );
+  }
+
+  // A key limited to certain projects has to include ours (or every project, before they exist)
+  const scopedTeams = key.scoped_teams ?? [];
+  const hasProjectAccess =
+    scopedTeams.length === 0 ||
+    (!!projectIds && projectIds.every((projectId) => scopedTeams.includes(Number(projectId))));
+  if (!hasProjectAccess) {
+    log.error('That key is limited to certain projects. Give it access to all projects.');
+  }
+
+  if (missingScopes.length > 0 || !hasProjectAccess) {
+    return;
+  }
+  return posthogApi;
+};
+
+/**
+ * Asks for a setup key with these scopes (explaining how to create one), checks it right away,
+ * and keeps asking until it's good. Setup keys are only used while setting up and never stored.
+ */
+const promptForPosthogSetupKey = async ({
+  scopes,
+  projectIds,
+  setupKey: initialKey,
+}: {
+  scopes: SetupKeyScope[];
+  /** Our project IDs, or undefined when they don't exist yet (so the key needs every project) */
+  projectIds?: string[];
+  /** A key from an earlier step, checked before asking for a new one */
+  setupKey?: string;
+}) => {
+  let setupKey = initialKey;
+  while (true) {
+    if (!setupKey) {
+      console.log(
+        `\nCreate a personal API key for setup with these scopes: ${scopes.map((scope) => SETUP_KEY_SCOPE_LABELS[scope]).join(', ')}: ${POSTHOG_APP_HOST}/settings/user-api-keys`,
+      );
+      setupKey = await promptRequired('Enter your PostHog setup API key: ');
+    }
+
+    const posthogApi = await checkPosthogSetupKey({ setupKey, scopes, projectIds });
+    if (posthogApi) {
+      return { setupKey, posthogApi };
+    }
+    setupKey = undefined;
+  }
+};
+
 /** Guides the user through setting up PostHog, including API key, org/project selection/creation, and saves config */
 const setupPosthog = async ({ projectName }: { projectName: string }) => {
-  console.log('Setting up PostHog...');
+  log.step('Setting up PostHog...');
 
   const configPath = path.resolve('packages/config/config.ts');
   let configContent = fs.readFileSync(configPath, 'utf8');
 
   // Check if PostHog is already set up
   const apiKeyMatch = configContent.match(
-    /posthog:\s*{[^}]*apiKey:\s*isProd\s*\?\s*['"]([^'"]*)['"]\s*:\s*['"]([^'"]*)['"]/,
+    /analytics:\s*{[^}]*apiKey:\s*isProd\s*\?\s*['"]([^'"]*)['"]\s*:\s*['"]([^'"]*)['"]/,
   );
   const prodApiKey = apiKeyMatch ? apiKeyMatch[1] : undefined;
   const devApiKey = apiKeyMatch ? apiKeyMatch[2] : undefined;
   if (prodApiKey || devApiKey) {
-    console.log('✔ PostHog already configured.\n');
+    log.success('PostHog already configured.\n');
     return;
   }
 
-  let cliToken: string;
+  let setupKey: string;
   while (true) {
     try {
       // Ask if they want to set up PostHog
-      const doSetup = await promptYesNo(
-        'Do you want to set up PostHog for analytics, logging, and error tracking? (y/n) ',
+      console.log(
+        "\nPostHog powers product analytics, error tracking, logs, and session replay, and can also send your app's emails (password resets, invitations, and contact form messages).",
       );
+      console.log('We strongly recommend it for any customer-facing app.\n');
+      const doSetup = await promptYesNo('Would you like to set up PostHog? (y/n) ');
       if (!doSetup) {
         console.log('PostHog setup skipped.\n');
         return;
       }
 
-      // Guide to signup/login and API key creation
+      // The setup key creates the projects now and sets up emails later, so check it can do both
+      // (the projects don't exist yet, so it needs access to every project)
       console.log(
-        '\nSign up or login (you will need to be on the pay as you go plan), then create a personal API key (with "Organization", "Project", and "Error tracking" permissions): https://app.posthog.com/settings/user-api-keys#variables',
+        '\nSign up or log in to PostHog (you will need to be on the pay as you go plan).',
       );
-
-      // Prompt for personal API key and create the API connection
-      cliToken = await promptUser(
-        "Enter your PostHog personal API key (with 'Organization' and 'Project' permissions): ",
-      );
-      const posthogApi = axios.create({
-        baseURL: 'https://app.posthog.com/api/',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${cliToken}`,
-        },
-      });
+      let posthogApi: AxiosInstance;
+      ({ setupKey, posthogApi } = await promptForPosthogSetupKey({
+        scopes: ['organization:write', ...EMAIL_SETUP_SCOPES],
+      }));
 
       // Try to retrieve organizations
       const orgsRes = await posthogApi.get<{ results: PosthogOrg[] }>('organizations/');
@@ -1035,7 +1168,7 @@ const setupPosthog = async ({ projectName }: { projectName: string }) => {
         });
         const newOrg = createOrgRes.data;
         orgId = newOrg.id;
-        console.log(`✔ Created new organization: ${newOrgName}`);
+        log.success(`Created new organization: ${newOrgName}`);
       }
 
       // Sanity check to narrow the types (we should never run this)
@@ -1055,28 +1188,48 @@ const setupPosthog = async ({ projectName }: { projectName: string }) => {
       console.log('\nCreating projects...');
       const prodProject = await createProject(orgId, projectName);
       const devProject = await createProject(orgId, `${projectName} (dev)`);
-      console.log('✔ PostHog projects have been created.');
+      log.success('PostHog projects have been created.');
 
-      // Save API key in config file
-      configContent = configContent.replace(
-        /apiKey:\s*isProd \? ['"][^'"]*['"] : ['"][^'"]*['"]/,
-        `apiKey: isProd ? '${prodProject.api_token}' : '${devProject.api_token}'`,
-      );
+      // Save the API keys in the config file, plus the project IDs (emails are sent through these projects)
+      configContent = writeConfigPair(configContent, 'apiKey', {
+        prod: prodProject.api_token,
+        dev: devProject.api_token,
+      });
+      configContent = writeConfigPair(configContent, 'projectId', {
+        prod: String(prodProject.id),
+        dev: String(devProject.id),
+      });
       fs.writeFileSync(configPath, configContent);
-      console.log('✔ PostHog has been added to the config.\n');
+      log.success('PostHog has been added to the config.\n');
+
+      // CI uploads source maps with its own key. It's stored as a GitHub secret, so it only gets
+      // the one scope it needs (PostHog keys can't create other keys, so this one is made by hand)
+      console.log(
+        'CI uploads source maps (for readable error stack traces) with a separate key, stored as a GitHub secret.',
+      );
+      console.log(
+        'Create a second personal API key with only "Error tracking" (write, under Error tracking, logs & tracing), so a leaked CI secret can\'t change anything else: https://app.posthog.com/settings/user-api-keys#variables',
+      );
+      const cliToken = await promptRequired('Enter your PostHog CI API key: ');
+
+      log.success('\nBasic PostHog setup complete.\n');
+
       return {
         prodProjectId: prodProject.id,
         devProjectId: devProject.id,
+        /** Error tracking only, stored in CI for source map uploads */
         cliToken,
+        /** Broader access for setup (also used by the email step), never stored */
+        setupKey,
       };
     } catch (error) {
       if (error instanceof AxiosError) {
-        console.log(
-          `\n❌ An error occurred during PostHog setup: ${error.response?.data?.detail || error.message}\n\nRestarting PostHog setup...`,
+        log.error(
+          `\nAn error occurred during PostHog setup: ${error.response?.data?.detail || error.message}\n\nRestarting PostHog setup...`,
         );
       } else {
-        console.log(
-          `\n❌ An error occurred during PostHog setup: ${String(error)}\n\nRestarting PostHog setup...`,
+        log.error(
+          `\nAn error occurred during PostHog setup: ${String(error)}\n\nRestarting PostHog setup...`,
         );
       }
       // The loop will restart from the setup prompt
@@ -1108,13 +1261,13 @@ const setupSlack = async ({ githubUrl }: { githubUrl: string }) => {
     `\n/github subscribe ${parsedGithubUrl} workflows:{event:"pull_request","push" branch:"main","staging","dev"}`,
   );
   await promptUser("\nPress enter to continue after you've set up Slack notifications...");
-  console.log('✔ Slack setup step complete.\n');
+  log.success('Slack setup step complete.\n');
 };
 
 // ---------- CRISP CHAT HELPERS ----------
 /** Guides the user through setting up Crisp chat for their site */
 const setupCrispChat = async () => {
-  console.log('Setting up Crisp Chat...');
+  log.step('Setting up Crisp Chat...');
 
   const configPath = path.resolve('packages/config/config.ts');
   let configContent = fs.readFileSync(configPath, 'utf8');
@@ -1123,7 +1276,7 @@ const setupCrispChat = async () => {
   const websiteIdMatch = configContent.match(/crisp:\s*{[^}]*websiteId:\s*['"]([^'"]*)['"]/);
   const websiteId = websiteIdMatch ? websiteIdMatch[1] : undefined;
   if (websiteId && websiteId !== '') {
-    console.log('✔ Crisp Chat already configured.\n');
+    log.success('Crisp Chat already configured.\n');
     return;
   }
 
@@ -1157,20 +1310,20 @@ const setupCrispChat = async () => {
     `websiteId: '${newWebsiteId}'`,
   );
   fs.writeFileSync(configPath, configContent);
-  console.log('✔ Crisp Chat websiteId saved to config.\n');
+  log.success('Crisp Chat websiteId saved to config.\n');
 };
 
 // ---------- DOCS SITE HELPER ----------
 /** Sets up the docs site if the user wants it */
 const setupDocsSite = async ({ domain }: { domain?: string }) => {
-  console.log('Setting up docs site...');
+  log.step('Setting up docs site...');
 
   const sstConfigPath = path.resolve('sst.config.ts');
   let sstConfig = fs.readFileSync(sstConfigPath, 'utf8');
 
   // Check if the docs site is already enabled (uncommented in sst.config.ts)
   if (!/\/\/\s*await import\(['"]\.\/infra\/docs['"]\);/.test(sstConfig)) {
-    console.log('✔ Docs site already configured.\n');
+    log.success('Docs site already configured.\n');
     return;
   }
 
@@ -1183,11 +1336,11 @@ const setupDocsSite = async ({ domain }: { domain?: string }) => {
 
   // Let them know what the docs site domain will be
   if (domain) {
-    console.log(
-      `✔ Docs site domain set to docs.${domain} (prod) and <stage>.docs.${domain} (other stages).`,
+    log.success(
+      `Docs site domain set to docs.${domain} (prod) and <stage>.docs.${domain} (other stages).`,
     );
   } else {
-    console.log('✔ Docs site will be set up without a custom domain.');
+    log.success('Docs site will be set up without a custom domain.');
   }
 
   // Update sst.config.ts to uncomment the docs import
@@ -1196,12 +1349,67 @@ const setupDocsSite = async ({ domain }: { domain?: string }) => {
     '\n    await import("./infra/docs");',
   );
   fs.writeFileSync(sstConfigPath, sstConfig);
-  console.log('✔ Enabled docs site stack in sst.config.ts.\n');
+  log.success('Enabled docs site stack in sst.config.ts.\n');
+};
+
+// ---------- MARKETING SITE HELPER ----------
+/** Sets up the marketing site if the user wants it */
+const setupMarketingSite = async ({ domain }: { domain?: string }) => {
+  log.step('Setting up marketing site...');
+
+  const sstConfigPath = path.resolve('sst.config.ts');
+  const apiPath = path.resolve('infra/api.ts');
+
+  // Check if the marketing site is already enabled (uncommented in sst.config.ts)
+  const sstConfig = fs.readFileSync(sstConfigPath, 'utf8');
+  if (!/\/\/\s*await import\(['"]\.\/infra\/marketing['"]\);/.test(sstConfig)) {
+    log.success('Marketing site already configured.\n');
+    return;
+  }
+
+  // Ask if they want to set up the marketing site
+  const doSetup = await promptYesNo(
+    'Would you like to set up a marketing site (served at your root domain)? (y/n) ',
+  );
+  if (!doSetup) {
+    console.log('Marketing site setup skipped.\n');
+    return;
+  }
+
+  // Let them know what the marketing site domain will be
+  if (domain) {
+    log.success(
+      `Marketing site domain set to ${domain} (prod) and <stage>.${domain} (other stages). The web app lives at app.${domain}.`,
+    );
+  } else {
+    log.success('Marketing site will be set up without a custom domain.');
+  }
+
+  // Deploy the stack, and link it to the API so the backend allows its origin (CORS) for the contact form
+  const isEnabled = uncommentLines([
+    { filePath: sstConfigPath, line: /await import\(['"]\.\/infra\/marketing['"]\);/ },
+    {
+      filePath: apiPath,
+      line: /const \{ marketing \} = await import\(['"]\.\/marketing['"]\);/,
+    },
+    { filePath: apiPath, line: /marketing,?/ },
+  ]);
+  if (!isEnabled) {
+    log.warn(
+      'Could not find every marketing line to uncomment, so nothing was changed. Uncomment `marketing` in sst.config.ts and infra/api.ts manually.\n',
+    );
+    return;
+  }
+
+  log.success('Enabled marketing site stack in sst.config.ts and linked it in infra/api.ts.');
+  console.log(
+    'The email step sets up the contact form email (or later with: bun run init:email).\n',
+  );
 };
 
 // ---------- LANGFUSE HELPERS ----------
 const setupLangfuse = async () => {
-  console.log('Setting up Langfuse...');
+  log.step('Setting up Langfuse...');
 
   // If the secrets haven't been setup yet, let's try to init them
   if (Object.keys(devSecrets).length === 0) {
@@ -1215,7 +1423,7 @@ const setupLangfuse = async () => {
     devSecrets.LANGFUSE_PUBLIC_KEY &&
     prodSecrets.LANGFUSE_PUBLIC_KEY
   ) {
-    console.log('✔ Langfuse already configured.\n');
+    log.success('Langfuse already configured.\n');
     return true;
   }
 
@@ -1261,116 +1469,393 @@ const setupLangfuse = async () => {
 
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
-  let secretsContent = fs.readFileSync(secretsPath, 'utf8');
-  secretsContent = secretsContent.replaceAll(
-    '// export const LANGFUSE_SECRET_KEY',
-    'export const LANGFUSE_SECRET_KEY',
-  );
-  secretsContent = secretsContent.replaceAll(
-    '// export const LANGFUSE_PUBLIC_KEY',
-    'export const LANGFUSE_PUBLIC_KEY',
-  );
-  fs.writeFileSync(secretsPath, secretsContent);
-  console.log('✔ Langfuse secrets have been set in SST.\n');
+  uncommentLines([
+    { filePath: secretsPath, line: /export const LANGFUSE_SECRET_KEY = .*/ },
+    { filePath: secretsPath, line: /export const LANGFUSE_PUBLIC_KEY = .*/ },
+  ]);
+  log.success('Langfuse secrets have been set in SST.\n');
 
   return true;
 };
 
-// ---------- LOOPS SETUP HELPER ----------
-/** Guides the user through setting up Loops for emails */
-const setupLoops = async () => {
-  console.log('Setting up Loops...');
+// ---------- EMAIL SETUP HELPERS ----------
+/** PostHog's private API host (US cloud) */
+const POSTHOG_APP_HOST = 'https://us.posthog.com';
 
-  // Read config
+/** The stages we set up email for, each with its own PostHog project */
+const EMAIL_STAGES = ['dev', 'prod'] as const;
+type EmailStage = (typeof EMAIL_STAGES)[number];
+
+/** Where email setup ended up for one PostHog project */
+type EmailStageResult = {
+  projectId: string;
+  status: 'ready' | 'configured' | 'no-sender' | 'error';
+};
+
+/** The outcome of the email step (undefined when emails were skipped) */
+export type EmailSetupResult = Partial<Record<EmailStage, EmailStageResult>> | undefined;
+
+type PosthogEmailSender = { id: number; display_name: string };
+type PosthogMessageTemplate = {
+  id: string;
+  name: string;
+  deleted?: boolean;
+  transactional_hog_flow_id: string | null;
+};
+
+/** Describes an API error in one line */
+const describePosthogError = (error: unknown) => {
+  if (error instanceof AxiosError) {
+    const detail: unknown = error.response?.data?.detail;
+    return typeof detail === 'string' ? detail : error.message;
+  }
+  return String(error);
+};
+
+/** Every scope a setup key can need, named (and grouped) the way PostHog's key screen shows them */
+const SETUP_KEY_SCOPE_LABELS = {
+  'organization:write': '"Organization" (write, under Organization & account)',
+  'project:write': '"Project" (write, under Organization & account)',
+  'hog_flow:write': '"Workflow" (write, under Data warehouse & pipelines)',
+  'integration:read': '"Integration" (read, under Setup & data management)',
+} as const;
+type SetupKeyScope = keyof typeof SETUP_KEY_SCOPE_LABELS;
+
+/** The scopes email setup needs (to upload templates, find senders, and create project keys) */
+const EMAIL_SETUP_SCOPES: SetupKeyScope[] = ['project:write', 'hog_flow:write', 'integration:read'];
+
+/** The PostHog page where a project's email senders are managed */
+const emailChannelsUrl = (projectId: string) =>
+  `${POSTHOG_APP_HOST}/project/${projectId}/workflows/channels`;
+
+/** Prompts until the user enters something */
+const promptRequired = async (question: string) => {
+  let answer = '';
+  while (!answer) {
+    const input = await promptUser(question);
+    answer = input.trim();
+  }
+  return answer;
+};
+
+/** Finds the project's email sender, guiding the user to add one when there isn't one yet */
+const selectEmailSender = async ({
+  posthogApi,
+  projectId,
+  domain,
+}: {
+  posthogApi: AxiosInstance;
+  projectId: string;
+  domain?: string;
+}) => {
+  while (true) {
+    const { data } = await posthogApi.get<{ results: PosthogEmailSender[] }>(
+      `projects/${projectId}/integrations/`,
+      { params: { kind: 'email' } },
+    );
+    const senders = data.results;
+
+    // One sender: use it. Several: ask which one.
+    if (senders.length === 1) {
+      log.success(`Sending from ${senders[0].display_name}`);
+      return senders[0].id;
+    }
+    if (senders.length > 1) {
+      const choice = await promptSelect({
+        message: 'Which sender should emails come from?',
+        choices: senders.map((sender) => sender.display_name),
+      });
+      return senders.find((sender) => sender.display_name === choice)?.id;
+    }
+
+    // Without a domain there's nothing to send from yet, so this has to wait
+    if (!domain) {
+      console.log(
+        "No email sender yet, and there's no domain to send from. Once you have one, add a sender and run: bun run init:email",
+      );
+      return;
+    }
+
+    // Adding a sender is only possible in the PostHog app (there's no API for it yet)
+    console.log(`Add an email sender in PostHog: ${emailChannelsUrl(projectId)}`);
+    console.log('Click "New channel", choose Email, and fill in:');
+    console.log("  - From name: your app's name");
+    console.log(
+      `  - Email address: account@mail.${domain} (usually best to use a subdomain to protect main domains reputation)`,
+    );
+    console.log('  - MAIL FROM subdomain: feedback');
+    console.log(`  - Default reply-to: an inbox you read, like support@${domain}`);
+    console.log(
+      `PostHog then shows DNS records to add to ${domain}. Emails only send once they're verified, but you can carry on before then.`,
+    );
+    const answer = await promptUser(
+      'Press Enter once you have added the sender (or type "skip" to finish this later): ',
+    );
+    if (answer.trim().toLowerCase() === 'skip') {
+      return;
+    }
+  }
+};
+
+/** Creates a template (or updates the one with the same name) and makes it sendable through the API */
+const upsertEmailTemplate = async ({
+  posthogApi,
+  projectId,
+  template,
+  senderId,
+}: {
+  posthogApi: AxiosInstance;
+  projectId: string;
+  template: EmailTemplateDefinition;
+  senderId: number;
+}) => {
+  const body = {
+    name: template.name,
+    description: template.description,
+    type: 'email',
+    sensitive: template.sensitive,
+    content: {
+      templating: 'liquid',
+      email: {
+        subject: template.subject,
+        text: template.text,
+        design: template.design,
+        ...(template.replyTo && { replyTo: template.replyTo }),
+      },
+    },
+  };
+
+  // Templates are found again by name, so re-running setup updates them instead of duplicating them
+  const templatesPath = `projects/${projectId}/messaging_templates/`;
+  const { data: list } = await posthogApi.get<{ results: PosthogMessageTemplate[] }>(
+    templatesPath,
+    { params: { limit: 500 } },
+  );
+  const existing = list.results.find((item) => item.name === template.name && !item.deleted);
+  const { data: saved } = existing
+    ? await posthogApi.patch<PosthogMessageTemplate>(`${templatesPath}${existing.id}/`, body)
+    : await posthogApi.post<PosthogMessageTemplate>(templatesPath, body);
+
+  // Making a template transactional can't be undone, and calling it again changes nothing
+  if (!saved.transactional_hog_flow_id) {
+    await posthogApi.post(`${templatesPath}${saved.id}/make_transactional/`, {
+      from_integration_id: senderId,
+    });
+  }
+
+  log.success(`${existing ? 'Updated' : 'Created'} the "${template.name}" email`);
+  return saved.id;
+};
+
+/** Creates a project secret key that can only send emails (it isn't tied to anyone's account) */
+const createEmailSecretKey = async ({
+  posthogApi,
+  projectId,
+}: {
+  posthogApi: AxiosInstance;
+  projectId: string;
+}) => {
+  try {
+    const { data } = await posthogApi.post<{ value: string }>(
+      `projects/${projectId}/project_secret_api_keys/`,
+      { label: 'Transactional email', scopes: ['hog_flow:write'] },
+    );
+    log.success('Created a project secret key for sending emails.');
+    return data.value;
+  } catch (error) {
+    // Project secret keys are rolling out gradually, so fall back to one the user creates
+    console.log(
+      `Couldn't create a project secret key automatically (${describePosthogError(error)}).`,
+    );
+    console.log(
+      `Create one with "Workflows" write access: ${POSTHOG_APP_HOST}/project/${projectId}/settings/project-secret-api-keys`,
+    );
+    return await promptRequired('Enter the project secret key: ');
+  }
+};
+
+/** Asks for the support inbox (which receives contact form messages) if it isn't set yet */
+const requestSupportEmail = async () => {
+  const configPath = path.resolve('packages/config/config.ts');
+  const configContent = fs.readFileSync(configPath, 'utf8');
+  const supportEmailRegex = /supportEmail:\s*['"]([^'"]*)['"]/;
+  if (configContent.match(supportEmailRegex)?.[1]) {
+    return;
+  }
+
+  console.log('\nWhich inbox should receive messages from your contact form?');
+  console.log(
+    'A Google Group like support@example.com works best, so several people can read and reply from one address.',
+  );
+  let supportEmail = '';
+  while (!supportEmail.includes('@')) {
+    const input = await promptUser('Support email: ');
+    supportEmail = input.trim();
+  }
+
+  fs.writeFileSync(
+    configPath,
+    configContent.replace(supportEmailRegex, `supportEmail: '${supportEmail}'`),
+  );
+  log.success('Support email saved to the config.\n');
+};
+
+/**
+ * Sets up transactional emails (password reset, invitations, contact form) through PostHog: finds
+ * each project's sender, uploads our templates, and stores a project secret key for sending them.
+ * `force` re-checks everything without asking (used by `bun run init:email`).
+ */
+export const setupPosthogEmail = async ({
+  domain,
+  personalApiKey,
+  force = false,
+}: {
+  domain?: string;
+  /** The personal API key from the PostHog step, if it ran (only used during setup, never stored) */
+  personalApiKey?: string;
+  force?: boolean;
+}): Promise<EmailSetupResult> => {
+  log.step('Setting up emails...');
+
   const configPath = path.resolve('packages/config/config.ts');
   let configContent = fs.readFileSync(configPath, 'utf8');
-  const resetPasswordMatch = configContent.match(/resetPassword:\s*['"]([^'"]*)['"]/);
-  const resetPasswordId = resetPasswordMatch ? resetPasswordMatch[1] : '';
 
-  // If the secrets haven't been setup yet, let's try to init them
+  // Emails are sent through PostHog, so it has to be set up first
+  const analyticsKeys = readConfigPair(configContent, 'apiKey');
+  if (!analyticsKeys.dev && !analyticsKeys.prod) {
+    console.log("Emails are sent through PostHog, which isn't set up, so emails were skipped.\n");
+    return undefined;
+  }
+
+  // If the secrets haven't been loaded yet, load them
   if (Object.keys(devSecrets).length === 0) {
     initSecrets();
   }
 
-  // Check if Loops is already configured (API key in secrets and resetPassword in config)
-  if (
-    devSecrets.LOOPS_API_KEY &&
-    prodSecrets.LOOPS_API_KEY &&
-    resetPasswordId &&
-    resetPasswordId !== ''
-  ) {
-    console.log('✔ Loops is already configured.\n');
-    return true;
+  // The templates we manage in code (emails built only in PostHog have their IDs set by hand)
+  const templateKeys = Object.keys(initialEmailTemplates);
+
+  // Check if emails are already configured (a secret key, plus every template for both projects)
+  const secretKeys: Partial<Record<EmailStage, string>> = {
+    dev: devSecrets.POSTHOG_SECRET_KEY,
+    prod: prodSecrets.POSTHOG_SECRET_KEY,
+  };
+  const projectIds = readConfigPair(configContent, 'projectId');
+  const isConfigured = EMAIL_STAGES.every(
+    (stage) =>
+      secretKeys[stage] &&
+      projectIds[stage] &&
+      templateKeys.every((key) => readConfigPair(configContent, key)[stage]),
+  );
+  if (isConfigured && !force) {
+    log.success('Emails are already configured (re-check them with: bun run init:email).\n');
+    return Object.fromEntries(
+      EMAIL_STAGES.map((stage) => [stage, { projectId: projectIds[stage], status: 'configured' }]),
+    );
   }
 
-  // Ask if they want to set up Loops
-  const doSetup = await promptYesNo(
-    'Would you like to set up Loops for emails (required for reset password)? (y/n) ',
-  );
-  if (!doSetup) {
-    console.log('Loops setup skipped.\n');
-    return false;
-  }
-
-  // Guide to signup and API key
-  console.log(
-    '\n1. Sign up or log in to Loops and then set up your DNS records: https://app.loops.so/register',
-  );
-  console.log('2. Generate an API key: https://app.loops.so/settings?page=api');
-  // Prompt for API key
-  let apiKey = '';
-  while (!apiKey) {
-    const input = await promptUser('Enter your Loops API key: ');
-    apiKey = input.trim();
-    if (!apiKey) {
-      console.log('Please enter a valid Loops API key.');
-      apiKey = '';
+  // Ask if they want to send emails through PostHog
+  if (!force) {
+    const doSetup = await promptYesNo(
+      'Would you like PostHog to send your emails (required for password reset and invitations)? (y/n) ',
+    );
+    if (!doSetup) {
+      console.log("Email setup skipped. Password reset and invitations won't send.\n");
+      return undefined;
     }
   }
 
-  // Store the API key as a secret for both dev and prod
-  execSync(`bun tsx ${addEnvScript} LOOPS_API_KEY "${apiKey}" "${apiKey}"`);
+  // Contact form messages are emailed to a support inbox (reload the config, since this may save it)
+  await requestSupportEmail();
+  configContent = fs.readFileSync(configPath, 'utf8');
 
-  // Uncomment secrets in infra/secrets.ts
-  const secretsPath = path.resolve('infra/secrets.ts');
-  let secretsContent = fs.readFileSync(secretsPath, 'utf8');
-  secretsContent = secretsContent.replaceAll(
-    '// export const LOOPS_API_KEY',
-    'export const LOOPS_API_KEY',
-  );
-  fs.writeFileSync(secretsPath, secretsContent);
-  console.log('✔ Loops API key has been set in SST.\n');
+  // The projects to set up (asked for if they're missing from the config)
+  for (const stage of EMAIL_STAGES) {
+    if (!readConfigPair(configContent, 'projectId')[stage]) {
+      const projectId = await promptRequired(
+        `Enter your ${stage} PostHog project ID (Project settings → Project ID): `,
+      );
+      configContent = writeConfigPair(configContent, 'projectId', { [stage]: projectId });
+      fs.writeFileSync(configPath, configContent);
+    }
+  }
+  const stageProjectIds = readConfigPair(configContent, 'projectId');
 
-  // Guide to creating the transactional email
-  console.log(
-    '3. Clone the reset password template: https://app.loops.so/templates?templateId=clfn0wbo0000008mr1fri2516',
-  );
-  console.log('   - Click the "Reset Password" button and click the "Link" option in the sidebar.');
-  console.log('   - Click the icon in the link area to add a data variable called `resetLink`.');
-  console.log('   - Publish the email.');
-  console.log('   - Click the review button in the left sidebar and copy the Transactional ID.');
+  // A setup key creates the templates and project keys (the PostHog step's key if it ran).
+  // It's checked before anything changes.
+  let posthogApi: AxiosInstance;
+  try {
+    ({ posthogApi } = await promptForPosthogSetupKey({
+      scopes: EMAIL_SETUP_SCOPES,
+      projectIds: EMAIL_STAGES.map((stage) => stageProjectIds[stage]),
+      setupKey: personalApiKey,
+    }));
+  } catch (error) {
+    // Something other than the key itself (e.g. PostHog being unreachable), so stop here
+    log.error(`Couldn't check the API key: ${describePosthogError(error)}`);
+    return Object.fromEntries(
+      EMAIL_STAGES.map((stage) => [stage, { projectId: stageProjectIds[stage], status: 'error' }]),
+    );
+  }
 
-  // Prompt for the transactional email ID
-  let transactionalId = '';
-  while (!transactionalId) {
-    const input = await promptUser('Enter the Transactional ID for your reset password email: ');
-    transactionalId = input.trim();
-    if (!transactionalId) {
-      console.log('Please enter a valid Transactional ID.');
-      transactionalId = '';
+  // Set up each PostHog project (dev, then prod)
+  const results: NonNullable<EmailSetupResult> = {};
+  const newSecretKeys: Partial<Record<EmailStage, string>> = {};
+  for (const stage of EMAIL_STAGES) {
+    const projectId = stageProjectIds[stage];
+    console.log(`\nSetting up emails for the ${stage} project (${projectId})...`);
+
+    try {
+      const senderId = await selectEmailSender({ posthogApi, projectId, domain });
+      if (!senderId) {
+        results[stage] = { projectId, status: 'no-sender' };
+        continue;
+      }
+
+      // Upload the templates and save their IDs (config keys match the template keys)
+      for (const [templateKey, template] of Object.entries(initialEmailTemplates)) {
+        const templateId = await upsertEmailTemplate({
+          posthogApi,
+          projectId,
+          template,
+          senderId,
+        });
+        configContent = writeConfigPair(configContent, templateKey, { [stage]: templateId });
+      }
+      fs.writeFileSync(configPath, configContent);
+
+      // Re-use the stored key, otherwise create one for this project
+      if (!secretKeys[stage]) {
+        newSecretKeys[stage] = await createEmailSecretKey({ posthogApi, projectId });
+        secretKeys[stage] = newSecretKeys[stage];
+      }
+      results[stage] = { projectId, status: 'ready' };
+    } catch (error) {
+      results[stage] = { projectId, status: 'error' };
+      log.error(`Email setup failed for the ${stage} project: ${describePosthogError(error)}`);
     }
   }
 
-  // Update the config file with the transactionalId
-  configContent = configContent.replace(
-    /resetPassword:\s*['"][^'"]*['"]/, // match both single and double quotes
-    `resetPassword: '${transactionalId}'`,
-  );
-  fs.writeFileSync(configPath, configContent);
-  console.log('✔ Loops reset password transactional ID saved to config.');
-  console.log('✔ Loops setup complete!\n');
+  // Store any new keys (dev uses the fallback value, prod its own stage), and enable the secret
+  if (newSecretKeys.dev) {
+    execSync(`bun sst secret set POSTHOG_SECRET_KEY "${newSecretKeys.dev}" --fallback`, {
+      stdio: 'inherit',
+    });
+  }
+  if (newSecretKeys.prod) {
+    execSync(`bun sst secret set POSTHOG_SECRET_KEY "${newSecretKeys.prod}" --stage prod`, {
+      stdio: 'inherit',
+    });
+  }
+  if (newSecretKeys.dev || newSecretKeys.prod) {
+    uncommentLines([
+      { filePath: path.resolve('infra/secrets.ts'), line: /export const POSTHOG_SECRET_KEY = .*/ },
+    ]);
+    log.success('\nThe PostHog secret key has been set in SST.');
+  }
 
-  return true;
+  log.success('\nEmail setup complete!\n');
+  return results;
 };
 
 // ---------- STRIPE SETUP HELPERS ----------
@@ -1410,11 +1895,11 @@ const createStripeWebhookForBetterAuth = async (
     return response.data.secret as string;
   } catch (error) {
     if (error instanceof AxiosError) {
-      console.log(
-        `❌ Failed to create webhook at ${url}: ${error?.response?.data?.error?.message || error.message}`,
+      log.error(
+        `Failed to create webhook at ${url}: ${error?.response?.data?.error?.message || error.message}`,
       );
     } else {
-      console.log(`❌ Failed to create webhook at ${url}: ${String(error)}`);
+      log.error(`Failed to create webhook at ${url}: ${String(error)}`);
     }
     return null;
   }
@@ -1422,7 +1907,7 @@ const createStripeWebhookForBetterAuth = async (
 
 /** Guides the user through setting up Stripe for payments */
 export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
-  console.log('Setting up Stripe...');
+  log.step('Setting up Stripe...');
 
   // If the secrets haven't been setup yet, let's try to init them
   if (Object.keys(devSecrets).length === 0) {
@@ -1455,7 +1940,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     prodPublishableKey &&
     prodPublishableKey !== ''
   ) {
-    console.log('✔ Stripe is already configured.\n');
+    log.success('Stripe is already configured.\n');
     return { didSetup: true, didSetupProd: true };
   }
 
@@ -1475,7 +1960,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
       devPublishableKey = '';
       devSecretKey = '';
     } else {
-      console.log('✔ Using existing sandbox keys');
+      log.success('Using existing sandbox keys');
     }
   }
 
@@ -1516,7 +2001,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
       prodPublishableKey = '';
       prodSecretKey = '';
     } else {
-      console.log('✔ Using existing live keys');
+      log.success('Using existing live keys');
       hasLiveAccount = true;
     }
   }
@@ -1563,8 +2048,8 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     }
     // Otherwise, skip it for now
     else {
-      console.log(
-        '✔ Skipping live keys setup. You can update your live keys later with `bun run init:stripe`.',
+      log.success(
+        'Skipping live keys setup. You can update your live keys later with `bun run init:stripe`.',
       );
     }
   }
@@ -1579,17 +2064,11 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
 
   // Uncomment secrets in infra/secrets.ts
   const secretsPath = path.resolve('infra/secrets.ts');
-  let secretsContent = fs.readFileSync(secretsPath, 'utf8');
-  secretsContent = secretsContent.replaceAll(
-    '// export const STRIPE_SECRET_KEY',
-    'export const STRIPE_SECRET_KEY',
-  );
-  secretsContent = secretsContent.replaceAll(
-    '// export const STRIPE_WEBHOOK_SECRET',
-    'export const STRIPE_WEBHOOK_SECRET',
-  );
-  fs.writeFileSync(secretsPath, secretsContent);
-  console.log('✔ Stripe secret keys have been set in SST.');
+  uncommentLines([
+    { filePath: secretsPath, line: /export const STRIPE_SECRET_KEY = .*/ },
+    { filePath: secretsPath, line: /export const STRIPE_WEBHOOK_SECRET = .*/ },
+  ]);
+  log.success('Stripe secret keys have been set in SST.');
 
   // Update config with publishable keys
   configContent = configContent.replace(
@@ -1597,46 +2076,10 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     `const publishableKey = isProd ? '${prodPublishableKey}' : '${devPublishableKey}'`,
   );
   fs.writeFileSync(configPath, configContent);
-  console.log('✔ Stripe publishable keys have been saved to config.');
-
-  // Uncomment stripe plugin in auth.ts
-  const authPath = path.resolve('apps/backend/core/auth.ts');
-  if (fs.existsSync(authPath)) {
-    let authContent = fs.readFileSync(authPath, 'utf8');
-
-    // Find and uncomment the entire stripe block using regex
-    // This regex matches the entire stripe block from "// stripePlugin({" to "// }),"
-    const stripeBlockRegex = /^(\s*)\/\/ stripePlugin\(\{[\s\S]*?^(\s*)\/\/ \}\),$/gm;
-
-    const hasStripeBlock = stripeBlockRegex.test(authContent);
-
-    if (hasStripeBlock) {
-      // Reset regex since test() consumed it
-      stripeBlockRegex.lastIndex = 0;
-
-      authContent = authContent.replaceAll(stripeBlockRegex, (match) => {
-        // Split the match into lines and process each one
-        return match
-          .split('\n')
-          .map((line) => {
-            // Remove "// " from the beginning of lines that start with "// "
-            if (/^(\s*)\/\/ /.test(line)) {
-              return line.replace(/^(\s*)\/\/ /, '$1');
-            }
-            return line;
-          })
-          .join('\n');
-      });
-
-      fs.writeFileSync(authPath, authContent);
-      console.log('✔ Stripe plugin has been enabled in apps/backend/core/auth.ts.\n');
-    } else {
-      console.log('⚠ Could not find stripe configuration block in auth.ts to uncomment.\n');
-    }
-  }
+  log.success('Stripe publishable keys have been saved to config.\n');
 
   // ---------- WEBHOOK SETUP ----------
-  console.log('Setting up Stripe webhook...');
+  log.step('Setting up Stripe webhook...');
 
   if (domain) {
     // We have a domain, so we can create the webhook automatically
@@ -1650,7 +2093,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
       if (resetDevWebhook) {
         devWebhookSecret = '';
       } else {
-        console.log('✔ Using existing dev webhook secret');
+        log.success('Using existing dev webhook secret');
       }
     }
 
@@ -1661,7 +2104,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
       const secret = await createStripeWebhookForBetterAuth(devWebhookUrl, devSecretKey);
       if (secret) {
         devWebhookSecret = secret;
-        console.log(`✔ Created dev webhook: ${devWebhookUrl}`);
+        log.success(`Created dev webhook: ${devWebhookUrl}`);
       } else {
         console.log('You will need to create the dev webhook manually.');
       }
@@ -1676,7 +2119,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
         if (resetProdWebhook) {
           prodWebhookSecret = '';
         } else {
-          console.log('✔ Using existing prod webhook secret');
+          log.success('Using existing prod webhook secret');
         }
       }
 
@@ -1687,7 +2130,7 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
         const secret = await createStripeWebhookForBetterAuth(prodWebhookUrl, prodSecretKey);
         if (secret) {
           prodWebhookSecret = secret;
-          console.log(`✔ Created prod webhook: ${prodWebhookUrl}`);
+          log.success(`Created prod webhook: ${prodWebhookUrl}`);
         } else {
           console.log('You will need to create the prod webhook manually.');
         }
@@ -1706,10 +2149,10 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
       execSync(`bun sst secret set STRIPE_WEBHOOK_SECRET "${devWebhookSecret}" --fallback`);
     }
 
-    console.log('✔ Stripe webhook setup complete!');
+    log.success('Stripe webhook setup complete!');
   } else {
     // No domain available, provide manual instructions
-    console.log('⚠ No custom domain configured for webhook creation.\n');
+    log.warn('No custom domain configured for webhook creation.\n');
     console.log(
       'Tip: You can re-run this setup script with a custom domain to automate webhook creation.\n',
     );
@@ -1736,21 +2179,49 @@ export const setupStripe = async ({ domain }: { domain?: string } = {}) => {
     await promptUser('Press enter to continue...');
   }
 
-  console.log('✔ Stripe setup complete!\n');
+  log.success('Stripe setup complete!\n');
   return { didSetup: true, didSetupProd: hasLiveAccount };
 };
 
 // ---------- NOTES HELPERs ----------
 /** Prints tips and disclosures for the user. */
 const printTips = async () => {
-  console.log('--- Tips and Disclosures ---');
+  log.step('--- Tips and Disclosures ---');
   console.log(
     '- This script works best if you already have a domain purchased and managed by AWS Route 53.\n',
   );
   await promptUser('Press enter to continue...\n');
 };
 
-/** Prints Stripe-specific setup instructions. */
+/** Prints email-specific setup instructions */
+export const printEmailFinalNotes = (result: EmailSetupResult) => {
+  if (!result) {
+    return;
+  }
+
+  // Only mention the stages that still need work
+  const notes = EMAIL_STAGES.flatMap((stage) => {
+    const stageResult = result[stage];
+    if (stageResult?.status === 'no-sender') {
+      const channelsUrl = emailChannelsUrl(stageResult.projectId);
+      return [
+        `- Email (${stage}): no sender yet. Add one at ${channelsUrl} once you have a domain, then run: "bun run init:email"`,
+      ];
+    }
+    if (stageResult?.status === 'error') {
+      return [`- Email (${stage}): email setup failed. Run it again with: "bun run init:email"`];
+    }
+    return [];
+  });
+  if (notes.length === 0) {
+    return;
+  }
+
+  console.log('Email setup...');
+  console.log(`${notes.join('\n')}\n`);
+};
+
+/** Prints Stripe-specific setup instructions */
 export const printStripeFinalNotes = (stripeConfig: Awaited<ReturnType<typeof setupStripe>>) => {
   if (!stripeConfig.didSetup) {
     return;
@@ -1759,7 +2230,7 @@ export const printStripeFinalNotes = (stripeConfig: Awaited<ReturnType<typeof se
   console.log('Stripe setup...');
   if (!stripeConfig.didSetupProd) {
     console.log(
-      '- Production Stripe is not yet configured. Finish your Stripe onboarding and re-run the stripe-specific setup with: bun run init:stripe',
+      '- Production Stripe is not yet configured. Finish your Stripe onboarding and re-run the stripe-specific setup with: "bun run init:stripe"',
     );
   }
   console.log(
@@ -1773,14 +2244,14 @@ export const printStripeFinalNotes = (stripeConfig: Awaited<ReturnType<typeof se
 /** Prints final setup instructions and tips for the user. */
 const printFinalNotes = ({
   posthogSetup,
-  loopsSetup,
+  emailSetup,
   stripeConfig,
 }: {
   posthogSetup: boolean;
-  loopsSetup: boolean;
+  emailSetup: EmailSetupResult;
   stripeConfig: Awaited<ReturnType<typeof setupStripe>>;
 }) => {
-  console.log('--- Final Notes ---');
+  log.step('--- Final Notes ---');
   console.log('You can start the app with: bun dev\n');
 
   // Only mention the error tracking setup if they opted in
@@ -1789,10 +2260,10 @@ const printFinalNotes = ({
       '- Set up error notifications for Slack: https://us.posthog.com/error_tracking/configuration?tab=error-tracking-alerting#selectedSetting=error-tracking-alerting',
     );
 
-    // If they also set up loops, mention that they can trigger email campaigns based on events
-    if (loopsSetup) {
+    // If they also set up emails, mention that they can run email campaigns based on events
+    if (emailSetup) {
       console.log(
-        '- Add Loops as a PostHog destination and set up an onboarding campaign based on the "User Signed Up" event.',
+        '- Build onboarding emails in PostHog Workflows, triggered by the "User Signed Up" event: https://us.posthog.com/workflows',
       );
     }
   }
@@ -1801,16 +2272,19 @@ const printFinalNotes = ({
     '- Make sure you restart your terminal for your AWS profile changes to take effect.\n',
   );
 
+  // Mention anything left to do for email setup
+  printEmailFinalNotes(emailSetup);
+
   // Mention Stripe setup if they configured it
   printStripeFinalNotes(stripeConfig);
 
-  console.log('✔ Setup complete! Happy coding!\n');
+  log.success('Setup complete! Happy coding!\n');
 };
 
 // ---------- MAIN ----------
 /** Initializes everything we need to get started with this repo */
 const init = async () => {
-  console.log('Setting up starter...\n');
+  log.step('Setting up starter...\n');
 
   // Check that all CLI tools are setup
   checkCLIs();
@@ -1842,6 +2316,12 @@ const init = async () => {
   // Setup PostHog
   const posthogConfig = await setupPosthog({ projectName });
 
+  // Setup emails (sent through PostHog)
+  const emailSetup = await setupPosthogEmail({
+    domain,
+    personalApiKey: posthogConfig?.setupKey,
+  });
+
   // Configure github url and secrets
   const githubConfig = await setupGithub({
     awsConfig,
@@ -1855,11 +2335,11 @@ const init = async () => {
   // Setup Crisp Chat
   await setupCrispChat();
 
+  // Setup marketing site
+  await setupMarketingSite({ domain });
+
   // Setup docs site
   await setupDocsSite({ domain });
-
-  // Setup Loops emails
-  const loopsSetup = await setupLoops();
 
   // Setup Langfuse
   await setupLangfuse();
@@ -1868,7 +2348,11 @@ const init = async () => {
   const stripeConfig = await setupStripe({ domain });
 
   // Print final notes
-  printFinalNotes({ posthogSetup: !!posthogConfig, loopsSetup, stripeConfig });
+  printFinalNotes({
+    posthogSetup: !!posthogConfig,
+    emailSetup,
+    stripeConfig,
+  });
 
   // End the script
   process.exit(0);

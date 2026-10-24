@@ -1,9 +1,21 @@
 // Builds PostHog email designs (Unlayer design JSON) from native blocks, so every template stays
 // editable block by block in PostHog's visual editor. The server renders the sent HTML from the design.
 
-/** The email palette (matches the app's neutral theme) */
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+import { readThemeColor } from '@repo/design/lib/theme';
+
+/** The design system's stylesheet, where the app's theme colors live */
+const designCss = fs.readFileSync(
+  fileURLToPath(import.meta.resolve('@repo/design/globals.css')),
+  'utf8',
+);
+
+/** The email palette */
 export const palette = {
-  primary: '#171717',
+  primary: readThemeColor({ css: designCss, variable: '--primary' }),
+  primaryForeground: readThemeColor({ css: designCss, variable: '--primary-foreground' }),
   body: '#404040',
   muted: '#737373',
   hairline: '#e5e5e5',
@@ -26,7 +38,6 @@ type Block = {
 };
 
 type Row = {
-  backgroundColor?: string;
   blocks: Block[];
 };
 
@@ -89,7 +100,7 @@ export const blocks = {
       text,
       href: { name: 'web', values: { href, target: '_blank' } },
       buttonColors: {
-        color: palette.white,
+        color: palette.primaryForeground,
         backgroundColor: palette.primary,
         hoverColor: palette.white,
         hoverBackgroundColor: '#000000',
@@ -123,9 +134,12 @@ export const blocks = {
   }),
 };
 
-/** The full-width accent bar at the top of every email */
+/**
+ * The accent bar at the top of every email. Only the divider's border is colored: a row
+ * background fills the full email width, and clients that pad the divider's cell show it
+ * as a thick bar.
+ */
 const topBar: Row = {
-  backgroundColor: palette.primary,
   blocks: [
     {
       type: 'divider',
@@ -193,7 +207,7 @@ export const createDesign = ({
           cells: [1],
           values: {
             padding: '0px',
-            backgroundColor: row.backgroundColor ?? '',
+            backgroundColor: '',
             _meta: { htmlID: rowId.htmlID, htmlClassNames: 'u_row' },
           },
           columns: [

@@ -45,7 +45,6 @@ import { email } from '@repo/email';
 await email.sendResetPasswordEmail({
   email: 'a@b.com',
   resetLink: 'https://app/reset?token=...',
-  userId: user.id,
 });
 ```
 

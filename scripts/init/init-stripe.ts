@@ -13,6 +13,7 @@ const initStripe = async () => {
   const stripeConfig = await setupStripe({ domain });
 
   // Print final notes
+  log.step('--- Final Notes ---\n');
   printStripeFinalNotes(stripeConfig);
 
   // End the script

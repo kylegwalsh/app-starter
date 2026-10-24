@@ -18,7 +18,8 @@ export const contactFormSubmissionTemplate: EmailTemplateDefinition = {
   description:
     'Sent to the support inbox when someone fills out the marketing site contact form. Variables: appName, name, email, company (optional), message.',
   sensitive: false,
-  subject: "New message from {{ variables.name | default: 'a visitor' }}",
+  // The app name prefix makes these easy to spot and filter in a shared inbox
+  subject: `[${appName}] New message from {{ variables.name | default: 'a visitor' }}`,
   // Replying goes straight to the person who filled out the form
   replyTo: '{{ variables.email }}',
   text: [

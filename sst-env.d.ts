@@ -18,10 +18,6 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "LOOPS_API_KEY": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
     "STAGE": {
       "type": "sst.sst.Secret"
       "value": string

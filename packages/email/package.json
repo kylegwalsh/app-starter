@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@repo/config": "workspace:*",
+    "@repo/design": "workspace:*",
     "@repo/tsconfig": "workspace:*",
     "typescript": "7.0.2"
   }

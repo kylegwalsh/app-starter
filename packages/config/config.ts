@@ -56,29 +56,36 @@ export const config = {
     /** The URL of the marketing site */
     url: marketingUrl,
   },
-  /** The configuration for PostHog (our analytics system) */
+  /** The configuration for PostHog (our analytics, error tracking, logs, and email system) */
   posthog: {
-    /** Whether posthog is enabled */
-    isEnabled: isDeployment,
-    /** The PostHog API key */
-    apiKey: isProd
-      ? 'phc_LE5qHtqyJtBrzG4vRkfTY5OKmc3bBhEf7u8OEPyneCD'
-      : 'phc_xKfOXqc9QAqX5E1KIepSG9EcG2FddQWvupGTvogQ0AH',
+    /** The PostHog project ID */
+    projectId: isProd ? '171114' : '171115',
+    /** Analytics, error tracking, and logs */
+    analytics: {
+      /** Whether analytics is enabled */
+      isEnabled: isDeployment,
+      /** The PostHog project API key */
+      apiKey: isProd
+        ? 'phc_LE5qHtqyJtBrzG4vRkfTY5OKmc3bBhEf7u8OEPyneCD'
+        : 'phc_xKfOXqc9QAqX5E1KIepSG9EcG2FddQWvupGTvogQ0AH',
+    },
+    /** Transactional emails */
+    email: {
+      /** The transactional email template IDs */
+      templates: {
+        /** Sent when a user asks to reset their password */
+        resetPassword: isProd ? '' : '01a16682-3704-0000-b61e-b31c5104117c',
+        /** Sent to the support inbox for contact form submissions */
+        contactFormSubmission: isProd ? '' : '01a16683-067a-0000-a15f-1c0dd04c6663',
+        /** Sent when a user is invited to an organization */
+        inviteToOrganization: isProd ? '' : '01a16e2b-5adc-0000-53f9-4e3620450d1c',
+      },
+    },
   },
   /** The configuration for crisp (our chat system) */
   crisp: {
     /** The crisp chat website ID */
     websiteId: '',
-  },
-  /** The configuration for our Loops (our email system) */
-  loops: {
-    /** The transactional emails we support */
-    transactional: {
-      /** The transactional email for reset password */
-      resetPassword: 'cmddvjz0v1hmexb0inad4bz0h',
-      /** The transactional email sent to our support inbox for contact form submissions */
-      contactFormSubmission: '',
-    },
   },
   /** The configuration for Stripe (our payment system) */
   stripe: (() => {

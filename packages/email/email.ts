@@ -37,20 +37,10 @@ const sendTemplate = async ({
 /** Methods related to email (each returns the queued send's ID) */
 export const email = {
   /** Sends a reset password email */
-  sendResetPasswordEmail: async ({
-    email,
-    resetLink,
-    userId,
-  }: {
-    email: string;
-    resetLink: string;
-    /** The user's ID, so the email's events land on their PostHog person */
-    userId?: string;
-  }) =>
+  sendResetPasswordEmail: async ({ email, resetLink }: { email: string; resetLink: string }) =>
     await sendTemplate({
       template: 'resetPassword',
       to: email,
-      distinctId: userId,
       variables: { resetLink },
     }),
   /** Sends a contact form submission email to our support inbox */

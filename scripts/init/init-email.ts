@@ -13,9 +13,8 @@ const initEmail = async () => {
   const emailSetup = await setupPosthogEmail({ domain, force: true });
 
   // Print final notes
-  log.step('--- Final Notes ---');
+  log.step('--- Final Notes ---\n');
   printEmailFinalNotes(emailSetup);
-  console.log();
 
   // End the script
   process.exit(0);
