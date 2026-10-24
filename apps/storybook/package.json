@@ -6,8 +6,8 @@
   "scripts": {
     "build": "storybook build",
     "dev": "storybook dev -p 6006",
-    "test": "sst shell -- vitest run",
-    "test:ui": "sst shell -- vitest --ui",
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
     "lint": "oxlint --type-aware --type-check",
     "lint:fix": "oxlint --type-aware --type-check --fix",
     "format": "oxfmt",
