@@ -1,6 +1,6 @@
 import type { Stripe } from 'stripe';
 
-import { routerFactory } from '@/tests/factories';
+import { type TestSession, sessionFactory } from '@/tests/factories';
 import type { PartialMock } from '@/tests/mocks/partial-mock';
 
 // Mock stripe
@@ -30,14 +30,14 @@ vi.mock('@/core/stripe', async (importOriginal) => {
 
 // Test our router
 describe('Billing Router', () => {
-  let api: Awaited<ReturnType<typeof routerFactory.createRouter>>['router'];
+  let api: TestSession['api'];
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const mock = await routerFactory.createRouter({
+    const session = await sessionFactory.createSession({
       organization: { stripeCustomerId: 'test-customer-id' },
     });
-    api = mock.router;
+    api = session.api;
   });
 
   describe('charge', () => {
@@ -76,7 +76,7 @@ describe('Billing Router', () => {
     });
 
     it('passes undefined as customer when org has no stripe customer id', async () => {
-      const { router: apiNoCustomer } = await routerFactory.createRouter({
+      const { api: apiNoCustomer } = await sessionFactory.createSession({
         organization: { stripeCustomerId: null },
       });
       mockStripe.checkout.sessions.create.mockResolvedValueOnce({
@@ -142,7 +142,7 @@ describe('Billing Router', () => {
 
   describe('getHistory', () => {
     it('returns an empty history when organization has no Stripe customer ID', async () => {
-      const { router: apiNoCustomer } = await routerFactory.createRouter({
+      const { api: apiNoCustomer } = await sessionFactory.createSession({
         organization: { stripeCustomerId: null },
       });
       const result = await apiNoCustomer.billing.getHistory();

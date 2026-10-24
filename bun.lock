@@ -71,7 +71,9 @@
         "@repo/constants": "workspace:*",
         "@repo/email": "workspace:*",
         "@repo/logs": "workspace:*",
+        "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
+        "axios": "1.9.0",
         "better-auth": "1.5.4",
         "hono": "4.8.4",
         "nanoid": "3.3.11",
@@ -105,6 +107,34 @@
         "@types/react": "19.3.0",
         "@types/react-dom": "19.3.0",
         "postcss": "8.5.4",
+        "tailwindcss": "4.3.3",
+        "typescript": "7.0.2",
+      },
+    },
+    "apps/marketing": {
+      "name": "@repo/marketing",
+      "version": "0.0.1",
+      "dependencies": {
+        "@hookform/resolvers": "5.9.2",
+        "@orpc/client": "1.15.7",
+        "@repo/analytics": "workspace:*",
+        "@repo/config": "workspace:*",
+        "@repo/design": "workspace:*",
+        "@repo/schemas": "workspace:*",
+        "@repo/seo": "workspace:*",
+        "lucide-react": "0.475.0",
+        "next": "16.4.2",
+        "react": "19.3.1",
+        "react-dom": "19.3.1",
+        "react-hook-form": "7.56.4",
+        "zod": "4.6.7",
+      },
+      "devDependencies": {
+        "@repo/backend": "workspace:*",
+        "@repo/tsconfig": "workspace:*",
+        "@types/node": "24.10.1",
+        "@types/react": "19.3.0",
+        "@types/react-dom": "19.3.0",
         "tailwindcss": "4.3.3",
         "typescript": "7.0.2",
       },
@@ -279,6 +309,7 @@
         "class-variance-authority": "0.7.1",
         "clsx": "2.1.1",
         "cmdk": "1.1.1",
+        "culori": "4.0.2",
         "date-fns": "4.1.0",
         "embla-carousel-react": "8.6.0",
         "input-otp": "1.4.2",
@@ -300,6 +331,7 @@
         "@repo/tsconfig": "workspace:*",
         "@tailwindcss/postcss": "4.3.3",
         "@turbo/gen": "2.4.2",
+        "@types/culori": "4.0.1",
         "@types/node": "24.10.1",
         "@types/react": "19.3.0",
         "@types/react-dom": "19.3.0",
@@ -311,10 +343,11 @@
       "name": "@repo/email",
       "version": "0.0.1",
       "dependencies": {
-        "loops": "5.0.1",
+        "axios": "1.9.0",
       },
       "devDependencies": {
         "@repo/config": "workspace:*",
+        "@repo/design": "workspace:*",
         "@repo/tsconfig": "workspace:*",
         "typescript": "7.0.2",
       },
@@ -1266,6 +1299,8 @@
 
     "@repo/logs": ["@repo/logs@workspace:packages/logs"],
 
+    "@repo/marketing": ["@repo/marketing@workspace:apps/marketing"],
+
     "@repo/schemas": ["@repo/schemas@workspace:packages/schemas"],
 
     "@repo/seo": ["@repo/seo@workspace:packages/seo"],
@@ -1567,6 +1602,8 @@
     "@types/babel__traverse": ["@types/babel__traverse@7.28.0", "", { "dependencies": { "@babel/types": "^7.28.2" } }, "sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q=="],
 
     "@types/chai": ["@types/chai@5.2.3", "", { "dependencies": { "@types/deep-eql": "*", "assertion-error": "^2.0.1" } }, "sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA=="],
+
+    "@types/culori": ["@types/culori@4.0.1", "", {}, "sha512-43M51r/22CjhbOXyGT361GZ9vncSVQ39u62x5eJdBQFviI8zWp2X5jzqg7k4M6PVgDQAClpy2bUe2dtwEgEDVQ=="],
 
     "@types/d3-array": ["@types/d3-array@3.2.2", "", {}, "sha512-hOLWVbm7uRza0BYXpIIW5pxfrKe0W+D5lrFiAEYR+pb6w3N2SwSMaJbXdUfSEv+dT4MfHBLtn5js0LAWaO6otw=="],
 
@@ -1991,6 +2028,8 @@
     "cssstyle": ["cssstyle@4.6.0", "", { "dependencies": { "@asamuzakjp/css-color": "^3.2.0", "rrweb-cssom": "^0.8.0" } }, "sha512-2z+rWdzbbSZv6/rhtvzvqeZQHrBaqgogqt85sqFNbabZOuFbCVFb8kPeEtZjiKkbrm395irpNKiYeFeLiQnFPg=="],
 
     "csstype": ["csstype@3.2.3", "", {}, "sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ=="],
+
+    "culori": ["culori@4.0.2", "", {}, "sha512-1+BhOB8ahCn4O0cep0Sh2l9KCOfOdY+BXJnKMHFFzDEouSr/el18QwXEMRlOj9UY5nCeA8UN3a/82rUWRBeyBw=="],
 
     "d3-array": ["d3-array@3.2.4", "", { "dependencies": { "internmap": "1 - 2" } }, "sha512-tdQAmyA18i4J7wprpYq8ClcxZy3SC31QMeByyCFyRt7BVHdREQZ5lpzoe5mFEYZUWe+oq8HBvk9JjpibyEV4Jg=="],
 
@@ -2599,8 +2638,6 @@
     "long": ["long@5.3.2", "", {}, "sha512-mNAgZ1GmyNhD7AuqnTG3/VQ26o760+ZYBPKjPvugO8+nLbYfX6TVpJPseBvopbdY+qpZ/lKUnmEc1LeZYS3QAA=="],
 
     "longest-streak": ["longest-streak@3.1.0", "", {}, "sha512-9Ri+o0JYgehTaVBBDoMqIl8GXtbWg711O3srftcHhZ0dqnETqLaoIK0x17fUw9rFSlK/0NlsKe0Ahhyl5pXE2g=="],
-
-    "loops": ["loops@5.0.1", "", {}, "sha512-xM1c9mnlr8Hr4cHW944TQoK6ApynjinUWOgYZd9/B0/3lwTThq24BQ7+XLjgbFAP5kJzqDTRDQi3t+Diy51Udw=="],
 
     "loose-envify": ["loose-envify@1.4.0", "", { "dependencies": { "js-tokens": "^3.0.0 || ^4.0.0" }, "bin": { "loose-envify": "cli.js" } }, "sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q=="],
 

@@ -1,4 +1,5 @@
 import readline from 'node:readline';
+import { styleText } from 'node:util';
 
 import inquirer from 'inquirer';
 
@@ -10,7 +11,7 @@ export const promptUser = (question: string): Promise<string> => {
     output: process.stdout,
   });
   return new Promise((resolve) => {
-    rl.question(question, (answer) => {
+    rl.question(styleText('bold', question), (answer) => {
       rl.close();
       resolve(answer);
     });

@@ -25,7 +25,7 @@ const pinoLevelToSeverity: Record<string, SeverityNumber> = {
 /** Initialize the OTel logger provider for PostHog when running in AWS */
 const { otelLogger, otelProvider } = (() => {
   // We only ship logs to PostHog if it's enabled (usually in deployed AWS environment)
-  if (!config.posthog.isEnabled || !config.posthog.apiKey) {
+  if (!config.posthog.analytics.isEnabled || !config.posthog.analytics.apiKey) {
     return { otelLogger: undefined, otelProvider: undefined };
   }
 
@@ -33,7 +33,7 @@ const { otelLogger, otelProvider } = (() => {
   const exporter = new OTLPLogExporter({
     url: 'https://us.i.posthog.com/i/v1/logs',
     headers: {
-      Authorization: `Bearer ${config.posthog.apiKey}`,
+      Authorization: `Bearer ${config.posthog.analytics.apiKey}`,
     },
   });
 
@@ -114,7 +114,7 @@ const customDestination = {
       }
 
       // Ship logs to PostHog via OpenTelemetry if it's enabled
-      if (config.posthog.isEnabled && otelLogger) {
+      if (config.posthog.analytics.isEnabled && otelLogger) {
         const {
           time,
           level,

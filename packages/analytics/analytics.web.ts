@@ -13,12 +13,16 @@ declare global {
 }
 
 // Only initialize PostHog if we're on the client and PostHog is enabled
-if (typeof window !== 'undefined' && config.posthog.isEnabled && config.posthog.apiKey) {
+if (
+  typeof window !== 'undefined' &&
+  config.posthog.analytics.isEnabled &&
+  config.posthog.analytics.apiKey
+) {
   // Initialize our PostHog instance
-  posthog.init(config.posthog.apiKey, {
-    // We send all events to our own /event-relay endpoint and then re-write them to PostHog in the next.config.ts file
-    // This helps to avoid issues with ad blockers
-    api_host: '/event-relay',
+  posthog.init(config.posthog.analytics.apiKey, {
+    // We send all events to the web app's /event-relay endpoint, which re-writes them to PostHog (see
+    // apps/web/next.config.ts). This helps to avoid issues with ad blockers.
+    api_host: `${config.app.url}/event-relay`,
     capture_pageview: 'history_change',
     capture_exceptions: true,
     autocapture: true,

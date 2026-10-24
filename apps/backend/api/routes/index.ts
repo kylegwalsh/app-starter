@@ -1,9 +1,11 @@
 import { billingRouter } from './billing';
+import { contactRouter } from './contact';
 import { healthRouter } from './health';
 
 /** The router used to handle all API traffic */
 export const router = {
   billing: billingRouter,
+  contact: contactRouter,
   health: healthRouter,
 };
 

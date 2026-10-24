@@ -1,0 +1,42 @@
+/* Shared design system tokens + components (forms, buttons, etc) */
+@import '@repo/design/globals.css';
+@source "../components/**/*.{ts,tsx}";
+@source "../sections/**/*.{ts,tsx}";
+@source "../lib/**/*.{ts,tsx}";
+@source "./**/*.{ts,tsx}";
+
+/*
+ * ---------- MARKETING BRAND ----------
+ * These tokens are this site's own identity and are expected to be replaced per product.
+ * They're deliberately separate from the app's tokens so the marketing site doesn't end up
+ * looking like a dashboard. Override any shared token (e.g. --radius, --background) here too.
+ */
+:root {
+  /* The signature accent (CTAs, highlights) */
+  --brand: oklch(0.55 0.2 265);
+  --brand-foreground: oklch(0.985 0 0);
+  /* A tinted surface for alternating sections and callouts */
+  --surface: oklch(0.975 0.008 265);
+}
+
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-surface: var(--surface);
+  /* Typography (fonts are loaded in app/layout.tsx and exposed as --font-heading / --font-text) */
+  --font-display: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-text), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Offset anchor targets (e.g. #contact) so the sticky nav doesn't cover them */
+    scroll-padding-top: 5rem;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight text-balance;
+  }
+}

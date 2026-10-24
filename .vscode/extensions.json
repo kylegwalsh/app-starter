@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "oxc.oxc-vscode",
+    "typescriptteam.native-preview",
     "mgmcdermott.vscode-language-babel",
     "formulahendry.auto-close-tag",
     "mikestead.dotenv",

@@ -64,7 +64,7 @@ tests/          Vitest setup, factories, mocks (not test files — those live ne
 - Run tests with the `/test-backend` skill.
 - Co-locate tests next to source: `api/routes/billing.ts` → `api/routes/billing.test.ts`.
 - Integration-style: real routes, real DB (isolated SQLite). Mock only external services.
-- Use `routerFactory.createRouter()` from `@/tests/factories` for route tests.
+- Use `sessionFactory.createSession()` from `@/tests/factories` for route tests (signed-in user + org + `api` client).
 - For patterns and a full example, see `.claude/docs/backend-testing.md`.
 
 ## Review & CI

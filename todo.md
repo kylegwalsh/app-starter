@@ -1,13 +1,5 @@
 # TODO
 
-## POSTHOG WORKFLOWS
-
-- Deprecate Loops in favor of PostHog workflows once it's further along
-  - Update onboarding script
-    - Go to posthog workflows > click "New channel" > add a domain like account@mail.DOMAIN.com
-    - Add the DNS records in your domain host
-    - TBD
-
 ## POSTHOG SUPPORT
 
 - Posthog added a support feature that could replace crisp once it's further along
@@ -31,10 +23,6 @@
 - Create slack app
 - Build chat UI for web-app
 
-## Marketing site
-
-- Consider adding marketing site to repo
-
 ## PRISMA V7
 
 - Wait a bit for it to stabilize, then move to Prisma v7 for large speed up
@@ -49,6 +37,7 @@
 - Add verification tool to record videos of changes
 - Upgrade oxlint and see if it removes the warnings for react/set-state-in-effect
 - Once API Gateway v2 supports response streaming, add it and test that the MCP and general AI apis stream output
+- Once Posthog adds transactional email to their SDK, replace the api call in the email package
 - Update migrations once we finish updating schema
 - When pushing final starter: Remove posthog settings from config / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
 

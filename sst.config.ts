@@ -133,7 +133,8 @@ export default $config({
     await import('./infra/web');
     await import('./infra/admin');
     await import('./infra/keep-alive');
-    // Optional docs site
+    // Optional sites
+    // await import('./infra/marketing');
     // await import('./infra/docs');
   },
 });

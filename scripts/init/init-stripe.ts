@@ -1,8 +1,10 @@
+import { log } from '../utils/log.js';
+
 import { getDomain, printStripeFinalNotes, setupStripe } from './init.js';
 
 /** Initialize Stripe configuration */
 const initStripe = async () => {
-  console.log('Preparing Stripe setup...\n');
+  log.step('Preparing Stripe setup...\n');
 
   // Get the domain details from the user
   const domain = await getDomain();
@@ -11,6 +13,7 @@ const initStripe = async () => {
   const stripeConfig = await setupStripe({ domain });
 
   // Print final notes
+  log.step('--- Final Notes ---\n');
   printStripeFinalNotes(stripeConfig);
 
   // End the script
