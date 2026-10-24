@@ -30,6 +30,9 @@
 - See if we should store generated types in client and remove generate step in postinstall + ci if possible
 - See if they changed the way migrations are handled
 - Cache PrismaClient instance between Lambda invocations to reduce cold-start time
+- Blockers (no merged fixes yet, Oct 2026):
+  - Better Auth prisma adapter doesn't support v8: https://github.com/better-auth/better-auth/issues/9636 (first attempt closed: https://github.com/better-auth/better-auth/pull/10099)
+  - No v8 PGlite adapter for tests: https://github.com/prisma/orm/issues/23752
 
 ## OTHER
 
