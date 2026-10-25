@@ -81,17 +81,16 @@ export const AppSidebar: FC = ({ children }) => {
   const shouldAutoCollapse =
     AUTO_COLLAPSE_ROUTES.some((prefix) => pathname.startsWith(prefix)) ||
     (isDrawerOpen && isNarrow);
-  const openRef = useRef(open);
-  openRef.current = open;
   const lastAutoCollapse = useRef<boolean | null>(null);
   const autoCollapsedByUs = useRef(false);
   useEffect(() => {
+    // Only act when the auto-collapse condition flips, not when the user toggles the sidebar
     if (lastAutoCollapse.current === shouldAutoCollapse) {
       return;
     }
     lastAutoCollapse.current = shouldAutoCollapse;
     if (shouldAutoCollapse) {
-      if (openRef.current) {
+      if (open) {
         autoCollapsedByUs.current = true;
         setOpen(false);
       }
@@ -99,7 +98,7 @@ export const AppSidebar: FC = ({ children }) => {
       autoCollapsedByUs.current = false;
       setOpen(true);
     }
-  }, [shouldAutoCollapse, setOpen]);
+  }, [shouldAutoCollapse, open, setOpen]);
 
   return (
     <>

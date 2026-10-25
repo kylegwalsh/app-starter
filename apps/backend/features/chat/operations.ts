@@ -166,7 +166,7 @@ export const sendMessage = async (
   const finalize = async () => {
     stopHeartbeat();
     // A lock that was already cleared means the cancel operation ran (and wrote its own marker)
-    const released = await conversationLock.release(conversation.id).catch((error) => {
+    const released = await conversationLock.release(conversation.id).catch((error: unknown) => {
       log.warn({ err: error, conversationId: conversation.id }, 'Failed to clear lock');
       return false;
     });
@@ -184,7 +184,7 @@ export const sendMessage = async (
             errored: true,
           },
         })
-        .catch((error) =>
+        .catch((error: unknown) =>
           log.warn(
             { err: error, conversationId: conversation.id },
             'Failed to persist errored marker',
@@ -208,7 +208,7 @@ export const sendMessage = async (
         if (latestErrored) {
           await db.message
             .delete({ where: { id: latestErrored.id } })
-            .catch((error) =>
+            .catch((error: unknown) =>
               log.warn(
                 { err: error, conversationId: conversation.id },
                 'Failed to clear retried errored shell',
@@ -242,7 +242,7 @@ export const sendMessage = async (
                 data: { lastMessageAt: new Date() },
               })
             : Promise.resolve(),
-        ]).catch((error) =>
+        ]).catch((error: unknown) =>
           log.error(
             { err: error, conversationId: conversation.id },
             'Failed to persist user messages',
@@ -271,7 +271,7 @@ export const sendMessage = async (
                 });
                 return title;
               })
-              .catch((error) => {
+              .catch((error: unknown) => {
                 log.warn(
                   { err: error, conversationId: conversation.id },
                   'Failed to generate conversation title — keeping seeded title',
@@ -421,6 +421,7 @@ export const reconnectToGeneration = async (conversationId: string, context: Aut
 
   return createUIMessageStream({
     execute: async ({ writer }) => {
+      // oxlint-disable-next-line no-await-in-loop -- Long-poll: each check waits on the previous one
       while (await conversationLock.isHeld(conversationId)) {
         // Keepalive — flushes a transient chunk so the response stream
         // keeps trickling bytes while we long-poll. Without it AWS
@@ -433,6 +434,7 @@ export const reconnectToGeneration = async (conversationId: string, context: Aut
           data: { at: Date.now() },
           transient: true,
         });
+        // oxlint-disable-next-line no-await-in-loop -- Waits between polls
         await new Promise((resolve) => setTimeout(resolve, RECONNECT_POLL_MS));
       }
 
@@ -459,7 +461,7 @@ export const reconnectToGeneration = async (conversationId: string, context: Aut
     onFinish: async () => {
       await conversationLock
         .releaseIfExpired(conversationId)
-        .catch((error) =>
+        .catch((error: unknown) =>
           log.warn({ err: error, conversationId }, 'Failed to clear lock from reconnect'),
         );
     },

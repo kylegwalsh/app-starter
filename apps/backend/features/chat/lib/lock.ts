@@ -38,7 +38,7 @@ export const conversationLock = {
   /** Extends the lock on an interval so it only expires if we die. Returns a stop function */
   startHeartbeat: (conversationId: string) => {
     const interval = setInterval(() => {
-      extend(conversationId).catch((error) =>
+      extend(conversationId).catch((error: unknown) =>
         log.warn({ err: error, conversationId }, 'Lock heartbeat failed'),
       );
     }, HEARTBEAT_INTERVAL_MS);
