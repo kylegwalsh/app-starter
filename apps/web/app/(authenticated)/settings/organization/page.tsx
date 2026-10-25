@@ -13,8 +13,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { DashboardLayout } from '@/components';
-import { auth } from '@/core';
 import { useUser } from '@/hooks';
+import { auth } from '@/lib';
 
 /** The organization settings page */
 const OrganizationSettingsPage = () => {

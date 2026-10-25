@@ -16,7 +16,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AuthorizeSkeleton } from '@/components';
-import { auth } from '@/core';
+import { auth } from '@/lib';
 
 /** OAuth consent page for MCP and third-party clients */
 const AuthorizePage = () => {

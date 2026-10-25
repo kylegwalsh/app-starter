@@ -1,3 +1,4 @@
+import type { Observed, ObservedArgs } from '@repo/ai';
 import type { UIMessageChunk } from 'ai';
 
 /**
@@ -11,9 +12,11 @@ import type { UIMessageChunk } from 'ai';
 const mockAi = vi.hoisted(() => ({
   streamText: vi.fn(),
   generateText: vi.fn(),
-  getTraceId: vi.fn().mockReturnValue('test-trace-id'),
   // Run observed functions directly (no Langfuse span in tests)
-  observe: vi.fn((_name: string, fn: (...args: never[]) => unknown) => fn),
+  observe: vi.fn(
+    (_config: unknown, fn: (args: Observed<ObservedArgs>) => unknown) => (args: ObservedArgs) =>
+      fn({ ...args, observation: { traceId: 'test-trace-id', end: () => {} } }),
+  ),
   scoreTrace: vi.fn(),
   flush: vi.fn(async () => {}),
   captureException: vi.fn(async () => {}),

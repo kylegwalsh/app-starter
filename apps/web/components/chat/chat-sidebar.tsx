@@ -24,13 +24,13 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { api } from '@/core/api';
 import {
   chatListQueryKey,
   useConversations,
   type ConversationListInfiniteData,
   type ConversationListPage,
 } from '@/hooks/use-conversations';
+import { api } from '@/lib/api';
 
 /** A conversation row as returned by the list endpoint (dates arrive as ISO strings) */
 type Conversation = ConversationListPage['items'][number];

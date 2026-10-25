@@ -31,7 +31,7 @@
 - Make a note in onboarding that MCP only works with custom domains (along with anything else that requires it?)
 - Determine if we want JSON or markdown output
 - Add MCP tracing to Langfuse
-- Fix deep type in mcp/server
+- Fix deep type in ai/mcp/server
 - Add submit_feedback tool to MCP and score in Langfuse
 - Get MCP working with local API somehow (so we don't hardcode it)
 
@@ -61,7 +61,7 @@
 - Upgrade oxlint and see if it removes the warnings for react/set-state-in-effect
 - Once API Gateway v2 supports response streaming, add it and test that the MCP and general AI apis stream output
 - Once Posthog adds transactional email to their SDK, replace the api call in the email package
-- When pushing final starter: Remove posthog settings from config / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend / custom domain
+- When pushing final starter: Remove posthog settings from config / comment out the langfuse secrets / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend / custom domain
 
 ## MINOR IMPROVEMENTS
 

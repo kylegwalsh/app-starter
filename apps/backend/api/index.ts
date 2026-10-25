@@ -1,13 +1,13 @@
 import { config } from '@repo/config';
 import { Hono } from 'hono';
 
-import { auth } from '@/core';
+import { auth } from '@/services';
 
 import { mcpAdapter, mcpDiscovery } from './adapters';
 import { internalDocsLoginHTML, mountInternalDocs } from './docs';
 import { handleHonoError } from './error';
 import { corsMiddleware, timeoutMiddleware, timingMiddleware } from './middleware';
-import { router } from './routes';
+import { router } from './router';
 
 // ---------- CONFIGURATION ----------
 // Our global configuration for the hono wrapper

@@ -8,12 +8,14 @@ Node.js + TypeScript, SST (AWS Lambda), Hono (+ hono-openapi), Prisma (Postgres)
 
 ```text
 lambda/         Lambda entrypoints (api, crons)
-api/            All of our API code (hono)
-api/routes/     Feature routers (most new API work happens here)
-api/middleware/ Hono middleware (auth, CORS, timing, timeout)
-api/adapters/   Protocol adapters (MCP)
-ai/             AI tools, MCP server, and tool adapter
-core/           Core services (auth, stripe, re-usable business logic helpers)
+api/            The wiring for our Hono API
+features/       Vertical slices, one folder per feature domain:
+  routes.ts       Hono router: validate input → call an operation → respond
+  operations.ts   Business logic (DB work + decisions)
+  tools.ts        AI tools for chat/MCP (registered in `ai/tools.ts`)
+  lib/            Any additional helpers (use when operations gets too unwieldy)
+ai/             Tool registry, AI SDK + MCP tool adapters, MCP server
+services/       External integrations (auth, stripe, storage, daytona)
 db/             Prisma schema, migrations, connection utilities
 tests/          Vitest setup, factories, mocks (not test files — those live next to source)
 ```
@@ -29,16 +31,15 @@ tests/          Vitest setup, factories, mocks (not test files — those live ne
 - **Helpers**: Export as cohesive namespaced objects (`time.parse()`, `time.format()`), not scattered top-level functions.
 - **Naming**: Descriptive, no abbreviations. Functions = verbs, values = nouns.
 - **Errors**: Throw typed/semantic errors. Map to HTTP responses at the edge. Never swallow silently.
-- **Validation**: Validate external inputs with Zod schemas from `@repo/schemas`.
+- **Validation**: Request body schemas live in `@repo/schemas` (shared with the frontend); routes validate with them and operations type their input with `z.infer`. Small route-only inputs (path params, pagination queries) can stay inline on the route.
 
 ## API & Routing
 
 - **Hono** is the unified HTTP entry point (`api/index.ts`). It handles non-API concerns first (auth, MCP, etc) then mounts the API router under `/api`.
-- New endpoints go in `api/routes/`. Chain them off a single `new Hono<ProtectedEnv>().use(requireAuth)` expression — chaining is what lets the frontend's `hc` client infer types, so never split a router into separate statements.
+- New endpoints go in `features/<feature>/routes.ts` and are mounted in `api/router.ts`. Mount public routers before protected ones — a router's `.use(requireAuth)` also applies to every route mounted after it. Chain routes off a single `new Hono<ProtectedEnv>().use(requireAuth)` expression — chaining is what lets the frontend's `hc` client infer types, so never split a router into separate statements.
 - Each route takes `describeRoute({ summary, tags })` for the OpenAPI spec, then `validator('json' | 'query' | 'param', schema)` (from `hono-openapi`) which both validates and documents the input. Read validated input with `c.req.valid('json')`.
-- Read auth context with `c.get('user')` / `c.get('organization')` — non-optional on routers that applied `requireAuth`.
+- Keep handlers thin: validate, call an operation, respond. Pass `c.var` (an `AuthContext` of `user` + `organization`, non-optional on routers that applied `requireAuth`) to operations so they work without HTTP (tests, MCP tools, crons).
 - Throw `HTTPException` from `hono/http-exception` for errors (404 not found, 409 conflict, etc). The global `onError` handler reports them.
-- The same routes serve both the typed frontend client and the Swagger docs — there is no second handler to keep in sync.
 
 ## Database
 
@@ -49,7 +50,7 @@ tests/          Vitest setup, factories, mocks (not test files — those live ne
 
 ## Auth & Security
 
-- Better Auth: identity + org membership derived in request context, enforced via middleware/procedures.
+- Better Auth: identity + org membership derived in request context, enforced via middleware (`authMiddleware` + `requireAuth`).
 - Never log secrets or expose API keys to frontend. Use SST secrets.
 - Webhooks: verify signatures (e.g., Stripe), handle idempotency.
 
@@ -65,7 +66,7 @@ tests/          Vitest setup, factories, mocks (not test files — those live ne
 ## Testing
 
 - Run tests with the `/test-backend` skill.
-- Co-locate tests next to source: `api/routes/billing.ts` → `api/routes/billing.test.ts`.
+- Co-locate tests next to source: `features/billing/routes.ts` → `features/billing/routes.test.ts`.
 - Integration-style: real routes, real DB (isolated SQLite). Mock only external services.
 - Use `sessionFactory.createSession()` from `@/tests/factories` for route tests (signed-in user + org + `api` client).
 - For patterns and a full example, see `.claude/docs/backend-testing.md`.

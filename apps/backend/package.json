@@ -6,7 +6,7 @@
   "scripts": {
     "test": "vitest run",
     "test:ui": "vitest --ui",
-    "auth:generate": "sst shell -- bunx @better-auth/cli generate --config ./core/auth.ts --output ./db/schema.prisma",
+    "auth:generate": "sst shell -- bunx @better-auth/cli generate --config ./services/auth.ts --output ./db/schema.prisma",
     "db:start": "bun db:get-url \"prisma db push && prisma studio --browser none\"",
     "db:push": "bun db:get-url \"prisma db push\"",
     "db:migrate": "tsx ./scripts/migrations/create-migration.ts",

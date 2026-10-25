@@ -1,15 +1,20 @@
 'use client';
 
-import { ChatProvider } from '@/components/chat/chat-provider';
-import { ChatView } from '@/components/chat/chat-view';
+import { useEffect } from 'react';
+
+import { ChatView, useChatContext } from '@/components/chat';
 
 /** New conversation page */
 const ChatPage = () => {
-  return (
-    <ChatProvider>
-      <ChatView />
-    </ChatProvider>
-  );
+  const { startNewConversation } = useChatContext();
+
+  // When landing on the /chat page, we clear any active conversations that
+  // may be active in the chat drawer (fresh conversation)
+  useEffect(() => {
+    startNewConversation();
+  }, [startNewConversation]);
+
+  return <ChatView />;
 };
 
 export default ChatPage;

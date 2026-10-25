@@ -11,8 +11,8 @@ export const BETTER_AUTH_SECRET = new sst.Secret('BETTER_AUTH_SECRET');
 // export const GOOGLE_GENERATIVE_AI_API_KEY = new sst.Secret('GOOGLE_GENERATIVE_AI_API_KEY');
 
 // Langfuse (ai tracing)
-// export const LANGFUSE_SECRET_KEY = new sst.Secret('LANGFUSE_SECRET_KEY');
-// export const LANGFUSE_PUBLIC_KEY = new sst.Secret('LANGFUSE_PUBLIC_KEY');
+export const LANGFUSE_SECRET_KEY = new sst.Secret('LANGFUSE_SECRET_KEY');
+export const LANGFUSE_PUBLIC_KEY = new sst.Secret('LANGFUSE_PUBLIC_KEY');
 
 // PostHog
 // export const POSTHOG_SECRET_KEY = new sst.Secret('POSTHOG_SECRET_KEY');

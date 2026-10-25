@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
+import { createTool } from '@/ai/utils';
 import { db } from '@/db';
-
-import { createTool } from '../utils';
 
 /** Lists all organizations the user belongs to, including which one is active for MCP */
 export const listOrganizations = createTool({

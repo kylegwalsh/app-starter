@@ -4,7 +4,7 @@ import { log } from '@repo/logs';
 import type { z } from 'zod';
 
 import { handleError } from '@/api/error';
-import type { AuthUser } from '@/core';
+import type { AuthUser } from '@/services';
 
 /** The surfaces a tool can be invoked through */
 export type ToolConsumer = 'chat' | 'mcp';

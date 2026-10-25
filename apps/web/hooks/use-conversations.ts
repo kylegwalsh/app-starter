@@ -1,6 +1,6 @@
 import { type InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
 
-import { api } from '@/core/api';
+import { api } from '@/lib/api';
 
 /** Page size — large enough to fill the sidebar on most displays in one fetch */
 export const CHAT_LIST_PAGE_SIZE = 35;
@@ -8,18 +8,19 @@ export const CHAT_LIST_PAGE_SIZE = 35;
 /** A single page of the conversation list, as returned by the API */
 export type ConversationListPage = (typeof api.chat.conversations.$get.$infer)['data'];
 
-/** Query key for the conversation list — shared so optimistic writes hit the same entry */
-export const chatListQueryKey = api.chat.conversations.$get.getQueryKey();
-
-/**
- * Shared infinite-query options for the conversation list. The chat provider
- * also uses these directly so its optimistic writes land on the same cache entry.
- */
+/** Shared infinite-query options for the conversation list */
 export const chatListInfiniteOptions = api.chat.conversations.$get.infiniteQueryOptions({
   query: { limit: String(CHAT_LIST_PAGE_SIZE) },
   initialPageParam: undefined as string | undefined,
   getNextPageParam: (lastPage: ConversationListPage) => lastPage.nextCursor,
 });
+
+/**
+ * Cache key for the conversation list, for updating or refetching it from elsewhere (e.g. adding
+ * a new conversation). Read from the infinite query's options so it matches exactly —
+ * `api.chat.conversations.$get.getQueryKey()` builds a regular-query key, which never matches.
+ */
+export const chatListQueryKey = chatListInfiniteOptions.queryKey;
 
 /** Aggregated infinite-query cache shape */
 export type ConversationListInfiniteData = InfiniteData<ConversationListPage, string | undefined>;

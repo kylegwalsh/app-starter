@@ -1,4 +1,4 @@
-import { auth } from '@/core';
+import { auth } from '@/lib';
 
 /** Grabs the current organization's details */
 export const useOrganization = () => {

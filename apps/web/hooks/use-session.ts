@@ -1,4 +1,4 @@
-import { auth } from '@/core';
+import { auth } from '@/lib';
 
 /** Grabs the current user's session */
 export const useSession = () => {

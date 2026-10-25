@@ -9,10 +9,9 @@ Next.js (TypeScript), Tailwind CSS v4, shadcn/ui (`@repo/design`), lucide-react,
 ```text
 app/          App Router: layouts, pages, API routes, route groups
 components/   Reusable UI (layout, providers, feature components)
-core/         Clients and core utilities (auth, api, storage)
+lib/          Clients and core utilities (auth, api, query client, storage)
 hooks/        Reusable React hooks (user/session/organization)
 atoms/        Global state (Jotai atoms/selectors)
-tests/core/   Vitest unit tests
 tests/e2e/    Playwright end-to-end tests
 ```
 

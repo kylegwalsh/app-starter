@@ -4,7 +4,8 @@ import { AuthLoading, RedirectToSignIn, SignedIn } from '@daveyplate/better-auth
 import { LoadingLayout } from '@repo/design';
 
 import { AppSidebar, NoOrganizationState } from '@/components';
-import { auth } from '@/core';
+import { ChatProvider } from '@/components/chat';
+import { auth } from '@/lib';
 
 /** Renders the app once the user is signed in */
 const SignedInContent: FC = ({ children }) => {
@@ -20,7 +21,11 @@ const SignedInContent: FC = ({ children }) => {
     return <NoOrganizationState />;
   }
 
-  return <AppSidebar>{children}</AppSidebar>;
+  return (
+    <ChatProvider>
+      <AppSidebar>{children}</AppSidebar>
+    </ChatProvider>
+  );
 };
 
 /** The layout for the dashboard (enforce authentication) */

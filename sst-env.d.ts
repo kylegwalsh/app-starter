@@ -22,6 +22,14 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "LANGFUSE_PUBLIC_KEY": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "LANGFUSE_SECRET_KEY": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "STAGE": {
       "type": "sst.sst.Secret"
       "value": string

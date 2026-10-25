@@ -1,8 +1,8 @@
 import type { Organization, User } from '@prisma/client';
 import { hc } from 'hono/client';
 
-import { router } from '@/api/routes';
-import { auth } from '@/core';
+import { router } from '@/api/router';
+import { auth } from '@/services';
 
 import { organizationFactory } from './organization-factory';
 import { userFactory } from './user-factory';

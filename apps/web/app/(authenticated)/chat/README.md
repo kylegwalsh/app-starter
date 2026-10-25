@@ -7,10 +7,10 @@ AI-powered chat with tool calling, conversation persistence, and file uploads.
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  Frontend (apps/web)                                    │
-│  ┌─────────────┐  ┌──────────────┐  ┌───────────────┐  │
-│  │ ChatProvider │  │  ChatView    │  │ ChatWidget    │  │
-│  │ (useChat)    │──│ (messages,   │  │ (floating     │  │
-│  │              │  │  input, err) │  │  sheet)       │  │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐  │
+│  │ ChatProvider │  │  ChatView    │  │ ChatDrawer    │  │
+│  │ (app layout, │──│ (messages,   │  │ (right drawer │  │
+│  │  owns Chat)  │  │  input, err) │  │  on all pages)│  │
 │  └──────┬───────┘  └──────────────┘  └───────────────┘  │
 │         │ DefaultChatTransport                          │
 │         │ (credentials: 'include')                      │
@@ -19,15 +19,15 @@ AI-powered chat with tool calling, conversation persistence, and file uploads.
           ▼
 ┌─────────────────────────────────────────────────────────┐
 │  Backend (apps/backend)                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │ Hono /api/   │  │ Hono /api/   │  │ MCP tools    │  │
-│  │ chat (stream)│  │ chat/convers-│  │ (in-process)  │  │
-│  │              │  │ ations (CRUD)│  │              │  │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
+│  │ Hono /api/   │  │ Hono /api/   │  │ AI tools     │   │
+│  │ chat (stream)│  │ chat/convers-│  │ (in-process) │   │
+│  │              │  │ ations (CRUD)│  │              │   │
+│  └──────┬───────┘  └──────┬───────┘  └───────┬──────┘   │
 │         │                 │                  │          │
 │         │    ┌────────────┴──────────────────┘          │
-│         │    │  MCP adapter (mcp/adapter.ts)            │
-│         │    │  Converts MCP tools → AI SDK tools       │
+│         │    │  Tool adapter (ai/sdk.ts)                │
+│         │    │  Converts our tools → AI SDK tools       │
 │         │    │  Zero network overhead (in-process)      │
 │         ▼    ▼                                          │
 │  ┌──────────────────────────────────────────────────┐   │
@@ -40,13 +40,22 @@ AI-powered chat with tool calling, conversation persistence, and file uploads.
 
 ## Key Design Decisions
 
+### App-Wide Chat State
+
+`ChatProvider` is mounted once in the authenticated layout and owns the active conversation's AI SDK `Chat` instance (created with `new Chat(...)` and passed to `useChat({ chat })`). The chat pages and the drawer are both views of that one chat:
+
+- `/chat` and `/chat/[id]` show it full screen. The route only picks which conversation is active (`startNewConversation()` / `openConversation(id, …)`).
+- Every other page can open it in a right-hand drawer from the header's chat button. The drawer's open state isn't persisted across reloads.
+
+Because the instance outlives the pages, a response keeps streaming while the user moves between the full-screen chat and the drawer. The first message of a new conversation is sent directly from the submit handler. Only one conversation streams at a time: switching conversations stops the previous one, and the backend's reconnect flow picks it back up if the user returns.
+
 ### Streaming Route
 
-The chat endpoint is a Hono route at `POST /api/chat` that returns the AI SDK's SSE stream via `createUIMessageStreamResponse()`, which is exactly what `useChat`'s `DefaultChatTransport` consumes. Conversation CRUD (list, get, delete, rename) uses the same router, reached through the typed `hc` client + TanStack Query.
+The chat endpoint is a Hono route at `POST /api/chat` (`apps/backend/features/chat/routes.ts`, with the logic in `operations.ts`) that returns the AI SDK's SSE stream via `createUIMessageStreamResponse()`, which is exactly what `useChat`'s `DefaultChatTransport` consumes. Conversation CRUD (list, get, delete, rename) uses the same router, reached through the typed `hc` client + TanStack Query.
 
-### MCP Tool Adapter (In-Process)
+### Tool Adapter (In-Process)
 
-Rather than connecting to our own MCP server over HTTP (which would add 2 network hops + auth per tool call), we convert MCP tool definitions to native AI SDK tools in-process via `mcp/adapter.ts`. Tool logic is defined once in `mcp/tools/`, and the adapter reads those same definitions. Zero latency overhead.
+Rather than connecting to our own MCP server over HTTP (which would add 2 network hops + auth per tool call), chat converts our tool definitions to native AI SDK tools in-process via `apps/backend/ai/sdk.ts`. Tools are defined once in each backend feature's `tools.ts` and shared by chat and the MCP server. Zero latency overhead.
 
 ### Message Storage (UIMessage JSON)
 
@@ -54,58 +63,69 @@ Messages are stored with their `parts` as a JSON column in Postgres. This preser
 
 ### AI-Generated Titles
 
-When a new conversation starts, we fire `ai.generateObject()` in parallel with the chat stream to generate a short descriptive title. This runs concurrently — no added latency to the user's response.
+When a new conversation starts, we call `generateChatTitle` (`apps/backend/features/chat/lib/title.ts`) in parallel with the chat stream to generate a short descriptive title. This runs concurrently — no added latency to the user's response. It's traced separately in Langfuse and grouped with the conversation's chat turns by session.
 
 ### Access Control
 
 All conversations are scoped to `userId + organizationId`. Switching organizations shows a different conversation list. The chat route and all CRUD endpoints enforce this scoping.
 
-## File Uploads (Planned)
+## File Uploads
+
+Users can attach images, PDFs, Office documents and text files (`CHAT_ALLOWED_FILE_TYPES` in `@repo/constants`, max 10 MB each). Files go straight from the browser to a private S3 bucket and never pass through our API.
+
+### Upload Flow
+
+1. **Attach**: the upload starts as soon as a file is staged in the prompt input, so it's usually done by the time the user hits send. A local blob URL renders the preview in the meantime.
+2. **Presign**: the client calls `POST /api/uploads/create-upload-url` (`apps/backend/features/uploads/`). The backend returns:
+   - a presigned POST (valid for 5 minutes) whose policy pins the content type and caps the size, so S3 rejects the upload even if the client lies about either
+   - a signed GET URL (`viewUrl`) for the new file
+3. **Upload**: the client POSTs the file to S3 with the returned form fields. A `SignatureDoesNotMatch` rejection is retried up to twice.
+4. **Send**: the message's file part stores the `viewUrl`, and the message is persisted with it.
 
 ### Storage
 
-Files are uploaded to a private S3 bucket at the path:
+Files live in the private `uploads` bucket (`infra/storage.ts`) under:
 
 ```
-/uploads/{organizationId}/{conversationId}/{fileId}.{ext}
+{organizationId}/{nanoid}-{fileName}
 ```
 
-### Access Control (CloudFront + Signed Cookies)
+The organization prefix is the security boundary — only that organization's members are ever handed signed URLs for it. The random prefix keeps re-uploads of the same name from colliding, and the original file name keeps the bucket legible when browsing.
 
-Files are served through a CloudFront distribution with signed cookies:
+Objects expire after **60 days** (a bucket lifecycle rule that reclaims orphaned uploads). That also applies to files referenced in conversations, so older attachments stop loading after that point.
 
-1. When a user authenticates, a CloudFront signed cookie is set scoped to `/uploads/{orgId}/*`
-2. File URLs in chat history are permanent CloudFront URLs (e.g., `https://cdn.app.com/uploads/{orgId}/{convId}/{fileId}.png`)
-3. Only users with a valid org-scoped cookie can access the files
-4. Cookies refresh with the auth session and expire when the session does
+### Access Control (Signed URLs)
 
-This approach means:
+The bucket is never public. Every link is a presigned S3 URL that's valid for 24 hours:
 
-- URLs stored in message parts are stable forever (no expiring presigned URLs)
-- All org members can view files in shared conversations
-- No per-image auth overhead (cookie covers all files in the org)
-- Users removed from an org lose access when their cookie expires
+- **Loading a conversation** (`GET /api/chat/conversations/:id`) re-signs each stored file URL after the ownership check, so only conversation members get working links, and links that expired since they were stored are refreshed.
+- **Download names**: signed URLs set the `Content-Disposition` file name, so browsers show the original name instead of the prefixed key.
+
+### Sending Files to the Model
+
+When the AI SDK needs a file's contents and the model can't fetch the URL itself, the chat turn reads the bytes directly from S3 with the Lambda's IAM credentials (`downloadUploadsFromS3` in `apps/backend/features/chat/lib/attachments.ts`). An expired stored URL therefore never breaks a conversation. File names are also sanitized and made unique before reaching Bedrock, which rejects most punctuation and duplicate names.
 
 ### Sharing (Future)
 
-Conversations can be shared via a share link (`/chat/shared/{shareToken}`):
+Conversations could be shared via a link (`/chat/shared/{shareToken}`):
 
-- **Within org**: Works automatically — all members have the org-scoped cookie
-- **External (public link)**: Shared view proxies images through an API route that validates the share token, or generates short-lived presigned S3 URLs at render time
-- Share links are read-only and revocable by the conversation owner
+- **Within the organization**: the share view re-signs file URLs after checking membership, the same way loading a conversation does
+- **External (public link)**: the share view validates the token and signs short-lived URLs at render time
+- Share links would be read-only and revocable by the conversation owner
 
 ## Routes
 
-| Route                                        | Type      | Description                                   |
-| -------------------------------------------- | --------- | --------------------------------------------- |
-| `POST /api/chat`                             | Streaming | Send messages, receive streamed AI response   |
-| `POST /api/chat/conversations/:id/cancel`    | JSON      | Stop generation, persist the partial response |
-| `POST /api/chat/conversations/:id/reconnect` | Streaming | Resume a generation started elsewhere         |
-| `GET /api/chat/conversations`                | JSON      | List user's conversations (paginated)         |
-| `GET /api/chat/conversations/:id`            | JSON      | Get conversation with all messages            |
-| `PATCH /api/chat/conversations/:id`          | JSON      | Rename a conversation                         |
-| `DELETE /api/chat/conversations/:id`         | JSON      | Delete a conversation                         |
-| `POST /api/chat/feedback`                    | JSON      | Submit thumbs up/down on an assistant message |
+| Route                                        | Type      | Description                                     |
+| -------------------------------------------- | --------- | ----------------------------------------------- |
+| `POST /api/chat`                             | Streaming | Send messages, receive streamed AI response     |
+| `POST /api/chat/conversations/:id/cancel`    | JSON      | Stop generation, persist the partial response   |
+| `POST /api/chat/conversations/:id/reconnect` | Streaming | Resume a generation started elsewhere           |
+| `GET /api/chat/conversations`                | JSON      | List user's conversations (paginated)           |
+| `GET /api/chat/conversations/:id`            | JSON      | Get conversation with all messages              |
+| `PATCH /api/chat/conversations/:id`          | JSON      | Rename a conversation                           |
+| `DELETE /api/chat/conversations/:id`         | JSON      | Delete a conversation                           |
+| `POST /api/chat/feedback`                    | JSON      | Submit thumbs up/down on an assistant message   |
+| `POST /api/uploads/create-upload-url`        | JSON      | Presign a direct-to-S3 upload for an attachment |
 
 ## Pages
 
@@ -131,10 +151,10 @@ Presentational components with no AI SDK dependency:
 
 Wire up the AI SDK:
 
-- `ChatProvider` — `useChat` hook wrapper, React context
+- `ChatProvider` — App-wide chat state (active conversation, uploads, drawer) exposed through React context
 - `ChatView` — Full chat view with markdown rendering
 - `ChatSidebar` — Conversation list with create/delete
-- `ChatWidget` — Floating sheet for embedding chat anywhere
+- `ChatDrawer` / `ChatDrawerToggle` — Right-hand drawer showing the active conversation on non-chat pages, and its header button
 
 ## Error Handling
 

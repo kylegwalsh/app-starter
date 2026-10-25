@@ -5,7 +5,7 @@ import { config } from '@repo/config';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { auth } from '@/core';
+import { auth } from '@/lib';
 
 /** The provider for our Better Auth authentication */
 export const AuthProvider: FC = ({ children }) => {

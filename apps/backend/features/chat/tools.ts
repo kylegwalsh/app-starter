@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
-import { sandboxManager } from '@/core/daytona';
-
-import { createTool } from '../utils';
+import { createTool } from '@/ai/utils';
+import { sandboxManager } from '@/services/daytona';
 
 /** Get the sandbox, throwing if unavailable */
 const requireSandbox = async (conversationId: string | undefined) => {

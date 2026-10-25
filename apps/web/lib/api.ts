@@ -3,7 +3,7 @@ import { HonoReactQuery } from 'hono-tanstack-query';
 import { hc } from 'hono/client';
 import { posthog } from 'posthog-js';
 
-import type { AppRouter } from '../../backend/api/routes';
+import type { AppRouter } from '../../backend/api/router';
 
 import { getQueryClient } from './query-client';
 

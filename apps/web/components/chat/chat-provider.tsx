@@ -1,13 +1,14 @@
 'use client';
 
-import { useChat } from '@ai-sdk/react';
+import { Chat, useChat } from '@ai-sdk/react';
 import { CHAT_ALLOWED_FILE_TYPES } from '@repo/constants';
 import { PromptInputProvider, useProviderAttachments, type PromptInputMessage } from '@repo/design';
 import { chatSchema } from '@repo/schemas';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { DefaultChatTransport, type ChatStatus, type UIMessage } from 'ai';
+import { ApiError } from 'hono-tanstack-query';
 import { nanoid } from 'nanoid';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   createContext,
   use,
@@ -20,19 +21,15 @@ import {
 } from 'react';
 import type { z } from 'zod';
 
-import { api, apiUrl, client } from '@/core/api';
 import { chatListQueryKey, type ConversationListInfiniteData } from '@/hooks/use-conversations';
+import { api, apiUrl, client } from '@/lib/api';
+import { auth } from '@/lib/auth';
 
 /** Our chat message type with typed metadata (traceId, feedback) */
 type ChatMessageMetadata = z.infer<typeof chatSchema.messageMetadata>;
 export type ChatMessage = UIMessage<ChatMessageMetadata>;
 
-/**
- * Per-attachment upload status, keyed by the blob URL of the staged file.
- * Carries the CDN descriptor and a local blob URL on success so the renderer
- * can swap back to the in-memory preview for just-sent messages without a round
- * trip to re-fetch bytes we already uploaded.
- */
+/** Upload status per staged file (keyed by blob URL), keeping a local preview URL once uploaded */
 type AttachmentUploadState =
   | { status: 'uploading' }
   | { status: 'ready'; uploaded: UploadedFilePart; localPreviewUrl: string }
@@ -59,25 +56,20 @@ type ChatContextValue = {
   erroredMessageIds: ReadonlySet<string>;
   handleSubmit: (message: PromptInputMessage) => void;
   submitFeedback: (messageId: string, rating: 'up' | 'down', comment?: string) => void;
+  /** Shows a blank new conversation (no-op if one is already showing) */
+  startNewConversation: () => void;
+  /** Loads a saved conversation and shows it, resuming its stream if it's still generating */
+  openConversation: (conversationId: string) => Promise<void>;
+  /** The saved conversation being loaded, if any (views show a skeleton until it's ready) */
+  loadingConversationId: string | undefined;
+  /** Whether the chat drawer is open (on pages other than the full-screen chat) */
+  isDrawerOpen: boolean;
+  setDrawerOpen: (open: boolean) => void;
 };
 
 const ChatContext = createContext<ChatContextValue | null>(null);
 
-/** sessionStorage key for a pending first message on a new conversation */
-export const pendingKey = (id: string) => `chat:pending:${id}`;
-
-export type ChatProviderProps = {
-  /** Existing conversation ID (for loading a saved conversation) */
-  conversationId?: string;
-  /** Pre-loaded messages from the database */
-  initialMessages?: ChatMessage[];
-  /**
-   * If non-null when the provider mounts, another tab (or a Lambda that died
-   * before clearing the lock) is producing the next assistant message. The
-   * provider will call `resumeStream()` so the result flows in through the
-   * normal `useChat` rendering path.
-   */
-  initialGeneratingUntil?: Date | string | null;
+type ChatProviderProps = {
   children: ReactNode;
 };
 
@@ -88,10 +80,18 @@ type UploadedFilePart = {
   filename: string;
 };
 
-/**
- * Typed error for S3 upload failures — keeps the S3 error code on the error object
- * so TanStack Query's `retry` predicate can decide whether to retry based on it.
- */
+/** The conversation currently shown in the full-screen chat or the drawer */
+type ActiveConversation = {
+  /** Undefined until the first message of a new conversation is sent */
+  conversationId: string | undefined;
+  chat: Chat<ChatMessage>;
+};
+
+/** Sends a message, attaching any uploaded files */
+const sendToChat = (chat: Chat<ChatMessage>, text: string, files: UploadedFilePart[]) =>
+  files.length > 0 ? chat.sendMessage({ text, files }) : chat.sendMessage({ text });
+
+/** S3 upload failure that keeps the S3 error code so retries can check it */
 class UploadError extends Error {
   readonly code: string | undefined;
   readonly status: number;
@@ -103,11 +103,7 @@ class UploadError extends Error {
   }
 }
 
-/**
- * Single-attempt upload: fetch the staged blob, presign via the API, POST to S3.
- * Throws `UploadError` with the parsed S3 code on failure so callers (or
- * `useMutation`'s retry) can react to specific codes.
- */
+/** Uploads one staged file: presign via the API, then POST it to S3 */
 const uploadFilePart = async (
   filePart: PromptInputMessage['files'][number],
 ): Promise<{ uploaded: UploadedFilePart; localPreviewUrl: string }> => {
@@ -174,35 +170,22 @@ const uploadFilePart = async (
   }
 };
 
-/** Outer wrapper — lifts the prompt input's attachments state so we can upload eagerly. */
-export const ChatProvider: FC<ChatProviderProps> = ({
-  conversationId,
-  initialMessages,
-  initialGeneratingUntil,
-  children,
-}) => {
+/** App-wide chat state, mounted in the authenticated layout so conversations survive navigation */
+export const ChatProvider: FC<ChatProviderProps> = ({ children }) => {
   return (
+    // Lifted so attachments can upload as soon as they're staged
     <PromptInputProvider>
-      <ChatProviderInner
-        conversationId={conversationId}
-        initialMessages={initialMessages}
-        initialGeneratingUntil={initialGeneratingUntil}
-      >
-        {children}
-      </ChatProviderInner>
+      <ChatProviderInner>{children}</ChatProviderInner>
     </PromptInputProvider>
   );
 };
 
 /** Inner provider — owns chat state plus the per-attachment upload map. */
-const ChatProviderInner: FC<ChatProviderProps> = ({
-  conversationId,
-  initialMessages,
-  initialGeneratingUntil,
-  children,
-}) => {
+const ChatProviderInner: FC<ChatProviderProps> = ({ children }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
+  const [isDrawerOpen, setDrawerOpen] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Single per-attachment state keyed by the staged file's blob URL — carries
@@ -311,66 +294,173 @@ const ChatProviderInner: FC<ChatProviderProps> = ({
     [attachmentUploads],
   );
 
-  // The chat endpoints stream SSE over plain HTTP, so the SDK's own transport
-  // handles parsing. We only override request shaping: the body uses the prop
-  // `conversationId` (not options.chatId — the SDK invents a random one when
-  // `id` is undefined, which the backend would reject as NOT_FOUND), and
-  // reconnect targets the per-conversation resume endpoint.
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport<ChatMessage>({
-        api: `${apiUrl}/chat`,
-        credentials: 'include',
-        prepareSendMessagesRequest: ({ messages: outgoing, body }) => ({
-          body: {
-            id: conversationId,
-            messages: outgoing as z.input<typeof chatSchema.chatMessage>['messages'],
-            isRetry: (body as { isRetry?: boolean } | undefined)?.isRetry,
-          },
-        }),
-        prepareReconnectToStreamRequest: () => ({
-          api: `${apiUrl}/chat/conversations/${conversationId}/reconnect`,
+  /** Creates the chat for one conversation */
+  const createChat = useCallback(
+    ({ conversationId, messages }: { conversationId?: string; messages?: ChatMessage[] } = {}) =>
+      // Created here (not by `useChat`, which stops chats it created on unmount) so streams
+      // survive moving between the full-screen chat and the drawer
+      new Chat<ChatMessage>({
+        id: conversationId,
+        messages,
+        messageMetadataSchema: chatSchema.messageMetadata,
+        // The chat endpoints stream SSE over plain HTTP, so the SDK's own transport
+        // handles parsing. We only override request shaping: the body uses our
+        // `conversationId` (not options.chatId — the SDK invents a random one when
+        // `id` is undefined, which the backend would reject as NOT_FOUND), and
+        // reconnect targets the per-conversation resume endpoint.
+        transport: new DefaultChatTransport<ChatMessage>({
+          api: `${apiUrl}/chat`,
           credentials: 'include',
+          prepareSendMessagesRequest: ({ messages: outgoing, body }) => ({
+            body: {
+              id: conversationId,
+              messages: outgoing as z.input<typeof chatSchema.chatMessage>['messages'],
+              isRetry: (body as { isRetry?: boolean } | undefined)?.isRetry,
+            },
+          }),
+          prepareReconnectToStreamRequest: () => ({
+            api: `${apiUrl}/chat/conversations/${conversationId}/reconnect`,
+            credentials: 'include',
+          }),
         }),
+        // Backend emits a transient `data-conversation-title` event when the AI-
+        // generated title resolves; patch the sidebar cache so the new title shows
+        // up without a list refetch.
+        onData: (dataPart) => {
+          if (dataPart.type !== 'data-conversation-title' || !conversationId) {
+            return;
+          }
+          const { title } = (dataPart as { data: { title: string } }).data;
+          queryClient.setQueryData<ConversationListInfiniteData>(chatListQueryKey, (old) =>
+            old
+              ? {
+                  ...old,
+                  pages: old.pages.map((page) => ({
+                    ...page,
+                    items: page.items.map((c) => (c.id === conversationId ? { ...c, title } : c)),
+                  })),
+                }
+              : old,
+          );
+        },
       }),
-    [conversationId],
+    [queryClient],
   );
+
+  const [active, setActive] = useState<ActiveConversation>(() => ({
+    conversationId: undefined,
+    chat: createChat(),
+  }));
+  const { conversationId } = active;
+  // Mirror of the active conversation so the actions below stay idempotent when they're called
+  // twice before React re-renders (e.g. StrictMode running effects twice in dev)
+  const activeRef = useRef(active);
+
+  /** Switches the active conversation, stopping the one we leave */
+  const activate = useCallback((next: ActiveConversation) => {
+    // The backend keeps generating it, and reconnect picks it back up if the user returns
+    void activeRef.current.chat.stop();
+    activeRef.current = next;
+    setActive(next);
+  }, []);
+
+  // The conversation being loaded. Its request is shared if the same conversation is opened again
+  // before it finishes, and a request that's no longer the latest is ignored when it resolves.
+  const [loadingConversationId, setLoadingConversationId] = useState<string>();
+  const pendingLoadRef = useRef<{ id: string; promise?: Promise<void> }>(undefined);
+
+  /** Drops any in-progress load so a slow response can't replace what the user picked next */
+  const cancelPendingLoad = useCallback(() => {
+    pendingLoadRef.current = undefined;
+    setLoadingConversationId(undefined);
+  }, []);
+
+  const startNewConversation = useCallback(() => {
+    cancelPendingLoad();
+    const current = activeRef.current;
+    if (!current.conversationId && current.chat.messages.length === 0) {
+      return;
+    }
+    activate({ conversationId: undefined, chat: createChat() });
+  }, [activate, cancelPendingLoad, createChat]);
+
+  const openConversation = useCallback(
+    (id: string) => {
+      if (activeRef.current.conversationId === id) {
+        cancelPendingLoad();
+        return Promise.resolve();
+      }
+      if (pendingLoadRef.current?.id === id && pendingLoadRef.current.promise) {
+        return pendingLoadRef.current.promise;
+      }
+
+      const request: { id: string; promise?: Promise<void> } = { id };
+      const isLatest = () => pendingLoadRef.current === request;
+
+      const load = async () => {
+        try {
+          // Always fetch fresh: a cached copy could miss newer messages or a generation to resume
+          const saved = await queryClient.fetchQuery({
+            ...api.chat.conversations[':id'].$get.queryOptions({ param: { id } }),
+            staleTime: 0,
+            // A missing or forbidden conversation won't load on a retry, so fail fast to redirect
+            retry: (failureCount, error) =>
+              failureCount < 2 && !(error instanceof ApiError && error.isClientError()),
+          });
+          if (!isLatest()) {
+            return;
+          }
+          const chat = createChat({
+            conversationId: id,
+            // The wire type can't express the AI SDK's `UIMessage` part union; the shapes match
+            messages: saved.messages as ChatMessage[],
+          });
+          activate({ conversationId: id, chat });
+          // Still generating (another tab, a Lambda that died before clearing the lock, or a
+          // stream we stopped when the user switched away). The backend long-polls and either
+          // replays the finished message or surfaces an error chunk.
+          if (saved.generatingUntil != null) {
+            void chat.resumeStream();
+          }
+        } catch (error) {
+          // Only the latest request's failure matters to the caller
+          if (isLatest()) {
+            throw error;
+          }
+        } finally {
+          if (isLatest()) {
+            cancelPendingLoad();
+          }
+        }
+      };
+
+      pendingLoadRef.current = request;
+      setLoadingConversationId(id);
+      request.promise = load();
+      return request.promise;
+    },
+    [activate, cancelPendingLoad, createChat, queryClient],
+  );
+
+  // Conversations belong to an organization, so switching organizations starts a new one
+  const activeOrganizationId = auth.useSession().data?.session.activeOrganizationId;
+  const organizationRef = useRef(activeOrganizationId);
+  useEffect(() => {
+    if (organizationRef.current === activeOrganizationId) {
+      return;
+    }
+    organizationRef.current = activeOrganizationId;
+    startNewConversation();
+  }, [activeOrganizationId, startNewConversation]);
 
   const {
     messages,
     status,
     error,
-    sendMessage,
     stop: rawStop,
     regenerate,
-    resumeStream,
     setMessages,
-  } = useChat<ChatMessage>({
-    transport,
-    id: conversationId,
-    messages: initialMessages,
-    messageMetadataSchema: chatSchema.messageMetadata,
-    // Backend emits a transient `data-conversation-title` event when the AI-
-    // generated title resolves; patch the sidebar cache so the new title shows
-    // up without a list refetch.
-    onData: (dataPart) => {
-      if (dataPart.type !== 'data-conversation-title' || !conversationId) {
-        return;
-      }
-      const { title } = (dataPart as { data: { title: string } }).data;
-      queryClient.setQueryData<ConversationListInfiniteData>(chatListQueryKey, (old) =>
-        old
-          ? {
-              ...old,
-              pages: old.pages.map((page) => ({
-                ...page,
-                items: page.items.map((c) => (c.id === conversationId ? { ...c, title } : c)),
-              })),
-            }
-          : old,
-      );
-    },
-  });
+  } = useChat<ChatMessage>({ chat: active.chat });
 
   const isLoading = status === 'streaming' || status === 'submitted';
 
@@ -477,44 +567,6 @@ const ChatProviderInner: FC<ChatProviderProps> = ({
     }
   }, [conversationId, messages, rawStop, setMessages]);
 
-  // If the conversation is mid-generation when we load it (another tab is
-  // streaming, or a Lambda died without clearing the lock), hook into that
-  // stream via `resumeStream`. The backend long-polls and either replays the
-  // resulting assistant message or surfaces an error chunk. The ref guard
-  // keeps StrictMode's double-effect in dev from firing two reconnects.
-  const resumeFiredRef = useRef(false);
-  useEffect(() => {
-    if (initialGeneratingUntil == null || resumeFiredRef.current) {
-      return;
-    }
-    resumeFiredRef.current = true;
-    void resumeStream();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once based on mount-time lock state
-  }, []);
-
-  // On mount, auto-send any pending message stored by the new-conversation flow.
-  // The [id] page stores the user's first message in sessionStorage before navigating.
-  useEffect(() => {
-    if (!conversationId) {
-      return;
-    }
-    const raw = sessionStorage.getItem(pendingKey(conversationId));
-    if (!raw) {
-      return;
-    }
-    sessionStorage.removeItem(pendingKey(conversationId));
-    const { text, fileUrls } = JSON.parse(raw) as {
-      text: string;
-      fileUrls: UploadedFilePart[];
-    };
-    if (fileUrls.length > 0) {
-      sendMessage({ text, files: fileUrls });
-    } else {
-      sendMessage({ text });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount only
-  }, [conversationId]);
-
   // Reconcile the optimistic sidebar item once the stream settles — error
   // too, otherwise the placeholder's null title stays as a permanent skeleton.
   useEffect(() => {
@@ -549,52 +601,61 @@ const ChatProviderInner: FC<ChatProviderProps> = ({
         fileUrls.push(entry.uploaded);
       }
 
-      // New conversation: generate an ID, stash the message, navigate to /chat/[id].
-      // The [id] page reads the stashed message and auto-sends it on mount.
-      if (!conversationId) {
-        const id = nanoid();
-
-        sessionStorage.setItem(pendingKey(id), JSON.stringify({ text: message.text, fileUrls }));
-
-        // Optimistically prepend the new conversation onto the first page of the
-        // infinite list so it appears immediately. The follow-up invalidation on
-        // `status === 'ready'` will refetch and reconcile against the real row.
-        queryClient.setQueryData<ConversationListInfiniteData>(chatListQueryKey, (old) => {
-          // Timestamps are ISO strings on the wire, so match that shape here —
-          // the refetch that reconciles this row returns the same format.
-          const now = new Date().toISOString();
-          const newItem = {
-            id,
-            title: null,
-            createdAt: now,
-            updatedAt: now,
-            lastMessageAt: null,
-          };
-          if (!old || old.pages.length === 0) {
-            return {
-              pages: [{ items: [newItem], nextCursor: undefined }],
-              pageParams: [undefined],
-            };
-          }
-          const [firstPage, ...rest] = old.pages;
-          return {
-            ...old,
-            pages: [{ ...firstPage, items: [newItem, ...firstPage.items] }, ...rest],
-          };
-        });
-
-        router.push(`/chat/${id}`);
+      // Existing conversation: send on its chat
+      if (conversationId) {
+        void sendToChat(activeRef.current.chat, message.text, fileUrls);
         return;
       }
 
-      // Existing conversation: send message with any uploaded file URLs
-      if (fileUrls.length > 0) {
-        sendMessage({ text: message.text, files: fileUrls });
-      } else {
-        sendMessage({ text: message.text });
+      // New conversation: give it an ID (the backend creates the row on first send), make it
+      // the active chat, and send the first message straight away
+      const id = nanoid();
+      const chat = createChat({ conversationId: id });
+      activate({ conversationId: id, chat });
+      void sendToChat(chat, message.text, fileUrls);
+
+      // Optimistically prepend the new conversation onto the first page of the
+      // infinite list so it appears immediately. The follow-up invalidation on
+      // `status === 'ready'` will refetch and reconcile against the real row.
+      queryClient.setQueryData<ConversationListInfiniteData>(chatListQueryKey, (old) => {
+        // Timestamps are ISO strings on the wire, so match that shape here —
+        // the refetch that reconciles this row returns the same format.
+        const now = new Date().toISOString();
+        const newItem = {
+          id,
+          title: null,
+          createdAt: now,
+          updatedAt: now,
+          lastMessageAt: null,
+        };
+        if (!old || old.pages.length === 0) {
+          return {
+            pages: [{ items: [newItem], nextCursor: undefined }],
+            pageParams: [undefined],
+          };
+        }
+        const [firstPage, ...rest] = old.pages;
+        return {
+          ...old,
+          pages: [{ ...firstPage, items: [newItem, ...firstPage.items] }, ...rest],
+        };
+      });
+
+      // The full-screen chat moves to the conversation's URL; the drawer stays where it is
+      if (pathname === '/chat') {
+        router.push(`/chat/${id}`);
       }
     },
-    [attachmentUploads, conversationId, isLoading, sendMessage, router, queryClient],
+    [
+      activate,
+      attachmentUploads,
+      conversationId,
+      createChat,
+      isLoading,
+      pathname,
+      queryClient,
+      router,
+    ],
   );
 
   const submitFeedback = useCallback(
@@ -624,6 +685,11 @@ const ChatProviderInner: FC<ChatProviderProps> = ({
       erroredMessageIds,
       handleSubmit,
       submitFeedback,
+      startNewConversation,
+      openConversation,
+      loadingConversationId,
+      isDrawerOpen,
+      setDrawerOpen,
     }),
     [
       messages,
@@ -642,6 +708,10 @@ const ChatProviderInner: FC<ChatProviderProps> = ({
       erroredMessageIds,
       handleSubmit,
       submitFeedback,
+      startNewConversation,
+      openConversation,
+      loadingConversationId,
+      isDrawerOpen,
     ],
   );
 

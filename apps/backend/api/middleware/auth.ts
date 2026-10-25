@@ -3,8 +3,8 @@ import { addLogMetadata, log } from '@repo/logs';
 import { createMiddleware } from 'hono/factory';
 import { HTTPException } from 'hono/http-exception';
 
-import { type AuthUser, auth } from '@/core';
 import { db } from '@/db';
+import { type AuthContext, type AuthUser, auth } from '@/services';
 
 /** Context populated by {@link authMiddleware} — user/organization may be absent */
 export type PublicEnv = {
@@ -19,15 +19,11 @@ export type PublicEnv = {
  * so handlers read `c.get('user')` without null checks.
  */
 export type ProtectedEnv = {
-  Variables: {
-    user: AuthUser;
-    organization: Organization;
-  };
+  Variables: AuthContext;
 };
 
 /**
- * Populates the auth context for every request and updates the AI trace with the
- * response once the handler completes. Applied once at the root of the API.
+ * Populates the auth context for every request. Applied once at the root of the API.
  */
 export const authMiddleware = createMiddleware<PublicEnv>(async (c, next) => {
   let user: AuthUser | undefined;

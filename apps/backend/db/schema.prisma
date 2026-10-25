@@ -310,7 +310,7 @@ model Conversation {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   lastMessageAt   DateTime?
-  /// While a `chat.send` is generating a response, this is set to `now + LOCK_TTL`
+  /// While `sendMessage` is generating a response, this is set to `now + LOCK_TTL`
   /// and bumped by a heartbeat. Non-null implies the conversation needs a reconnect
   /// (the producer is alive, or it died and the lock will expire on its own).
   generatingUntil DateTime?
@@ -331,7 +331,7 @@ model Message {
   traceId        String?
   feedback       Boolean?
   /// True if the assistant message was stopped by the user mid-stream. Set by
-  /// `chat.cancel`; the frontend renders a "Stopped" badge for these rows.
+  /// `cancelGeneration`; the frontend renders a "Stopped" badge for these rows.
   cancelled      Boolean?
   /// True if the assistant response errored out before persisting normally.
   /// Persisted as an empty shell so reloads still surface "something went wrong"

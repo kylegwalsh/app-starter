@@ -406,3 +406,8 @@ export type AuthSession = typeof auth.$Infer.Session.session;
 export type AuthUser = typeof auth.$Infer.Session.user;
 /** The type of the auth organization object */
 export type AuthOrganization = typeof auth.$Infer.Organization;
+/** The authenticated context accompanying requested */
+export type AuthContext = {
+  user: AuthUser;
+  organization: Organization;
+};

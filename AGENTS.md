@@ -61,7 +61,7 @@ Clarity · Consistency · Simplicity · Reliability · Observability
 - **Named exports**: Always use named exports with descriptive names.
 - **Guard clauses**: Early returns, max 2 levels of nesting.
 - **No `any`**: Use `unknown` + type guards. Prefer `type` over `interface`.
-- **Comments**: Include helpful comments where appropriate.
+- **Comments**: Keep function/type JSDoc to one short line saying what it does (e.g. `/** Loads the organization's combined Stripe invoices and charges */`). Put any non-obvious "why" as a brief inline comment next to the code it explains, not in a multi-paragraph docblock.
 - **Formatting**: Multi-line readability over dense one-liners. Repo uses oxlint + oxfmt.
 
 ## TypeScript Conventions

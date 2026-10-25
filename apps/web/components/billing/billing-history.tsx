@@ -23,7 +23,7 @@ import { Download } from 'lucide-react';
 import Link from 'next/link';
 import { type FC, useMemo, useState } from 'react';
 
-import { api } from '@/core';
+import { api } from '@/lib';
 
 /** The number of items to show per page */
 const PAGE_SIZE = 10;

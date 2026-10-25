@@ -46,14 +46,15 @@ apps/backend/
 │   ├── api.ts         # Main Lambda handler
 │   └── crons/         # Scheduled Lambda functions
 ├── api/               # All API code (Hono)
-│   ├── index.ts       # Hono app, route mounting
+│   ├── index.ts       # Hono app
+│   ├── router.ts      # Mounts every feature router
 │   ├── error.ts       # Shared error handling
 │   ├── docs.ts        # Swagger UI config, login page
-│   ├── routes/        # Feature routers (most new work happens here)
 │   ├── middleware/    # Hono middleware (auth, CORS, timing, timeout)
 │   └── adapters/      # Protocol adapters (MCP)
-├── mcp/               # MCP server and tools
-├── core/              # Core services (auth, stripe, etc)
+├── features/          # Vertical slices: routes, operations, tools (most new work happens here)
+├── ai/                # Tool registry, AI SDK + MCP adapters, MCP server
+├── services/          # External integrations (auth, stripe, storage, daytona)
 ├── db/                # Prisma schema and client wiring
 │   └── schema.prisma  # Database schema
 ├── tests/             # Vitest setup, factories, mocks
@@ -87,21 +88,22 @@ Infrastructure is managed by SST. See the root-level `sst.config.ts` and the `in
   - Better Auth for `/api/auth/*`
   - MCP adapter for `/mcp/*`
   - Swagger login page at `/api/login`
-  - RPCHandler at `/rpc/*` (typed frontend client)
-  - OpenAPIHandler at `/api/*` (external consumers, Swagger docs)
+  - Feature routers at `/api/*` (typed `hc` client, Swagger docs)
 
 ## MCP Server
 
 The backend includes a [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server at `/mcp`. This allows AI assistants like Claude, Cursor, and other MCP-compatible clients to interact with your app through typed tools.
 
 - **Auth**: Uses Better Auth's OAuth provider plugin — clients authenticate via standard OAuth 2.0 flow and receive a JWT access token.
-- **Tools**: Defined in `mcp/tools/`. Each tool uses `createTool` from `mcp/utils.ts` for type-safe input schemas and session access.
-- **Auto-registration**: Export a tool from `mcp/tools/index.ts` and it's automatically registered on the server.
+- **Tools**: Defined in the owning feature's `tools.ts` (e.g. `features/organization/tools.ts`). Each tool uses `createTool` from `ai/utils.ts` for type-safe input schemas and session access.
+- **Auto-registration**: Tool files re-exported from `ai/tools.ts` are registered automatically on the MCP server and/or in chat, depending on each tool's `consumers`.
 
 ### Adding a new tool
 
-1. Create a file in `mcp/tools/` (see `mcp/tools/example.ts` for reference).
-2. Export it from `mcp/tools/index.ts`.
+1. Add it to the owning feature's `tools.ts` (see `features/organization/tools.ts` for reference).
+2. Export the file from `ai/tools.ts`.
+
+See [`ai/README.md`](ai/README.md) for the full walkthrough.
 
 ### Connecting an MCP client
 
@@ -124,7 +126,7 @@ Claude Code, Cursor, and other MCP clients will pick up this config and authenti
 
 Authentication is managed by Better Auth.
 
-- `core/auth.ts`: Central config for Better Auth (Prisma adapter, secrets, cookie settings) plus auth-event webhooks (e.g., user/org lifecycle, password reset email hooks, analytics).
+- `services/auth.ts`: Central config for Better Auth (Prisma adapter, secrets, cookie settings) plus auth-event webhooks (e.g., user/org lifecycle, password reset email hooks, analytics).
 - Routes: Auth HTTP routes are exposed under `/api/auth` (handled via Hono and forwarded to `auth.handler`).
 - Context: `api/middleware/auth.ts` parses the Better Auth cookie from request headers to populate `user` and the active `organization` on the Hono context. Routers that require a signed-in user apply `requireAuth`.
 

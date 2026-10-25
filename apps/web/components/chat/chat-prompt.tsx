@@ -54,13 +54,13 @@ const AttachmentPreviews = () => {
 };
 
 /** Prompt input bar with staged-attachment previews and the attach-file menu */
-export const PromptInputBar = () => {
+export const PromptInputBar: FC<{ disabled?: boolean }> = ({ disabled = false }) => {
   const { status, isUploading, attachmentUploads, stop, handleSubmit } = useChatContext();
   // Block sending while attachments are still uploading or any are in an error state.
   // Shown as disabled rather than a loading spinner — the tile overlay already signals
   // "uploading", so the submit button doesn't need to duplicate that indicator.
   const hasUploadError = Array.from(attachmentUploads.values()).some((u) => u.status === 'error');
-  const disableSend = isUploading || hasUploadError;
+  const disableSend = disabled || isUploading || hasUploadError;
 
   return (
     <PromptInput
@@ -70,11 +70,15 @@ export const PromptInputBar = () => {
       onSubmit={handleSubmit}
     >
       <AttachmentPreviews />
-      <PromptInputTextarea className="min-h-10 pt-2 text-[13px]" placeholder="Ask anything..." />
+      <PromptInputTextarea
+        className="min-h-10 pt-2 text-[13px]"
+        disabled={disabled}
+        placeholder="Ask anything..."
+      />
       <PromptInputFooter className="px-2 pb-2">
         <PromptInputTools>
           <PromptInputActionMenu>
-            <PromptInputActionMenuTrigger tooltip="Attach files" />
+            <PromptInputActionMenuTrigger disabled={disabled} tooltip="Attach files" />
             <PromptInputActionMenuContent onCloseAutoFocus={(e) => e.preventDefault()}>
               <PromptInputActionAddAttachments />
             </PromptInputActionMenuContent>

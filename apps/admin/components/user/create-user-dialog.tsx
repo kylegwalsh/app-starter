@@ -20,7 +20,7 @@ import {
 import { Loader2Icon } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
-import { adminApi } from '@/core/auth';
+import { adminApi } from '@/lib/auth';
 
 type CreateUserDialogProps = {
   open: boolean;

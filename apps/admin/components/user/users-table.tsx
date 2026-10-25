@@ -16,7 +16,7 @@ import { format } from '@repo/utils';
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon, UsersIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-import type { User } from '@/core/auth';
+import type { User } from '@/lib/auth';
 
 type SortField = 'email' | 'name' | 'createdAt';
 type SortOrder = 'asc' | 'desc';

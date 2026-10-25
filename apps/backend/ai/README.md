@@ -4,29 +4,30 @@ AI capabilities for the backend — chat streaming, tool execution, and MCP serv
 
 ```text
 ai/
-  adapter.ts       Converts tool definitions to AI SDK format for chat
+  tools.ts         Tool registry — re-exports every feature's `tools.ts`
+  sdk.ts           Converts tool definitions to AI SDK format for chat
   utils.ts         Shared types (ToolSession, AiTool, createTool)
   mcp/
     server.ts      MCP server + transport (for external clients)
     session.ts     DB-backed MCP session resolution
-  tools/           Tool definitions (shared across chat and MCP)
 ```
 
 ## Tools
 
-Tools are defined once in `tools/` and automatically available in two contexts:
+Tools live with the feature they belong to (`features/<feature>/tools.ts`), are defined once, and are automatically available in two contexts:
 
-1. **Chat** — the chat route (`api/routes/chat.ts`) converts tools to AI SDK format via `adapter.ts` and passes them to `streamText`
+1. **Chat** — `streamChatTurn` (`features/chat/operations.ts`) converts tools to AI SDK format via `sdk.ts` and passes them to `streamText`
 2. **MCP** — the MCP server (`mcp/server.ts`) registers tools for external clients (e.g., Claude Desktop, Cursor)
 
 ### Adding a New Tool
 
-1. Create a file in `tools/` (e.g., `my-tool.ts`)
+1. Add it to the owning feature's `tools.ts` (e.g. `features/organization/tools.ts`)
 2. Export one or more tools using `createTool`:
 
 ```typescript
 import { z } from 'zod';
-import { createTool } from '../utils';
+
+import { createTool } from '@/ai/utils';
 
 export const myTool = createTool({
   name: 'my-tool',
@@ -47,17 +48,17 @@ export const myTool = createTool({
 });
 ```
 
-3. Export from `tools/index.ts`:
+3. If it's the feature's first tool, register the file in `ai/tools.ts`:
 
 ```typescript
-export * from './my-tool';
+export * from '@/features/my-feature/tools';
 ```
 
 That's it — the tool auto-registers in both chat and MCP.
 
 ## Chat Streaming
 
-The chat endpoint is a protected Hono route (`api/routes/chat.ts`). It uses the [Vercel AI SDK](https://ai-sdk.dev) for streaming (`streamText`) and returns the result through `createUIMessageStreamResponse()`. The frontend consumes it with the SDK's own `DefaultChatTransport` in `useChat`.
+The chat endpoint is a protected Hono route (`features/chat/routes.ts`) backed by `sendMessage` in `features/chat/operations.ts`. It uses the [Vercel AI SDK](https://ai-sdk.dev) for streaming (`streamText`) and returns the result through `createUIMessageStreamResponse()`. The frontend consumes it with the SDK's own `DefaultChatTransport` in `useChat`.
 
 ## MCP Server
 

@@ -5,7 +5,7 @@ import { Hono } from 'hono';
 
 import { createMcpServer, createMcpTransport } from '@/ai/mcp/server';
 import { resolveMcpSession } from '@/ai/mcp/session';
-import { auth } from '@/core';
+import { auth } from '@/services';
 
 // ---------- BASE MCP HANDLER (/mcp/*) ----------
 /** MCP sub-app — mounted at /mcp in the main API */

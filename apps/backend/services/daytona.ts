@@ -76,4 +76,14 @@ export const sandboxManager = {
 
     return sandbox;
   },
+  /** Stops a conversation's sandbox (no-op if it's already gone) */
+  stop: async (sandboxId: string) => {
+    try {
+      const sandbox = await getClient().get(sandboxId);
+      await sandbox.stop();
+    } catch (error) {
+      // The sandbox may already be deleted or Daytona may not be configured — nothing to stop
+      log.info({ err: error, sandboxId }, 'Skipped stopping sandbox');
+    }
+  },
 };

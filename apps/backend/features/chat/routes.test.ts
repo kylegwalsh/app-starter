@@ -3,7 +3,7 @@ import { type TestSession, sessionFactory } from '@/tests/factories';
 import { userFactory } from '@/tests/factories/user-factory';
 import { fakeStreamResult, mockAi } from '@/tests/mocks/ai';
 
-/** Build a minimal UIMessage we can send through chat.send's input schema. */
+/** Build a minimal UIMessage we can send through the chat route's input schema. */
 const userMessage = (id: string, text: string) => ({
   id,
   role: 'user' as const,
@@ -160,7 +160,7 @@ describe('Chat Router', () => {
     });
 
     it('does not write an errored marker on top of a cancellation marker', async () => {
-      // When `chat.cancel` clears the lock mid-stream it also writes its own
+      // When `cancelGeneration` clears the lock mid-stream it also writes its own
       // marker. The handler's `finally` must not pile an errored row on top.
       let conversationId: string | undefined;
       mockAi.streamText.mockImplementationOnce(() => ({
@@ -170,7 +170,7 @@ describe('Chat Router', () => {
               controller.enqueue({ type: 'start' });
               const conv = await db.conversation.findFirst({ where: { userId: user.id } });
               conversationId = conv?.id;
-              // Mimic chat.cancel landing while we're still streaming.
+              // Mimic cancelGeneration landing while we're still streaming.
               await db.conversation.update({
                 where: { id: conv!.id },
                 data: { generatingUntil: null },
@@ -358,7 +358,7 @@ describe('Chat Router', () => {
     });
 
     it('skips persisting the assistant message when the lock is cleared mid-stream', async () => {
-      // While streamText is running, simulate a concurrent `chat.cancel` by
+      // While streamText is running, simulate a concurrent `cancelGeneration` by
       // clearing `generatingUntil` from the DB. The handler's onFinish should
       // see the missing lock and bail before writing the assistant message.
       let conversationId: string | undefined;

@@ -15,8 +15,8 @@ import { useMutation } from '@tanstack/react-query';
 import { Building2, Check } from 'lucide-react';
 import { useMemo } from 'react';
 
-import { api, auth } from '@/core';
 import { useUser } from '@/hooks';
+import { api, auth } from '@/lib';
 
 /** Access requests go through the contact endpoint, which needs a support inbox and an email template */
 const canRequestAccess = !!(

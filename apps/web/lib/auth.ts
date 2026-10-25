@@ -9,7 +9,7 @@ import {
 } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
 
-import type { auth as backendAuth } from '../../backend/core/auth';
+import type { auth as backendAuth } from '../../backend/services/auth';
 
 /** The config for our Better Auth client (defined separately to avoid TypeScript issues) */
 const authConfig = {

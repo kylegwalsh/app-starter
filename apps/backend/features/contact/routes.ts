@@ -1,8 +1,8 @@
-import { email } from '@repo/email';
-import { log } from '@repo/logs';
 import { contactSchema } from '@repo/schemas';
 import { Hono } from 'hono';
 import { describeRoute, validator } from 'hono-openapi';
+
+import { submitContactForm } from './operations';
 
 /** The contact router */
 export const contactRouter = new Hono()
@@ -15,12 +15,7 @@ export const contactRouter = new Hono()
     }),
     validator('json', contactSchema.submit),
     async (c) => {
-      const input = c.req.valid('json');
-
-      // Log the lead first so it isn't lost if the notification fails
-      log.info({ contact: input }, 'Contact form submitted');
-
-      await email.sendContactEmail(input);
+      await submitContactForm(c.req.valid('json'));
       return c.json({ success: true });
     },
   );

@@ -1,6 +1,6 @@
 import type { email } from '@repo/email';
 
-import { auth } from '@/core';
+import { auth } from '@/services';
 import { type TestSession, sessionFactory } from '@/tests/factories';
 
 const { mockSendContactEmail } = vi.hoisted(() => ({

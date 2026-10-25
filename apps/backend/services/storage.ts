@@ -1,4 +1,5 @@
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Resource } from 'sst';
 
@@ -56,6 +57,29 @@ export const storage = {
       }),
       { expiresIn: expiresInSeconds },
     ),
+
+  /** Creates a presigned POST for uploading straight to S3, pinning content type and max size */
+  createUploadUrl: ({
+    key,
+    contentType,
+    maxSizeBytes,
+    expiresInSeconds = 300,
+  }: {
+    key: string;
+    contentType: string;
+    maxSizeBytes: number;
+    expiresInSeconds?: number;
+  }) =>
+    createPresignedPost(s3, {
+      Bucket: Resource.uploads.name,
+      Key: key,
+      Conditions: [
+        ['content-length-range', 0, maxSizeBytes],
+        ['eq', '$Content-Type', contentType],
+      ],
+      Fields: { 'Content-Type': contentType },
+      Expires: expiresInSeconds,
+    }),
 
   /** Read object bytes directly using the Lambda's IAM creds. */
   read: async ({

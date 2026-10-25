@@ -1,7 +1,8 @@
 import { streamHandle, type LambdaContext } from 'hono/aws-lambda';
 
 import { app } from '@/api';
-import { withLambdaContext } from '@/core';
+
+import { withLambdaContext } from './utils';
 
 /**
  * Streaming Lambda entry point. `streamHandle` wraps the Hono app with

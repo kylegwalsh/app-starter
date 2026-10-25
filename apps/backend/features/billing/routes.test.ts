@@ -19,8 +19,8 @@ const { mockStripe } = vi.hoisted(() => ({
     },
   },
 }));
-vi.mock('@/core/stripe', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@/core/stripe')>();
+vi.mock('@/services/stripe', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/services/stripe')>();
 
   return {
     ...original,

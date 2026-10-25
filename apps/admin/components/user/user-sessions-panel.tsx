@@ -2,7 +2,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from '@rep
 import { format } from '@repo/utils';
 import { Loader2Icon, RefreshCwIcon } from 'lucide-react';
 
-import type { Session } from '@/core/auth';
+import type { Session } from '@/lib/auth';
 
 export const UserSessionsPanel = ({
   sessions,

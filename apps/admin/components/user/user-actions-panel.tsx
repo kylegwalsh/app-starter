@@ -37,7 +37,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { adminApi, type User } from '@/core/auth';
+import { adminApi, type User } from '@/lib/auth';
 
 export const UserActionsPanel = ({
   user,

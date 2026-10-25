@@ -24,9 +24,10 @@ import {
 import { ChevronRight, LayoutDashboard, MessageSquare, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, type ComponentType, type SVGProps } from 'react';
+import { useEffect, useRef, useSyncExternalStore, type ComponentType, type SVGProps } from 'react';
 
 import { OrganizationSwitcher, UserButton } from '@/components/auth';
+import { ChatDrawer, useChatContext } from '@/components/chat';
 
 /** The type for a navigation item */
 type NavItem = {
@@ -48,15 +49,38 @@ type NavItem = {
  */
 const AUTO_COLLAPSE_ROUTES = ['/chat'];
 
+/** Below this width, opening the chat drawer collapses the app sidebar to make room */
+const CHAT_DRAWER_COLLAPSE_QUERY = '(max-width: 1535px)';
+
+/** Subscribes to changes in whether the viewport is below the chat drawer breakpoint */
+const subscribeToViewport = (onChange: () => void) => {
+  const mql = window.matchMedia(CHAT_DRAWER_COLLAPSE_QUERY);
+  mql.addEventListener('change', onChange);
+  return () => mql.removeEventListener('change', onChange);
+};
+
+/** Whether the screen is too narrow for both the app sidebar and the chat drawer */
+const useIsNarrowForChatDrawer = () =>
+  useSyncExternalStore(
+    subscribeToViewport,
+    () => window.matchMedia(CHAT_DRAWER_COLLAPSE_QUERY).matches,
+    // Rendered on the server before we know the viewport
+    () => false,
+  );
+
 /** The sidebar for the application */
 export const AppSidebar: FC = ({ children }) => {
   const pathname = usePathname();
   const { open, setOpen } = useSidebar();
+  const { isDrawerOpen } = useChatContext();
+  const isNarrow = useIsNarrowForChatDrawer();
 
-  // Close on entry only if currently open, and re-open on exit only if we
-  // were the one who closed it — so a manually-collapsed sidebar stays
-  // collapsed on return.
-  const shouldAutoCollapse = AUTO_COLLAPSE_ROUTES.some((prefix) => pathname.startsWith(prefix));
+  // Collapse on chat routes, or when the chat drawer opens on a narrow screen. Close on entry only
+  // if currently open, and re-open on exit only if we were the one who closed it — so a
+  // manually-collapsed sidebar stays collapsed on return.
+  const shouldAutoCollapse =
+    AUTO_COLLAPSE_ROUTES.some((prefix) => pathname.startsWith(prefix)) ||
+    (isDrawerOpen && isNarrow);
   const openRef = useRef(open);
   openRef.current = open;
   const lastAutoCollapse = useRef<boolean | null>(null);
@@ -122,6 +146,7 @@ export const AppSidebar: FC = ({ children }) => {
         <SidebarRail />
       </Sidebar>
       <SidebarInset>{children}</SidebarInset>
+      <ChatDrawer />
     </>
   );
 };

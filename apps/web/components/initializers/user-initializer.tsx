@@ -4,8 +4,8 @@ import { analytics } from '@repo/analytics';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 
-import { storage } from '@/core';
 import { useUser } from '@/hooks';
+import { storage } from '@/lib';
 
 /** Watches user changes and performs tasks */
 export const UserInitializer = () => {

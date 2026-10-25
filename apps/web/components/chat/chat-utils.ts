@@ -45,7 +45,7 @@ export const extractMessageText = (parts: readonly ChatMessagePart[]): string =>
     .map((p) => p.text)
     .join('\n');
 
-/** "tell-me-a-joke" → "Tell me a joke" */
+/** "list-organizations" → "List organizations" */
 export const formatToolName = (name: string): string => {
   const spaced = name.replaceAll(/[-_]/g, ' ').trim();
   return spaced.length === 0 ? name : spaced.charAt(0).toUpperCase() + spaced.slice(1);

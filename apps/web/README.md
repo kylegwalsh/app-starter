@@ -39,13 +39,12 @@ apps/web/
 │   ├── (authenticated)/   # Auth-gated routes and nested layout
 │   └── (unauthenticated)/ # Unauthenticated routes managed by Better Auth UI
 ├── components/            # UI building blocks and providers directly related to this app
-├── core/                  # App-level singletons & clients
+├── lib/                   # Clients and core utilities
 │   ├── auth.ts            # Better Auth client (plugins configured)
 │   ├── api.ts             # Typed Hono client bound to backend AppRouter
 │   └── ...
 ├── hooks/                 # React hooks for reusable state
 ├── tests/                 # Web tests
-│   ├── core/              # Core tests (vitest)
 │   └── e2e/               # E2E tests (playwright)
 ├── scripts/               # Local scripts (e.g., Playwright install)
 ├── next.config.ts         # Next.js config
@@ -83,7 +82,7 @@ The shared `@repo/design` system standardizes UI across apps and bundles accessi
 
 Better Auth powers authentication and provides hooks/UI for user and organization flows.
 
-- Client: Configured in `core/auth.ts` (baseURL to backend, plugins for org/admin/stripe).
+- Client: Configured in `lib/auth.ts` (baseURL to backend, plugins for org/admin/stripe).
 - UI: `components/providers/auth-provider.tsx` wires the Better Auth UI provider to Next navigation (push/replace) and app URL.
 - Routing: Unauthenticated flows are handled under `app/(unauthenticated)`, while `app/(authenticated)/layout.tsx` protects app content (redirects to sign-in, shows loading, renders when signed in).
 - Access: Hooks like `auth.useSession()` are wrapped by our `use-user`/`use-organization` hooks for convenient consumption.
@@ -92,7 +91,7 @@ Better Auth powers authentication and provides hooks/UI for user and organizatio
 
 The app communicates with the backend via Hono's typed `hc` client, bound to TanStack Query by `hono-tanstack-query`.
 
-- Types: We import the backend `AppRouter` and create a typed client in `core/api.ts`.
+- Types: We import the backend `AppRouter` and create a typed client in `lib/api.ts`.
 - Usage: `useQuery(api.<path>.$get.queryOptions())` for reads, `useMutation(api.<path>.$post.mutationOptions())` for writes; TanStack Query manages caching and invalidation.
 - Inputs mirror the HTTP request: `{ json }` for bodies, `{ query }` for query strings (values must be strings), `{ param }` for path params — e.g. `api.chat.conversations[':id'].$patch.mutationOptions()` takes `{ param: { id }, json: { title } }`.
 - Mutations do **not** auto-invalidate (the client is configured with `invalidation: 'none'`), so cache updates are explicit.

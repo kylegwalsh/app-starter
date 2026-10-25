@@ -42,13 +42,48 @@ const { output } = await ai.generateText({
 });
 ```
 
-Wrap AI tasks with `ai.observe` so each one is traced in Langfuse with its input and output (calls outside it are still traced individually):
+You can wrap AI tasks with multiple steps with `ai.observe` so each one is traced in Langfuse with its overall input and output (calls outside it are still traced individually). An observed function takes one object: `input` is recorded on the trace, so it should hold everything needed to replay the task, and `context` holds runtime dependencies that shouldn't be recorded (e.g. the signed-in user):
 
 ```ts
-export const summarize = ai.observe('summarize', async (input: { notes: string }) => {
-  const { text } = await ai.generateText({ prompt: `Summarize: ${input.notes}` });
-  return text;
-});
+export const summarize = ai.observe(
+  { name: 'summarize' },
+  async ({ input: { notes } }: { input: { notes: string } }) => {
+    const { text } = await ai.generateText({ prompt: `Summarize: ${notes}` });
+    return text;
+  },
+);
+
+await summarize({ input: { notes } });
 ```
 
-For chat streaming, tools, and MCP server integration, see [`apps/backend/ai/README.md`](../../apps/backend/ai/README.md).
+For work that outlives the call (like a stream), set `endOnExit: false` and end the observation yourself. Annotate the parameter with `Observed<…>` to receive the `observation` handle:
+
+```ts
+export const chat = ai.observe(
+  {
+    name: 'chat',
+    // Do not end the trace after exiting the function (streaming is active)
+    endOnExit: false,
+    // Group each conversation's traces into a Langfuse session
+    sessionId: ({ input }) => input.conversationId,
+  },
+  async ({
+    input: { conversationId, messages },
+    context: { user },
+    observation,
+  }: Observed<{
+    input: { conversationId: string; messages: UIMessage[] };
+    context: { user: AuthUser };
+  }>) => {
+    const result = await ai.streamText({
+      // ...
+      // Manually assign the output of the trace once streaming ends
+      onFinish: ({ text }) => observation.end({ output: text }),
+      onError: ({ error }) => observation.end({ error }),
+    });
+    return { result, traceId: observation.traceId };
+  },
+);
+
+await chat({ input: { conversationId, messages }, context: { user } });
+```
