@@ -177,13 +177,13 @@ function* streamFromMessage(message: DbMessage): Generator<UIMessageChunk> {
 }
 
 /** Generates a short sidebar title for a conversation from its first message */
-const generateTitle = ai.observe('generate-chat-title', async (titleSeed: string) => {
+const generateTitle = async (titleSeed: string) => {
   const { output } = await ai.generateText({
     output: Output.object({ schema: z.object({ title: z.string().max(80) }) }),
     prompt: `Generate a short, descriptive title (3-6 words) for a chat conversation that starts with this message. Aim to keep it under 35 characters so it fits comfortably in a sidebar — slightly longer is fine if needed for clarity.\n\n"${titleSeed.slice(0, 500)}"`,
   });
   return output.title;
-});
+};
 
 /** The chat router — streaming AI chat, conversation CRUD, and feedback */
 export const chatRouter = new Hono<ProtectedEnv>()

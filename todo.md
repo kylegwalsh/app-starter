@@ -10,13 +10,9 @@
 
 ## AI
 
-Merge
-
-- See if we can move title generation outside of the LLM observe that was added
-- Confirm the pino linting error rule still works
-
-Other
-
+- See if we should move the ai.observe() method higher up the tree (basically start of the function for evals)
+  - Should maybe wrap title generation
+- Add analytics for using chat
 - Verify streamed chat responses put their output in Langfuse since it's async
 - Ensure unsupported files are sent to Daytona for code exec
 - Ensure we don't overly use Daytona (seems to want to save TODOs there or something)
@@ -27,6 +23,7 @@ Other
 - Disable chat routes / MCP server if AI is not set up during init (skip importing infra/storage, skip chat route mounting, etc.)
 - Clean up any generated code
 - Add new storybook stories for new design system files
+- Add compaction
 
 ## MCP
 
