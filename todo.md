@@ -32,6 +32,7 @@ Other
 
 - Verify MCP streams long text
 - Make a note in onboarding that MCP only works with custom domains (along with anything else that requires it?)
+- Determine if we want JSON or markdown output
 - Add MCP tracing to Langfuse
 - Fix deep type in mcp/server
 - Add submit_feedback tool to MCP and score in Langfuse

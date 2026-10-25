@@ -39,8 +39,7 @@ describe('Contact Router', () => {
       expect(await res.json()).toEqual({ success: true });
     });
 
-    it('is available without a signed-in user', async () => {
-      // Public route: the marketing site submits without a session
+    it('is available without a signed-in user (public)', async () => {
       vi.spyOn(auth.api, 'getSession').mockResolvedValue(null);
 
       const res = await api.contact.$post({
