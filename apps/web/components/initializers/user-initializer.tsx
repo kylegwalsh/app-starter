@@ -2,7 +2,7 @@
 
 import { analytics } from '@repo/analytics';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { storage } from '@/core';
 import { useUser } from '@/hooks';
@@ -11,14 +11,14 @@ import { useUser } from '@/hooks';
 export const UserInitializer = () => {
   const queryClient = useQueryClient();
   const { user, organization, isLoading, isLoggedIn } = useUser();
-  const [previouslyIdentified, setPreviouslyIdentified] = useState(false);
-  const [previousOrganizationId, setPreviousOrganizationId] = useState<string>();
+  const previouslyIdentified = useRef(false);
+  const previousOrganizationId = useRef<string>(undefined);
 
   // Once the user becomes defined, identify them
   useEffect(() => {
-    if (isLoggedIn && !previouslyIdentified) {
+    if (isLoggedIn && !previouslyIdentified.current) {
       // Mark the user as previously identified until they logout
-      setPreviouslyIdentified(true);
+      previouslyIdentified.current = true;
 
       // If the user exists, identify them on load and set their last active time
       if (user?.id) {
@@ -33,16 +33,17 @@ export const UserInitializer = () => {
       }
     }
     // If the user logs out, reset their previously identified state
-    else if (!isLoggedIn && previouslyIdentified) {
-      setPreviouslyIdentified(false);
-      setPreviousOrganizationId(undefined);
+    else if (!isLoggedIn && previouslyIdentified.current) {
+      previouslyIdentified.current = false;
+      previousOrganizationId.current = undefined;
     }
-  }, [isLoggedIn, user, previouslyIdentified]);
+  }, [isLoggedIn, user]);
 
   // Whenever the organization changes, identify it
   useEffect(() => {
-    if (isLoggedIn && organization?.id && organization.id !== previousOrganizationId) {
-      setPreviousOrganizationId(organization.id);
+    if (isLoggedIn && organization?.id && organization.id !== previousOrganizationId.current) {
+      const hadPreviousOrganization = !!previousOrganizationId.current;
+      previousOrganizationId.current = organization.id;
       analytics.organizationIdentify({
         organizationId: organization.id,
         traits: {
@@ -52,11 +53,11 @@ export const UserInitializer = () => {
       });
 
       // Invalidate all queries when switching organizations to ensure fresh data
-      if (previousOrganizationId) {
+      if (hadPreviousOrganization) {
         queryClient.invalidateQueries();
       }
     }
-  }, [isLoggedIn, organization, previousOrganizationId, queryClient]);
+  }, [isLoggedIn, organization, queryClient]);
 
   // Once the user logs in, store something indicating that they had a session at some point (used to detect session expiration)
   useEffect(() => {

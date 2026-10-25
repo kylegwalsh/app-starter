@@ -1,6 +1,6 @@
 'use client';
 
-// oxlint-disable no-namespace-import: This won't impact performance
+// oxlint-disable no-namespace-import -- This won't impact performance
 import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area';
 import { cn } from '@repo/design/lib/utils';
 import type { ComponentProps } from 'react';

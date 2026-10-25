@@ -10,7 +10,8 @@ apps/
   admin/         Admin panel (Next.js App Router, Better Auth admin)
   backend/       SST serverless backend (Hono, Prisma, Stripe, Better Auth)
   storybook/     Component stories
-  docs/          Fumadocs (optional)
+  marketing/     Marketing site (optional - static Next.js export)
+  docs/          Documentation site (optional - Next.js App Router, Fumadocs)
 packages/
   design/        Component library (Radix/shadcn, Tailwind v4)
   config/        Shared runtime config + env helpers
@@ -27,6 +28,7 @@ infra/           SST/AWS infrastructure stacks
   api/           API Gateway
   docs/          Docs site
   secrets/       Shared secrets (AWS Secrets Manager)
+  marketing.ts   Marketing site
   web/           Web app
 ```
 

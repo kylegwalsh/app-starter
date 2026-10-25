@@ -1,27 +1,23 @@
 # TODO
 
-## POSTHOG WORKFLOWS
+## POSTHOG SUPPORT
 
-- Deprecate Loops in favor of PostHog workflows once it's further along
-  - Update onboarding script
-    - Go to posthog workflows > click "New channel" > add a domain like account@mail.DOMAIN.com
-    - Add the DNS records in your domain host
-    - TBD
-
-## POSTHOG MESSAGING
-
-- They are rolling out a new messaging system that will replace crisp
-
-## USER INVITES
-
-- Ensure starter supports sending invites
-  - Add new routes / logic
-  - Ensure creating an account works for the redirect to accept-invite
-  - Accepting the invite doesn't automatically load the new organization on the home page
-  - Have to allow no organization and have a signup for a demo or something
+- Posthog added a support feature that could replace crisp once it's further along
+  - Add identity verification so users can recover conversations via email
+  - Set up workflows (hopefully it's built in at some point) to handle emailing customers and us when replies happen
+    - We wouldn't want to email if the customer already saw the reply (maybe delay and add a condition)
+  - Update onboarding script to use Posthog support
 
 ## AI
 
+Merge
+
+- See if we can move title generation outside of the LLM observe that was added
+- Confirm the pino linting error rule still works
+
+Other
+
+- Verify streamed chat responses put their output in Langfuse since it's async
 - Ensure unsupported files are sent to Daytona for code exec
 - Ensure we don't overly use Daytona (seems to want to save TODOs there or something)
 - Create slack app
@@ -45,21 +41,16 @@
 
 - Verify `bun setup-worktree` works correctly after the .sst symlink change (now symlinks entire .sst dir instead of just .sst/platform)
 
-# EVALS
+## PRISMA V8
 
-- Rethink how we trace for Langfuse and how we can support evals (input must be easily replayed against functions)
-
-## MARKETING SITE
-
-- Consider adding marketing site to repo
-
-## PRISMA V7
-
-- Wait a bit for it to stabilize, then move to Prisma v7 for large speed up
+- Wait a bit for it to stabilize, then move to Prisma V8 for large speed up
 - Drop custom lambda layer stuff
 - See if we should store generated types in client and remove generate step in postinstall + ci if possible
 - See if they changed the way migrations are handled
 - Cache PrismaClient instance between Lambda invocations to reduce cold-start time
+- Blockers (no merged fixes yet, Oct 2026):
+  - Better Auth prisma adapter doesn't support v8: https://github.com/better-auth/better-auth/issues/9636 (first attempt closed: https://github.com/better-auth/better-auth/pull/10099)
+  - No v8 PGlite adapter for tests: https://github.com/prisma/orm/issues/23752
 
 ## OTHER
 
@@ -67,19 +58,15 @@
 - Add new Posthog error trace support
 - Pass PostHog build number through with the source maps
 - NextJS does not reliably kill port and reload when making infra changes (and sometimes dies and has to restart when AI makes a lot of edits)
-- Add superset config file
-- Add SST debug launch file
-- Create good "clean" command to remove node_modules
-- test whether we need the hacky minimal env anymore or if SST supports running without a deployed stage
+- Update migrations once we finish updating schema (chat feature)
+- Add verification tool to record videos of changes
+- Upgrade oxlint and see if it removes the warnings for react/set-state-in-effect
 - Once API Gateway v2 supports response streaming, add it and test that the MCP and general AI apis stream output
-- On Windows, editing a monorepo package (like config) doesn't cause the backend to hot reload
-- Debug why first stripe invocation causes SST proxy to die on Windows (could be related to below issue) - https://github.com/sst/sst/issues/6051
-- Update migrations once we finish updating schema
+- Once Posthog adds transactional email to their SDK, replace the api call in the email package
 - When pushing final starter: Remove posthog settings from config / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend / custom domain
 
 ## MINOR IMPROVEMENTS
 
 - Disable autoplay of storybook stories when supported: https://github.com/storybookjs/storybook/discussions/25011
-- Remove the patch we applied to the AI SDK after this PR is addressed: https://github.com/vercel/ai/issues/9593
-- Potentially remove separate authConfig after issue is resolved - https://github.com/better-auth/better-auth/issues/3408
-- Once oxlint/tsgolint is updated, see if we can remove the oxlint ts-ignore rules we added to the backend auth file
+- Once Storybook natively supports react-docgen-typescript on TS 7 (https://github.com/storybookjs/storybook/pull/36771), run `storybook upgrade` and remove the `registerHooks` TypeScript redirect in `apps/storybook/.storybook/main.ts` (keep `@typescript/typescript6`)
+- Once SST fixes the issue with hot reloading a monorepo package (like config) on Windows, remove the "bun dev" GODEBUG flag - https://github.com/anomalyco/sst/issues/7036

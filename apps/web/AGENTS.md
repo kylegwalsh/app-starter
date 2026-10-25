@@ -26,7 +26,7 @@ tests/e2e/    Playwright end-to-end tests
 - **Typography**: 4–5 font sizes/weights max. `text-xs` for captions. Avoid `text-xl` unless hero/major headings.
 - **Color**: 1 neutral base (e.g., `zinc`) + up to 2 accents.
 - **Spacing**: Multiples of 4 for padding/margins. Fixed height containers with internal scrolling for long content.
-- **Loading states**: Skeleton placeholders or `animate-pulse` during fetches.
+- **Loading states**: Skeleton placeholders or `animate-pulse` during fetches. Use `Button`'s built-in `loading` prop (spinner + disabled) instead of ternaries on button text.
 - **Interactivity**: Hover transitions (`hover:bg-*`, `hover:shadow-md`) for clickable elements.
 - **Accessibility**: Semantic HTML, ARIA roles. Prefer Radix/shadcn components (accessibility built in).
 
@@ -46,3 +46,13 @@ tests/e2e/    Playwright end-to-end tests
   - `FC<Props>` — custom props + children
   - `FC<typeof Component>` — inherits props from component
   - `FC<typeof Component, Props>` — inherits + custom props
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

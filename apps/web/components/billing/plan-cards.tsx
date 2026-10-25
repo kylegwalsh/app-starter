@@ -2,7 +2,7 @@
 
 import { plans } from '@repo/constants';
 import { Label, PricingCard, Switch } from '@repo/design';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useSubscription } from '@/hooks';
 
@@ -21,14 +21,9 @@ export const PlanCards: FC<Props> = ({ showSwitch = true }) => {
     cancel,
   } = useSubscription();
   const [activePlan, setActivePlan] = useState<keyof typeof plans | null>(null);
-  const [isAnnual, setIsAnnual] = useState(false);
-
-  // Default the toggle to the user's current billing period once loaded
-  useEffect(() => {
-    if (isFetched) {
-      setIsAnnual(isAnnualSubscription);
-    }
-  }, [isFetched, isAnnualSubscription]);
+  // Default the toggle to the user's current billing period until they change it
+  const [selectedIsAnnual, setIsAnnual] = useState<boolean>();
+  const isAnnual = selectedIsAnnual ?? isAnnualSubscription;
 
   /** Get the button text for a plan card */
   const getButtonText = useCallback(

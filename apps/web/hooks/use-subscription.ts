@@ -64,7 +64,7 @@ export const useSubscription = () => {
         throw new Error(error.message);
       }
     },
-    onError: () => toast.error('Failed to upgrade plan. Please try again.'),
+    onError: () => toast.error('Failed to change plan. Please try again.'),
   });
 
   /** Cancel the current subscription */

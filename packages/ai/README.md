@@ -15,89 +15,40 @@ AI functionality and tracing utilities (backend-only).
 
 ## Overview
 
-- Provides text/object generation via the Vercel AI SDK (`ai`), with retry and provider configuration
+- Provides text and structured output generation via the Vercel AI SDK (`ai`), with retries and a default model
 - Providers: Amazon Bedrock by default (others like OpenAI/Anthropic/Google can be enabled)
-- Integrates with Langfuse for tracing/telemetry (OpenTelemetry exporter) and scoring/feedback
-- Trace helpers to create, annotate, score, and flush traces across requests
+- Integrates with Langfuse for tracing and scoring/feedback
 
 ## Structure
 
-- `ai.ts`: Exposes `ai` utilities:
-  - `generateText`, `generateObject` (Vercel AI SDK) with automatic Langfuse telemetry
-  - `models` (e.g., Bedrock `claude-3-5-haiku`, `claude-4-sonnet`)
-  - `createTrace`, `getTraceId`, `scoreTrace`, `flush`
+- `ai.ts`: AI utilities (generation and tracing helpers)
+- `models.ts`: Providers and available models
+- `langfuse.ts`: Langfuse client setup
 
 ## Usage
 
-Generate text:
-
 ```ts
 import { ai } from '@repo/ai';
-
-const { text, finishReason } = await ai.generateText({
-  prompt: 'Summarize our latest release in 2 sentences',
-});
-```
-
-Generate a typed object with Zod:
-
-```ts
-import { ai } from '@repo/ai';
+import { Output } from 'ai';
 import { z } from 'zod';
 
-const releaseNotes = z.object({ summary: z.string(), highlights: z.array(z.string()) });
+// Generate text
+const { text } = await ai.generateText({ prompt: 'Summarize our latest release' });
 
-const result = await ai.generateObject({
-  schema: releaseNotes,
-  prompt: 'Create a JSON object of highlights from this changelog: ...',
+// Generate typed structured output
+const { output } = await ai.generateText({
+  prompt: 'Create highlights from this changelog: ...',
+  output: Output.object({ schema: z.object({ highlights: z.array(z.string()) }) }),
 });
-
-const notes = result.object; // typed to z.infer<typeof releaseNotes>
 ```
 
-Group multiple generations under a custom observation:
+Wrap AI tasks with `ai.observe` so each one is traced in Langfuse with its input and output (calls outside it are still traced individually):
 
 ```ts
-import { ai } from '@repo/ai';
-
-// Wrap multiple AI calls in a custom observation
-const result = await ai.startActiveObservation('Analyze Release', async () => {
-  const summary = await ai.generateText({
-    prompt: 'Summarize the release notes',
-    name: 'Generate Summary',
-  });
-
-  const highlights = await ai.generateObject({
-    schema: HighlightsSchema,
-    prompt: `Extract highlights from: ${summary.text}`,
-    name: 'Extract Highlights',
-  });
-
-  return { summary, highlights };
+export const summarize = ai.observe('summarize', async (input: { notes: string }) => {
+  const { text } = await ai.generateText({ prompt: `Summarize: ${input.notes}` });
+  return text;
 });
-
-// In Langfuse, this creates the hierarchy:
-// Analyze Release
-//   > Generate Summary
-//   > Extract Highlights
 ```
 
-Without `startActiveObservation`, generations are grouped at the request level:
-
-```ts
-// Creates: GET /my-route > generateText
-await ai.generateText({ prompt: '...' });
-```
-
-Score a trace:
-
-```ts
-await ai.scoreTrace({ traceId, score: true, comment: 'This is a good summary!' });
-```
-
-Notes:
-
-- Langfuse is activated when the required env vars are present. Telemetry is attached automatically to generations.
-- The default provider is Amazon Bedrock (using AWS credentials from the Lambda environment). Other providers are scaffolded and can be enabled with API keys.
-- Use `startActiveObservation` to create logical groupings of AI operations in your traces, making it easier to analyze and debug complex workflows in Langfuse.
-- For chat streaming, tools, and MCP server integration, see [`apps/backend/ai/README.md`](../../apps/backend/ai/README.md).
+For chat streaming, tools, and MCP server integration, see [`apps/backend/ai/README.md`](../../apps/backend/ai/README.md).

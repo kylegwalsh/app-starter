@@ -1,5 +1,4 @@
 import type { Organization } from '@prisma/client';
-import { ai } from '@repo/ai';
 import { addLogMetadata, log } from '@repo/logs';
 import { createMiddleware } from 'hono/factory';
 import { HTTPException } from 'hono/http-exception';
@@ -67,17 +66,6 @@ export const authMiddleware = createMiddleware<PublicEnv>(async (c, next) => {
   c.set('organization', organization);
 
   await next();
-
-  // Update the AI trace with the output of our request (don't fail the request if
-  // this fails). Only buffered JSON responses can be read back here — streaming
-  // responses are left alone so we never drain the body the client is waiting on.
-  try {
-    const isJson = c.res.headers.get('content-type')?.includes('application/json');
-    const output = isJson ? await c.res.clone().json() : c.res.status;
-    ai.updateRequestTrace({ output });
-  } catch (error) {
-    log.error({ err: error }, 'Error updating AI trace');
-  }
 });
 
 /**

@@ -1,7 +1,7 @@
 import type { ToolSet } from 'ai';
 import { z } from 'zod';
 
-// oxlint-disable-next-line no-namespace: Namespace import used to auto-register all exported tools
+// oxlint-disable-next-line no-namespace -- Namespace import used to auto-register all exported tools
 import * as allTools from './tools';
 import { runTool, type AiTool, type ToolSession } from './utils';
 

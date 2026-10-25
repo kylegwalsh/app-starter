@@ -1,8 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { config } from '@repo/config';
+import { z } from 'zod';
 
-// oxlint-disable-next-line no-namespace: Namespace import used to auto-register all exported tools
+// oxlint-disable-next-line no-namespace -- Namespace import used to auto-register all exported tools
 import * as tools from '../tools';
 import { runTool, type AiTool, type ToolSession } from '../utils';
 
@@ -49,7 +50,8 @@ export const createMcpServer = ({ session }: { session?: ToolSession }) => {
       tool.name,
       {
         description: tool.description,
-        inputSchema: tool.inputSchema,
+        // Wrap the raw shape in a Zod object so the MCP SDK can validate it (matches the AI SDK adapter)
+        inputSchema: tool.inputSchema ? z.object(tool.inputSchema) : undefined,
         annotations: tool.annotations,
       },
       async (args) => {

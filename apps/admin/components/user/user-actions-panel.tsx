@@ -1,3 +1,4 @@
+// oxlint-disable jsx-a11y/no-noninteractive-tabindex -- Disabled buttons are wrapped in a focusable element so their tooltips stay keyboard accessible
 'use client';
 
 import { config } from '@repo/config';

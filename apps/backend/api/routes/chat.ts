@@ -9,6 +9,8 @@ import {
   createIdGenerator,
   createUIMessageStream,
   createUIMessageStreamResponse,
+  type ModelMessage,
+  Output,
   smoothStream,
   stepCountIs,
 } from 'ai';
@@ -173,6 +175,15 @@ function* streamFromMessage(message: DbMessage): Generator<UIMessageChunk> {
 
   yield { type: 'finish' };
 }
+
+/** Generates a short sidebar title for a conversation from its first message */
+const generateTitle = ai.observe('generate-chat-title', async (titleSeed: string) => {
+  const { output } = await ai.generateText({
+    output: Output.object({ schema: z.object({ title: z.string().max(80) }) }),
+    prompt: `Generate a short, descriptive title (3-6 words) for a chat conversation that starts with this message. Aim to keep it under 35 characters so it fits comfortably in a sidebar — slightly longer is fine if needed for clarity.\n\n"${titleSeed.slice(0, 500)}"`,
+  });
+  return output.title;
+});
 
 /** The chat router — streaming AI chat, conversation CRUD, and feedback */
 export const chatRouter = new Hono<ProtectedEnv>()
@@ -387,12 +398,7 @@ export const chatRouter = new Hono<ProtectedEnv>()
             !existing && titleSeed
               ? (async () => {
                   try {
-                    const result = await ai.generateObject({
-                      name: 'generate-title',
-                      schema: z.object({ title: z.string().max(80) }),
-                      prompt: `Generate a short, descriptive title (3-6 words) for a chat conversation that starts with this message. Aim to keep it under 35 characters so it fits comfortably in a sidebar — slightly longer is fine if needed for clarity.\n\n"${titleSeed.slice(0, 500)}"`,
-                    });
-                    const title = result.object.title;
+                    const title = await generateTitle(titleSeed);
                     if (!title) {
                       return null;
                     }
@@ -420,9 +426,15 @@ export const chatRouter = new Hono<ProtectedEnv>()
             ignoreIncompleteToolCalls: true,
           });
 
-          // Stream the response using our traced wrapper
-          const streamResult = await ai.streamText({
-            system: `You are a helpful AI assistant with access to a persistent code execution environment.
+          // Stream the response inside a Langfuse observation so the run has a trace ID that
+          // feedback can score later. The stream outlives the observation, so we skip capturing
+          // its output (the AI SDK integration records the generation itself).
+          const { streamResult, traceId } = await ai.observe(
+            'chat',
+            async (input: ModelMessage[]) => ({
+              traceId: ai.getTraceId(),
+              streamResult: await ai.streamText({
+                system: `You are a helpful AI assistant with access to a persistent code execution environment.
 
 When you need to analyze data, perform calculations, or generate visualizations:
 - Use the run-code tool to execute Python code
@@ -432,30 +444,30 @@ When you need to analyze data, perform calculations, or generate visualizations:
 
 Files persist across messages in this conversation. You can build on previous work.
 When generating charts, save them to /output/ (e.g., plt.savefig('/output/chart.png')).`,
-            messages: modelMessages,
-            // Give chat access to all our tools
-            tools,
-            // Allow the model to generate up to 10 steps
-            stopWhen: stepCountIs(10),
-            // Enable reasoning (up to 2000 tokens)
-            model: models.bedrock['claude-4-6-sonnet'],
-            providerOptions: {
-              bedrock: {
-                reasoningConfig: {
-                  type: 'enabled',
-                  budgetTokens: 2000,
+                messages: input,
+                // Give chat access to all our tools
+                tools,
+                // Allow the model to generate up to 10 steps
+                stopWhen: stepCountIs(10),
+                // Enable reasoning (up to 2000 tokens)
+                model: models.bedrock['claude-sonnet-5-5'],
+                providerOptions: {
+                  bedrock: {
+                    reasoningConfig: {
+                      type: 'enabled',
+                      budgetTokens: 2000,
+                    },
+                  },
                 },
-              },
-            },
-            // Allow the model to download files from S3
-            experimental_download: downloadUploadsFromS3,
-            // Smooth the token-by-token output into word-sized chunks with a small
-            // delay so the UI renders typing-like text instead of jittery bursts.
-            experimental_transform: smoothStream({ delayInMs: 25, chunking: 'word' }),
-          });
-
-          // Get the Langfuse trace ID so we can pass it to the client for feedback scoring
-          const traceId = ai.getRequestTraceId();
+                // Allow the model to download files from S3
+                experimental_download: downloadUploadsFromS3,
+                // Smooth the token-by-token output into word-sized chunks with a small
+                // delay so the UI renders typing-like text instead of jittery bursts.
+                experimental_transform: smoothStream({ delayInMs: 25, chunking: 'word' }),
+              }),
+            }),
+            { captureOutput: false },
+          )(modelMessages);
 
           writer.merge(
             streamResult.toUIMessageStream({

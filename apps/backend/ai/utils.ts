@@ -39,7 +39,7 @@ export type AiTool<TInput extends z.ZodRawShape = z.ZodRawShape> = {
   isTool: true;
   /** Handler returns a string on success, throws on error. Format conversion is handled at the boundary. */
   handler: (
-    args: TInput extends z.ZodRawShape ? z.objectOutputType<TInput, z.ZodTypeAny> : unknown,
+    args: TInput extends z.ZodRawShape ? z.infer<z.ZodObject<TInput>> : unknown,
     session: ToolSession,
   ) => Promise<string>;
 };
@@ -67,7 +67,7 @@ export const runTool = async ({
   session,
 }: {
   tool: Pick<AiTool, 'name' | 'handler'>;
-  // oxlint-disable-next-line no-explicit-any: tool args are tool-specific; the adapter has already validated them
+  // oxlint-disable-next-line no-explicit-any -- tool args are tool-specific; the adapter has already validated them
   args: any;
   session: ToolSession;
 }): Promise<ToolRunResult> => {

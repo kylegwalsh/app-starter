@@ -7,10 +7,10 @@ import { auth } from '@/core';
 import { organizationFactory } from './organization-factory';
 import { userFactory } from './user-factory';
 
-/** Exports a factory for creating a test-based API client */
-export const routerFactory = {
-  /** Creates a typed in-process API client with a user and organization */
-  createRouter: async ({
+/** Exports a factory for creating authenticated test sessions */
+export const sessionFactory = {
+  /** Creates a user and organization, signs them in, and returns an API client acting as them */
+  createSession: async ({
     user: userFields,
     organization: organizationFields,
   }: {
@@ -39,7 +39,7 @@ export const routerFactory = {
     // Dispatch straight into the Hono router in-process (no socket), attaching a
     // fake cookie on every request so `authMiddleware` triggers the mocked
     // session lookup above.
-    const client = hc<typeof router>('http://test.local', {
+    const api = hc<typeof router>('http://test.local', {
       fetch: (input: string | URL | Request, init?: RequestInit) => {
         const headers = new Headers(init?.headers);
         headers.set('cookie', 'better-auth.session_token=test-session');
@@ -50,6 +50,9 @@ export const routerFactory = {
       },
     });
 
-    return { user, organization, router: client };
+    return { user, organization, api };
   },
 };
+
+/** A signed-in test session (user + org + api client) */
+export type TestSession = Awaited<ReturnType<typeof sessionFactory.createSession>>;

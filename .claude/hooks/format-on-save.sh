@@ -8,7 +8,7 @@ if [ -z "$file_path" ]; then
   exit 0
 fi
 
-lint_output=$(bunx oxlint --type-aware --type-check --fix "$file_path" 2>&1)
+lint_output=$(bunx oxlint --type-aware --type-check --fix --no-error-on-unmatched-pattern "$file_path" 2>&1)
 lint_exit=$?
 bunx oxfmt --no-error-on-unmatched-pattern "$file_path"
 

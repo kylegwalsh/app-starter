@@ -123,7 +123,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
   const safeInvoke = async (func: () => Promise<void> | void) => {
     try {
       // Only send analytics events if posthog is enabled
-      if (config.posthog.isEnabled && config.posthog.apiKey) {
+      if (config.posthog.analytics.isEnabled && config.posthog.analytics.apiKey) {
         await func();
       }
     } catch (error) {
@@ -423,10 +423,9 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
       await safeInvoke(() => {
         // Track the error differently based on platform
         if (platform === 'backend') {
-          const { awsRequestId, userId, langfuseTraceId, request } = getLogMetadata?.() ?? {};
+          const { awsRequestId, userId, request } = getLogMetadata?.() ?? {};
           platformAnalytics.captureException(error, userId as string, {
             awsRequestId,
-            langfuseTraceId,
             path: request?.path,
             method: request?.method,
             ...properties,

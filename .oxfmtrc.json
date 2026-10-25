@@ -3,9 +3,9 @@
   "singleQuote": true,
   "semi": true,
   "trailingComma": "all",
-  "experimentalSortImports": {
+  "sortImports": {
     "groups": [
-      ["side-effect"],
+      ["side_effect"],
       ["builtin"],
       ["external", "type-external"],
       ["internal", "type-internal"],
@@ -15,7 +15,7 @@
     ],
     "newlinesBetween": true
   },
-  "experimentalSortPackageJson": true,
-  "experimentalTailwindcss": {},
+  "sortPackageJson": true,
+  "sortTailwindcss": true,
   "ignorePatterns": ["**/sst-env.d.ts"]
 }

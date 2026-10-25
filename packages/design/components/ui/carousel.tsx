@@ -106,6 +106,7 @@ function Carousel({
     if (!api) {
       return;
     }
+    // oxlint-disable-next-line react/set-state-in-effect -- Syncs the initial Embla carousel state
     onSelect(api);
     api.on('reInit', onSelect);
     api.on('select', onSelect);
@@ -133,6 +134,7 @@ function Carousel({
         className={cn('relative', className)}
         data-slot="carousel"
         onKeyDownCapture={handleKeyDown}
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- shadcn uses ARIA roles for the carousel region
         role="region"
         {...props}
       >
@@ -167,6 +169,7 @@ function CarouselItem({ className, ...props }: ComponentProps<'div'>) {
         className,
       )}
       data-slot="carousel-item"
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- shadcn uses ARIA roles for carousel slides
       role="group"
       {...props}
     />

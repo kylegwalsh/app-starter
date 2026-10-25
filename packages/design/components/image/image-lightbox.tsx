@@ -1,6 +1,6 @@
 'use client';
 
-// oxlint-disable no-namespace-import: Radix primitives ship namespaced; this has no runtime cost
+// oxlint-disable no-namespace-import -- Radix primitives ship namespaced; this has no runtime cost
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { cn } from '@repo/design/lib/utils';
 import { XIcon } from 'lucide-react';
@@ -32,7 +32,7 @@ export const ImageLightbox = ({ src, alt, children, imageClassName }: ImageLight
         className="fixed inset-0 z-50 flex items-center justify-center p-8 outline-none"
       >
         <DialogPrimitive.Title className="sr-only">{alt || 'Image'}</DialogPrimitive.Title>
-        {/* oxlint-disable-next-line eslint-plugin-next(no-img-element): lightbox shows CDN-hosted attachments */}
+        {/* oxlint-disable-next-line next/no-img-element -- lightbox shows CDN-hosted attachments */}
         <img
           alt={alt || 'Image'}
           className={cn('max-h-full max-w-full object-contain', imageClassName)}

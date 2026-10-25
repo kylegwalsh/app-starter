@@ -1,4 +1,4 @@
-// oxlint-disable-next-line triple-slash-reference: This is how SST expects the types
+// oxlint-disable-next-line triple-slash-reference -- This is how SST expects the types
 /// <reference path="./.sst/platform/config.d.ts" />
 
 // The config that manages our SST application / deployments
@@ -128,21 +128,14 @@ export default $config({
     });
 
     // ---------- MAIN ----------
-    // SST fails if you run `sst shell` without a corresponding stage being deployed.
-    // This causes our CI to fail unless we deploy something first. To ensure we keep it
-    // speedy the first time (and this should only deploy once), we create a minimal stage
-    // and just skip the rest of the deployment.
-    if ($app.stage === 'minimal') {
-      return;
-    }
-
     // Import primary application stacks
     await import('./infra/storage');
     await import('./infra/api');
     await import('./infra/web');
     await import('./infra/admin');
     await import('./infra/keep-alive');
-    // Optional docs site
+    // Optional sites
+    // await import('./infra/marketing');
     // await import('./infra/docs');
   },
 });

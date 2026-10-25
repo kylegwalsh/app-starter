@@ -42,13 +42,10 @@ execSync('bun install', { stdio: 'inherit' });
 
 // 2. Link .sst
 if (!existsSync(sstSrc)) {
-  console.error(
-    `\n.sst not found at: ${sstSrc}\nRun 'sst dev' or 'bun dev' in the main repo first to generate SST types.\n`,
+  console.warn(
+    `\n.sst not found at: ${sstSrc}\nRun 'sst dev' or 'bun dev' in the main repo first to generate SST types.\nSkipping symlink for now — rerun 'bun setup-worktree' once it exists.\n`,
   );
-  process.exit(1);
-}
-
-if (existsSync(sstDest)) {
+} else if (existsSync(sstDest)) {
   console.log('.sst already linked, skipping.');
 } else {
   // 'junction' works without elevated privileges on Windows; behaves as a

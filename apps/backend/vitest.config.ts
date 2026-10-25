@@ -12,6 +12,10 @@ export default defineConfig({
     setupFiles: ['./tests/setup/setup.ts', './tests/mocks/ai.ts'],
     globalSetup: ['./tests/setup/global-setup.ts'],
     pool: 'threads',
+    env: {
+      // Ensure that tests have a valid API URL to initialize better-auth with
+      NEXT_PUBLIC_API_URL: 'http://localhost',
+    },
     include: ['**/*.test.ts'],
     coverage: {
       reporter: ['text', 'html'],

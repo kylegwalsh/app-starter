@@ -1,4 +1,5 @@
 import readline from 'node:readline';
+import { styleText } from 'node:util';
 
 import inquirer from 'inquirer';
 
@@ -10,7 +11,7 @@ export const promptUser = (question: string): Promise<string> => {
     output: process.stdout,
   });
   return new Promise((resolve) => {
-    rl.question(question, (answer) => {
+    rl.question(styleText('bold', question), (answer) => {
       rl.close();
       resolve(answer);
     });
@@ -20,7 +21,7 @@ export const promptUser = (question: string): Promise<string> => {
 /** Prompt the user for a yes/no answer */
 export const promptYesNo = async (question: string): Promise<boolean> => {
   while (true) {
-    // oxlint-disable no-await-in-loop: We need to await here
+    // oxlint-disable no-await-in-loop -- We need to await here
     const rawAnswer = await promptUser(question);
     const answer = rawAnswer.trim().toLowerCase();
     if (['y', 'yes'].includes(answer)) {

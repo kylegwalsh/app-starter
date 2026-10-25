@@ -186,8 +186,11 @@ jobs:
           bun sst unlock --stage ci || true
           SKIP_SOURCEMAPS=true bun sst deploy --stage ci
 
+      # Run against the ci stage we just deployed
       - name: Run E2E tests
         run: bun web test:e2e
+        env:
+          SST_STAGE: ci
 
       # Upload artifacts to see results
       - name: Upload Playwright report

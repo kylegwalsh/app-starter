@@ -5,6 +5,7 @@ import {
   ChangePasswordCard,
   UpdateAvatarCard,
   UpdateNameCard,
+  UserInvitationsCard,
 } from '@daveyplate/better-auth-ui';
 
 import { DashboardLayout } from '@/components';
@@ -21,6 +22,7 @@ const AccountSettingsPage = () => {
       <UpdateNameCard />
       <ChangeEmailCard />
       <ChangePasswordCard />
+      <UserInvitationsCard />
     </DashboardLayout>
   );
 };

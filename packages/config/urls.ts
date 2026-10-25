@@ -1,6 +1,6 @@
 import { resources } from './cloud-resources';
 
-// oxlint-disable no-explicit-any: We need the backend to build and ignore the window
+// oxlint-disable no-explicit-any -- We need the backend to build and ignore the window
 declare const window: any;
 
 // Extract only resource keys that have a `url` property (e.g. 'web', 'admin', 'api')
@@ -9,9 +9,10 @@ type ResourceWithUrl = {
 }[keyof typeof resources];
 
 /**
- * Resolve a URL for an SST resource. In the browser, returns `window.location.origin`
- * (the current app's own URL). On the backend, reads the SST resource URL directly.
- * Falls back to a local dev URL when SST returns a dev-mode placeholder.
+ * Resolve a URL for an SST resource. A dedicated URL (set by SST at build time) always wins,
+ * which also covers static builds where there's no window. Otherwise, in the browser it returns
+ * `window.location.origin` (the current app's own URL), and on the backend it reads the SST
+ * resource URL directly, falling back to a local dev URL when SST returns a dev-mode placeholder.
  */
 const resolveWebAppUrl = ({
   resource,
@@ -25,10 +26,10 @@ const resolveWebAppUrl = ({
   /** If we're running in the frontend, we sometimes have a direct URL provided and should be our first pick */
   dedicatedUrl?: string;
 }) => {
-  let url: string | undefined;
-  if (typeof window !== 'undefined') {
-    // oxlint-disable no-unsafe-assignment, no-unsafe-member-access: The window is not typed here
-    url = dedicatedUrl ?? window.location.origin;
+  let url = dedicatedUrl;
+  if (!url && typeof window !== 'undefined') {
+    // oxlint-disable no-unsafe-assignment, no-unsafe-member-access -- The window is not typed here
+    url = window.location.origin;
   }
   if (!url) {
     try {
@@ -60,12 +61,32 @@ const resolveApiUrl = () => {
 export const appUrl = resolveWebAppUrl({
   resource: 'web',
   localUrl: 'http://localhost:3000',
-  // Admin is provided this specifically so that it knows where the web app lives
+  // Admin and marketing are provided this specifically so that they know where the web app lives
   dedicatedUrl: process.env.NEXT_PUBLIC_WEB_URL,
 });
 
 /** The URL of our admin dashboard */
 export const adminUrl = resolveWebAppUrl({ resource: 'admin', localUrl: 'http://localhost:3001' });
 
+/**
+ * Resolve the marketing site URL. The marketing site itself gets it via an env var (set by SST at
+ * build time). The site is optional, so its resource only exists (and is linked to the backend)
+ * when `infra/marketing.ts` is enabled.
+ */
+const resolveMarketingUrl = () => {
+  try {
+    return (
+      process.env.NEXT_PUBLIC_MARKETING_URL ||
+      // The resource is missing from the generated SST types if not enabled in `sst.config.ts`
+      (resources as typeof resources & { marketing?: { url: string } }).marketing?.url
+    );
+  } catch {
+    return;
+  }
+};
+
 /** The URL of our API */
 export const apiUrl = resolveApiUrl();
+
+/** The URL of our marketing site */
+export const marketingUrl = resolveMarketingUrl();

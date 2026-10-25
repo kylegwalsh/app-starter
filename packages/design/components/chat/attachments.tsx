@@ -146,7 +146,7 @@ const AttachmentImage = ({
 }) => {
   const [loaded, setLoaded] = useState(false);
   const img = (
-    // oxlint-disable-next-line eslint-plugin-next(no-img-element): attachment previews are user-uploaded CDN images
+    // oxlint-disable-next-line next/no-img-element -- attachment previews are user-uploaded CDN images
     <img
       alt={filename || 'Image'}
       className={cn(

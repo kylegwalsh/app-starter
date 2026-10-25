@@ -56,7 +56,7 @@ export const UserMessage: FC<{ message: ChatMessage }> = ({ message }) => {
         {textParts.map((part, partIndex) => (
           <MessageContent
             className="bg-secondary w-fit max-w-[min(80%,56ch)] overflow-hidden rounded-2xl rounded-br-lg px-3.5 py-2 text-[13px] leading-relaxed break-words"
-            // oxlint-disable-next-line eslint-plugin-react(no-array-index-key): text parts have no stable ID; index is the canonical position within a message
+            // oxlint-disable-next-line react/no-array-index-key -- text parts have no stable ID; index is the canonical position within a message
             key={`${message.id}-text-${partIndex}`}
           >
             <MessageResponse>{part.text}</MessageResponse>
@@ -84,7 +84,7 @@ const ProcessSteps: FC<{ parts: ChatMessagePart[] }> = ({ parts }) => {
         if (part.type === 'reasoning') {
           const state = (part as { state?: 'streaming' | 'done' }).state ?? 'done';
           return (
-            // oxlint-disable-next-line eslint-plugin-react(no-array-index-key): reasoning parts have no stable id
+            // oxlint-disable-next-line react/no-array-index-key -- reasoning parts have no stable id
             <Reasoning key={`reasoning-${index}`} state={state}>
               {(part as { text?: string }).text ?? ''}
             </Reasoning>
@@ -175,7 +175,7 @@ export const AssistantMessage: FC<AssistantMessageProps> = ({
       rendered.push(
         <MessageContent
           className="text-[13px] leading-relaxed"
-          // oxlint-disable-next-line eslint-plugin-react(no-array-index-key): text parts have no stable ID; index is the canonical position within a message
+          // oxlint-disable-next-line react/no-array-index-key -- text parts have no stable ID; index is the canonical position within a message
           key={`${message.id}-text-${partIndex}`}
         >
           <MessageResponse isAnimating={isAnimating}>{part.text}</MessageResponse>

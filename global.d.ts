@@ -1,5 +1,8 @@
 /// <reference types="react" />
 
+/** Allow side-effect CSS imports (e.g. `import './globals.css'`), which are handled by the bundler */
+declare module '*.css';
+
 /**
  * Flexible React.FC type with overloads:
  * - FC - just standard component type + children
@@ -8,7 +11,7 @@
  * - FC<typeof Component, Props> - inherits the props from the referenced component + custom props
  */
 declare type FC<T = object, P = never> = [P] extends [never]
-  ? // oxlint-disable no-explicit-any: We need to allow any to allow for flexible extensions
+  ? // oxlint-disable no-explicit-any -- We need to allow any to allow for flexible extensions
     T extends React.ComponentType<any>
     ? React.FC<React.PropsWithChildren<React.ComponentProps<T>>> // Just component type + children
     : React.FC<React.PropsWithChildren<T>> // Just props + children

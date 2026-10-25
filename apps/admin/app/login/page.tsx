@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  Alert,
-  AlertDescription,
-  Button,
-  Card,
-  CardContent,
-  Input,
-  Label,
-} from '@repo/design';
+import { Alert, AlertDescription, Button, Card, CardContent, Input, Label } from '@repo/design';
 import { Loader2Icon, XIcon } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState, type FormEvent } from 'react';

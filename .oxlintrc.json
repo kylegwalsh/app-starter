@@ -13,7 +13,7 @@
     "nextjs",
     "oxc"
   ],
-  "jsPlugins": ["oxlint-plugin-eslint"],
+  "jsPlugins": [{ "name": "eslint-js", "specifier": "oxlint-plugin-eslint" }],
   "ignorePatterns": ["**/sst-env.d.ts"],
   "rules": {
     // --- ESLint rules ---
@@ -32,6 +32,16 @@
     "no-constant-binary-expression": "error",
     "no-useless-rename": "error",
     "no-useless-call": "error",
+    // enforces camelCase/PascalCase names, or SCREAMING_SNAKE_CASE constants
+    "id-match": [
+      "warn",
+      "^(_{0,2}[a-zA-Z$][a-zA-Z0-9$]*|[A-Z][A-Z0-9]*(_[A-Z0-9]+)*|_)$",
+      {
+        "properties": false,
+        "onlyDeclarations": true,
+        "ignoreDestructuring": true
+      }
+    ],
 
     // Pino expects `err` (it has a built-in serializer for that field).
     // Passing `error` silently bypasses the serializer.
@@ -53,7 +63,6 @@
     "bad-object-literal-comparison": "error",
     "bad-replace-all-arg": "error",
     "const-comparisons": "error",
-    "double-comparisons": "warn",
     "erasing-op": "error",
     "misrefactored-assign-op": "error",
     "missing-throw": "error",
@@ -80,8 +89,6 @@
     "no-array-sort": "warn",
     "no-await-in-promise-methods": "error",
     "no-magic-array-flat-depth": "warn",
-    "no-new-array": "warn",
-    "no-single-promise-in-promise-methods": "warn",
     "no-unnecessary-array-flat-depth": "warn",
     "no-unnecessary-array-splice-count": "warn",
     "no-useless-collection-argument": "warn",
@@ -91,7 +98,6 @@
     "prefer-array-index-of": "warn",
     "prefer-array-some": "warn",
     "prefer-set-has": "warn",
-    "prefer-set-size": "warn",
     "prefer-spread": "warn",
     "require-array-join-separator": "warn",
     "consistent-empty-array-spread": "warn",
@@ -129,7 +135,7 @@
     "consistent-assert": "warn",
     "consistent-date-clone": "warn",
     "empty-brace-spaces": "warn",
-    "filename-case": ["error", "kebabCase"],
+    "filename-case": ["error", { "case": "kebabCase" }],
     "new-for-builtins": "error",
     "no-accessor-recursion": "error",
     "no-anonymous-default-export": "warn",
@@ -146,7 +152,6 @@
     "no-object-as-default-parameter": "warn",
     "no-static-only-class": "warn",
     "no-this-assignment": "warn",
-    "no-unnecessary-await": "warn",
     "no-unnecessary-slice-end": "warn",
     "no-unreadable-iife": "warn",
     "no-useless-switch-case": "warn",
@@ -172,8 +177,6 @@
     "switch-case-braces": "warn",
 
     // --- Import recommended rules ---
-    "default": "warn",
-    "namespace": "warn",
     "no-named-as-default": "warn",
     "no-named-as-default-member": "warn",
     "no-duplicates": "error",
@@ -189,7 +192,6 @@
 
     // --- React rules ---
     "rules-of-hooks": "error",
-    "exhaustive-deps": "warn",
     "jsx-curly-brace-presence": [
       "error",
       {
@@ -222,33 +224,31 @@
     "no-array-index-key": "warn",
 
     // --- TypeScript rules ---
-    "prefer-ts-expect-error": "error",
-    "no-explicit-any": "warn",
-    "ban-ts-comment": "error",
-    "no-duplicate-enum-values": "error",
-    "no-empty-object-type": "error",
-    "no-extra-non-null-assertion": "error",
-    "no-misused-new": "error",
-    "no-namespace": "error",
-    "no-non-null-asserted-optional-chain": "error",
-    "no-require-imports": "error",
-    "no-this-alias": "error",
-    "no-unnecessary-type-constraint": "error",
-    "no-unsafe-declaration-merging": "error",
-    "no-unsafe-function-type": "error",
-    "no-wrapper-object-types": "error",
-    "prefer-as-const": "error",
-    "prefer-namespace-keyword": "error",
-    "no-floating-promises": "off",
+    "typescript/prefer-ts-expect-error": "error",
+    "typescript/no-explicit-any": "warn",
+    "typescript/ban-ts-comment": "error",
+    "typescript/no-duplicate-enum-values": "error",
+    "typescript/no-empty-object-type": "error",
+    "typescript/no-extra-non-null-assertion": "error",
+    "typescript/no-misused-new": "error",
+    "typescript/no-namespace": "error",
+    "typescript/no-non-null-asserted-optional-chain": "error",
+    "typescript/no-require-imports": "error",
+    "typescript/no-this-alias": "error",
+    "typescript/no-unnecessary-type-constraint": "error",
+    "typescript/no-unsafe-declaration-merging": "error",
+    "typescript/no-unsafe-function-type": "error",
+    "typescript/no-wrapper-object-types": "error",
+    "typescript/prefer-as-const": "error",
+    "typescript/prefer-namespace-keyword": "error",
+    "typescript/no-floating-promises": "off",
 
     // --- Vitest rules ---
     "no-import-node-test": "error",
     "no-unneeded-async-expect-function": "error",
     "require-local-test-context-for-concurrent-snapshots": "error",
-    // Vitest rules available under  namespace
     "expect-expect": "error",
     "no-conditional-expect": "error",
-    "no-disabled-tests": "warn",
     "no-focused-tests": "error",
     "no-commented-out-tests": "error",
     "no-identical-title": "error",
@@ -295,7 +295,6 @@
     "no-new-statics": "error",
     "no-nesting": "warn",
     "no-promise-in-callback": "warn",
-    "no-callback-in-promise": "warn",
     "valid-params": "error",
 
     // --- Next.js rules ---
@@ -306,20 +305,12 @@
     "no-head-import-in-document": "error",
     "no-script-component-in-head": "error",
     "no-async-client-component": "error",
-    "google-font-display": "warn",
-    "google-font-preconnect": "warn",
-    "next-script-for-ga": "warn",
     "no-before-interactive-script-outside-document": "error",
-    "no-css-tags": "warn",
     "no-head-element": "error",
-    "no-html-link-for-pages": "warn",
     "no-img-element": "error",
-    "no-page-custom-font": "warn",
     "no-styled-jsx-in-document": "error",
-    "no-sync-scripts": "warn",
     "no-title-in-document-head": "error",
-    "no-typos": "error",
-    "no-unwanted-polyfillio": "warn"
+    "no-typos": "error"
   },
   "overrides": [
     // Disable console logs in main backend files (should use logging package)
@@ -339,8 +330,8 @@
     {
       "files": ["**/*.{ts,tsx}"],
       "rules": {
-        "no-unsafe-assignment": "warn",
-        "no-unsafe-member-access": "warn"
+        "typescript/no-unsafe-assignment": "warn",
+        "typescript/no-unsafe-member-access": "warn"
       }
     },
     // Storybook renders hooks inside of stories in a way that conflicts with the rules-of-hooks rule

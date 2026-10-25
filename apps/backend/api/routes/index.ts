@@ -4,6 +4,7 @@ import { authMiddleware } from '../middleware';
 
 import { billingRouter } from './billing';
 import { chatRouter } from './chat';
+import { contactRouter } from './contact';
 import { healthRouter } from './health';
 import { uploadsRouter } from './uploads';
 
@@ -15,7 +16,10 @@ import { uploadsRouter } from './uploads';
  */
 export const router = new Hono()
   .use(authMiddleware)
+  // Public routers must be mounted first — a router's `.use(requireAuth)` also applies to every route mounted after it
   .route('/', healthRouter)
+  .route('/', contactRouter)
+  // Protected routers
   .route('/', billingRouter)
   .route('/', chatRouter)
   .route('/', uploadsRouter);

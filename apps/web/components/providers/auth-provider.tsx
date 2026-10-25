@@ -19,7 +19,7 @@ export const AuthProvider: FC = ({ children }) => {
       replace={(...args) => router.replace(...args)}
       Link={Link}
       credentials={{
-        forgotPassword: !!config.loops.transactional.resetPassword,
+        forgotPassword: !!config.posthog.email.templates.resetPassword,
       }}
       // Clear router cache (protected routes)
       onSessionChange={() => {

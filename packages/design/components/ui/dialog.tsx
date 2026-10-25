@@ -1,4 +1,4 @@
-// oxlint-disable no-namespace-import: This won't impact performance
+// oxlint-disable no-namespace-import -- This won't impact performance
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { cn } from '@repo/design/lib/utils';
 import { XIcon } from 'lucide-react';

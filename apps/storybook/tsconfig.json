@@ -4,8 +4,6 @@
     "paths": {
       "@/*": ["./*"]
     },
-    "declaration": false,
-    "declarationMap": false,
     "strictNullChecks": true
   },
   "include": ["**/*", ".storybook/**/*", "../../global.d.ts"],

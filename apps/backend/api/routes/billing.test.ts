@@ -1,17 +1,20 @@
-import { routerFactory } from '@/tests/factories';
+import type { Stripe } from 'stripe';
+
+import { type TestSession, sessionFactory } from '@/tests/factories';
+import type { PartialMock } from '@/tests/mocks/partial-mock';
 
 // Mock stripe
 const { mockStripe } = vi.hoisted(() => ({
   mockStripe: {
     invoices: {
-      list: vi.fn(),
+      list: vi.fn<PartialMock<Stripe['invoices']['list']>>(),
     },
     charges: {
-      list: vi.fn(),
+      list: vi.fn<PartialMock<Stripe['charges']['list']>>(),
     },
     checkout: {
       sessions: {
-        create: vi.fn(),
+        create: vi.fn<PartialMock<Stripe['checkout']['sessions']['create']>>(),
       },
     },
   },
@@ -27,14 +30,14 @@ vi.mock('@/core/stripe', async (importOriginal) => {
 
 // Test our router
 describe('Billing Router', () => {
-  let api: Awaited<ReturnType<typeof routerFactory.createRouter>>['router'];
+  let api: TestSession['api'];
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const mock = await routerFactory.createRouter({
+    const session = await sessionFactory.createSession({
       organization: { stripeCustomerId: 'test-customer-id' },
     });
-    api = mock.router;
+    api = session.api;
   });
 
   describe('charge', () => {
@@ -61,7 +64,7 @@ describe('Billing Router', () => {
           line_items: [
             expect.objectContaining({
               quantity: 1,
-              // oxlint-disable-next-line no-unsafe-assignment - we only care about a subset of the data
+              // oxlint-disable-next-line no-unsafe-assignment -- we only care about a subset of the data
               price_data: expect.objectContaining({
                 currency: 'usd',
                 unit_amount: 4999,
@@ -76,7 +79,7 @@ describe('Billing Router', () => {
     });
 
     it('passes undefined as customer when org has no stripe customer id', async () => {
-      const { router: apiNoCustomer } = await routerFactory.createRouter({
+      const { api: apiNoCustomer } = await sessionFactory.createSession({
         organization: { stripeCustomerId: null },
       });
       mockStripe.checkout.sessions.create.mockResolvedValueOnce({
@@ -114,7 +117,7 @@ describe('Billing Router', () => {
       expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(
         expect.objectContaining({
           line_items: [
-            // oxlint-disable-next-line no-unsafe-assignment - we only care about a subset of the data
+            // oxlint-disable-next-line no-unsafe-assignment -- we only care about a subset of the data
             expect.objectContaining({ price_data: expect.objectContaining({ unit_amount: 150 }) }),
           ],
         }),
@@ -148,7 +151,7 @@ describe('Billing Router', () => {
 
   describe('getHistory', () => {
     it('returns an empty history when organization has no Stripe customer ID', async () => {
-      const { router: apiNoCustomer } = await routerFactory.createRouter({
+      const { api: apiNoCustomer } = await sessionFactory.createSession({
         organization: { stripeCustomerId: null },
       });
       const res = await apiNoCustomer.billing.history.$get();

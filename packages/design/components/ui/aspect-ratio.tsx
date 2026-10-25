@@ -1,4 +1,4 @@
-// oxlint-disable no-namespace-import: This won't impact performance
+// oxlint-disable no-namespace-import -- This won't impact performance
 import * as AspectRatioPrimitive from '@radix-ui/react-aspect-ratio';
 import type { ComponentProps } from 'react';
 

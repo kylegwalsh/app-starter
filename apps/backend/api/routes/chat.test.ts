@@ -1,5 +1,5 @@
 import { db } from '@/db';
-import { routerFactory } from '@/tests/factories';
+import { type TestSession, sessionFactory } from '@/tests/factories';
 import { userFactory } from '@/tests/factories/user-factory';
 import { fakeStreamResult, mockAi } from '@/tests/mocks/ai';
 
@@ -33,19 +33,19 @@ const consume = async (res: Response): Promise<Array<Record<string, unknown>>> =
 
 // ---------- Tests ----------
 describe('Chat Router', () => {
-  let api: Awaited<ReturnType<typeof routerFactory.createRouter>>['router'];
-  let user: Awaited<ReturnType<typeof routerFactory.createRouter>>['user'];
-  let organization: Awaited<ReturnType<typeof routerFactory.createRouter>>['organization'];
+  let api: TestSession['api'];
+  let user: TestSession['user'];
+  let organization: TestSession['organization'];
 
   beforeEach(async () => {
     vi.clearAllMocks();
     // Default mocks: stream completes cleanly, title generation succeeds.
     mockAi.streamText.mockResolvedValue(fakeStreamResult());
-    mockAi.generateObject.mockResolvedValue({ object: { title: 'Generated title' } });
-    const mock = await routerFactory.createRouter();
-    api = mock.router;
-    user = mock.user;
-    organization = mock.organization;
+    mockAi.generateText.mockResolvedValue({ output: { title: 'Generated title' } });
+    const session = await sessionFactory.createSession();
+    api = session.api;
+    user = session.user;
+    organization = session.organization;
   });
 
   describe('send', () => {
@@ -241,7 +241,7 @@ describe('Chat Router', () => {
     });
 
     it('uses the user message as the title when AI title generation fails', async () => {
-      mockAi.generateObject.mockRejectedValueOnce(new Error('model unavailable'));
+      mockAi.generateText.mockRejectedValueOnce(new Error('model unavailable'));
 
       const res = await api.chat.$post({
         json: { messages: [userMessage('m1', 'Hello world')] },
@@ -253,7 +253,7 @@ describe('Chat Router', () => {
     });
 
     it('truncates a long fallback title at 60 chars with an ellipsis', async () => {
-      mockAi.generateObject.mockRejectedValueOnce(new Error('boom'));
+      mockAi.generateText.mockRejectedValueOnce(new Error('boom'));
 
       const longText = 'a'.repeat(100);
       const res = await api.chat.$post({ json: { messages: [userMessage('m1', longText)] } });
@@ -272,7 +272,7 @@ describe('Chat Router', () => {
       // the seed (written during creation) is the fallback — not the IIFE's
       // own catch block.
       mockAi.streamText.mockRejectedValueOnce(new Error('boom'));
-      mockAi.generateObject.mockRejectedValueOnce(new Error('title boom'));
+      mockAi.generateText.mockRejectedValueOnce(new Error('title boom'));
 
       const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello world')] } });
       const chunks = await consume(res);
@@ -308,7 +308,7 @@ describe('Chat Router', () => {
 
       const conv = await db.conversation.findFirst({ where: { userId: user.id } });
       expect(conv?.title).toBe('New chat');
-      expect(mockAi.generateObject).not.toHaveBeenCalled();
+      expect(mockAi.generateText).not.toHaveBeenCalled();
     });
 
     it('does not re-generate an AI title on a follow-up send to an existing conversation', async () => {
@@ -324,7 +324,7 @@ describe('Chat Router', () => {
       });
       await consume(res);
 
-      expect(mockAi.generateObject).not.toHaveBeenCalled();
+      expect(mockAi.generateText).not.toHaveBeenCalled();
       const after = await db.conversation.findUnique({ where: { id: conv.id } });
       expect(after?.title).toBe('Existing title');
     });

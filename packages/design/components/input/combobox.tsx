@@ -1,5 +1,6 @@
 'use client';
 
+import { useComposedRefs } from '@radix-ui/react-compose-refs';
 import { Badge } from '@repo/design/components/ui/badge';
 import {
   Command,
@@ -238,6 +239,9 @@ const MultiBadgeList = ({
   handleDragEnd: () => void;
   setIsInputFocused: (focused: boolean) => void;
 }) => {
+  // Keep our internal input ref and the consumer's forwarded ref in sync
+  const composedInputRef = useComposedRefs(inputRef, forwardedRef);
+
   if (renderSelectedValue) {
     if (selectedOptions.length > 0) {
       return <span className="truncate py-[1px]">{renderSelectedValue(selectedOptions)}</span>;
@@ -337,14 +341,7 @@ const MultiBadgeList = ({
             handleKeyDown(e);
           }}
           placeholder={selectedOptions.length > 0 ? '' : placeholder}
-          ref={(node) => {
-            inputRef.current = node;
-            if (typeof forwardedRef === 'function') {
-              forwardedRef(node);
-            } else if (forwardedRef) {
-              (forwardedRef as React.MutableRefObject<HTMLInputElement | null>).current = node;
-            }
-          }}
+          ref={composedInputRef}
           value={search}
           {...restInputProps}
         />
@@ -533,7 +530,9 @@ export const Combobox = ({
   );
 
   // Current search query entered
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearch] = useState('');
+  // Ignore any search query when searching is disabled
+  const search = searchable ? searchInput : '';
   // Track if the input is focused to conditionally render it
   const [isInputFocused, setIsInputFocused] = useState(false);
 
@@ -555,14 +554,6 @@ export const Combobox = ({
       onSearchChange?.('');
     }, 150);
   }, [handleOpenChange, onSearchChange]);
-
-  // Clear search when searchable becomes false
-  useEffect(() => {
-    if (!searchable && search) {
-      setSearch('');
-      onSearchChange?.('');
-    }
-  }, [searchable, search, onSearchChange]);
 
   /** Ref for the trigger container */
   const triggerContainerRef = useRef<HTMLDivElement>(null);
@@ -950,6 +941,7 @@ export const Combobox = ({
               }
             }}
             ref={triggerContainerRef}
+            // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- The trigger holds badges and an inline input, so it cannot be a native input or select
             role="combobox"
             style={triggerStyle}
             tabIndex={disabled || loading ? -1 : 0}

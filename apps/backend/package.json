@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "sst shell -- vitest run",
-    "test:ui": "sst shell -- vitest --ui",
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
     "auth:generate": "sst shell -- bunx @better-auth/cli generate --config ./core/auth.ts --output ./db/schema.prisma",
     "db:start": "bun db:get-url \"prisma db push && prisma studio --browser none\"",
     "db:push": "bun db:get-url \"prisma db push\"",
@@ -41,9 +41,11 @@
     "@repo/constants": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/logs": "workspace:*",
+    "@repo/schemas": "workspace:*",
     "@repo/utils": "workspace:*",
     "@standard-community/standard-json": "0.3.5",
     "@standard-community/standard-openapi": "0.2.9",
+    "axios": "1.9.0",
     "better-auth": "1.5.4",
     "hono": "4.8.4",
     "hono-openapi": "1.1.0",
@@ -51,8 +53,7 @@
     "openapi-types": "12.1.3",
     "prisma": "6.7.0",
     "stripe": "18.4.0",
-    "zod": "3.25.49",
-    "zod-openapi": "^4"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.15",

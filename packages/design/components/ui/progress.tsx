@@ -1,4 +1,4 @@
-// oxlint-disable no-namespace-import: This won't impact performance
+// oxlint-disable no-namespace-import -- This won't impact performance
 import * as ProgressPrimitive from '@radix-ui/react-progress';
 import { cn } from '@repo/design/lib/utils';
 import type { ComponentProps } from 'react';

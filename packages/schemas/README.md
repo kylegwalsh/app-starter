@@ -23,11 +23,11 @@ Using Zod with React Hook Form and shadcn/ui `Form`:
 
 ```tsx
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@repo/design';
 import { Input, Button } from '@repo/design';
 import { signUpSchema } from '@repo/schemas';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 type FormValues = z.infer<typeof signUpSchema>;
 

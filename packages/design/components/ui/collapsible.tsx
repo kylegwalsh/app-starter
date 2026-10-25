@@ -1,4 +1,4 @@
-// oxlint-disable no-namespace-import: This won't impact performance
+// oxlint-disable no-namespace-import -- This won't impact performance
 import * as CollapsiblePrimitive from '@radix-ui/react-collapsible';
 import type { ComponentProps } from 'react';
 

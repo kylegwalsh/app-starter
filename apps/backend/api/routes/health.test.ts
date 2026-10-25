@@ -1,11 +1,11 @@
-import { routerFactory } from '@/tests/factories';
+import { type TestSession, sessionFactory } from '@/tests/factories';
 
 describe('Health Router', () => {
-  let api: Awaited<ReturnType<typeof routerFactory.createRouter>>['router'];
+  let api: TestSession['api'];
 
   beforeEach(async () => {
-    const mock = await routerFactory.createRouter();
-    api = mock.router;
+    const session = await sessionFactory.createSession();
+    api = session.api;
   });
 
   it('returns ok status', async () => {

@@ -8,6 +8,10 @@
     "moduleResolution": "Bundler",
     "jsx": "preserve",
     "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    // Apps import workspace packages by source path, so allow files from the whole repo
+    "rootDir": "../..",
     "incremental": true,
     "resolveJsonModule": true,
     "isolatedModules": true,

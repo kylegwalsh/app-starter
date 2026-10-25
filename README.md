@@ -53,7 +53,8 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Backend:** Serverless backend managed with SST, deployed to AWS. Hono as the HTTP layer, with typed API endpoints consumed via Hono's `hc` client.
 - **Web Frontend:** Next.js for fast, modern web applications.
 - **Admin Panel:** Internal admin dashboard for managing users and organizations, powered by Better Auth's admin plugin.
-- **Documentation:** [Fumadocs](https://fumadocs.org/) for building a documentation site (optional, see below).
+- **Marketing Site:** A static Next.js marketing site (optional).
+- **Documentation:** [Fumadocs](https://fumadocs.org/) for building a documentation site (optional).
 - **Continuous Integration:** Automated testing and deployment via GitHub Actions.
 - **Alerts:** Slack integration for real-time notifications and alerts.
 - **Logging:** Shared logging package (Pino) with pretty local output, and production integration with Posthog and CloudWatch.
@@ -61,7 +62,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **AI Chat:** Built-in chat UI with streaming responses, conversation persistence, file uploads (S3 + CloudFront), user feedback (Langfuse), and sandboxed code execution (Daytona).
 - **MCP Server:** Built-in [Model Context Protocol](https://modelcontextprotocol.io/) server with OAuth authentication, allowing AI assistants (Claude, Cursor, etc.) to interact with your app's backend tools.
 - **AI-Assisted Development:** Pre-configured with Cursor rules for AI-powered workflows.
-- **Email:** Transactional and marketing/engagement email system powered by Loops (for password resets, onboarding, and user communications).
+- **Email:** Transactional emails (password resets, organization invitations, contact form messages) sent through PostHog, with templates kept in code and uploaded by `bun run init`.
 
 ---
 
@@ -78,10 +79,9 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Oxfmt/Oxlint:** Fast, zero-config code formatter and linter (Rust-based) for consistent code quality.
 - **GitHub Actions:** CI/CD pipelines for automated testing and deployment.
 - **Slack:** Integration for deployment and error alerts.
-- **Posthog:** Analytics, logging, and error tracking.
+- **PostHog:** Analytics, logging, error tracking, and transactional emails.
 - **Stripe:** Payment processing platform for subscriptions and one-time payments.
 - **Langfuse:** Open-source platform for AI tracing, monitoring, and evaluation.
-- **Loops:** Email platform for transactional (e.g., password reset) and user engagement emails.
 
 _All packages and apps are written in TypeScript for consistency and type safety._
 
@@ -95,6 +95,7 @@ _All packages and apps are written in TypeScript for consistency and type safety
 │   ├── web/           # Next.js frontend app
 │   ├── admin/         # Admin panel (Next.js App Router, Better Auth admin)
 │   ├── backend/       # Serverless backend (SST)
+│   ├── marketing/     # (Optional) Marketing site shell, static Next.js export (deployment disabled by default)
 │   ├── storybook/     # Storybook documentation and testing for components
 │   └── docs/          # (Optional) Fumadocs-powered documentation app (deployment disabled by default)
 ├── packages/          # Shared packages and utilities
@@ -108,6 +109,7 @@ _All packages and apps are written in TypeScript for consistency and type safety
 │   ├── api.ts         # Backend API infrastructure
 │   ├── web.ts         # Web-app deployment infrastructure
 │   ├── secrets.ts     # Backend environment secrets
+│   ├── marketing.ts   # (Optional) Marketing site deployment infrastructure
 │   ├── docs.ts        # (Optional) Documentation site deployment infrastructure
 │   ├── ping-db.ts     # Simple function to keep free database awake
 │   ├── utils.ts       # Shared utils (domain helpers, etc.)
@@ -173,9 +175,9 @@ This interactive script will guide you through configuring all the services and 
 - Initializes AWS credentials and profile for deployment
 - Guides you through setting up Supabase projects (production and development)
 - Configures Better Auth for authentication
-- Configures Loops for email (e.g., password reset, onboarding, user campaigns)
-- Optionally sets up PostHog for analytics, logging, and error tracking
+- Optionally sets up PostHog for analytics, logging, error tracking, and emails (strongly recommended for customer-facing apps)
 - Configures GitHub environments and secrets for CI/CD
+- Sets up marketing site
 - Sets up documentation site
 - Sets up Slack integration for CI notifications and error alerts
 - Sets up Crisp Chat for customer support

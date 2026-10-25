@@ -14,7 +14,7 @@ export const ChatImage = ({ url, alt }: { url: string; alt: string }) => {
         type="button"
       >
         {!loaded && <span className="bg-muted block size-40 animate-pulse rounded-lg" />}
-        {/* oxlint-disable-next-line eslint-plugin-next(no-img-element): CDN-hosted attachment, not optimizable */}
+        {/* oxlint-disable-next-line next/no-img-element -- CDN-hosted attachment, not optimizable */}
         <img
           alt={alt}
           className={cn(

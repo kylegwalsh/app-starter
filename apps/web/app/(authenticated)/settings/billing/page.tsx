@@ -1,14 +1,21 @@
 'use client';
 
 import { SettingsCard } from '@daveyplate/better-auth-ui';
+import { config } from '@repo/config';
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/design';
 import { ExternalLink } from 'lucide-react';
+import { notFound } from 'next/navigation';
 
 import { BillingHistory, DashboardLayout } from '@/components';
 import { useSubscription } from '@/hooks';
 
 /** The payment and billing settings page */
 const BillingPage = () => {
+  // Billing only exists when Stripe is configured
+  if (!config.stripe.isEnabled) {
+    notFound();
+  }
+
   const { openBillingPortal, isOpeningBillingPortal } = useSubscription();
 
   return (

@@ -8,11 +8,12 @@
   ],
   "type": "module",
   "scripts": {
-    "dev": "sst dev",
+    "dev": "cross-env GODEBUG=winsymlink=0 sst dev",
     "backend": "cd apps/backend && bun",
     "web": "cd apps/web && bun",
     "admin": "cd apps/admin && bun",
     "docs": "cd apps/docs && bun",
+    "marketing": "cd apps/marketing && bun",
     "storybook": "cd apps/storybook && bun",
     "design": "cd packages/design && bun",
     "build": "sst build",
@@ -26,6 +27,7 @@
     "clean": "npx rimraf --glob \"apps/*/node_modules\" \"packages/*/node_modules\" && rm -r node_modules",
     "init": "tsx scripts/init/init",
     "init:stripe": "tsx scripts/init/init-stripe",
+    "init:email": "tsx scripts/init/init-email",
     "init:existing": "tsx scripts/init/init-existing",
     "update-readme": "doctoc README.md",
     "get-package-version": "tsx scripts/get-package-version",
@@ -50,25 +52,22 @@
     "inquirer": "9.2.16",
     "jsdom": "26.1.0",
     "lint-staged": "15.2.2",
-    "oxfmt": "0.32.0",
-    "oxlint": "1.47.0",
-    "oxlint-plugin-eslint": "1.65.0",
-    "oxlint-tsgolint": "0.12.1",
+    "oxfmt": "0.74.0",
+    "oxlint": "1.89.0",
+    "oxlint-plugin-eslint": "1.89.0",
+    "oxlint-tsgolint": "7.0.2004",
     "sherif": "1.10.0",
-    "sst": "4.14.1",
+    "sst": "4.17.2",
     "tsx": "4.19.4",
     "turbo": "2.5.3",
-    "typescript": "5.9.3",
+    "typescript": "7.0.2",
     "vite": "6.4.1",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "3.1.4",
-    "zod": "3.25.49"
+    "zod": "4.6.7"
   },
   "engines": {
     "node": ">=24"
   },
-  "packageManager": "bun@1.3.3",
-  "patchedDependencies": {
-    "ai@5.0.104": "patches/ai@5.0.104.patch"
-  }
+  "packageManager": "bun@1.3.3"
 }

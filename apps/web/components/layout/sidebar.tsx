@@ -26,7 +26,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, type ComponentType, type SVGProps } from 'react';
 
-import { OrganizationSwitcher, UserButton } from '@/components';
+import { OrganizationSwitcher, UserButton } from '@/components/auth';
 
 /** The type for a navigation item */
 type NavItem = {

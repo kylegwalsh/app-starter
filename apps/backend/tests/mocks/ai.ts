@@ -10,9 +10,10 @@ import type { UIMessageChunk } from 'ai';
  */
 const mockAi = vi.hoisted(() => ({
   streamText: vi.fn(),
-  generateObject: vi.fn(),
-  getRequestTraceId: vi.fn().mockReturnValue('test-trace-id'),
-  updateRequestTrace: vi.fn(),
+  generateText: vi.fn(),
+  getTraceId: vi.fn().mockReturnValue('test-trace-id'),
+  // Run observed functions directly (no Langfuse span in tests)
+  observe: vi.fn((_name: string, fn: (...args: never[]) => unknown) => fn),
   scoreTrace: vi.fn(),
   flush: vi.fn(async () => {}),
   captureException: vi.fn(async () => {}),

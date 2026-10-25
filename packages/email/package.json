@@ -13,11 +13,12 @@
     "update-readme": "doctoc README.md"
   },
   "dependencies": {
-    "loops": "5.0.1"
+    "axios": "1.9.0"
   },
   "devDependencies": {
     "@repo/config": "workspace:*",
+    "@repo/design": "workspace:*",
     "@repo/tsconfig": "workspace:*",
-    "typescript": "5.9.3"
+    "typescript": "7.0.2"
   }
 }
