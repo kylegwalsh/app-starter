@@ -9,6 +9,7 @@ function InputGroup({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
       data-slot="input-group"
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- shadcn groups the controls with a role
       role="group"
       className={cn(
         'group/input-group relative flex w-full items-center rounded-md border border-input shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30',
@@ -63,7 +64,9 @@ function InputGroupAddon({
   ...props
 }: ComponentProps<'div'> & VariantProps<typeof inputGroupAddonVariants>) {
   return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Clicking the addon just forwards focus to the input
     <div
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- shadcn groups the addon with a role
       role="group"
       data-slot="input-group-addon"
       data-align={align}

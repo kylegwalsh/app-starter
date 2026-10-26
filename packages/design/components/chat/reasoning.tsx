@@ -7,7 +7,7 @@ import {
 } from '@repo/design/components/ui/collapsible';
 import { cn } from '@repo/design/lib/utils';
 import { ChevronRightIcon, LightbulbIcon } from 'lucide-react';
-import { useEffect, useRef, useState, type ComponentProps } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 
 import { Shimmer } from './shimmer';
 
@@ -35,29 +35,30 @@ export const Reasoning = ({ state, className, children, ...props }: ReasoningPro
   // Re-render every 250ms while streaming so the live duration updates.
   const [now, setNow] = useState(() => Date.now());
   const [endedAt, setEndedAt] = useState<number | null>(null);
-  const startedAtRef = useRef<number | null>(null);
+  const [startedAt, setStartedAt] = useState(() => (state === 'streaming' ? now : null));
 
-  useEffect(() => {
-    if (state === 'streaming' && startedAtRef.current == null) {
-      startedAtRef.current = Date.now();
-    }
-    if (state === 'done' && startedAtRef.current != null && endedAt == null) {
-      setEndedAt(Date.now());
-    }
-  }, [state, endedAt]);
+  // Starts the clock if streaming begins after mount
+  if (state === 'streaming' && startedAt == null) {
+    setStartedAt(now);
+  }
 
   useEffect(() => {
     if (state !== 'streaming') {
       return;
     }
     const id = window.setInterval(() => setNow(Date.now()), 250);
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearInterval(id);
+      // Locks the duration when streaming stops. The last cleanup wins, so a StrictMode re-run
+      // that ends early is overwritten.
+      setEndedAt(Date.now());
+    };
   }, [state]);
 
-  const startedAt = startedAtRef.current;
   let duration: number | null = null;
   if (startedAt != null) {
-    duration = endedAt != null ? endedAt - startedAt : now - startedAt;
+    // Ignore `endedAt` while streaming, since a StrictMode cleanup can set it early
+    duration = state !== 'streaming' && endedAt != null ? endedAt - startedAt : now - startedAt;
   }
 
   return (
