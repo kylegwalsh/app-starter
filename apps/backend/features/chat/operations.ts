@@ -175,21 +175,45 @@ export const sendMessage = async (
     // empty assistant shell with `errored: true` so reloads can render the
     // error inline where the response should have been.
     if (!assistantPersisted && released) {
-      await db.message
-        .create({
+      try {
+        await db.message.create({
           data: {
             conversationId: conversation.id,
             role: 'assistant',
             parts: [],
             errored: true,
           },
-        })
-        .catch((error: unknown) =>
-          log.warn(
-            { err: error, conversationId: conversation.id },
-            'Failed to persist errored marker',
-          ),
+        });
+      } catch (error) {
+        log.warn(
+          { err: error, conversationId: conversation.id },
+          'Failed to persist errored marker',
         );
+      }
+    }
+  };
+
+  /** Generates an AI title and saves it, keeping the seeded title if that fails */
+  const generateTitle = async (seed: string) => {
+    try {
+      const title = await generateChatTitle({
+        input: { seed },
+        context: { conversationId: conversation.id },
+      });
+      if (!title) {
+        return null;
+      }
+      await db.conversation.update({
+        where: { id: conversation.id },
+        data: { title },
+      });
+      return title;
+    } catch (error) {
+      log.warn(
+        { err: error, conversationId: conversation.id },
+        'Failed to generate conversation title — keeping seeded title',
+      );
+      return null;
     }
   };
 
@@ -206,14 +230,14 @@ export const sendMessage = async (
           select: { id: true },
         });
         if (latestErrored) {
-          await db.message
-            .delete({ where: { id: latestErrored.id } })
-            .catch((error: unknown) =>
-              log.warn(
-                { err: error, conversationId: conversation.id },
-                'Failed to clear retried errored shell',
-              ),
+          try {
+            await db.message.delete({ where: { id: latestErrored.id } });
+          } catch (error) {
+            log.warn(
+              { err: error, conversationId: conversation.id },
+              'Failed to clear retried errored shell',
             );
+          }
         }
       }
 
@@ -223,62 +247,40 @@ export const sendMessage = async (
       // existing id, so we don't need a pre-flight existence check.
       const userMessages = messages.filter((m) => m.role === 'user');
       if (userMessages.length > 0) {
-        await Promise.all([
-          db.message.createMany({
-            data: userMessages.map((msg) => ({
-              id: msg.id,
-              conversationId: conversation.id,
-              role: msg.role,
-              parts: msg.parts as Prisma.InputJsonValue,
-            })),
-            skipDuplicates: true,
-          }),
-          // Bump the row to the top of the sidebar. New conversations already
-          // have `lastMessageAt` set by the create, but follow-up sends to an
-          // existing conversation need this nudge.
-          existing
-            ? db.conversation.update({
-                where: { id: conversation.id },
-                data: { lastMessageAt: new Date() },
-              })
-            : Promise.resolve(),
-        ]).catch((error: unknown) =>
+        try {
+          await Promise.all([
+            db.message.createMany({
+              data: userMessages.map((msg) => ({
+                id: msg.id,
+                conversationId: conversation.id,
+                role: msg.role,
+                parts: msg.parts as Prisma.InputJsonValue,
+              })),
+              skipDuplicates: true,
+            }),
+            // Bump the row to the top of the sidebar. New conversations already
+            // have `lastMessageAt` set by the create, but follow-up sends to an
+            // existing conversation need this nudge.
+            existing
+              ? db.conversation.update({
+                  where: { id: conversation.id },
+                  data: { lastMessageAt: new Date() },
+                })
+              : Promise.resolve(),
+          ]);
+        } catch (error) {
           log.error(
             { err: error, conversationId: conversation.id },
             'Failed to persist user messages',
-          ),
-        );
+          );
+        }
       }
 
       // If this is a new conversation, generate an AI title in parallel with the
       // chat stream. We hold onto the promise so the stream can emit a
       // `data-conversation-title` event when it resolves; the frontend updates
-      // the sidebar cache directly without a follow-up fetch. On failure the
-      // seeded title (already on the row) stands in as the fallback.
-      const titlePromise =
-        !existing && titleSeed
-          ? generateChatTitle({
-              input: { seed: titleSeed },
-              context: { conversationId: conversation.id },
-            })
-              .then(async (title) => {
-                if (!title) {
-                  return null;
-                }
-                await db.conversation.update({
-                  where: { id: conversation.id },
-                  data: { title },
-                });
-                return title;
-              })
-              .catch((error: unknown) => {
-                log.warn(
-                  { err: error, conversationId: conversation.id },
-                  'Failed to generate conversation title — keeping seeded title',
-                );
-                return null;
-              })
-          : null;
+      // the sidebar cache directly without a follow-up fetch.
+      const titlePromise = !existing && titleSeed ? generateTitle(titleSeed) : null;
 
       const { result, traceId } = await streamChatTurn({
         input: { conversationId: conversation.id, messages },
@@ -459,11 +461,11 @@ export const reconnectToGeneration = async (conversationId: string, context: Aut
     // Clear it so future reloads don't re-trigger reconnect, without ever
     // stomping on an actively-heartbeating producer's claim.
     onFinish: async () => {
-      await conversationLock
-        .releaseIfExpired(conversationId)
-        .catch((error: unknown) =>
-          log.warn({ err: error, conversationId }, 'Failed to clear lock from reconnect'),
-        );
+      try {
+        await conversationLock.releaseIfExpired(conversationId);
+      } catch (error) {
+        log.warn({ err: error, conversationId }, 'Failed to clear lock from reconnect');
+      }
     },
   });
 };
