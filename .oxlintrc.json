@@ -44,7 +44,6 @@
     ],
 
     // Pino expects `err` (it has a built-in serializer for that field).
-    // Passing `error` silently bypasses the serializer.
     "eslint-js/no-restricted-syntax": [
       "error",
       {
