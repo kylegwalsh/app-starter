@@ -67,7 +67,7 @@ export const runTool = async ({
   session,
 }: {
   tool: Pick<AiTool, 'name' | 'handler'>;
-  // oxlint-disable-next-line no-explicit-any -- tool args are tool-specific; the adapter has already validated them
+  // oxlint-disable-next-line no-explicit-any -- tool args are tool-specific and the adapter has already validated them
   args: any;
   session: ToolSession;
 }): Promise<ToolRunResult> => {
