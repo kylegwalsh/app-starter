@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { ai, models, type Observed } from '@repo/ai';
+import { analytics } from '@repo/analytics';
 import { log } from '@repo/logs';
 import type { chatSchema } from '@repo/schemas';
 import {
@@ -156,11 +157,35 @@ export const sendMessage = async (
   }
   const stopHeartbeat = conversationLock.startHeartbeat(conversation.id);
 
+  const lastMessage = messages.at(-1);
+  await analytics.chatMessageSent({
+    userId: user.id,
+    organizationId: organization.id,
+    conversationId: conversation.id,
+    isNewConversation: !existing,
+    isRetry: isRetry ?? false,
+    attachmentCount: lastMessage?.parts.filter((part) => part.type === 'file').length ?? 0,
+    messageCount: messages.length,
+  });
+
   // Flipped to true inside `onFinish` once the assistant message lands in
   // the DB. If it's still false during cleanup, the run errored before
   // persisting — we write a placeholder errored shell so reloads can
   // surface "something went wrong" instead of just dropping the response.
   let assistantPersisted = false;
+
+  // A failed turn reaches several error handlers (the model stream reports the original error,
+  // then re-raises a plain copy that also reaches the outer stream), so report only the first,
+  // which carries the most detail
+  let errorReported = false;
+  /** Reports a failed turn to error tracking once */
+  const reportError = (error: unknown, properties?: Record<string, unknown>) => {
+    if (errorReported) {
+      return;
+    }
+    errorReported = true;
+    void analytics.captureException(error, { conversationId: conversation.id, ...properties });
+  };
 
   /** Releases the generation lock and records an errored shell if nothing was persisted */
   const finalize = async () => {
@@ -298,25 +323,15 @@ export const sendMessage = async (
             return;
           },
           onError: (error) => {
-            // Surface the real cause in Lambda logs so we can diagnose stream failures
-            // (Bedrock validation errors, S3 download failures, tool errors, etc.).
+            // Report the real cause so we can diagnose stream failures (Bedrock validation
+            // errors, S3 download failures, tool errors, etc.)
             const err = error as {
               name?: string;
               message?: string;
               statusCode?: number;
               data?: unknown;
             };
-            log.error(
-              {
-                err: error,
-                name: err.name,
-                message: err.message,
-                statusCode: err.statusCode,
-                data: err.data,
-                conversationId: conversation.id,
-              },
-              'sendMessage: stream error',
-            );
+            reportError(error, { traceId, statusCode: err.statusCode, data: err.data });
             return err.message ?? 'An error occurred while generating the response.';
           },
           onFinish: async ({ messages: allMessages }) => {
@@ -347,10 +362,7 @@ export const sendMessage = async (
               });
               assistantPersisted = true;
             } catch (error) {
-              log.error(
-                { err: error, conversationId: conversation.id },
-                'Failed to persist chat messages',
-              );
+              await analytics.captureException(error, { conversationId: conversation.id, traceId });
             }
           },
         }),
@@ -369,7 +381,7 @@ export const sendMessage = async (
       }
     },
     onError: (error) => {
-      log.error({ err: error, conversationId: conversation.id }, 'sendMessage: stream failed');
+      reportError(error);
       return error instanceof Error
         ? error.message
         : 'An error occurred while generating the response.';
@@ -577,6 +589,15 @@ export const submitFeedback = async (
   await db.message.update({
     where: { id: messageId },
     data: { feedback: rating === 'up' },
+  });
+
+  await analytics.feedbackSubmitted({
+    userId: user.id,
+    organizationId: organization.id,
+    feature: 'chat',
+    rating,
+    comment,
+    traceId: message.traceId ?? undefined,
   });
 
   // Score the Langfuse trace if we have one

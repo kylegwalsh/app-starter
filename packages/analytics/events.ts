@@ -400,6 +400,62 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         });
       });
     },
+    /** Track when the user sends a chat message */
+    chatMessageSent: async (
+      properties: EventProps<
+        T,
+        {
+          /** The conversation the message was sent to */
+          conversationId: string;
+          /** Whether this message started the conversation */
+          isNewConversation: boolean;
+          /** Whether this send retries a response that errored */
+          isRetry: boolean;
+          /** How many files were attached to the message */
+          attachmentCount: number;
+          /** How many messages the conversation has, including this one */
+          messageCount: number;
+        }
+      >,
+    ) => {
+      log.info('[analytics] Event: Chat Message Sent', {
+        category: 'Chat',
+        ...properties,
+      });
+      await safeInvoke(() => {
+        track('Chat Message Sent', {
+          category: 'Chat',
+          ...properties,
+        });
+      });
+    },
+    /** Track when the user rates an AI response */
+    feedbackSubmitted: async (
+      properties: EventProps<
+        T,
+        {
+          /** The feature the feedback is about */
+          feature: 'chat';
+          /** Thumbs up or down */
+          rating: 'up' | 'down';
+          /** The user's optional comment */
+          comment?: string;
+          /** The Langfuse trace of the rated AI response */
+          traceId?: string;
+        }
+      >,
+    ) => {
+      log.info('[analytics] Event: Feedback Submitted', {
+        category: 'Feedback',
+        ...properties,
+      });
+      await safeInvoke(() => {
+        track('Feedback Submitted', {
+          category: 'Feedback',
+          ...properties,
+        });
+      });
+    },
     /** Reset the analytics when the user signs out */
     reset: async () => {
       log.info('[analytics] Resetting user');
