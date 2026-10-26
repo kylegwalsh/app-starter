@@ -75,7 +75,7 @@ The shared `@repo/design` system standardizes UI across apps and bundles accessi
 
 - Package: `@repo/design`
 - Tailwind v4: Pre-configured and bundled in the design package; global styles imported in `app/layout.tsx` via `@repo/design/globals.css`.
-- Theming: Use `ThemeProvider` from `@repo/design` (wired in `components/providers/providers.tsx`) for light/dark mode and CSS variables.
+- Theming: Use `ThemeProvider` from `@repo/design` (wired in `components/provider/providers.tsx`) for light/dark mode and CSS variables.
 - Layout primitives: Shared layout components and patterns ensure consistent spacing, typography, and responsive behavior.
 
 ## Authentication
@@ -83,7 +83,7 @@ The shared `@repo/design` system standardizes UI across apps and bundles accessi
 Better Auth powers authentication and provides hooks/UI for user and organization flows.
 
 - Client: Configured in `lib/auth.ts` (baseURL to backend, plugins for org/admin/stripe).
-- UI: `components/providers/auth-provider.tsx` wires the Better Auth UI provider to Next navigation (push/replace) and app URL.
+- UI: `components/provider/auth-provider.tsx` wires the Better Auth UI provider to Next navigation (push/replace) and app URL.
 - Routing: Unauthenticated flows are handled under `app/(unauthenticated)`, while `app/(authenticated)/layout.tsx` protects app content (redirects to sign-in, shows loading, renders when signed in).
 - Access: Hooks like `auth.useSession()` are wrapped by our `use-user`/`use-organization` hooks for convenient consumption.
 

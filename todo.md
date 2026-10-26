@@ -10,16 +10,11 @@
 
 ## AI
 
-- See if we should move the ai.observe() method higher up the tree (basically start of the function for evals)
-  - Should maybe wrap title generation
-- Add analytics for using chat
-- Verify streamed chat responses put their output in Langfuse since it's async
 - Ensure unsupported files are sent to Daytona for code exec
 - Ensure we don't overly use Daytona (seems to want to save TODOs there or something)
-- Create slack app
 - Add Daytona setup to init script (sign up at daytona.io, get API key, `sst secret set DAYTONA_API_KEY <value>`)
-- Ensure the bot doesn't focus on data analysis (maybe give it a basic prompt)
 - Make Daytona sandbox manager fail gracefully when API key is not configured (return tool error, don't crash)
+- Ensure the bot doesn't focus on data analysis (maybe give it a basic prompt)
 - Disable chat routes / MCP server if AI is not set up during init (skip importing infra/storage, skip chat route mounting, etc.)
 - Clean up any generated code
 - Add new storybook stories for new design system files
@@ -35,10 +30,6 @@
 - Add submit_feedback tool to MCP and score in Langfuse
 - Get MCP working with local API somehow (so we don't hardcode it)
 
-## Worktree
-
-- Verify `bun setup-worktree` works correctly after the .sst symlink change (now symlinks entire .sst dir instead of just .sst/platform)
-
 ## PRISMA V8
 
 - Wait a bit for it to stabilize, then move to Prisma V8 for large speed up
@@ -49,6 +40,10 @@
 - Blockers (no merged fixes yet, Oct 2026):
   - Better Auth prisma adapter doesn't support v8: https://github.com/better-auth/better-auth/issues/9636 (first attempt closed: https://github.com/better-auth/better-auth/pull/10099)
   - No v8 PGlite adapter for tests: https://github.com/prisma/orm/issues/23752
+
+## SLACK
+
+- Create slack app using chat-sdk
 
 ## OTHER
 
