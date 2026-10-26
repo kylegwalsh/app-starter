@@ -8,7 +8,7 @@ import { createUploadUrl } from './operations';
 
 /** The uploads router — presigned URL generation for direct S3 uploads */
 export const uploadsRouter = new Hono<ProtectedEnv>().use(requireAuth).post(
-  '/uploads/create-upload-url',
+  '/create-upload-url',
   describeRoute({
     summary: 'Generate a presigned S3 upload URL',
     tags: ['Uploads'],

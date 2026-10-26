@@ -36,7 +36,7 @@ tests/          Vitest setup, factories, mocks (not test files — those live ne
 ## API & Routing
 
 - **Hono** is the unified HTTP entry point (`api/index.ts`). It handles non-API concerns first (auth, MCP, etc) then mounts the API router under `/api`.
-- New endpoints go in `features/<feature>/routes.ts` and are mounted in `api/router.ts`. Mount public routers before protected ones — a router's `.use(requireAuth)` also applies to every route mounted after it. Chain routes off a single `new Hono<ProtectedEnv>().use(requireAuth)` expression — chaining is what lets the frontend's `hc` client infer types, so never split a router into separate statements.
+- New endpoints go in `features/<feature>/routes.ts` and are mounted in `api/router.ts` at their own prefix (`.route('/billing', billingRouter)`), with route paths relative to it (`'/charge'`, not `'/billing/charge'`). Chain routes off a single `new Hono<ProtectedEnv>().use(requireAuth)` expression — chaining is what lets the frontend's `hc` client infer types, so never split a router into separate statements.
 - Each route takes `describeRoute({ summary, tags })` for the OpenAPI spec, then `validator('json' | 'query' | 'param', schema)` (from `hono-openapi`) which both validates and documents the input. Read validated input with `c.req.valid('json')`.
 - Keep handlers thin: validate, call an operation, respond. Pass `c.var` (an `AuthContext` of `user` + `organization`, non-optional on routers that applied `requireAuth`) to operations so they work without HTTP (tests, MCP tools, crons).
 - Throw `HTTPException` from `hono/http-exception` for errors (404 not found, 409 conflict, etc). The global `onError` handler reports them.

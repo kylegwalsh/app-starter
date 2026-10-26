@@ -11,7 +11,7 @@ export const billingRouter = new Hono<ProtectedEnv>()
   .use(requireAuth)
   /** Creates a one-time Stripe Checkout session and returns its URL */
   .post(
-    '/billing/charge',
+    '/charge',
     describeRoute({
       summary: 'Create a Stripe checkout session',
       tags: ['Billing'],
@@ -21,7 +21,7 @@ export const billingRouter = new Hono<ProtectedEnv>()
   )
   /** Gets a list of all the organization's invoices */
   .get(
-    '/billing/history',
+    '/history',
     describeRoute({
       summary: 'Get billing history',
       tags: ['Billing'],

@@ -22,7 +22,7 @@ export const chatRouter = new Hono<ProtectedEnv>()
   .use(requireAuth)
   /** Send a message and stream the AI response */
   .post(
-    '/chat',
+    '/',
     describeRoute({
       summary: 'Send a chat message',
       tags: ['Chat'],
@@ -40,7 +40,7 @@ export const chatRouter = new Hono<ProtectedEnv>()
   )
   /** Cancel an in-progress chat response (the frontend calls this on Stop) */
   .post(
-    '/chat/conversations/:id/cancel',
+    '/conversations/:id/cancel',
     describeRoute({
       summary: 'Cancel an in-progress chat response',
       tags: ['Chat'],
@@ -55,7 +55,7 @@ export const chatRouter = new Hono<ProtectedEnv>()
   )
   /** Reconnect to an in-progress chat response started elsewhere */
   .post(
-    '/chat/conversations/:id/reconnect',
+    '/conversations/:id/reconnect',
     describeRoute({
       summary: 'Reconnect to an in-progress chat response',
       tags: ['Chat'],
@@ -68,7 +68,7 @@ export const chatRouter = new Hono<ProtectedEnv>()
   )
   /** List the current user's conversations (most recent first) */
   .get(
-    '/chat/conversations',
+    '/conversations',
     describeRoute({
       summary: 'List conversations',
       tags: ['Chat'],
@@ -84,7 +84,7 @@ export const chatRouter = new Hono<ProtectedEnv>()
   )
   /** Get a single conversation with all messages */
   .get(
-    '/chat/conversations/:id',
+    '/conversations/:id',
     describeRoute({
       summary: 'Get conversation with messages',
       tags: ['Chat'],
@@ -94,7 +94,7 @@ export const chatRouter = new Hono<ProtectedEnv>()
   )
   /** Update a conversation's title */
   .patch(
-    '/chat/conversations/:id',
+    '/conversations/:id',
     describeRoute({
       summary: 'Update conversation title',
       tags: ['Chat'],
@@ -109,7 +109,7 @@ export const chatRouter = new Hono<ProtectedEnv>()
   )
   /** Delete a conversation and all its messages */
   .delete(
-    '/chat/conversations/:id',
+    '/conversations/:id',
     describeRoute({
       summary: 'Delete a conversation',
       tags: ['Chat'],
@@ -122,7 +122,7 @@ export const chatRouter = new Hono<ProtectedEnv>()
   )
   /** Submit feedback (thumbs up/down + optional comment) on an assistant message */
   .post(
-    '/chat/feedback',
+    '/feedback',
     describeRoute({
       summary: 'Submit feedback on a message',
       tags: ['Chat'],

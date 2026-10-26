@@ -8,7 +8,7 @@ import { submitContactForm } from './operations';
 export const contactRouter = new Hono()
   /** Forwards a contact form submission to our support inbox */
   .post(
-    '/contact',
+    '/',
     describeRoute({
       summary: 'Submit the contact form',
       tags: ['Contact'],

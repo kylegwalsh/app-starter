@@ -6,7 +6,7 @@ import { db } from '@/db';
 
 /** The health router */
 export const healthRouter = new Hono().get(
-  '/health',
+  '/',
   describeRoute({
     summary: 'Check the health of the API',
     tags: ['Health'],
