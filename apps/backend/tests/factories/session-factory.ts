@@ -36,9 +36,8 @@ export const sessionFactory = {
       session: { activeOrganizationId: organization.id },
     } as unknown as Awaited<ReturnType<typeof auth.api.getSession>>);
 
-    // Dispatch straight into the Hono router in-process (no socket), attaching a
-    // fake cookie on every request so `authMiddleware` triggers the mocked
-    // session lookup above.
+    // Attaching a fake cookie on every request so `authMiddleware` triggers the
+    // mocked session lookup above.
     const api = hc<typeof router>('http://test.local', {
       fetch: (input: string | URL | Request, init?: RequestInit) => {
         const headers = new Headers(init?.headers);
