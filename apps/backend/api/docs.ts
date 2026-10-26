@@ -89,6 +89,30 @@ const internalDocsHead = `
   }
   .scheme-container .auth-btn:hover { background: rgba(73, 204, 144, 0.1); }
 
+  /* Signed-in control: the user on the left, a Sign out action on the right */
+  .scheme-container .auth-session {
+    display: inline-flex;
+    align-items: stretch;
+    border: 2px solid #49cc90;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: sans-serif;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  .scheme-container .auth-session .auth-user {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    color: #3b4151;
+  }
+  .scheme-container .auth-session .auth-btn {
+    border: none;
+    border-left: 2px solid #49cc90;
+    border-radius: 0;
+  }
+
   /* Hide the native Authorize button since ours replaces it */
   .scheme-container .auth-wrapper { display: none; }
 
@@ -96,21 +120,63 @@ const internalDocsHead = `
   .scheme-container section.schemes > :first-child { flex: 1; }
 </style>
 <script>
+  // Build from window.location so this works under any stage/path prefix
+  // (e.g. /api on a custom domain, /stage/api on the default API Gateway URL).
+  // We can't use relative URLs because the page is served at both /api and /api/.
+  const apiBase = window.location.pathname.replace(/[/]+$/, '');
+
+  // Fetch the session up front so the button can show who is signed in
+  const sessionPromise = fetch(apiBase + '/auth/get-session', { credentials: 'include' })
+    .then((res) => (res.ok ? res.json() : null))
+    .catch(() => null);
+
+  /** Swagger's own lock icon, matching the native Authorize button */
+  const lockIcon = (name) =>
+    '<svg width="15" height="17" viewBox="0 0 20 20" fill="#49cc90"><use href="#' + name + '" xlink:href="#' + name + '"></use></svg>';
+
   // Inject an Authenticate button into the scheme-container (where Authorize normally sits)
   // Swagger UI renders async, so we poll until the target element exists
-  const interval = setInterval(() => {
+  const interval = setInterval(async () => {
     const target = document.querySelector('.scheme-container section.schemes');
     if (!target) return;
     clearInterval(interval);
+
+    // Wait for the session before adding anything, so the button never renders empty
+    const session = await sessionPromise;
     const btn = document.createElement('a');
-    // Build from window.location so this works under any stage/path prefix
-    // (e.g. /api/login on a custom domain, /stage/api/login on the default API Gateway URL).
-    // We can't use './login' because the page is served at /api (no trailing slash),
-    // so the relative base is the root and './login' would resolve to /login.
-    btn.href = window.location.pathname.replace(/[/]+$/, '') + '/login';
     btn.className = 'auth-btn';
-    btn.innerHTML = 'Authenticate <svg width="15" height="17" viewBox="0 0 20 20" fill="#49cc90"><use href="#locked" xlink:href="#locked"></use></svg>';
-    target.appendChild(btn);
+
+    if (!session?.user) {
+      btn.href = apiBase + '/login';
+      btn.innerHTML = 'Authenticate ' + lockIcon('locked');
+      target.appendChild(btn);
+      return;
+    }
+
+    // Signed in: the user's email joined to a Sign out action
+    const user = document.createElement('span');
+    user.className = 'auth-user';
+    user.innerHTML = lockIcon('unlocked');
+    user.append(session.user.email);
+
+    btn.href = '#';
+    btn.textContent = 'Sign out';
+
+    const control = document.createElement('div');
+    control.className = 'auth-session';
+    control.append(user, btn);
+    target.appendChild(control);
+
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await fetch(apiBase + '/auth/sign-out', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: '{}',
+      });
+      window.location.reload();
+    });
   }, 100);
 </script>`;
 
@@ -166,5 +232,6 @@ export const mountInternalDocs = <E extends Env, S extends Schema, P extends str
     }),
   );
 
-  app.get('/api', (c) => c.html(internalDocsHTML));
+  // Also serve `/api/`, where the login page's `./` redirect lands
+  app.on('GET', ['/api', '/api/'], (c) => c.html(internalDocsHTML));
 };
