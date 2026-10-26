@@ -5,12 +5,8 @@ import { app } from '@/api';
 import { withLambdaContext } from './utils';
 
 /**
- * Streaming Lambda entry point. `streamHandle` wraps the Hono app with
- * `awslambda.streamifyResponse`, and `withLambdaContext` copies the streaming
- * marker forward so the Lambda runtime keeps invoking us in streaming mode.
- *
- * The signature is written out because Hono doesn't re-export the internal
- * `Handler` type its adapter infers, which declaration emit can't name.
+ * The Lambda entry point into our API. It uses the stream handler to
+ * support streamed responses from the chat feature.
  */
 export const handler: (
   event: unknown,
