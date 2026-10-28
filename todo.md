@@ -10,25 +10,14 @@
 
 ## AI
 
+- Test that routes, docs, MCP all work without custom domain
 - Ensure unsupported files are sent to Daytona for code exec
 - Ensure we don't overly use Daytona (seems to want to save TODOs there or something)
 - Add Daytona setup to init script (sign up at daytona.io, get API key, `sst secret set DAYTONA_API_KEY <value>`)
 - Make Daytona sandbox manager fail gracefully when API key is not configured (return tool error, don't crash)
-- Ensure the bot doesn't focus on data analysis (maybe give it a basic prompt)
-- Disable chat routes / MCP server if AI is not set up during init (skip importing infra/storage, skip chat route mounting, etc.)
 - Clean up any generated code
 - Add new storybook stories for new design system files
-- Add compaction
-
-## MCP
-
-- Verify MCP streams long text
-- Make a note in onboarding that MCP only works with custom domains (along with anything else that requires it?)
-- Determine if we want JSON or markdown output
-- Add MCP tracing to Langfuse
-- Fix deep type in ai/mcp/server
-- Add submit_feedback tool to MCP and score in Langfuse
-- Get MCP working with local API somehow (so we don't hardcode it)
+- Test compaction
 
 ## PRISMA V8
 
@@ -47,7 +36,6 @@
 
 ## OTHER
 
-- See if we can drop the database urls as part of github CI and just leverage SST secrets directly
 - Add new Posthog error trace support
 - Pass PostHog build number through with the source maps
 - NextJS does not reliably kill port and reload when making infra changes (and sometimes dies and has to restart when AI makes a lot of edits)

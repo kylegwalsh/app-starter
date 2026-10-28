@@ -42,16 +42,39 @@ AI-powered chat with tool calling, conversation persistence, and file uploads.
 
 ### App-Wide Chat State
 
-`ChatProvider` is mounted once in the authenticated layout and owns the active conversation's AI SDK `Chat` instance (created with `new Chat(...)` and passed to `useChat({ chat })`). The chat pages and the drawer are both views of that one chat:
+`ChatProvider` is mounted once in the authenticated layout and owns the active conversation's AI SDK `Chat` instance (created with `new Chat(...)`). Components subscribe to it with `useActiveChat()` (`useChat({ chat })`), so only the views that render messages re-render while a response streams. The context itself holds just the active conversation and its actions. The chat pages and the drawer are both views of that one chat:
 
-- `/chat` and `/chat/[id]` show it full screen. The route only picks which conversation is active (`startNewConversation()` / `openConversation(id, …)`).
-- Every other page can open it in a right-hand drawer from the header's chat button. The drawer's open state isn't persisted across reloads.
+- `/chat` and `/chat/[id]` show it full screen. The route only picks which conversation is active (`startNewConversation()` / `openConversation(id)`).
+- Every other page can open it in a right-hand drawer from the header's chat button (`chatDrawerOpenAtom` in `apps/web/atoms/chat.ts`). The drawer's open state isn't persisted across reloads.
 
-Because the instance outlives the pages, a response keeps streaming while the user moves between the full-screen chat and the drawer. The first message of a new conversation is sent directly from the submit handler. Only one conversation streams at a time: switching conversations stops the previous one, and the backend's reconnect flow picks it back up if the user returns.
+Because the instance outlives the pages, a response keeps streaming while the user moves between the full-screen chat and the drawer. Only one conversation streams at a time: switching conversations stops the stream on the client, while the server finishes and saves the response. Opening a conversation whose response is still generating (e.g. in another tab) shows the thinking indicator and polls until the response is saved.
+
+Attachments upload as soon as they're staged (`useChatUploads()` in `chat-uploads.ts`, one TanStack query per file).
 
 ### Streaming Route
 
 The chat endpoint is a Hono route at `POST /api/chat` (`apps/backend/features/chat/routes.ts`, with the logic in `operations.ts`) that returns the AI SDK's SSE stream via `createUIMessageStreamResponse()`, which is exactly what `useChat`'s `DefaultChatTransport` consumes. Conversation CRUD (list, get, delete, rename) uses the same router, reached through the typed `hc` client + TanStack Query.
+
+**The server owns the history.** The client sends only the new user message (`{ id, message }`); the server saves it, loads the conversation from the database and answers. A client can't rewrite earlier turns or forge tool results. Re-sending an already-saved message (what `regenerate()` does) is a retry: the replies after that message are deleted and it's answered fresh.
+
+### Generation Lock & Cancelling
+
+`conversation.generatingUntil` is a lease (`lib/lock.ts`): one response generates per conversation at a time (a second send gets a 409), a heartbeat extends it while generating, and it expires on its own if the Lambda dies. Stop calls `POST /conversations/:id/cancel`, which releases the lock and saves the partial reply the user saw. The producer's heartbeat notices the lost lock and aborts the model, so it stops spending tokens and running tools, and it doesn't save its own response.
+
+### Context Compaction
+
+A long thread eventually outgrows the model's 1M-token input limit, and the provider refuses the request rather than truncating it. Tool results are what get us there. `compactContext` (`apps/backend/features/chat/lib/compaction.ts`) is the one entry point. It runs in `streamText`'s `prepareStep` before every step, because one step can append many large tool results. Outside a protected tail it drops reasoning, replaces read-only tool results with `[Result cleared to save context — re-run if needed]`, and blanks tool arguments large enough to be a payload. Stored history is never modified; this is only the view we send.
+
+- **Sizing:** the provider's measured count of the last request (the last step's usage, or `conversation.contextTokens` at the start of a turn), plus an estimate of what's been appended since, at 2.2 characters per token. That ratio fits tool-result JSON and reads high, so sweeps err early. Images are charged a flat 4,784 tokens.
+- **Sweep above 80% of the limit, and only if it reclaims at least 15%.** Clearing content rewrites the prompt prefix, so a small sweep pays for that and leaves the thread over the trigger to sweep again next turn. The sweep is all or nothing: it's priced in full before anything is committed.
+- **Never touch the tail:** the live step (Anthropic requires its thinking echoed back while its tool calls are pending), or a walk back from the end until 10% of the limit is used, whichever reaches further. The tail is measured in tokens, not turns, since one turn can be the whole thread.
+- **Only read-only tools are cleared** (`annotations.readOnlyHint`). Write results carry ids a mutation created and can't be re-fetched. Today that's `read-file` and `list-organizations`, so `run-code` and `execute-command` output is never cleared.
+- **The boundary is stored** (`conversation.compactedThrough`), and only a sweep advances it. Re-deriving it each turn would drift as the thread grows, rewriting the prompt prefix on turns where nothing was reclaimed. The measured size after each turn is stored in `conversation.contextTokens`.
+- **Observability:** a sweep logs `Compacted chat context` with the boundary, step number and tokens reclaimed.
+
+**Known gap (Claude Sonnet 5.5 thinking):** each thinking block is signed against the exact conversation before it. A sweep changes earlier messages, so thinking blocks in the protected tail no longer match. Accounts created before Aug 31, 2026 are unaffected (the mismatch is only recorded). On newer accounts, the request that performs a sweep can return a 400. Sweeps are rare (each must reclaim 150k+ tokens). If this bites, set `thinking.block_binding.prefix_mismatch_behavior: "drop_block"` (beta `thinking-binding-controls-2026-08-01`) on the request that sweeps.
+
+**Still to come:** once everything outside the tail is cleared, another sweep can't reach the 15% bar. The next rung inside `compactContext` would replace the swept span with a summary.
 
 ### Tool Adapter (In-Process)
 
@@ -115,17 +138,16 @@ Conversations could be shared via a link (`/chat/shared/{shareToken}`):
 
 ## Routes
 
-| Route                                        | Type      | Description                                     |
-| -------------------------------------------- | --------- | ----------------------------------------------- |
-| `POST /api/chat`                             | Streaming | Send messages, receive streamed AI response     |
-| `POST /api/chat/conversations/:id/cancel`    | JSON      | Stop generation, persist the partial response   |
-| `POST /api/chat/conversations/:id/reconnect` | Streaming | Resume a generation started elsewhere           |
-| `GET /api/chat/conversations`                | JSON      | List user's conversations (paginated)           |
-| `GET /api/chat/conversations/:id`            | JSON      | Get conversation with all messages              |
-| `PATCH /api/chat/conversations/:id`          | JSON      | Rename a conversation                           |
-| `DELETE /api/chat/conversations/:id`         | JSON      | Delete a conversation                           |
-| `POST /api/chat/feedback`                    | JSON      | Submit thumbs up/down on an assistant message   |
-| `POST /api/uploads/create-upload-url`        | JSON      | Presign a direct-to-S3 upload for an attachment |
+| Route                                     | Type      | Description                                      |
+| ----------------------------------------- | --------- | ------------------------------------------------ |
+| `POST /api/chat`                          | Streaming | Send a message, receive the streamed AI response |
+| `POST /api/chat/conversations/:id/cancel` | JSON      | Stop generation, persist the partial response    |
+| `GET /api/chat/conversations`             | JSON      | List user's conversations (paginated)            |
+| `GET /api/chat/conversations/:id`         | JSON      | Get conversation with all messages               |
+| `PATCH /api/chat/conversations/:id`       | JSON      | Rename a conversation                            |
+| `DELETE /api/chat/conversations/:id`      | JSON      | Delete a conversation                            |
+| `POST /api/chat/feedback`                 | JSON      | Submit thumbs up/down on an assistant message    |
+| `POST /api/uploads/create-upload-url`     | JSON      | Presign a direct-to-S3 upload for an attachment  |
 
 ## Pages
 
@@ -151,7 +173,7 @@ Presentational components with no AI SDK dependency:
 
 Wire up the AI SDK:
 
-- `ChatProvider` — App-wide chat state (active conversation, uploads, drawer) exposed through React context
+- `ChatProvider` — App-wide chat state (the active conversation and its actions) exposed through React context, plus `useActiveChat()` for messages and status
 - `ChatView` — Full chat view with markdown rendering
 - `ChatSidebar` — Conversation list with create/delete
 - `ChatDrawer` / `ChatDrawerToggle` — Right-hand drawer showing the active conversation on non-chat pages, and its header button
@@ -164,6 +186,7 @@ Follows the ChatGPT pattern:
 - A **"Try again"** button calls `regenerate()` to retry the last response
 - The user's message is never lost
 - The error replaces the typing indicator
+- Failed turns aren't saved, so a conversation that ends on an unanswered user message (a failure, or a server that died mid-response) shows the same error after a reload
 
 ## Feedback
 

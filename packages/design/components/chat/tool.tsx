@@ -12,6 +12,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import { isValidElement } from 'react';
 
 import { CodeBlock } from './code-block';
+import { MessageResponse } from './message';
 
 export type ToolPart = ToolUIPart | DynamicToolUIPart;
 
@@ -29,19 +30,19 @@ export const ToolOutput = ({ className, output, ...props }: ToolOutputProps) => 
     return null;
   }
 
-  // String outputs (the common case — most tools return free-form text) render
-  // as plain prose inside a subtle muted card, so they read as "content" and
-  // not as another header row, but without the heavy bordered look.
+  // String outputs (the common case — tools return Markdown) render inside a
+  // subtle muted card, so they read as "content" and not as another header row,
+  // but without the heavy bordered look.
   if (typeof output === 'string') {
     return (
       <div
         className={cn(
-          'bg-muted/40 text-foreground/80 rounded-md px-2.5 py-1.5 text-xs leading-relaxed break-words whitespace-pre-wrap',
+          'bg-muted/40 text-foreground/80 rounded-md px-2.5 py-1.5 text-xs leading-relaxed break-words',
           className,
         )}
         {...props}
       >
-        {output}
+        <MessageResponse>{output}</MessageResponse>
       </div>
     );
   }

@@ -137,5 +137,12 @@ export default $config({
     // Optional sites
     // await import('./infra/marketing');
     // await import('./infra/docs');
+
+    // ---------- OUTPUTS ----------
+    // Written to .sst/outputs.json (used by scripts/mcp.ts to find this stage's MCP server)
+    const { apiUrl } = await import('./infra/gateway');
+    return {
+      apiUrl: apiUrl.properties.url,
+    };
   },
 });

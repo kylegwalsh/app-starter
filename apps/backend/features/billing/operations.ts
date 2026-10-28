@@ -1,8 +1,8 @@
 import { log } from '@repo/logs';
 import type { billingSchema } from '@repo/schemas';
-import { HTTPException } from 'hono/http-exception';
 import type { z } from 'zod';
 
+import { NotFoundError } from '@/api/error';
 import { type AuthContext, stripe } from '@/services';
 
 /** A single invoice or payment row in the billing history */
@@ -22,7 +22,7 @@ export const createCheckoutSession = async (
   { organization }: AuthContext,
 ) => {
   if (!stripe) {
-    throw new HTTPException(404, { message: 'Billing is not configured' });
+    throw new NotFoundError('Billing is not configured');
   }
 
   const session = await stripe.checkout.sessions.create({

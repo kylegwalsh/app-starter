@@ -94,6 +94,9 @@
     ],
     "deny": []
   },
+  "env": {
+    "MCP_TIMEOUT": "120000"
+  },
   "hooks": {
     "SessionStart": [
       {

@@ -1,25 +1,23 @@
+import { analytics } from '@repo/analytics';
 import { z } from 'zod';
 
 // oxlint-disable-next-line no-namespace -- Namespace import to check every registered tool
 import * as registry from '@/ai/tools';
-import type { AiTool } from '@/ai/utils';
+import { type AiTool, createTool } from '@/ai/utils';
+import { ForbiddenError } from '@/api/error';
 import { type TestMcpClient, mcpFactory } from '@/tests/factories';
 
-// These tests cover the server's wiring and derive every tool from the registry, so they don't
-// change as tools are added. Each tool's own behavior is tested next to it (features/*/tools.test.ts).
-// The registry's tools have specific input types, so widen them like the server does
-const allTools = Object.values(registry) as AiTool[];
-const mcpTools = allTools.filter((tool) => tool.consumers.includes('mcp'));
-const chatOnlyTool = allTools.find((tool) => !tool.consumers.includes('mcp'));
+const mcpTools = Object.values(registry).filter((tool) => tool.consumers.includes('mcp'));
 
 describe('MCP Server', () => {
-  let mcp: TestMcpClient;
+  // Rules every real tool must follow; they don't change as tools are added
+  describe('registry', () => {
+    let mcp: TestMcpClient;
 
-  beforeEach(async () => {
-    mcp = await mcpFactory.createClient();
-  });
+    beforeEach(async () => {
+      mcp = await mcpFactory.createClient();
+    });
 
-  describe('tools/list', () => {
     it('exposes exactly the tools that opt into MCP', async () => {
       const { tools } = await mcp.client.listTools();
 
@@ -29,91 +27,136 @@ describe('MCP Server', () => {
       );
     });
 
-    it('gives every tool a description and read-only/destructive hints', async () => {
-      const { tools } = await mcp.client.listTools();
+    // One block per tool, so a failure names the tool that broke the rule
+    describe.each(mcpTools)('$name', (tool) => {
+      /** The tool as the server lists it */
+      const listTool = async () => {
+        const { tools } = await mcp.client.listTools();
+        return tools.find((listed) => listed.name === tool.name);
+      };
 
-      // Includes the name so a failure shows which tool is missing metadata
-      for (const tool of tools) {
-        expect({
-          name: tool.name,
-          description: tool.description,
-          readOnlyHint: typeof tool.annotations?.readOnlyHint,
-          destructiveHint: typeof tool.annotations?.destructiveHint,
-        }).toEqual({
-          name: tool.name,
-          description: expect.stringMatching(/\S/),
-          readOnlyHint: 'boolean',
-          destructiveHint: 'boolean',
-        });
-      }
-    });
+      it('has a description and read-only/destructive hints', async () => {
+        const listed = await listTool();
 
-    it('publishes each input schema with the same parameters as its Zod shape', async () => {
-      const { tools } = await mcp.client.listTools();
+        expect(listed?.description?.trim()).toBeTruthy();
+        expect(typeof listed?.annotations?.readOnlyHint).toBe('boolean');
+        expect(typeof listed?.annotations?.destructiveHint).toBe('boolean');
+      });
 
-      for (const tool of mcpTools) {
+      it('publishes its input schema with the same parameters as its Zod shape', async () => {
+        const listed = await listTool();
         const shape = tool.inputSchema ?? {};
-        const listed = tools.find((listedTool) => listedTool.name === tool.name);
-        const properties = Object.keys(listed?.inputSchema.properties ?? {});
+        // A parameter is required when its schema rejects a missing value
+        const required = Object.entries(shape)
+          .filter(([, schema]) => !z.object({ value: schema }).safeParse({}).success)
+          .map(([key]) => key);
 
-        expect({
-          name: tool.name,
-          type: listed?.inputSchema.type,
-          properties: properties.toSorted(),
-          required: (listed?.inputSchema.required ?? []).toSorted(),
-        }).toEqual({
-          name: tool.name,
-          type: 'object',
-          properties: Object.keys(shape).toSorted(),
-          // A parameter is required when its schema rejects a missing value
-          required: Object.entries(shape)
-            .filter(([, schema]) => !z.object({ value: schema }).safeParse({}).success)
-            .map(([key]) => key)
-            .toSorted(),
-        });
-      }
+        expect(listed?.inputSchema.type).toBe('object');
+        expect(Object.keys(listed?.inputSchema.properties ?? {}).toSorted()).toEqual(
+          Object.keys(shape).toSorted(),
+        );
+        expect((listed?.inputSchema.required ?? []).toSorted()).toEqual(required.toSorted());
+      });
     });
   });
 
-  describe('tools/call', () => {
-    it('returns invalid input as an error result the model can read', async () => {
-      const { tools } = await mcp.client.listTools();
-      const tool = tools.find((listedTool) => listedTool.inputSchema.required?.length);
-      if (!tool) {
-        throw new Error('No MCP tool has a required parameter to test input validation with');
-      }
+  // How the server handles a call, tested against tools built for these tests
+  describe('tool calls', () => {
+    let mcp: TestMcpClient;
+    let handler: ReturnType<typeof vi.fn<(args: { message: string }) => Promise<string>>>;
 
-      const result = await mcp.callTool(tool.name, {});
-
-      expect(result.isError).toBe(true);
-      expect(result.text).toContain(tool.inputSchema.required?.[0]);
+    beforeEach(async () => {
+      handler = vi.fn<(args: { message: string }) => Promise<string>>().mockResolvedValue('Echoed');
+      const tools = [
+        createTool({
+          name: 'test-tool',
+          description: 'A tool for testing',
+          inputSchema: { message: z.string().describe('Text to echo') },
+          annotations: { readOnlyHint: true, destructiveHint: false },
+          consumers: ['mcp'],
+          handler: (args) => handler(args),
+        }),
+        createTool({
+          name: 'chat-only-tool',
+          description: 'A tool only chat can use',
+          annotations: { readOnlyHint: true, destructiveHint: false },
+          consumers: ['chat'],
+          handler: async () => 'Never called',
+        }),
+      ] satisfies AiTool[];
+      mcp = await mcpFactory.createClient({ tools });
     });
 
-    it('returns handler errors as an error result instead of failing the request', async () => {
-      const [tool] = mcpTools;
-      if (!tool) {
-        throw new Error('No MCP tools are registered');
-      }
-      const handler = vi.spyOn(tool, 'handler').mockRejectedValue(new Error('boom'));
-      onTestFinished(() => handler.mockRestore());
+    /** Spies on analytics for one test */
+    const spyOnAnalytics = () => {
+      const track = vi.spyOn(analytics, 'mcpToolCalled');
+      const capture = vi.spyOn(analytics, 'captureException');
+      onTestFinished(() => {
+        track.mockRestore();
+        capture.mockRestore();
+      });
+      return { track, capture };
+    };
 
-      // Fill required parameters so the call reaches the handler
-      const args = Object.fromEntries(Object.keys(tool.inputSchema ?? {}).map((key) => [key, 'x']));
-      const result = await mcp.callTool(tool.name, args);
+    it("returns the handler's result", async () => {
+      const result = await mcp.callTool('test-tool', { message: 'hi' });
+
+      expect(result).toEqual({ isError: false, text: 'Echoed' });
+      expect(handler).toHaveBeenCalledWith({ message: 'hi' });
+    });
+
+    it('returns invalid input as an error result the model can read', async () => {
+      const result = await mcp.callTool('test-tool', {});
+
+      expect(result.isError).toBe(true);
+      expect(result.text).toContain('message');
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('tracks each call as an "MCP Tool Called" event', async () => {
+      const { track } = spyOnAnalytics();
+
+      await mcp.callTool('test-tool', { message: 'hi' });
+
+      const [event] = track.mock.calls[0] ?? [];
+      expect(event).toMatchObject({
+        userId: mcp.user.id,
+        organizationId: mcp.organization.id,
+        sessionId: mcp.session.id,
+        toolName: 'test-tool',
+        success: true,
+        errorStatus: undefined,
+      });
+      expect(typeof event?.durationMs).toBe('number');
+    });
+
+    it('returns an unexpected error as an error result and reports it', async () => {
+      const { track, capture } = spyOnAnalytics();
+      handler.mockRejectedValue(new Error('boom'));
+
+      const result = await mcp.callTool('test-tool', { message: 'hi' });
 
       expect(result).toEqual({ isError: true, text: 'boom' });
+      expect(capture).toHaveBeenCalled();
+      expect(track.mock.calls[0]?.[0]).toMatchObject({ success: false, errorStatus: 500 });
+    });
+
+    it('returns a caller error as an error result without reporting it', async () => {
+      const { track, capture } = spyOnAnalytics();
+      handler.mockRejectedValue(new ForbiddenError('Not yours'));
+
+      const result = await mcp.callTool('test-tool', { message: 'hi' });
+
+      expect(result).toEqual({ isError: true, text: 'Not yours' });
+      expect(capture).not.toHaveBeenCalled();
+      expect(track.mock.calls[0]?.[0]).toMatchObject({ success: false, errorStatus: 403 });
     });
 
     it('rejects tools that are not exposed via MCP', async () => {
-      const tool = chatOnlyTool;
-      if (!tool) {
-        throw new Error('No chat-only tools are registered');
-      }
-
-      const result = await mcp.callTool(tool.name);
+      const result = await mcp.callTool('chat-only-tool');
 
       expect(result.isError).toBe(true);
-      expect(result.text).toContain(tool.name);
+      expect(result.text).toContain('chat-only-tool');
     });
   });
 });

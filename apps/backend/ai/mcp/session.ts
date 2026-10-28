@@ -1,3 +1,4 @@
+import { ForbiddenError } from '@/api/error';
 import { db } from '@/db';
 
 import { ToolSession } from '../utils';
@@ -62,7 +63,7 @@ export const resolveMcpSession = async ({
 
   // If we still don't have a membership, throw an error (no access)
   if (!membership) {
-    throw new Error('User has no organization memberships');
+    throw new ForbiddenError('User has no organization memberships');
   }
 
   // Persist the session with their active organization for the next request

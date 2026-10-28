@@ -21,13 +21,15 @@ import {
   SidebarRail,
   useSidebar,
 } from '@repo/design';
+import { useAtomValue } from 'jotai';
 import { ChevronRight, LayoutDashboard, MessageSquare, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useSyncExternalStore, type ComponentType, type SVGProps } from 'react';
 
+import { chatDrawerOpenAtom } from '@/atoms/chat';
 import { OrganizationSwitcher, UserButton } from '@/components/auth';
-import { ChatDrawer, useChatContext } from '@/components/chat';
+import { ChatDrawer } from '@/components/chat';
 
 /** The type for a navigation item */
 type NavItem = {
@@ -72,7 +74,7 @@ const useIsNarrowForChatDrawer = () =>
 export const AppSidebar: FC = ({ children }) => {
   const pathname = usePathname();
   const { open, setOpen } = useSidebar();
-  const { isDrawerOpen } = useChatContext();
+  const isDrawerOpen = useAtomValue(chatDrawerOpenAtom);
   const isNarrow = useIsNarrowForChatDrawer();
 
   // Collapse on chat routes, or when the chat drawer opens on a narrow screen. Close on entry only

@@ -30,7 +30,7 @@ tests/          Vitest setup, factories, mocks (not test files — those live ne
 
 - **Helpers**: Export as cohesive namespaced objects (`time.parse()`, `time.format()`), not scattered top-level functions.
 - **Naming**: Descriptive, no abbreviations. Functions = verbs, values = nouns.
-- **Errors**: Throw typed/semantic errors. Map to HTTP responses at the edge. Never swallow silently.
+- **Errors**: For caller mistakes (bad input, no access, not found), throw a named error from `@/api/error` (`BadRequestError`, `ForbiddenError`, …). For real failures, throw a plain `Error`. Never swallow errors.
 - **Validation**: Request body schemas live in `@repo/schemas` (shared with the frontend); routes validate with them and operations type their input with `z.infer`. Small route-only inputs (path params, pagination queries) can stay inline on the route.
 
 ## API & Routing
@@ -39,7 +39,13 @@ tests/          Vitest setup, factories, mocks (not test files — those live ne
 - New endpoints go in `features/<feature>/routes.ts` and are mounted in `api/router.ts` at their own prefix (`.route('/billing', billingRouter)`), with route paths relative to it (`'/charge'`, not `'/billing/charge'`). Chain routes off a single `new Hono<ProtectedEnv>().use(requireAuth)` expression — chaining is what lets the frontend's `hc` client infer types, so never split a router into separate statements.
 - Each route takes `describeRoute({ summary, tags })` for the OpenAPI spec, then `validator('json' | 'query' | 'param', schema)` (from `hono-openapi`) which both validates and documents the input. Read validated input with `c.req.valid('json')`.
 - Keep handlers thin: validate, call an operation, respond. Pass `c.var` (an `AuthContext` of `user` + `organization`, non-optional on routers that applied `requireAuth`) to operations so they work without HTTP (tests, MCP tools, crons).
-- Throw `HTTPException` from `hono/http-exception` for errors (404 not found, 409 conflict, etc). The global `onError` handler reports them.
+- Throw errors as described under Code Style; the global `onError` handler turns them into JSON responses.
+
+## AI Tools
+
+- Define tools with `createTool` in `features/<feature>/tools.ts` (see `ai/README.md`).
+- **Return Markdown** written inline: bullets for lists, **bold** for the key item, fenced code blocks for raw output, one sentence for confirmations. Never return an empty string.
+- On failure, throw with an actionable message (a named error when the caller is at fault); the model sees it and can recover.
 
 ## Database
 

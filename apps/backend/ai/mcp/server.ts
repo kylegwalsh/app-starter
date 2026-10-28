@@ -1,10 +1,11 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
+import { analytics } from '@repo/analytics';
 import { config } from '@repo/config';
 import { z } from 'zod';
 
 // oxlint-disable-next-line no-namespace -- Namespace import used to auto-register all exported tools
-import * as tools from '../tools';
+import * as registry from '../tools';
 import { runTool, type AiTool, type ToolSession } from '../utils';
 
 /**
@@ -27,19 +28,24 @@ export const createMcpTransport = ({ sessionId }: { sessionId: string | null }) 
   return transport;
 };
 
-/** Create a new MCP server instance with all MCP-supported tools registered */
-export const createMcpServer = ({ session }: { session?: ToolSession }) => {
+/** Every registered tool */
+const registeredTools: AiTool[] = Object.values(registry);
+
+/** Create a new MCP server instance with the MCP-supported tools registered */
+export const createMcpServer = ({
+  session,
+  tools = registeredTools,
+}: {
+  session?: ToolSession;
+  /** The tools to offer (defaults to the registry; tests pass their own) */
+  tools?: AiTool[];
+}) => {
   const server = new McpServer({
     name: config.app.name,
     version: '1.0.0',
   });
 
-  // Auto-register all exported tools that support MCP (skip on init requests where session isn't resolved yet)
-  for (const tool of Object.values(tools) as AiTool[]) {
-    if (!('isTool' in tool && tool.isTool)) {
-      continue;
-    }
-
+  for (const tool of tools) {
     // Skip tools that aren't exposed via MCP
     if (!tool.consumers.includes('mcp')) {
       continue;
@@ -55,7 +61,21 @@ export const createMcpServer = ({ session }: { session?: ToolSession }) => {
         annotations: tool.annotations,
       },
       async (args) => {
-        const outcome = await runTool({ tool, args, session: session! });
+        // Only init requests lack a session, and they never call tools
+        if (!session) {
+          throw new Error('Tool called before the MCP session was resolved');
+        }
+        const start = Date.now();
+        const outcome = await runTool({ tool, args, session });
+        await analytics.mcpToolCalled({
+          userId: session.user.id,
+          organizationId: session.organization.id,
+          toolName: tool.name,
+          sessionId: session.id,
+          success: outcome.ok,
+          errorStatus: outcome.ok ? undefined : outcome.status,
+          durationMs: Date.now() - start,
+        });
         if (outcome.ok) {
           return { content: [{ type: 'text' as const, text: outcome.result }] };
         }

@@ -20,12 +20,12 @@ import {
   usePromptInputAttachments,
 } from '@repo/design';
 
-import { useChatContext } from './chat-provider';
+import { useActiveChat, useChatContext } from './chat-provider';
+import { useChatUploads } from './chat-uploads';
 
 /** Attachment strip above the input — renders only when files are staged */
-const AttachmentPreviews = () => {
+const AttachmentPreviews: FC<{ uploads: ReturnType<typeof useChatUploads> }> = ({ uploads }) => {
   const { files, remove } = usePromptInputAttachments();
-  const { attachmentUploads } = useChatContext();
   if (files.length === 0) {
     return null;
   }
@@ -33,13 +33,13 @@ const AttachmentPreviews = () => {
     <PromptInputHeader className="px-3 pt-2 pb-1">
       <Attachments variant="inline">
         {files.map((file) => {
-          const upload = attachmentUploads.get(file.url);
+          const upload = uploads.byUrl.get(file.url);
           return (
             <Attachment
               data={file}
-              error={upload?.status === 'error' ? upload.error : null}
+              error={upload?.error?.message ?? null}
               key={file.id}
-              loading={upload?.status === 'uploading'}
+              loading={upload?.isPending}
               onRemove={() => remove(file.id)}
             >
               <AttachmentPreview />
@@ -55,21 +55,21 @@ const AttachmentPreviews = () => {
 
 /** Prompt input bar with staged-attachment previews and the attach-file menu */
 export const PromptInputBar: FC<{ disabled?: boolean }> = ({ disabled = false }) => {
-  const { status, isUploading, attachmentUploads, stop, handleSubmit } = useChatContext();
-  // Block sending while attachments are still uploading or any are in an error state.
-  // Shown as disabled rather than a loading spinner — the tile overlay already signals
-  // "uploading", so the submit button doesn't need to duplicate that indicator.
-  const hasUploadError = Array.from(attachmentUploads.values()).some((u) => u.status === 'error');
-  const disableSend = disabled || isUploading || hasUploadError;
+  const { isWaiting, sendMessage, stop } = useChatContext();
+  const { status } = useActiveChat();
+  const uploads = useChatUploads();
+  // Block sending while attachments are uploading or failed, or a response is generating
+  // elsewhere. Shown as disabled rather than a spinner — the tiles already signal "uploading".
+  const disableSend = disabled || isWaiting || uploads.isUploading || uploads.hasError;
 
   return (
     <PromptInput
       accept={CHAT_ALLOWED_FILE_TYPES.join(',')}
       maxFileSize={CHAT_MAX_FILE_SIZE}
       multiple
-      onSubmit={handleSubmit}
+      onSubmit={sendMessage}
     >
-      <AttachmentPreviews />
+      <AttachmentPreviews uploads={uploads} />
       <PromptInputTextarea
         className="min-h-10 pt-2 text-[13px]"
         disabled={disabled}

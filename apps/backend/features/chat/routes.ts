@@ -1,5 +1,5 @@
 import { chatSchema } from '@repo/schemas';
-import { type UIMessage, createUIMessageStreamResponse } from 'ai';
+import { createUIMessageStreamResponse } from 'ai';
 import { Hono } from 'hono';
 import { describeRoute, validator } from 'hono-openapi';
 import { z } from 'zod';
@@ -11,7 +11,6 @@ import {
   deleteConversation,
   getConversation,
   listConversations,
-  reconnectToGeneration,
   renameConversation,
   sendMessage,
   submitFeedback,
@@ -29,12 +28,8 @@ export const chatRouter = new Hono<ProtectedEnv>()
     }),
     validator('json', chatSchema.chatMessage),
     async (c) => {
-      const { id, messages, isRetry } = c.req.valid('json');
-      const stream = await sendMessage(
-        // Cast to UIMessage[] — the SDK's full part union can't be expressed in Zod
-        { conversationId: id, messages: messages as unknown as UIMessage[], isRetry },
-        c.var,
-      );
+      const { id, message } = c.req.valid('json');
+      const stream = await sendMessage({ conversationId: id, message }, c.var);
       return createUIMessageStreamResponse({ stream });
     },
   )
@@ -46,24 +41,11 @@ export const chatRouter = new Hono<ProtectedEnv>()
       tags: ['Chat'],
     }),
     validator('param', z.object({ id: z.string() })),
-    validator('json', chatSchema.cancel.omit({ id: true })),
+    validator('json', chatSchema.cancel),
     async (c) => {
       const { id } = c.req.valid('param');
       const { partial } = c.req.valid('json');
       return c.json(await cancelGeneration({ conversationId: id, partial }, c.var));
-    },
-  )
-  /** Reconnect to an in-progress chat response started elsewhere */
-  .post(
-    '/conversations/:id/reconnect',
-    describeRoute({
-      summary: 'Reconnect to an in-progress chat response',
-      tags: ['Chat'],
-    }),
-    validator('param', z.object({ id: z.string() })),
-    async (c) => {
-      const stream = await reconnectToGeneration(c.req.valid('param').id, c.var);
-      return createUIMessageStreamResponse({ stream });
     },
   )
   /** List the current user's conversations (most recent first) */

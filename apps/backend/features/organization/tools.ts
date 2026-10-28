@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { createTool } from '@/ai/utils';
+import { ForbiddenError } from '@/api/error';
 import { db } from '@/db';
 
 /** Lists all organizations the user belongs to, including which one is active for MCP */
@@ -10,7 +11,7 @@ export const listOrganizations = createTool({
     'Lists all organizations you belong to and shows which one is currently active for MCP tool calls.',
   annotations: { readOnlyHint: true, destructiveHint: false },
   // Chat runs in the context of a single org (doesn't need this tool)
-  consumers: ['mcp'],
+  consumers: ['chat', 'mcp'],
   handler: async (_args, session) => {
     // Get all organizations the user belongs to
     const memberships = await db.member.findMany({
@@ -23,13 +24,14 @@ export const listOrganizations = createTool({
       return 'You are not a member of any organizations.';
     }
 
-    // Format the organizations into a list of lines
-    const lines = memberships.map((m) => {
-      const isActive = m.organizationId === session.organization.id;
-      return `${isActive ? '→ ' : '  '}${m.organization.name} (${m.organizationId})`;
-    });
+    // Format the organizations as a Markdown list, with the active one in bold
+    const lines = memberships.map((m) =>
+      m.organizationId === session.organization.id
+        ? `- **${m.organization.name}** (${m.organizationId}) — active`
+        : `- ${m.organization.name} (${m.organizationId})`,
+    );
 
-    return `Organizations:\n${lines.join('\n')}`;
+    return `## Organizations\n\n${lines.join('\n')}`;
   },
 });
 
@@ -50,7 +52,7 @@ export const switchOrganization = createTool({
 
     // Handle edge case where the user is not a member of the organization
     if (!membership) {
-      throw new Error(
+      throw new ForbiddenError(
         'You are not a member of that organization. Use list-organizations to see your options.',
       );
     }
@@ -61,6 +63,6 @@ export const switchOrganization = createTool({
       data: { organizationId: args.organizationId },
     });
 
-    return `Active organization set to "${membership.organization.name}" (${membership.organizationId}).`;
+    return `Active organization set to **${membership.organization.name}** (${membership.organizationId}).`;
   },
 });

@@ -2,7 +2,6 @@
 
 import { CHAT_FILE_TYPES } from '@repo/constants';
 import {
-  ChatError,
   CopyButton,
   FeedbackButtons,
   MessageActions,
@@ -16,6 +15,8 @@ import {
 import { isFileUIPart } from 'ai';
 import { CircleXIcon } from 'lucide-react';
 
+import { api } from '@/lib/api';
+
 import { useChatContext } from './chat-provider';
 import {
   extractMessageText,
@@ -25,7 +26,6 @@ import {
   isTextPart,
   type ChatMessage,
   type ChatMessagePart,
-  type FeedbackHandler,
 } from './chat-utils';
 
 /** Thin wrapper that injects the chat context's localPreviews + the app's file-type map. */
@@ -73,11 +73,15 @@ export const UserMessage: FC<{ message: ChatMessage }> = ({ message }) => {
  * open while streaming, tool calls open while their input is still streaming
  * or before the output arrives, everything else closes by default.
  */
-const ProcessSteps: FC<{ parts: ChatMessagePart[] }> = ({ parts }) => {
+const ProcessSteps: FC<{ parts: ChatMessagePart[]; isAnimating: boolean }> = ({
+  parts,
+  isAnimating,
+}) => {
   if (parts.length === 0) {
     return null;
   }
-  const anyActive = parts.some((p) => isProcessPartActive(p));
+  // A stopped reply can leave tools mid-call, so only a streaming message has active steps
+  const anyActive = isAnimating && parts.some((p) => isProcessPartActive(p));
   return (
     <Steps count={parts.length} defaultOpen={anyActive}>
       {parts.map((part, index) => {
@@ -107,7 +111,7 @@ const ProcessSteps: FC<{ parts: ChatMessagePart[] }> = ({ parts }) => {
               : part.type.slice('tool-'.length);
           return (
             <ToolStep
-              defaultOpen={isProcessPartActive(part)}
+              defaultOpen={isAnimating && isProcessPartActive(part)}
               failed={toolPart.state === 'output-error' || toolPart.errorText != null}
               key={toolPart.toolCallId}
               name={formatToolName(rawToolName)}
@@ -121,36 +125,28 @@ const ProcessSteps: FC<{ parts: ChatMessagePart[] }> = ({ parts }) => {
   );
 };
 
+/** Saves thumbs up/down feedback (best-effort — feedback is non-critical) */
+const submitFeedback = (messageId: string, rating: 'up' | 'down', comment?: string) => {
+  api.chat.feedback.$post.call({ json: { messageId, rating, comment } }).catch(() => {});
+};
+
 export type AssistantMessageProps = {
   message: ChatMessage;
-  isLatest: boolean;
-  isLoading: boolean;
-  cancelled: boolean;
-  /** True when the stream errored against this message (live or persisted). */
-  errored: boolean;
-  onFeedback: FeedbackHandler;
-  /** Triggers a regenerate when the user clicks the retry button. */
-  onRetry: () => void;
+  /** True while this message is streaming */
+  isAnimating: boolean;
+  /** Show copy/feedback (hidden while streaming or when the turn errored) */
+  showActions: boolean;
 };
 
 /** Assistant message — text/tool parts with copy & feedback actions */
 export const AssistantMessage: FC<AssistantMessageProps> = ({
   message,
-  isLatest,
-  isLoading,
-  cancelled,
-  errored,
-  onFeedback,
-  onRetry,
+  isAnimating,
+  showActions,
 }) => {
   const fileParts = message.parts.filter((p) => isFileUIPart(p));
   const contentParts = message.parts.filter((p) => !isFileUIPart(p));
-  const isAnimating = isLoading && isLatest;
-  // Cancelled/errored state comes from either in-memory tracking (pre-reload)
-  // or the persisted metadata flag (post-reload). Either signal renders the
-  // matching inline indicator.
-  const isCancelled = cancelled || message.metadata?.cancelled === true;
-  const isErrored = errored || message.metadata?.errored === true;
+  const isCancelled = message.metadata?.cancelled === true;
 
   // Walk `contentParts` in order, grouping consecutive reasoning + tool parts
   // into a single "Took N steps" block. Text parts break the group and render
@@ -162,7 +158,7 @@ export const AssistantMessage: FC<AssistantMessageProps> = ({
     if (stepBuffer.length === 0) {
       return;
     }
-    rendered.push(<ProcessSteps key={key} parts={stepBuffer} />);
+    rendered.push(<ProcessSteps isAnimating={isAnimating} key={key} parts={stepBuffer} />);
     stepBuffer = [];
   };
   for (const [partIndex, part] of contentParts.entries()) {
@@ -198,23 +194,13 @@ export const AssistantMessage: FC<AssistantMessageProps> = ({
           </div>
         )}
 
-        {isErrored && (
-          <ChatError
-            message="Something went wrong while generating the response."
-            onRetry={isLatest ? onRetry : undefined}
-          />
-        )}
-
-        {/* Hide actions only on the message currently streaming — older
-            messages keep their copy/feedback when a fresh send or retry is
-            in flight further down the thread. */}
-        {!(isLatest && isLoading) && !isCancelled && !isErrored && (
+        {showActions && !isCancelled && (
           <MessageActions>
             <CopyButton text={extractMessageText(message.parts)} />
             <FeedbackButtons
               existingFeedback={message.metadata?.feedback ?? null}
               messageId={message.id}
-              onFeedback={onFeedback}
+              onFeedback={submitFeedback}
             />
           </MessageActions>
         )}

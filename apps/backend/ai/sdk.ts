@@ -10,13 +10,9 @@ export const toAiSdkTools = (session: Omit<ToolSession, 'consumer'>): ToolSet =>
   /** Our list of AI SDK compatible tools */
   const aiTools: ToolSet = {};
 
-  // Auto-register all exported tools that support chat (skip on init requests where session isn't resolved yet)
-  for (const tool of Object.values(allTools) as AiTool[]) {
-    // Skip non-tool exports
-    if (!('isTool' in tool && tool.isTool)) {
-      continue;
-    }
-
+  // Auto-register all exported tools that support chat
+  const tools: AiTool[] = Object.values(allTools);
+  for (const tool of tools) {
     // Skip tools that aren't exposed via chat
     if (!tool.consumers.includes('chat')) {
       continue;

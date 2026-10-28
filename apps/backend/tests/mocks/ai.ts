@@ -1,5 +1,6 @@
 import type { Observed, ObservedArgs } from '@repo/ai';
-import type { UIMessageChunk } from 'ai';
+import { streamText } from 'ai';
+import { MockLanguageModelV4 } from 'ai/test';
 
 /**
  * The mock instance behind `@repo/ai`'s `ai` export. Mutate per-test via
@@ -27,22 +28,40 @@ vi.mock('@repo/ai', async (importOriginal) => {
 });
 
 /**
- * Stand-in for `streamText`'s result. The returned `toUIMessageStream` emits a
- * minimal valid chunk sequence (start → optional middle chunks → finish) so
- * `createUIMessageStream` flushes and closes cleanly.
+ * Makes `ai.streamText` run the real AI SDK against a mock model that replies with `text`, so
+ * streaming, `onFinish` persistence and aborts behave as in production. `beforeFinish` runs
+ * mid-reply (e.g. to simulate a cancel landing while the model is still generating).
  */
-export const fakeStreamResult = (chunks: UIMessageChunk[] = []) => ({
-  toUIMessageStream: () =>
-    new ReadableStream<UIMessageChunk>({
-      start(controller) {
-        controller.enqueue({ type: 'start' });
-        for (const chunk of chunks) {
-          controller.enqueue(chunk);
-        }
-        controller.enqueue({ type: 'finish' });
-        controller.close();
-      },
+export const mockChatModel = ({
+  text = 'Hello!',
+  beforeFinish,
+}: { text?: string; beforeFinish?: () => Promise<void> } = {}) => {
+  const model = new MockLanguageModelV4({
+    doStream: async () => ({
+      stream: new ReadableStream({
+        async start(controller) {
+          controller.enqueue({ type: 'stream-start', warnings: [] });
+          controller.enqueue({ type: 'text-start', id: 'text-1' });
+          controller.enqueue({ type: 'text-delta', id: 'text-1', delta: text });
+          controller.enqueue({ type: 'text-end', id: 'text-1' });
+          await beforeFinish?.();
+          controller.enqueue({
+            type: 'finish',
+            finishReason: { unified: 'stop', raw: undefined },
+            usage: {
+              inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+              outputTokens: { total: 1, text: 1, reasoning: 0 },
+            },
+          });
+          controller.close();
+        },
+      }),
     }),
-});
+  });
+  mockAi.streamText.mockImplementation((options: Parameters<typeof streamText>[0]) =>
+    streamText({ ...options, model }),
+  );
+  return model;
+};
 
 export { mockAi };

@@ -1,3 +1,5 @@
+import { analytics } from '@repo/analytics';
+
 import { resolveMcpSession } from '@/ai/mcp/session';
 import { db } from '@/db';
 import { type TestMcpClient, mcpFactory, organizationFactory } from '@/tests/factories';
@@ -26,8 +28,8 @@ describe('Organization tools (MCP)', () => {
       const result = await mcp.callTool('list-organizations');
 
       expect(result.isError).toBe(false);
-      expect(result.text).toContain(`→ Acme (${mcp.organization.id})`);
-      expect(result.text).toContain(`  Globex (${globex.id})`);
+      expect(result.text).toContain(`- **Acme** (${mcp.organization.id}) — active`);
+      expect(result.text).toContain(`- Globex (${globex.id})`);
     });
 
     it("doesn't list organizations the user isn't a member of", async () => {
@@ -47,7 +49,7 @@ describe('Organization tools (MCP)', () => {
 
       expect(result).toEqual({
         isError: false,
-        text: `Active organization set to "Globex" (${globex.id}).`,
+        text: `Active organization set to **Globex** (${globex.id}).`,
       });
       // The next request in this session resolves to the new organization
       const nextSession = await resolveMcpSession({
@@ -66,6 +68,22 @@ describe('Organization tools (MCP)', () => {
       expect(result.text).toContain('You are not a member of that organization');
       const session = await db.mcpSession.findUniqueOrThrow({ where: { id: mcp.session.id } });
       expect(session.organizationId).toBe(mcp.organization.id);
+    });
+
+    it('treats a refusal as the caller’s mistake, not a failure to report', async () => {
+      const initech = await organizationFactory.createOrganization({ name: 'Initech' });
+      const capture = vi.spyOn(analytics, 'captureException');
+      const track = vi.spyOn(analytics, 'mcpToolCalled');
+      onTestFinished(() => {
+        capture.mockRestore();
+        track.mockRestore();
+      });
+
+      await mcp.callTool('switch-organization', { organizationId: initech.id });
+
+      expect(capture).not.toHaveBeenCalled();
+      const [event] = track.mock.calls[0] ?? [];
+      expect(event).toMatchObject({ success: false, errorStatus: 403 });
     });
   });
 });

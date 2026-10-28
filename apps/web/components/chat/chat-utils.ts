@@ -1,20 +1,20 @@
-import { useChatContext } from './chat-provider';
+import type { chatSchema } from '@repo/schemas';
+import type { UIMessage } from 'ai';
+import type { z } from 'zod';
 
 // ---------- Types ----------
 
-export type ChatMessage = ReturnType<typeof useChatContext>['messages'][number];
+/** A chat message with our typed metadata (traceId, feedback, cancelled) */
+export type ChatMessage = UIMessage<
+  z.infer<typeof chatSchema.messageMetadata>,
+  { 'conversation-title': z.infer<(typeof chatSchema.dataParts)['conversation-title']> }
+>;
 export type ChatMessagePart = ChatMessage['parts'][number];
 type TextPart = { type: 'text'; text: string };
-
-export type FeedbackHandler = (messageId: string, rating: 'up' | 'down', comment?: string) => void;
 
 // ---------- Part predicates ----------
 
 export const isTextPart = (p: ChatMessagePart): p is TextPart => p.type === 'text';
-
-export const isUserOrAssistant = (
-  m: ChatMessage,
-): m is ChatMessage & { role: 'user' | 'assistant' } => m.role === 'user' || m.role === 'assistant';
 
 /** Reasoning + tool parts ("steps") that we group into a single collapsible block. */
 export const isProcessPart = (p: ChatMessagePart): boolean =>

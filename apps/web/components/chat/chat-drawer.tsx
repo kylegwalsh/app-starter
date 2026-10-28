@@ -2,8 +2,11 @@
 
 import { Button } from '@repo/design';
 import { cn } from '@repo/design/lib/utils';
+import { useAtom } from 'jotai';
 import { Maximize2, MessageSquare, X } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
+
+import { chatDrawerOpenAtom } from '@/atoms/chat';
 
 import { useChatContext } from './chat-provider';
 import { ChatView } from './chat-view';
@@ -13,7 +16,8 @@ import { ConversationPicker } from './conversation-picker';
 export const ChatDrawer = () => {
   const router = useRouter();
   const isChatPage = usePathname().startsWith('/chat');
-  const { conversationId, isDrawerOpen, setDrawerOpen } = useChatContext();
+  const { conversationId } = useChatContext();
+  const [isDrawerOpen, setDrawerOpen] = useAtom(chatDrawerOpenAtom);
 
   // We don't show this drawer on the chat page
   if (isChatPage) {
@@ -71,7 +75,7 @@ export const ChatDrawer = () => {
 /** Header button that opens and closes the chat drawer */
 export const ChatDrawerToggle = () => {
   const isChatPage = usePathname().startsWith('/chat');
-  const { isDrawerOpen, setDrawerOpen } = useChatContext();
+  const [isDrawerOpen, setDrawerOpen] = useAtom(chatDrawerOpenAtom);
 
   if (isChatPage) {
     return null;

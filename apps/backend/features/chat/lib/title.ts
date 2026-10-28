@@ -1,13 +1,15 @@
 import { ai } from '@repo/ai';
-import { type UIMessage, Output } from 'ai';
+import { log } from '@repo/logs';
+import { Output } from 'ai';
 import { z } from 'zod';
 
-/** Seeds a title from the first user text part so a new row never appears "untitled" */
-export const getTitleSeed = (messages: UIMessage[]) =>
-  messages
-    .filter((m) => m.role === 'user')
-    .flatMap((m) => m.parts)
-    .find((p): p is { type: 'text'; text: string } => p.type === 'text')?.text;
+import { db } from '@/db';
+
+/** Seeds a title from the message's first text part so a new row never appears "untitled" */
+export const getTitleSeed = (message: { parts: ReadonlyArray<{ type: string }> }) => {
+  const part = message.parts.find((p) => p.type === 'text');
+  return part && 'text' in part && typeof part.text === 'string' ? part.text : undefined;
+};
 
 /** Collapses whitespace and truncates a title seed to fit the sidebar */
 export const truncateTitle = (seed: string) => {
@@ -32,3 +34,18 @@ export const generateChatTitle = ai.observe(
     return output.title;
   },
 );
+
+/** Generates an AI title for a new conversation and saves it, keeping the seeded title if that fails */
+export const saveGeneratedTitle = async (conversationId: string, seed: string) => {
+  try {
+    const title = await generateChatTitle({ input: { seed }, context: { conversationId } });
+    if (!title) {
+      return;
+    }
+    await db.conversation.update({ where: { id: conversationId }, data: { title } });
+    return title;
+  } catch (error) {
+    log.warn({ err: error, conversationId }, 'Failed to generate conversation title');
+    return;
+  }
+};

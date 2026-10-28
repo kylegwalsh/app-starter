@@ -1,8 +1,8 @@
 import type { Organization } from '@prisma/client';
 import { addLogMetadata, log } from '@repo/logs';
 import { createMiddleware } from 'hono/factory';
-import { HTTPException } from 'hono/http-exception';
 
+import { UnauthorizedError } from '@/api/error';
 import { db } from '@/db';
 import { type AuthContext, type AuthUser, auth } from '@/services';
 
@@ -70,7 +70,7 @@ export const authMiddleware = createMiddleware<PublicEnv>(async (c, next) => {
  */
 export const requireAuth = createMiddleware<ProtectedEnv>(async (c, next) => {
   if (!(c.get('user') && c.get('organization'))) {
-    throw new HTTPException(401, { message: 'Unauthorized' });
+    throw new UnauthorizedError();
   }
 
   await next();

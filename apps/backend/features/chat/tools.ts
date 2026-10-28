@@ -1,15 +1,24 @@
 import { z } from 'zod';
 
 import { createTool } from '@/ai/utils';
+import { BadRequestError, UnprocessableError } from '@/api/error';
 import { sandboxManager } from '@/services/daytona';
 
 /** Get the sandbox, throwing if unavailable */
 const requireSandbox = async (conversationId: string | undefined) => {
   if (!conversationId) {
-    throw new Error('Code execution requires an active conversation.');
+    throw new BadRequestError('Code execution requires an active conversation.');
   }
   return sandboxManager.getOrCreate(conversationId);
 };
+
+/** Formats a process's output as a code block, noting when it printed nothing */
+const formatOutput = (output: string) =>
+  output.trim() ? `\`\`\`\n${output.trimEnd()}\n\`\`\`` : '_No output._';
+
+/** Formats a failed process's exit code and output */
+const formatFailure = ({ exitCode, result }: { exitCode: number; result: string }) =>
+  `Error (exit code ${String(exitCode)}):\n\n${formatOutput(result)}`;
 
 /** Execute Python code in a persistent sandboxed environment */
 export const runCode = createTool({
@@ -35,17 +44,17 @@ export const runCode = createTool({
         (f) => !f.isDir && /\.(png|jpg|jpeg|gif|svg)$/i.test(f.name),
       );
       if (imageFiles.length > 0) {
-        const fileNames = imageFiles.map((f) => f.name).join(', ');
-        outputNote = `\n\n[Generated files in /output/: ${fileNames}]`;
+        const fileNames = imageFiles.map((f) => `- ${f.name}`).join('\n');
+        outputNote = `\n\n**Generated files in /output/:**\n${fileNames}`;
       }
     } catch {
       // /output/ directory may not exist yet
     }
 
     if (response.exitCode !== 0) {
-      throw new Error(`Error (exit code ${String(response.exitCode)}):\n${response.result}`);
+      throw new UnprocessableError(formatFailure(response));
     }
-    return `${response.result}${outputNote}`;
+    return `${formatOutput(response.result)}${outputNote}`;
   },
 });
 
@@ -64,7 +73,7 @@ export const sandboxWriteFile = createTool({
   handler: async (args, session) => {
     const sandbox = await requireSandbox(session.conversationId);
     await sandbox.fs.uploadFile(Buffer.from(args.content, 'utf8'), args.path);
-    return `File written to ${args.path}`;
+    return `File written to ${args.path}.`;
   },
 });
 
@@ -82,7 +91,10 @@ export const sandboxReadFile = createTool({
   handler: async (args, session) => {
     const sandbox = await requireSandbox(session.conversationId);
     const content = await sandbox.fs.downloadFile(args.path);
-    return typeof content === 'string' ? content : String(content);
+    const text = typeof content === 'string' ? content : String(content);
+    // Tag the block with the file's extension (e.g. `py`, `csv`) so it's highlighted
+    const extension = /\.([a-z0-9]+)$/i.exec(args.path)?.[1] ?? '';
+    return `\`\`\`${extension}\n${text.trimEnd()}\n\`\`\``;
   },
 });
 
@@ -125,7 +137,7 @@ export const sandboxExecuteCommand = createTool({
     // Block shell metacharacters to prevent command chaining via prompt injection
     const SHELL_META = /[;|&`$><]/;
     if (SHELL_META.test(args.command)) {
-      throw new Error('Shell metacharacters (;|&`$><) are not permitted in commands.');
+      throw new BadRequestError('Shell metacharacters (;|&`$><) are not permitted in commands.');
     }
 
     // Validate command against allowlist to prevent prompt injection abuse
@@ -134,7 +146,7 @@ export const sandboxExecuteCommand = createTool({
       (prefix) => args.command.trim().startsWith(prefix) || commandBase === prefix.split(' ')[0],
     );
     if (!isAllowed) {
-      throw new Error(
+      throw new BadRequestError(
         `Command "${commandBase}" is not allowed. Permitted: ${ALLOWED_COMMAND_PREFIXES.join(', ')}`,
       );
     }
@@ -148,8 +160,8 @@ export const sandboxExecuteCommand = createTool({
     );
 
     if (response.exitCode !== 0) {
-      throw new Error(`Error (exit code ${String(response.exitCode)}):\n${response.result}`);
+      throw new UnprocessableError(formatFailure(response));
     }
-    return response.result;
+    return formatOutput(response.result);
   },
 });

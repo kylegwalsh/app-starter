@@ -27,7 +27,7 @@ import { toast } from 'sonner';
 import {
   chatListQueryKey,
   useConversations,
-  type ConversationListInfiniteData,
+  conversationListCache,
   type ConversationListPage,
 } from '@/hooks/use-conversations';
 import { api } from '@/lib/api';
@@ -61,16 +61,8 @@ const ConversationItem: FC<ConversationItemProps> = ({ conversation, isActive })
     onMutate: async ({ param, json }) => {
       await queryClient.cancelQueries({ queryKey: chatListQueryKey });
       const previous = queryClient.getQueryData(chatListQueryKey);
-      queryClient.setQueryData<ConversationListInfiniteData>(chatListQueryKey, (old) =>
-        old
-          ? {
-              ...old,
-              pages: old.pages.map((page) => ({
-                ...page,
-                items: page.items.map((c) => (c.id === param.id ? { ...c, title: json.title } : c)),
-              })),
-            }
-          : old,
+      conversationListCache.updateItems(queryClient, (items) =>
+        items.map((c) => (c.id === param.id ? { ...c, title: json.title } : c)),
       );
       return { previous };
     },
@@ -89,16 +81,8 @@ const ConversationItem: FC<ConversationItemProps> = ({ conversation, isActive })
     onMutate: async ({ param }) => {
       await queryClient.cancelQueries({ queryKey: chatListQueryKey });
       const previous = queryClient.getQueryData(chatListQueryKey);
-      queryClient.setQueryData<ConversationListInfiniteData>(chatListQueryKey, (old) =>
-        old
-          ? {
-              ...old,
-              pages: old.pages.map((page) => ({
-                ...page,
-                items: page.items.filter((c) => c.id !== param.id),
-              })),
-            }
-          : old,
+      conversationListCache.updateItems(queryClient, (items) =>
+        items.filter((c) => c.id !== param.id),
       );
       if (isActive) {
         router.push('/chat');
@@ -267,7 +251,7 @@ export const ChatSidebar = () => {
     const el = e.currentTarget;
     // Trigger when the user has scrolled past 90% of the content (only 10% remains below)
     if (el.scrollTop + el.clientHeight >= el.scrollHeight * NEXT_PAGE_TRIGGER_RATIO) {
-      void fetchNextPage();
+      fetchNextPage();
     }
   };
 

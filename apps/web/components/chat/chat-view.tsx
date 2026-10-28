@@ -10,16 +10,15 @@ import {
 
 import { AssistantMessage, UserMessage } from './chat-messages';
 import { PromptInputBar } from './chat-prompt';
-import { useChatContext } from './chat-provider';
-import { hasVisibleContent, isUserOrAssistant } from './chat-utils';
+import { useActiveChat, useChatContext } from './chat-provider';
+import { hasVisibleContent } from './chat-utils';
 import { ConversationSkeleton } from './conversation-skeleton';
 
 /** Centered welcome screen shown before any message has been sent */
-const WelcomeScreen: FC<{ uploadError: string | null }> = ({ uploadError }) => (
+const WelcomeScreen = () => (
   <div className="flex h-full flex-col items-center justify-center px-4">
     <div className="flex w-full max-w-2xl flex-col gap-6">
       <h1 className="text-center text-2xl font-medium">What's on your mind today?</h1>
-      {uploadError && <div className="text-destructive text-center text-xs">{uploadError}</div>}
       <PromptInputBar />
     </div>
   </div>
@@ -32,60 +31,32 @@ type ChatViewProps = {
 
 /** Full chat view — messages list, thinking/error states, and input bar */
 export const ChatView: FC<ChatViewProps> = ({ showWelcome = true }) => {
-  const {
-    messages,
-    status,
-    error,
-    retry,
-    isLoading,
-    uploadError,
-    submitFeedback,
-    cancelledMessageIds,
-    erroredMessageIds,
-    conversationId,
-    loadingConversationId,
-  } = useChatContext();
+  const { conversationId, isWaiting, loadingConversationId } = useChatContext();
+  const { messages, status, regenerate } = useActiveChat();
   // While a saved conversation loads, show a skeleton for its messages and keep the input disabled
   const isLoadingConversation = loadingConversationId !== undefined;
 
-  // Drop system/data roles and empty assistant shells left by failed streams.
-  // Keep cancelled and errored assistant messages even if their parts are
-  // empty — they need to render their respective badges.
-  const visibleMessages = messages
-    .filter((m) => isUserOrAssistant(m))
-    .filter(
-      (m) =>
-        m.role !== 'assistant' ||
-        hasVisibleContent(m.parts) ||
-        m.metadata?.cancelled === true ||
-        m.metadata?.errored === true ||
-        cancelledMessageIds.has(m.id) ||
-        erroredMessageIds.has(m.id),
-    );
-
-  // Welcome screen only on the bare `/chat` route — an existing conversation
-  // with no messages (e.g. a previous send errored before persistence) still
-  // gets the full layout so the input stays at the bottom.
-  if (
-    showWelcome &&
-    !isLoadingConversation &&
-    !conversationId &&
-    visibleMessages.length === 0 &&
-    !isLoading &&
-    !error
-  ) {
-    return <WelcomeScreen uploadError={uploadError} />;
+  if (showWelcome && !isLoadingConversation && !conversationId) {
+    return <WelcomeScreen />;
   }
 
-  // Keep the indicator visible until the assistant message has something to
-  // render. `useChat` flips `status` to `streaming` on the first stream chunk
-  // (often a metadata frame), but `smoothStream` may still be buffering up to
-  // a word boundary — without this we get a brief gap with nothing on screen.
+  const isStreaming = status === 'submitted' || status === 'streaming';
+  const isBusy = isStreaming || isWaiting;
   const lastMessage = messages.at(-1);
-  const assistantHasVisibleContent =
-    lastMessage?.role === 'assistant' && hasVisibleContent(lastMessage.parts);
-  const showThinking =
-    (status === 'submitted' || status === 'streaming') && !assistantHasVisibleContent;
+  const lastHasContent = lastMessage?.role === 'assistant' && hasVisibleContent(lastMessage.parts);
+  // Keep the indicator up until the reply has something to render (the first chunks are often
+  // metadata, and smoothStream buffers to a word boundary)
+  const showThinking = isBusy && !lastHasContent;
+  // A failed turn, or one that never finished (e.g. the server died), leaves the user's message
+  // unanswered; the server keeps no error record, so this is the same live and after a reload
+  const showError = !isBusy && (status === 'error' || lastMessage?.role === 'user');
+
+  // Hide empty replies from failed streams, but keep stopped ones for their badge
+  const visibleMessages = messages.filter(
+    (m) =>
+      m.role === 'user' ||
+      (m.role === 'assistant' && (hasVisibleContent(m.parts) || m.metadata?.cancelled)),
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -96,42 +67,34 @@ export const ChatView: FC<ChatViewProps> = ({ showWelcome = true }) => {
       ) : (
         <Conversation>
           <ConversationContent className="gap-4 py-6">
-            {visibleMessages.map((message, index) => {
+            {visibleMessages.map((message) => {
               if (message.role === 'user') {
                 return <UserMessage key={message.id} message={message} />;
               }
-              const isLatest = index === visibleMessages.length - 1;
+              const isLast = message === lastMessage;
               return (
                 <AssistantMessage
-                  cancelled={cancelledMessageIds.has(message.id)}
-                  errored={erroredMessageIds.has(message.id)}
-                  isLatest={isLatest}
-                  isLoading={isLoading}
+                  isAnimating={isLast && isStreaming}
                   key={message.id}
                   message={message}
-                  onFeedback={submitFeedback}
-                  onRetry={retry}
+                  showActions={!isLast || (!isBusy && !showError)}
                 />
               );
             })}
 
             {showThinking && <ThinkingIndicator />}
 
-            {/* Fallback for the case where the stream errored before useChat
-              created an assistant stub — the last visible row is a user
-              message, so the inline path has nothing to attach to. Render
-              the same ChatError standalone here so the error sits right
-              after that user message. */}
-            {error && !isLoading && visibleMessages.at(-1)?.role !== 'assistant' && (
-              <ChatError message="Something went wrong generating this response." onRetry={retry} />
+            {showError && (
+              <ChatError
+                message="Something went wrong generating this response."
+                onRetry={() => regenerate()}
+              />
             )}
           </ConversationContent>
 
           <ConversationScrollButton />
         </Conversation>
       )}
-
-      {uploadError && <div className="text-destructive mx-4 mb-2 text-xs">{uploadError}</div>}
 
       <div className="border-t p-3">
         <PromptInputBar disabled={isLoadingConversation} />

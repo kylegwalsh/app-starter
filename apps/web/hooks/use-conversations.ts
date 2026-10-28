@@ -1,4 +1,4 @@
-import { type InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
+import { type InfiniteData, type QueryClient, useInfiniteQuery } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
 
@@ -24,6 +24,31 @@ export const chatListQueryKey = chatListInfiniteOptions.queryKey;
 
 /** Aggregated infinite-query cache shape */
 export type ConversationListInfiniteData = InfiniteData<ConversationListPage, string | undefined>;
+
+type ConversationListItem = ConversationListPage['items'][number];
+
+/** Optimistic edits to the cached conversation list */
+export const conversationListCache = {
+  /** Replaces the items on every loaded page */
+  updateItems: (
+    queryClient: QueryClient,
+    update: (items: ConversationListItem[]) => ConversationListItem[],
+  ) =>
+    queryClient.setQueryData<ConversationListInfiniteData>(chatListQueryKey, (old) =>
+      old
+        ? { ...old, pages: old.pages.map((page) => ({ ...page, items: update(page.items) })) }
+        : old,
+    ),
+  /** Adds a conversation to the top of the first page */
+  prepend: (queryClient: QueryClient, item: ConversationListItem) =>
+    queryClient.setQueryData<ConversationListInfiniteData>(chatListQueryKey, (old) => {
+      const [firstPage, ...rest] = old?.pages ?? [];
+      if (!old || !firstPage) {
+        return { pages: [{ items: [item], nextCursor: undefined }], pageParams: [undefined] };
+      }
+      return { ...old, pages: [{ ...firstPage, items: [item, ...firstPage.items] }, ...rest] };
+    }),
+};
 
 /** Loads the current user's conversations as a paginated infinite list */
 export const useConversations = () => useInfiniteQuery(chatListInfiniteOptions);

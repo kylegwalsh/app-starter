@@ -1,9 +1,11 @@
 import { db } from '@/db';
 import { type TestSession, sessionFactory } from '@/tests/factories';
 import { userFactory } from '@/tests/factories/user-factory';
-import { fakeStreamResult, mockAi } from '@/tests/mocks/ai';
+import { mockAi, mockChatModel } from '@/tests/mocks/ai';
 
-/** Build a minimal UIMessage we can send through the chat route's input schema. */
+import { CLEARED_RESULT_NOTE } from './lib/compaction';
+
+/** Build a user message in the shape the chat route accepts */
 const userMessage = (id: string, text: string) => ({
   id,
   role: 'user' as const,
@@ -31,6 +33,11 @@ const consume = async (res: Response): Promise<Array<Record<string, unknown>>> =
   return chunks;
 };
 
+type SendInput = {
+  id: string;
+  message: { id: string; role: 'user'; parts: Array<{ type: string; [key: string]: unknown }> };
+};
+
 // ---------- Tests ----------
 describe('Chat Router', () => {
   let api: TestSession['api'];
@@ -39,8 +46,8 @@ describe('Chat Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    // Default mocks: stream completes cleanly, title generation succeeds.
-    mockAi.streamText.mockResolvedValue(fakeStreamResult());
+    // Default mocks: the model replies cleanly, title generation succeeds.
+    mockChatModel();
     mockAi.generateText.mockResolvedValue({ output: { title: 'Generated title' } });
     const session = await sessionFactory.createSession();
     api = session.api;
@@ -48,427 +55,434 @@ describe('Chat Router', () => {
     organization = session.organization;
   });
 
-  describe('send', () => {
-    it('creates a conversation when no id is provided', async () => {
-      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
-      await consume(res);
+  /** Sends a message to a conversation and drains the streamed response */
+  const send = async (
+    conversationId: string,
+    message: SendInput['message'] = userMessage('m1', 'Hello'),
+  ) => {
+    const res = await api.chat.$post({ json: { id: conversationId, message } });
+    return { res, chunks: await consume(res) };
+  };
 
-      const conversations = await db.conversation.findMany({ where: { userId: user.id } });
-      expect(conversations).toHaveLength(1);
+  /** Creates a conversation owned by the signed-in user */
+  const createConversation = (
+    data: { title?: string; generatingUntil?: Date | null; contextTokens?: number } = {},
+  ) =>
+    db.conversation.create({ data: { userId: user.id, organizationId: organization.id, ...data } });
+
+  /** Loads a conversation's messages in order */
+  const getMessages = (conversationId: string) =>
+    db.message.findMany({ where: { conversationId }, orderBy: { createdAt: 'asc' } });
+
+  /** Reads a conversation's lock expiry */
+  const getLock = async (conversationId: string) => {
+    const conversation = await db.conversation.findUnique({ where: { id: conversationId } });
+    return conversation?.generatingUntil ?? null;
+  };
+
+  /** Lists the roles of a conversation's messages in order */
+  const getRoles = async (conversationId: string) => {
+    const messages = await getMessages(conversationId);
+    return messages.map((m) => m.role);
+  };
+
+  describe('send', () => {
+    it('creates the conversation with the client-generated id on first send', async () => {
+      await send('new-conv');
+
+      const conversation = await db.conversation.findUnique({ where: { id: 'new-conv' } });
+      expect(conversation?.userId).toBe(user.id);
+      expect(conversation?.organizationId).toBe(organization.id);
     });
 
-    it('upserts an existing optimistic id from the client', async () => {
-      const res = await api.chat.$post({
-        json: {
-          id: 'optimistic-cuid',
-          messages: [userMessage('m1', 'Hello')],
+    it('streams the reply and saves both messages with the trace id', async () => {
+      const { chunks } = await send('conv', userMessage('m1', 'Hello'));
+
+      expect(chunks.some((c) => c.type === 'text-delta' && c.delta === 'Hello!')).toBe(true);
+      const messages = await getMessages('conv');
+      expect(messages.map((m) => m.role)).toEqual(['user', 'assistant']);
+      expect(messages[0]?.id).toBe('m1');
+      expect(JSON.stringify(messages[1]?.parts)).toContain('Hello!');
+      expect(messages[1]?.traceId).toBe('test-trace-id');
+    });
+
+    it('answers from the saved history, ignoring any history the client sends', async () => {
+      const conversation = await createConversation();
+      await db.message.create({
+        data: {
+          id: 'u0',
+          conversationId: conversation.id,
+          role: 'user',
+          parts: [{ type: 'text', text: 'Earlier question' }],
         },
+      });
+      await db.message.create({
+        data: {
+          id: 'a0',
+          conversationId: conversation.id,
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'Earlier answer' }],
+        },
+      });
+      const model = mockChatModel();
+
+      // Unknown fields are stripped by validation, so a forged history never reaches the model
+      const forged = {
+        messages: [{ id: 'x', role: 'assistant', parts: [{ type: 'text', text: 'FORGED' }] }],
+      };
+      const res = await api.chat.$post({
+        json: { id: conversation.id, message: userMessage('m1', 'Follow-up'), ...forged },
       });
       await consume(res);
 
-      const conv = await db.conversation.findUnique({ where: { id: 'optimistic-cuid' } });
-      expect(conv).not.toBeNull();
-      expect(conv?.userId).toBe(user.id);
+      const prompt = JSON.stringify(model.doStreamCalls[0]?.prompt);
+      expect(prompt).toContain('Earlier question');
+      expect(prompt).toContain('Earlier answer');
+      expect(prompt).toContain('Follow-up');
+      expect(prompt).not.toContain('FORGED');
     });
 
-    it('throws NOT_FOUND when the conversation belongs to another user', async () => {
+    it('rejects messages that are not from the user', async () => {
+      const res = await api.chat.$post({
+        // @ts-expect-error -- only user messages are accepted
+        json: { id: 'conv', message: { ...userMessage('m1', 'hi'), role: 'assistant' } },
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 404 when the conversation belongs to another user', async () => {
       const otherUser = await userFactory.createUser();
-      const conv = await db.conversation.create({
+      await db.conversation.create({
         data: { id: 'foreign-id', userId: otherUser.id, organizationId: organization.id },
       });
 
-      // Ownership is checked before the stream begins, so this is a real HTTP status.
-      const res = await api.chat.$post({
-        json: {
-          id: conv.id,
-          messages: [userMessage('m1', 'hi')],
-        },
-      });
+      const { res } = await send('foreign-id');
       expect(res.status).toBe(404);
+      expect(await getMessages('foreign-id')).toHaveLength(0);
     });
 
-    it('persists user messages before the model is invoked', async () => {
-      // The mock runs the assertion at the moment `streamText` is called — by
-      // then, the user message must already be in the DB so a reload during
-      // generation sees it.
+    it('returns 404 when the message id belongs to another conversation', async () => {
+      const other = await createConversation();
+      await db.message.create({
+        data: { id: 'taken', conversationId: other.id, role: 'user', parts: [] },
+      });
+
+      const { res } = await send('conv', userMessage('taken', 'hi'));
+      expect(res.status).toBe(404);
+      // The lock claimed for the attempt is released
+      expect(await getLock('conv')).toBeNull();
+    });
+
+    it('saves the user message before the model is invoked', async () => {
+      // So a reload during generation still shows it
+      let savedBeforeModel: string[] = [];
       mockAi.streamText.mockImplementationOnce(async () => {
-        const userMessages = await db.message.findMany({ where: { role: 'user' } });
-        expect(userMessages).toHaveLength(1);
-        expect(userMessages[0]?.id).toBe('m1');
-        return fakeStreamResult();
+        const saved = await db.message.findMany({ where: { role: 'user' } });
+        savedBeforeModel = saved.map((m) => m.id);
+        throw new Error('stop here');
       });
 
-      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
-      await consume(res);
+      await send('conv');
+      expect(savedBeforeModel).toEqual(['m1']);
     });
 
-    it('claims the generation lock by setting generatingUntil', async () => {
-      let lockSnapshot: Date | null = null;
-      mockAi.streamText.mockImplementationOnce(async () => {
-        const conv = await db.conversation.findFirst({ where: { userId: user.id } });
-        lockSnapshot = conv?.generatingUntil ?? null;
-        return fakeStreamResult();
-      });
+    it('bumps lastMessageAt on a follow-up send', async () => {
+      const conversation = await createConversation();
+      await send(conversation.id);
 
-      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
-      await consume(res);
-
-      expect(lockSnapshot).not.toBeNull();
-      // Lock should expire some time in the (near) future.
-      expect(lockSnapshot!.getTime()).toBeGreaterThan(Date.now() - 1000);
+      const after = await db.conversation.findUnique({ where: { id: conversation.id } });
+      expect(after?.lastMessageAt).not.toBeNull();
     });
 
-    it('clears the lock after the stream completes successfully', async () => {
-      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
-      await consume(res);
-
-      const conv = await db.conversation.findFirst({ where: { userId: user.id } });
-      expect(conv?.generatingUntil).toBeNull();
-    });
-
-    it('clears the lock even when the stream throws', async () => {
-      mockAi.streamText.mockRejectedValueOnce(new Error('boom'));
-
-      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
-      const chunks = await consume(res);
-      expect(chunks.some((c) => c.type === 'error' && String(c.errorText).includes('boom'))).toBe(
-        true,
-      );
-
-      const conv = await db.conversation.findFirst({ where: { userId: user.id } });
-      expect(conv?.generatingUntil).toBeNull();
-    });
-
-    it('persists an errored marker when the stream throws before persistence', async () => {
-      // Reload of an errored conversation needs to surface "something went
-      // wrong" inline — that requires an assistant row with `errored: true`.
-      mockAi.streamText.mockRejectedValueOnce(new Error('boom'));
-
-      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
-      const chunks = await consume(res);
-      expect(chunks.some((c) => c.type === 'error' && String(c.errorText).includes('boom'))).toBe(
-        true,
-      );
-
-      const conv = await db.conversation.findFirst({ where: { userId: user.id } });
-      const assistantMessages = await db.message.findMany({
-        where: { conversationId: conv!.id, role: 'assistant' },
-      });
-      expect(assistantMessages).toHaveLength(1);
-      expect(assistantMessages[0]?.errored).toBe(true);
-      expect(assistantMessages[0]?.parts).toEqual([]);
-    });
-
-    it('does not write an errored marker on top of a cancellation marker', async () => {
-      // When `cancelGeneration` clears the lock mid-stream it also writes its own
-      // marker. The handler's `finally` must not pile an errored row on top.
-      let conversationId: string | undefined;
-      mockAi.streamText.mockImplementationOnce(() => ({
-        toUIMessageStream: () =>
-          new ReadableStream({
-            async start(controller) {
-              controller.enqueue({ type: 'start' });
-              const conv = await db.conversation.findFirst({ where: { userId: user.id } });
-              conversationId = conv?.id;
-              // Mimic cancelGeneration landing while we're still streaming.
-              await db.conversation.update({
-                where: { id: conv!.id },
-                data: { generatingUntil: null },
-              });
-              await db.message.create({
-                data: { conversationId: conv!.id, role: 'assistant', parts: [], cancelled: true },
-              });
-              controller.enqueue({ type: 'finish' });
-              controller.close();
-            },
-          }),
-      }));
-
-      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
-      await consume(res);
-
-      const assistantMessages = await db.message.findMany({
-        where: { conversationId, role: 'assistant' },
-      });
-      expect(assistantMessages).toHaveLength(1);
-      expect(assistantMessages[0]?.cancelled).toBe(true);
-      expect(assistantMessages[0]?.errored).toBeFalsy();
-    });
-
-    it('throws CONFLICT when another producer is actively generating', async () => {
-      const conv = await db.conversation.create({
-        data: {
-          userId: user.id,
-          organizationId: organization.id,
-          // Lock that expires comfortably in the future.
-          generatingUntil: new Date(Date.now() + 60_000),
+    it('holds the generation lock while generating and clears it afterwards', async () => {
+      let lockDuringGeneration: Date | null = null;
+      mockChatModel({
+        beforeFinish: async () => {
+          lockDuringGeneration = await getLock('conv');
         },
       });
 
-      // The lock is claimed before the stream begins, so this is a real HTTP status.
-      const res = await api.chat.$post({
-        json: {
-          id: conv.id,
-          messages: [userMessage('m1', 'Hello')],
-        },
-      });
+      await send('conv');
+
+      expect(lockDuringGeneration).not.toBeNull();
+      expect(await getLock('conv')).toBeNull();
+    });
+
+    it('passes an abort signal so a cancel can stop the model', async () => {
+      const model = mockChatModel();
+      await send('conv');
+      expect(model.doStreamCalls[0]?.abortSignal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('streams an error for a failed turn, saves no reply, and clears the lock', async () => {
+      mockAi.streamText.mockRejectedValueOnce(new Error('boom'));
+
+      const { chunks } = await send('conv');
+
+      const error = chunks.find((c) => c.type === 'error');
+      expect(String(error?.errorText)).toContain('boom');
+      // The conversation ends on the user's message, which the client offers to retry
+      expect(await getRoles('conv')).toEqual(['user']);
+      expect(await getLock('conv')).toBeNull();
+    });
+
+    it('retries a saved message by replacing the reply after it', async () => {
+      await send('conv', userMessage('m1', 'Hello'));
+      mockChatModel({ text: 'Second answer' });
+
+      await send('conv', userMessage('m1', 'Hello'));
+
+      const messages = await getMessages('conv');
+      expect(messages.map((m) => m.role)).toEqual(['user', 'assistant']);
+      expect(JSON.stringify(messages[1]?.parts)).toContain('Second answer');
+    });
+
+    it('retries without touching earlier turns', async () => {
+      await send('conv', userMessage('m1', 'First'));
+      await send('conv', userMessage('m2', 'Second'));
+      const [, firstReply] = await getMessages('conv');
+
+      await send('conv', userMessage('m2', 'Second'));
+
+      const messages = await getMessages('conv');
+      expect(messages.map((m) => m.role)).toEqual(['user', 'assistant', 'user', 'assistant']);
+      expect(messages[0]?.id).toBe('m1');
+      expect(messages[1]?.id).toBe(firstReply?.id);
+      expect(messages[2]?.id).toBe('m2');
+    });
+
+    it('returns 409 when another producer is actively generating', async () => {
+      const lock = new Date(Date.now() + 60_000);
+      const conversation = await createConversation({ generatingUntil: lock });
+
+      const { res } = await send(conversation.id);
       expect(res.status).toBe(409);
 
-      // Original lock must be untouched.
-      const after = await db.conversation.findUnique({ where: { id: conv.id } });
-      expect(after?.generatingUntil).toEqual(conv.generatingUntil);
+      // Nothing was saved and the original lock is untouched
+      expect(await getMessages(conversation.id)).toHaveLength(0);
+      expect(await getLock(conversation.id)).toEqual(lock);
     });
 
     it('can re-claim a stale (TTL-expired) lock', async () => {
-      const conv = await db.conversation.create({
-        data: {
-          userId: user.id,
-          organizationId: organization.id,
-          generatingUntil: new Date(Date.now() - 60_000), // long expired
-        },
+      const conversation = await createConversation({
+        generatingUntil: new Date(Date.now() - 60_000),
       });
 
-      const res = await api.chat.$post({
-        json: {
-          id: conv.id,
-          messages: [userMessage('m1', 'Hello')],
-        },
-      });
-      await consume(res);
+      await send(conversation.id);
 
-      const after = await db.conversation.findUnique({ where: { id: conv.id } });
-      expect(after?.generatingUntil).toBeNull();
+      expect(await getMessages(conversation.id)).toHaveLength(2);
     });
 
-    it('uses the user message as the title when AI title generation fails', async () => {
+    it('keeps only the partial the user saw when they cancel mid-stream', async () => {
+      mockChatModel({
+        beforeFinish: async () => {
+          await api.chat.conversations[':id'].cancel.$post({
+            param: { id: 'conv' },
+            json: { partial: { id: 'partial', parts: [{ type: 'text', text: 'Hel' }] } },
+          });
+        },
+      });
+
+      await send('conv');
+
+      const [userMessageRow, reply, ...rest] = await getMessages('conv');
+      expect(userMessageRow?.role).toBe('user');
+      expect(reply?.id).toBe('partial');
+      expect(reply?.cancelled).toBe(true);
+      expect(rest).toHaveLength(0);
+    });
+
+    it('titles a new conversation with the AI title, streaming it to the client', async () => {
+      const { chunks } = await send('conv', userMessage('m1', 'Hello world'));
+
+      const conversation = await db.conversation.findUnique({ where: { id: 'conv' } });
+      expect(conversation?.title).toBe('Generated title');
+      // Sent as soon as it's ready, so the sidebar doesn't wait for the response to finish
+      expect(chunks).toContainEqual({
+        type: 'data-conversation-title',
+        data: { title: 'Generated title' },
+        transient: true,
+      });
+    });
+
+    it('keeps the seeded title when AI title generation fails', async () => {
       mockAi.generateText.mockRejectedValueOnce(new Error('model unavailable'));
 
-      const res = await api.chat.$post({
-        json: { messages: [userMessage('m1', 'Hello world')] },
-      });
-      await consume(res);
+      await send('conv', userMessage('m1', 'Hello world'));
 
-      const conv = await db.conversation.findFirst({ where: { userId: user.id } });
-      expect(conv?.title).toBe('Hello world');
+      const conversation = await db.conversation.findUnique({ where: { id: 'conv' } });
+      expect(conversation?.title).toBe('Hello world');
     });
 
-    it('truncates a long fallback title at 60 chars with an ellipsis', async () => {
+    it('truncates a long seeded title at 60 chars with an ellipsis', async () => {
       mockAi.generateText.mockRejectedValueOnce(new Error('boom'));
 
-      const longText = 'a'.repeat(100);
-      const res = await api.chat.$post({ json: { messages: [userMessage('m1', longText)] } });
-      await consume(res);
+      await send('conv', userMessage('m1', 'a'.repeat(100)));
 
-      const conv = await db.conversation.findFirst({ where: { userId: user.id } });
-      expect(conv?.title).toMatch(/…$/);
+      const conversation = await db.conversation.findUnique({ where: { id: 'conv' } });
+      expect(conversation?.title).toMatch(/…$/);
       // 60 'a's + ellipsis = 61 visible chars (ellipsis is one char).
-      expect(conv?.title?.length).toBe(61);
+      expect(conversation?.title?.length).toBe(61);
     });
 
-    it('seeds the title at creation so a stream failure still leaves a titled row', async () => {
-      // Earlier behavior: streamText throwing before the title IIFE landed
-      // left the conversation row with a null title, which the sidebar
-      // rendered as a permanent skeleton. Both AI calls fail here to prove
-      // the seed (written during creation) is the fallback — not the IIFE's
-      // own catch block.
+    it('keeps the seeded title when the stream fails', async () => {
       mockAi.streamText.mockRejectedValueOnce(new Error('boom'));
       mockAi.generateText.mockRejectedValueOnce(new Error('title boom'));
 
-      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello world')] } });
-      const chunks = await consume(res);
-      expect(chunks.some((c) => c.type === 'error' && String(c.errorText).includes('boom'))).toBe(
-        true,
-      );
+      await send('conv', userMessage('m1', 'Hello world'));
 
-      const conv = await db.conversation.findFirst({ where: { userId: user.id } });
-      expect(conv?.title).toBe('Hello world');
+      const conversation = await db.conversation.findUnique({ where: { id: 'conv' } });
+      expect(conversation?.title).toBe('Hello world');
     });
 
-    it('seeds "New chat" when the first user message has no text part', async () => {
-      // File-only first message — no text to seed from, so the placeholder
-      // stands in. The AI title IIFE is skipped (no seed to prompt with).
-      const res = await api.chat.$post({
-        json: {
-          messages: [
+    it('seeds "New chat" when the first message has no text', async () => {
+      await send('conv', {
+        id: 'm1',
+        role: 'user',
+        parts: [{ type: 'file', url: 'https://example.com/x.pdf', mediaType: 'application/pdf' }],
+      });
+
+      const conversation = await db.conversation.findUnique({ where: { id: 'conv' } });
+      expect(conversation?.title).toBe('New chat');
+      expect(mockAi.generateText).not.toHaveBeenCalled();
+    });
+
+    it('compacts a thread near the ceiling and stores where it swept to', async () => {
+      // The last turn measured 900k tokens. History: an old read the sweep can clear, then a recent
+      // run-code result large enough to fill the protected tail.
+      const conversation = await createConversation({ contextTokens: 900_000 });
+      const history = [
+        { role: 'user', parts: [{ type: 'text', text: 'Load the data' }] },
+        {
+          role: 'assistant',
+          parts: [
+            { type: 'step-start' },
             {
-              id: 'm1',
-              role: 'user',
-              parts: [
-                {
-                  type: 'file' as const,
-                  url: 'https://example.com/x.pdf',
-                  mediaType: 'application/pdf',
-                },
-              ],
+              type: 'tool-read-file',
+              toolCallId: 'c1',
+              state: 'output-available',
+              input: { path: '/data.csv' },
+              output: 'r'.repeat(400_000),
             },
+            { type: 'text', text: 'Loaded.' },
           ],
         },
-      });
-      await consume(res);
-
-      const conv = await db.conversation.findFirst({ where: { userId: user.id } });
-      expect(conv?.title).toBe('New chat');
-      expect(mockAi.generateText).not.toHaveBeenCalled();
-    });
-
-    it('does not re-generate an AI title on a follow-up send to an existing conversation', async () => {
-      const conv = await db.conversation.create({
-        data: { userId: user.id, organizationId: organization.id, title: 'Existing title' },
-      });
-
-      const res = await api.chat.$post({
-        json: {
-          id: conv.id,
-          messages: [userMessage('m1', 'Follow-up')],
-        },
-      });
-      await consume(res);
-
-      expect(mockAi.generateText).not.toHaveBeenCalled();
-      const after = await db.conversation.findUnique({ where: { id: conv.id } });
-      expect(after?.title).toBe('Existing title');
-    });
-
-    it('deduplicates user messages by id (regenerate-style retries)', async () => {
-      const conv = await db.conversation.create({
-        data: { userId: user.id, organizationId: organization.id },
-      });
-      // Same id as the message we'll re-send.
-      await db.message.create({
-        data: {
-          id: 'm1',
-          conversationId: conv.id,
-          role: 'user',
-          parts: [{ type: 'text', text: 'Hello' }],
-        },
-      });
-
-      const res = await api.chat.$post({
-        json: {
-          id: conv.id,
-          messages: [userMessage('m1', 'Hello')],
-        },
-      });
-      await consume(res);
-
-      const userMessages = await db.message.findMany({
-        where: { conversationId: conv.id, role: 'user' },
-      });
-      expect(userMessages).toHaveLength(1);
-    });
-
-    it('skips persisting the assistant message when the lock is cleared mid-stream', async () => {
-      // While streamText is running, simulate a concurrent `cancelGeneration` by
-      // clearing `generatingUntil` from the DB. The handler's onFinish should
-      // see the missing lock and bail before writing the assistant message.
-      let conversationId: string | undefined;
-      mockAi.streamText.mockImplementationOnce(() => ({
-        toUIMessageStream: () =>
-          new ReadableStream({
-            async start(controller) {
-              controller.enqueue({ type: 'start' });
-              // Clear the lock externally to mimic a cancel call landing
-              // while the producer is still generating.
-              const conv = await db.conversation.findFirst({ where: { userId: user.id } });
-              conversationId = conv?.id;
-              await db.conversation.update({
-                where: { id: conv!.id },
-                data: { generatingUntil: null },
-              });
-              controller.enqueue({ type: 'finish' });
-              controller.close();
+        { role: 'user', parts: [{ type: 'text', text: 'Analyze it' }] },
+        {
+          role: 'assistant',
+          parts: [
+            { type: 'step-start' },
+            {
+              type: 'tool-run-code',
+              toolCallId: 'c2',
+              state: 'output-available',
+              input: { code: 'analyze()' },
+              output: 'o'.repeat(250_000),
             },
-          }),
-      }));
+            { type: 'text', text: 'Done.' },
+          ],
+        },
+      ];
+      for (const [index, message] of history.entries()) {
+        // oxlint-disable-next-line no-await-in-loop -- Distinct timestamps keep the history ordered
+        await db.message.create({
+          data: {
+            conversationId: conversation.id,
+            ...message,
+            createdAt: new Date(Date.now() - (history.length - index) * 1000),
+          },
+        });
+      }
 
-      const res = await api.chat.$post({ json: { messages: [userMessage('m1', 'Hello')] } });
-      await consume(res);
+      const firstModel = mockChatModel();
+      await send(conversation.id, userMessage('m1', 'Summarize'));
 
-      const assistantMessages = await db.message.findMany({
-        where: { conversationId, role: 'assistant' },
-      });
-      expect(assistantMessages).toHaveLength(0);
+      // The old read was cleared from the prompt; the recent result in the tail was kept
+      const firstPrompt = JSON.stringify(firstModel.doStreamCalls[0]?.prompt);
+      expect(firstPrompt).not.toContain('r'.repeat(1000));
+      expect(firstPrompt).toContain(CLEARED_RESULT_NOTE);
+      expect(firstPrompt).toContain('o'.repeat(1000));
+      // The boundary and the measured size (the mock model reports 1 input + 1 output token) are stored
+      const afterFirst = await db.conversation.findUnique({ where: { id: conversation.id } });
+      expect(afterFirst?.compactedThrough).toBeGreaterThan(0);
+      expect(afterFirst?.contextTokens).toBe(2);
+      // Stored history is never modified
+      const stored = await getMessages(conversation.id);
+      expect(JSON.stringify(stored[1]?.parts)).toContain('r'.repeat(1000));
+
+      // The next turn is under the trigger, but re-applies the stored boundary so the prefix is stable
+      const secondModel = mockChatModel();
+      await send(conversation.id, userMessage('m2', 'Thanks'));
+      const secondPrompt = JSON.stringify(secondModel.doStreamCalls[0]?.prompt);
+      expect(secondPrompt).not.toContain('r'.repeat(1000));
+      const afterSecond = await db.conversation.findUnique({ where: { id: conversation.id } });
+      expect(afterSecond?.compactedThrough).toBe(afterFirst?.compactedThrough);
+    });
+
+    it('does not re-title an existing conversation on a follow-up send', async () => {
+      const conversation = await createConversation({ title: 'Existing title' });
+
+      const { chunks } = await send(conversation.id, userMessage('m1', 'Follow-up'));
+
+      expect(mockAi.generateText).not.toHaveBeenCalled();
+      expect(chunks.some((chunk) => chunk.type === 'data-conversation-title')).toBe(false);
+      const after = await db.conversation.findUnique({ where: { id: conversation.id } });
+      expect(after?.title).toBe('Existing title');
     });
   });
 
   describe('cancel', () => {
-    it('clears the lock and persists a cancellation marker as an assistant message', async () => {
-      const conv = await db.conversation.create({
-        data: {
-          userId: user.id,
-          organizationId: organization.id,
-          generatingUntil: new Date(Date.now() + 30_000),
-        },
+    it('clears the lock and saves an empty cancelled reply', async () => {
+      const conversation = await createConversation({
+        generatingUntil: new Date(Date.now() + 30_000),
       });
 
       const res = await api.chat.conversations[':id'].cancel.$post({
-        param: { id: conv.id },
+        param: { id: conversation.id },
         json: {},
       });
-      expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ cancelled: true });
 
-      const refreshed = await db.conversation.findUnique({ where: { id: conv.id } });
-      expect(refreshed?.generatingUntil).toBeNull();
-
-      const assistantMessages = await db.message.findMany({
-        where: { conversationId: conv.id, role: 'assistant' },
-      });
-      expect(assistantMessages).toHaveLength(1);
-      expect(assistantMessages[0]?.cancelled).toBe(true);
-      expect(assistantMessages[0]?.parts).toEqual([]);
+      expect(await getLock(conversation.id)).toBeNull();
+      const messages = await getMessages(conversation.id);
+      expect(messages).toHaveLength(1);
+      expect(messages[0]?.cancelled).toBe(true);
+      expect(messages[0]?.parts).toEqual([]);
     });
 
-    it('persists the supplied partial assistant message alongside the cancelled flag', async () => {
-      const conv = await db.conversation.create({
-        data: {
-          userId: user.id,
-          organizationId: organization.id,
-          generatingUntil: new Date(Date.now() + 30_000),
-        },
+    it('saves the supplied partial reply as cancelled', async () => {
+      const conversation = await createConversation({
+        generatingUntil: new Date(Date.now() + 30_000),
       });
 
       await api.chat.conversations[':id'].cancel.$post({
-        param: { id: conv.id },
+        param: { id: conversation.id },
         json: {
-          partial: {
-            id: 'partial-msg-id',
-            parts: [{ type: 'text', text: 'Half of what I was about to say…' }],
-          },
+          partial: { id: 'partial-msg-id', parts: [{ type: 'text', text: 'Half of it…' }] },
         },
       });
 
-      const assistantMessages = await db.message.findMany({
-        where: { conversationId: conv.id, role: 'assistant' },
-      });
-      expect(assistantMessages).toHaveLength(1);
-      expect(assistantMessages[0]?.id).toBe('partial-msg-id');
-      expect(assistantMessages[0]?.cancelled).toBe(true);
-      expect(assistantMessages[0]?.parts).toEqual([
-        { type: 'text', text: 'Half of what I was about to say…' },
-      ]);
+      const messages = await getMessages(conversation.id);
+      expect(messages).toHaveLength(1);
+      expect(messages[0]?.id).toBe('partial-msg-id');
+      expect(messages[0]?.cancelled).toBe(true);
+      expect(messages[0]?.parts).toEqual([{ type: 'text', text: 'Half of it…' }]);
     });
 
-    it('returns { cancelled: false } and writes no marker when generation already finished', async () => {
-      const conv = await db.conversation.create({
-        data: { userId: user.id, organizationId: organization.id, generatingUntil: null },
-      });
+    it('returns { cancelled: false } and saves nothing when generation already finished', async () => {
+      const conversation = await createConversation();
 
       const res = await api.chat.conversations[':id'].cancel.$post({
-        param: { id: conv.id },
+        param: { id: conversation.id },
         json: {},
       });
       expect(await res.json()).toEqual({ cancelled: false });
-
-      const assistantMessages = await db.message.findMany({
-        where: { conversationId: conv.id, role: 'assistant' },
-      });
-      expect(assistantMessages).toHaveLength(0);
+      expect(await getMessages(conversation.id)).toHaveLength(0);
     });
 
-    it('throws NOT_FOUND for an unowned conversation', async () => {
+    it('returns 404 for an unowned conversation', async () => {
       const otherUser = await userFactory.createUser();
-      const conv = await db.conversation.create({
+      const conversation = await db.conversation.create({
         data: {
           userId: otherUser.id,
           organizationId: organization.id,
@@ -477,137 +491,18 @@ describe('Chat Router', () => {
       });
 
       const res = await api.chat.conversations[':id'].cancel.$post({
-        param: { id: conv.id },
+        param: { id: conversation.id },
         json: {},
       });
       expect(res.status).toBe(404);
     });
   });
 
-  describe('reconnect', () => {
-    it('throws NOT_FOUND for an unowned conversation', async () => {
-      const otherUser = await userFactory.createUser();
-      const conv = await db.conversation.create({
-        data: { userId: otherUser.id, organizationId: organization.id },
-      });
-
-      // Ownership is checked before the stream begins, so this is a real HTTP status.
-      const res = await api.chat.conversations[':id'].reconnect.$post({ param: { id: conv.id } });
-      expect(res.status).toBe(404);
-    });
-
-    it('replays the latest assistant message when the conversation is not locked', async () => {
-      const conv = await db.conversation.create({
-        data: { userId: user.id, organizationId: organization.id, generatingUntil: null },
-      });
-      await db.message.create({
-        data: {
-          conversationId: conv.id,
-          role: 'assistant',
-          parts: [{ type: 'text', text: 'Hello, world!' }],
-        },
-      });
-
-      const res = await api.chat.conversations[':id'].reconnect.$post({ param: { id: conv.id } });
-      const events = (await consume(res)) as Array<{
-        type?: string;
-        delta?: string;
-      }>;
-      const textDeltas = events.filter((e) => e.type === 'text-delta');
-      expect(textDeltas.some((e) => e.delta === 'Hello, world!')).toBe(true);
-    });
-
-    it('emits an error chunk when no assistant message exists for the conversation', async () => {
-      const conv = await db.conversation.create({
-        data: { userId: user.id, organizationId: organization.id, generatingUntil: null },
-      });
-      // Only a user message — the producer never persisted a reply.
-      await db.message.create({
-        data: {
-          conversationId: conv.id,
-          role: 'user',
-          parts: [{ type: 'text', text: 'Hi' }],
-        },
-      });
-
-      const res = await api.chat.conversations[':id'].reconnect.$post({ param: { id: conv.id } });
-      const events = (await consume(res)) as Array<{
-        type?: string;
-        errorText?: string;
-      }>;
-      const errorChunk = events.find((e) => e.type === 'error');
-      expect(errorChunk).toBeDefined();
-      expect(errorChunk?.errorText).toMatch(/interrupted/i);
-    });
-
-    it('clears an expired lock on cleanup', async () => {
-      const conv = await db.conversation.create({
-        data: {
-          userId: user.id,
-          organizationId: organization.id,
-          generatingUntil: new Date(Date.now() - 60_000), // already expired
-        },
-      });
-      await db.message.create({
-        data: {
-          conversationId: conv.id,
-          role: 'assistant',
-          parts: [{ type: 'text', text: 'hi' }],
-        },
-      });
-
-      const res = await api.chat.conversations[':id'].reconnect.$post({ param: { id: conv.id } });
-      await consume(res);
-
-      const after = await db.conversation.findUnique({ where: { id: conv.id } });
-      expect(after?.generatingUntil).toBeNull();
-    });
-
-    it('replays tool parts with input + output chunks', async () => {
-      const conv = await db.conversation.create({
-        data: { userId: user.id, organizationId: organization.id },
-      });
-      await db.message.create({
-        data: {
-          conversationId: conv.id,
-          role: 'assistant',
-          parts: [
-            {
-              type: 'tool-runCode',
-              toolCallId: 'call_1',
-              state: 'output-available',
-              input: { code: 'print(1)' },
-              output: { stdout: '1\n' },
-            },
-          ],
-        },
-      });
-
-      const res = await api.chat.conversations[':id'].reconnect.$post({ param: { id: conv.id } });
-      const events = (await consume(res)) as Array<{
-        type?: string;
-        toolCallId?: string;
-        toolName?: string;
-      }>;
-      expect(
-        events.some((e) => e.type === 'tool-input-available' && e.toolCallId === 'call_1'),
-      ).toBe(true);
-      expect(
-        events.some((e) => e.type === 'tool-output-available' && e.toolCallId === 'call_1'),
-      ).toBe(true);
-    });
-  });
-
   describe('get', () => {
-    it('returns the conversation with its title, messages, and lock state', async () => {
-      const lockTime = new Date(Date.now() + 30_000);
-      const conv = await db.conversation.create({
-        data: {
-          userId: user.id,
-          organizationId: organization.id,
-          title: 'A saved chat',
-          generatingUntil: lockTime,
-        },
+    it('returns the conversation with its title, messages, and generating state', async () => {
+      const conv = await createConversation({
+        title: 'A saved chat',
+        generatingUntil: new Date(Date.now() + 30_000),
       });
       await db.message.createMany({
         data: [
@@ -632,12 +527,32 @@ describe('Chat Router', () => {
 
       expect(result.id).toBe(conv.id);
       expect(result.title).toBe('A saved chat');
-      // JSON transport serializes dates to ISO strings.
-      expect(result.generatingUntil).toEqual(lockTime.toISOString());
+      expect(result.isGenerating).toBe(true);
       const messages: Array<{ id: string; role: string }> = result.messages;
       expect(messages).toHaveLength(2);
       expect(messages.map((m) => m.role)).toEqual(['user', 'assistant']);
       expect(messages.map((m) => m.id)).toEqual(['u1', 'a1']);
+    });
+
+    it('reports an expired lock (a producer that died) as not generating', async () => {
+      const conv = await createConversation({ generatingUntil: new Date(Date.now() - 1000) });
+
+      const res = await api.chat.conversations[':id'].$get({ param: { id: conv.id } });
+      const result = await res.json();
+      expect(result.isGenerating).toBe(false);
+    });
+
+    it('includes the cancelled flag in message metadata', async () => {
+      const conv = await createConversation();
+      await db.message.create({
+        data: { id: 'a1', conversationId: conv.id, role: 'assistant', parts: [], cancelled: true },
+      });
+
+      const res = await api.chat.conversations[':id'].$get({ param: { id: conv.id } });
+      const {
+        messages: [message],
+      } = await res.json();
+      expect(message?.metadata.cancelled).toBe(true);
     });
 
     it('throws NOT_FOUND for a conversation that does not exist', async () => {
