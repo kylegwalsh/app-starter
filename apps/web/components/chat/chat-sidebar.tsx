@@ -17,11 +17,12 @@ import {
   Input,
   Skeleton,
 } from '@repo/design/components/ui';
+import { cn } from '@repo/design/lib/utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2Icon, PlusIcon, MoreHorizontalIcon, PencilIcon, TrashIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -100,22 +101,6 @@ const ConversationItem: FC<ConversationItemProps> = ({ conversation, isActive })
     },
   });
 
-  // Focus the input after Radix finishes restoring focus to the dropdown trigger
-  useEffect(() => {
-    if (!isRenaming) {
-      return;
-    }
-    // Double rAF: first frame lets React commit the input to the DOM,
-    // second frame runs after Radix's focus-restoration microtask completes.
-    const id = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
-      });
-    });
-    return () => cancelAnimationFrame(id);
-  }, [isRenaming]);
-
   const startRename = () => {
     setRenameValue(conversation.title ?? '');
     setIsRenaming(true);
@@ -139,9 +124,10 @@ const ConversationItem: FC<ConversationItemProps> = ({ conversation, isActive })
   return (
     <>
       <div
-        className={`group flex h-9 shrink-0 items-center gap-1 rounded-md px-2 text-sm transition-colors ${
-          isActive ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'
-        }`}
+        className={cn(
+          'group flex h-9 shrink-0 items-center gap-1 rounded-md px-2 text-sm transition-colors',
+          isActive ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50',
+        )}
       >
         {isRenaming ? (
           <Input
@@ -168,11 +154,16 @@ const ConversationItem: FC<ConversationItemProps> = ({ conversation, isActive })
         {isWorking && (
           <Loader2Icon className="text-muted-foreground size-3 shrink-0 animate-spin" />
         )}
-        {!isWorking && !isRenaming && (
+        {/* Stays mounted while renaming, so closing it can hand focus to the input */}
+        {!isWorking && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                className="hidden size-6 shrink-0 group-hover:inline-flex data-[state=open]:inline-flex"
+                aria-label="Conversation actions"
+                className={cn(
+                  'hidden size-6 shrink-0',
+                  !isRenaming && 'group-hover:inline-flex data-[state=open]:inline-flex',
+                )}
                 size="icon"
                 variant="ghost"
               >
@@ -182,9 +173,11 @@ const ConversationItem: FC<ConversationItemProps> = ({ conversation, isActive })
             <DropdownMenuContent
               align="end"
               onCloseAutoFocus={(e) => {
-                // Stop Radix from focusing the trigger — the input will take focus instead.
+                // Hand focus to the rename input instead of the trigger
                 if (isRenaming) {
                   e.preventDefault();
+                  inputRef.current?.focus();
+                  inputRef.current?.select();
                 }
               }}
               side="right"
@@ -210,9 +203,7 @@ const ConversationItem: FC<ConversationItemProps> = ({ conversation, isActive })
           <AlertDialogHeader>
             <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
             <AlertDialogDescription>
-              {conversation.title
-                ? `"${conversation.title}" will be permanently deleted.`
-                : 'This conversation will be permanently deleted.'}
+              "{conversation.title}" will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -236,20 +227,19 @@ const NEXT_PAGE_TRIGGER_RATIO = 0.75;
 /** Sidebar listing all conversations with create/delete actions */
 export const ChatSidebar = () => {
   const { id: activeId } = useParams<{ id?: string }>();
-  const { data, isPending, hasNextPage, isFetchingNextPage, fetchNextPage } = useConversations();
-
-  // Flatten paginated results into a single list for rendering
-  const conversations = useMemo(
-    () => data?.pages.flatMap((page) => page.items) ?? [],
-    [data?.pages],
-  );
+  const {
+    data: conversations = [],
+    isPending,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useConversations();
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (!hasNextPage || isFetchingNextPage) {
       return;
     }
     const el = e.currentTarget;
-    // Trigger when the user has scrolled past 90% of the content (only 10% remains below)
     if (el.scrollTop + el.clientHeight >= el.scrollHeight * NEXT_PAGE_TRIGGER_RATIO) {
       fetchNextPage();
     }
@@ -261,7 +251,7 @@ export const ChatSidebar = () => {
       <div className="flex items-center justify-between border-b p-3">
         <h2 className="text-sm font-semibold">Chats</h2>
         <Button asChild size="icon" variant="ghost">
-          <Link href="/chat">
+          <Link aria-label="New chat" href="/chat">
             <PlusIcon className="size-4" />
           </Link>
         </Button>

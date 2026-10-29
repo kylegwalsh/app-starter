@@ -469,6 +469,31 @@ describe('Chat Router', () => {
       expect(messages[0]?.parts).toEqual([{ type: 'text', text: 'Half of it…' }]);
     });
 
+    it('replaces the full reply if it saved just before the lock cleared', async () => {
+      const conversation = await createConversation({
+        generatingUntil: new Date(Date.now() + 30_000),
+      });
+      await db.message.create({
+        data: {
+          id: 'reply-id',
+          conversationId: conversation.id,
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'The whole reply' }],
+        },
+      });
+
+      const res = await api.chat.conversations[':id'].cancel.$post({
+        param: { id: conversation.id },
+        json: { partial: { id: 'reply-id', parts: [{ type: 'text', text: 'The whole' }] } },
+      });
+      expect(await res.json()).toEqual({ cancelled: true });
+
+      const messages = await getMessages(conversation.id);
+      expect(messages).toHaveLength(1);
+      expect(messages[0]?.cancelled).toBe(true);
+      expect(messages[0]?.parts).toEqual([{ type: 'text', text: 'The whole' }]);
+    });
+
     it('returns { cancelled: false } and saves nothing when generation already finished', async () => {
       const conversation = await createConversation();
 

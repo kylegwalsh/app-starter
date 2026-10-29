@@ -1,4 +1,4 @@
-import type { Message, Prisma } from '@prisma/client';
+import type { Conversation, Message, Prisma } from '@prisma/client';
 import { ai, models, type Observed } from '@repo/ai';
 import { analytics } from '@repo/analytics';
 import { log } from '@repo/logs';
@@ -29,16 +29,17 @@ const DEFAULT_ERROR_MESSAGE = 'An error occurred while generating the response.'
 type UserMessage = z.infer<typeof chatSchema.chatMessage>['message'];
 
 // ---------- HELPERS ----------
-/** Finds a conversation belonging to the signed-in user and organization, or throws a 404 */
-const findOwnedConversation = async (id: string, { user, organization }: AuthContext) => {
-  const conversation = await db.conversation.findFirst({
-    where: { id, userId: user.id, organizationId: organization.id },
-  });
-  if (!conversation) {
+/** Returns the conversation if the signed-in user and organization own it, or throws a 404 */
+const requireOwned = (conversation: Conversation | null, { user, organization }: AuthContext) => {
+  if (conversation?.userId !== user.id || conversation.organizationId !== organization.id) {
     throw new NotFoundError('Conversation not found');
   }
   return conversation;
 };
+
+/** Finds a conversation belonging to the signed-in user and organization, or throws a 404 */
+const findOwnedConversation = async (id: string, context: AuthContext) =>
+  requireOwned(await db.conversation.findUnique({ where: { id } }), context);
 
 /** Converts a stored message row into an AI SDK UI message */
 const toUIMessage = (message: Message): UIMessage => ({
@@ -51,14 +52,12 @@ const toUIMessage = (message: Message): UIMessage => ({
 const findOrCreateConversation = async (
   conversationId: string,
   message: UserMessage,
-  { user, organization }: AuthContext,
+  context: AuthContext,
 ) => {
+  const { user, organization } = context;
   const existing = await db.conversation.findUnique({ where: { id: conversationId } });
-  if (existing && (existing.userId !== user.id || existing.organizationId !== organization.id)) {
-    throw new NotFoundError('Conversation not found');
-  }
   if (existing) {
-    return { conversation: existing, isNew: false };
+    return { conversation: requireOwned(existing, context), isNew: false };
   }
   const seed = getTitleSeed(message);
   const conversation = await db.conversation.create({
@@ -216,20 +215,19 @@ export const sendMessage = async (
   const { conversation, isNew } = await findOrCreateConversation(conversationId, message, context);
 
   // Only one response generates at a time (another tab may be mid-response)
-  if (!(await conversationLock.claim(conversation.id))) {
+  const lease = await conversationLock.claim(conversation.id);
+  if (!lease) {
     throw new ConflictError('This conversation is already generating a response');
   }
   const turn = await prepareTurn(conversation.id, message).catch(async (error: unknown) => {
-    await conversationLock.release(conversation.id);
+    await lease.release();
     throw error;
   });
 
   // Cancelling clears the lock; the heartbeat notices and aborts so the model stops spending
   // tokens and running tools
   const abortController = new AbortController();
-  const stopHeartbeat = conversationLock.startHeartbeat(conversation.id, () =>
-    abortController.abort(),
-  );
+  const stopHeartbeat = lease.startHeartbeat(() => abortController.abort());
 
   await analytics.chatMessageSent({
     userId: user.id,
@@ -280,7 +278,7 @@ export const sendMessage = async (
           },
           onFinish: async ({ responseMessage, isAborted }) => {
             // A cleared lock means the user cancelled, and the cancel saved what they saw
-            if (failed || isAborted || !(await conversationLock.extend(conversation.id))) {
+            if (failed || isAborted || !(await lease.extend())) {
               return;
             }
             try {
@@ -327,7 +325,7 @@ export const sendMessage = async (
     // Fires once the merged stream settles, so the lock covers the whole generation
     onFinish: async () => {
       stopHeartbeat();
-      await conversationLock.release(conversation.id).catch((error: unknown) => {
+      await lease.release().catch((error: unknown) => {
         log.warn({ err: error, conversationId: conversation.id }, 'Failed to release lock');
       });
     },
@@ -350,12 +348,12 @@ export const cancelGeneration = async (
 
   // Clearing the lock stops the producer: its heartbeat aborts the model, and it won't save its
   // own response. Nothing to cancel if it finished before the user hit Stop.
-  if (!(await conversationLock.release(conversationId))) {
+  if (!(await conversationLock.clear(conversationId))) {
     return { cancelled: false };
   }
 
   // Save what the user saw so a reload renders the same content and "stopped" badge
-  await db.message.create({
+  const saveCancelled = db.message.create({
     data: {
       id: partial?.id,
       conversationId,
@@ -364,6 +362,15 @@ export const cancelGeneration = async (
       cancelled: true,
     },
   });
+  if (!partial) {
+    await saveCancelled;
+    return { cancelled: true };
+  }
+  // Replaces the producer's copy if it saved in the moment before the lock cleared
+  await db.$transaction([
+    db.message.deleteMany({ where: { id: partial.id, conversationId } }),
+    saveCancelled,
+  ]);
   return { cancelled: true };
 };
 

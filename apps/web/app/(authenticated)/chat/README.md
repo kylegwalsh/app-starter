@@ -59,7 +59,7 @@ The chat endpoint is a Hono route at `POST /api/chat` (`apps/backend/features/ch
 
 ### Generation Lock & Cancelling
 
-`conversation.generatingUntil` is a lease (`lib/lock.ts`): one response generates per conversation at a time (a second send gets a 409), a heartbeat extends it while generating, and it expires on its own if the Lambda dies. Stop calls `POST /conversations/:id/cancel`, which releases the lock and saves the partial reply the user saw. The producer's heartbeat notices the lost lock and aborts the model, so it stops spending tokens and running tools, and it doesn't save its own response.
+`conversation.generatingUntil` is a lease (`lib/lock.ts`): one response generates per conversation at a time (a second send gets a 409), a heartbeat extends it while generating, and it expires on its own if the Lambda dies. Each holder matches on the last expiry it wrote, so a cancelled producer can never extend or release a newer send's lock. Stop calls `POST /conversations/:id/cancel`, which clears the lock and saves the partial reply the user saw. The producer's heartbeat notices the lost lock and aborts the model, so it stops spending tokens and running tools, and it doesn't save its own response.
 
 ### Context Compaction
 

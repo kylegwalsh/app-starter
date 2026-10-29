@@ -46,12 +46,15 @@ type ChatContextValue = {
   chat: Chat<ChatMessage>;
   conversationId: string | undefined;
   isWaiting: boolean;
+  /** A stop is still saving the stopped reply; sending before it lands would hit the old lock */
+  isStopping: boolean;
   /** The saved conversation being loaded, if any (views show a skeleton until it's ready) */
   loadingConversationId: string | undefined;
   /** Uploaded file URL → local blob URL, so just-sent files render without a round trip */
   localPreviews: ReadonlyMap<string, string>;
   sendMessage: (message: PromptInputMessage) => void;
-  stop: () => void;
+  /** Stops the response, keeping what streamed as a stopped reply */
+  stop: () => Promise<void>;
   /** Shows a blank new conversation (no-op if one is already showing) */
   startNewConversation: () => void;
   /** Loads a saved conversation and shows it */
@@ -73,6 +76,8 @@ const ChatProviderInner: FC<{ children: ReactNode }> = ({ children }) => {
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const [localPreviews, setLocalPreviews] = useState<ReadonlyMap<string, string>>(new Map());
+  // The previews' blob URLs, revoked once their conversation is left
+  const previewUrlsRef = useRef<string[]>([]);
   // Points at `reconnect` below (chats are created before it's defined)
   const reconnectRef = useRef<(conversationId: string) => void>(() => {});
 
@@ -132,6 +137,14 @@ const ChatProviderInner: FC<{ children: ReactNode }> = ({ children }) => {
   const activate = useCallback((next: ActiveConversation) => {
     // The server keeps generating it, and reopening the conversation waits for it to land
     activeRef.current.chat.stop();
+    // Reopening a conversation loads freshly signed URLs, so its local previews are done with
+    if (next.conversationId !== activeRef.current.conversationId) {
+      for (const url of previewUrlsRef.current) {
+        URL.revokeObjectURL(url);
+      }
+      previewUrlsRef.current = [];
+      setLocalPreviews(new Map());
+    }
     activeRef.current = next;
     setActive(next);
   }, []);
@@ -171,22 +184,31 @@ const ChatProviderInner: FC<{ children: ReactNode }> = ({ children }) => {
   /** Shows a saved conversation; if its response is still generating, polls until it's saved */
   const showConversation = useCallback(
     (id: string, saved: SavedConversation) => {
-      const show = (current: SavedConversation) => {
-        // The wire type can't express the AI SDK's `UIMessage` part union; the shapes match
-        const chat = createChat(id, current.messages as ChatMessage[]);
-        activate({ conversationId: id, chat, isWaiting: current.isGenerating });
-        if (!current.isGenerating) {
-          return;
-        }
+      // The wire type can't express the AI SDK's `UIMessage` part union; the shapes match
+      const chat = createChat(id, saved.messages as ChatMessage[]);
+      activate({ conversationId: id, chat, isWaiting: saved.isGenerating });
+
+      // The reply is only saved once it finishes, so keep the chat as is until then
+      const poll = () =>
         setTimeout(async () => {
-          const latest = await fetchConversation(id).catch(() => current);
+          const latest = await fetchConversation(id).catch(() => {});
           // Stop once the user has moved on to another conversation
-          if (activeRef.current.chat === chat) {
-            show(latest);
+          if (activeRef.current.chat !== chat) {
+            return;
           }
+          if (!latest || latest.isGenerating) {
+            poll();
+            return;
+          }
+          activate({
+            conversationId: id,
+            chat: createChat(id, latest.messages as ChatMessage[]),
+            isWaiting: false,
+          });
         }, GENERATION_POLL_MS);
-      };
-      show(saved);
+      if (saved.isGenerating) {
+        poll();
+      }
     },
     [activate, createChat, fetchConversation],
   );
@@ -259,14 +281,6 @@ const ChatProviderInner: FC<{ children: ReactNode }> = ({ children }) => {
         toast.error('Some attachments failed to upload. Remove them and try again.');
         return;
       }
-      setLocalPreviews((previews) => {
-        const next = new Map(previews);
-        for (const { part, blob } of files) {
-          next.set(part.url, URL.createObjectURL(blob));
-        }
-        return next;
-      });
-
       let { chat } = current;
       if (!current.conversationId) {
         // A new conversation: the client picks its ID and the server creates it on first send
@@ -286,11 +300,20 @@ const ChatProviderInner: FC<{ children: ReactNode }> = ({ children }) => {
           router.push(`/chat/${conversationId}`);
         }
       }
+
+      // After `activate`, which clears the previews of the conversation it leaves
+      const previews = files.map(
+        ({ part, blob }) => [part.url, URL.createObjectURL(blob)] as const,
+      );
+      previewUrlsRef.current.push(...previews.map(([, url]) => url));
+      setLocalPreviews((existing) => new Map([...existing, ...previews]));
+
       chat.sendMessage({ text: message.text, files: files.map(({ part }) => part) });
     },
     [activate, createChat, pathname, queryClient, router],
   );
 
+  const [isStopping, setIsStopping] = useState(false);
   const stop = useCallback(async () => {
     const { chat, conversationId } = activeRef.current;
     await chat.stop();
@@ -308,9 +331,11 @@ const ChatProviderInner: FC<{ children: ReactNode }> = ({ children }) => {
     ];
 
     // Best-effort: the server saves the same partial, so a reload shows what the user saw
+    setIsStopping(true);
     await client.chat.conversations[':id'].cancel
       .$post({ param: { id: conversationId }, json: { partial } })
       .catch(() => {});
+    setIsStopping(false);
   }, []);
 
   const value = useMemo(
@@ -318,15 +343,17 @@ const ChatProviderInner: FC<{ children: ReactNode }> = ({ children }) => {
       chat: active.chat,
       conversationId: active.conversationId,
       isWaiting: active.isWaiting,
+      isStopping,
       loadingConversationId,
       localPreviews,
       sendMessage,
-      stop: () => stop(),
+      stop,
       startNewConversation,
       openConversation,
     }),
     [
       active,
+      isStopping,
       loadingConversationId,
       localPreviews,
       sendMessage,

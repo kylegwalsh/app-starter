@@ -14,15 +14,13 @@ export type ShimmerProps = HTMLAttributes<HTMLSpanElement> & {
 export const Shimmer = ({ className, children, duration = 2, style, ...props }: ShimmerProps) => (
   <span
     className={cn('animate-shimmer bg-clip-text text-transparent', className)}
-    style={
-      {
-        backgroundImage:
-          'linear-gradient(90deg, var(--color-muted-foreground) 0%, var(--color-foreground) 40%, var(--color-muted-foreground) 60%, var(--color-muted-foreground) 100%)',
-        backgroundSize: '200% 100%',
-        animationDuration: `${String(duration)}s`,
-        ...style,
-      } as React.CSSProperties
-    }
+    style={{
+      backgroundImage:
+        'linear-gradient(90deg, var(--color-muted-foreground) 0%, var(--color-foreground) 40%, var(--color-muted-foreground) 60%, var(--color-muted-foreground) 100%)',
+      backgroundSize: '200% 100%',
+      animationDuration: `${String(duration)}s`,
+      ...style,
+    }}
     {...props}
   >
     {children}

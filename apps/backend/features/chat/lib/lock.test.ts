@@ -24,25 +24,54 @@ describe('conversationLock', () => {
     return conversation?.generatingUntil ?? null;
   };
 
+  /** Claims the lock, failing the test if it's already held */
+  const claim = async () => {
+    const lease = await conversationLock.claim(conversationId);
+    if (!lease) {
+      throw new Error('Expected to claim the lock');
+    }
+    return lease;
+  };
+
   it('claims a free lock once', async () => {
-    await expect(conversationLock.claim(conversationId)).resolves.toBe(true);
-    await expect(conversationLock.claim(conversationId)).resolves.toBe(false);
+    await claim();
+    await expect(conversationLock.claim(conversationId)).resolves.toBeUndefined();
     expect(conversationLock.isActive(await getExpiry())).toBe(true);
   });
 
   it('takes over a stale lock', async () => {
     await setExpiry(new Date(Date.now() - 1000));
-    await expect(conversationLock.claim(conversationId)).resolves.toBe(true);
+    await expect(conversationLock.claim(conversationId)).resolves.toBeDefined();
   });
 
   it('reports a cleared lock when extending (the cancel probe)', async () => {
-    await conversationLock.claim(conversationId);
-    await expect(conversationLock.extend(conversationId)).resolves.toBe(true);
+    const lease = await claim();
+    await expect(lease.extend()).resolves.toBe(true);
 
-    await expect(conversationLock.release(conversationId)).resolves.toBe(true);
-    await expect(conversationLock.extend(conversationId)).resolves.toBe(false);
-    await expect(conversationLock.release(conversationId)).resolves.toBe(false);
+    await expect(conversationLock.clear(conversationId)).resolves.toBe(true);
+    await expect(lease.extend()).resolves.toBe(false);
+    await expect(lease.release()).resolves.toBe(false);
+    await expect(conversationLock.clear(conversationId)).resolves.toBe(false);
     expect(conversationLock.isActive(await getExpiry())).toBe(false);
+  });
+
+  it("never extends or releases a newer holder's lock after a cancel", async () => {
+    const stopped = await claim();
+    await conversationLock.clear(conversationId);
+    const next = await claim();
+
+    // The stopped producer finds the lock isn't its own, and can't free it
+    await expect(stopped.extend()).resolves.toBe(false);
+    await expect(stopped.release()).resolves.toBe(false);
+    expect(conversationLock.isActive(await getExpiry())).toBe(true);
+
+    await expect(next.extend()).resolves.toBe(true);
+    await expect(next.release()).resolves.toBe(true);
+  });
+
+  it('keeps the lock when a heartbeat and a final check extend at once', async () => {
+    const lease = await claim();
+    await expect(Promise.all([lease.extend(), lease.extend()])).resolves.toEqual([true, true]);
   });
 
   it('treats an expired lock as inactive', () => {
@@ -54,15 +83,15 @@ describe('conversationLock', () => {
   it('calls onLost once the heartbeat finds the lock cleared', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     try {
-      await conversationLock.claim(conversationId);
+      const lease = await claim();
       const onLost = vi.fn<() => void>();
-      const stop = conversationLock.startHeartbeat(conversationId, onLost);
+      const stop = lease.startHeartbeat(onLost);
 
       await vi.advanceTimersToNextTimerAsync();
       await vi.waitFor(async () => expect(await getExpiry()).not.toBeNull());
       expect(onLost).not.toHaveBeenCalled();
 
-      await conversationLock.release(conversationId);
+      await conversationLock.clear(conversationId);
       await vi.advanceTimersToNextTimerAsync();
       await vi.waitFor(() => expect(onLost).toHaveBeenCalledOnce());
       stop();

@@ -19,6 +19,7 @@ import {
   PromptInputTools,
   usePromptInputAttachments,
 } from '@repo/design';
+import { toast } from 'sonner';
 
 import { useActiveChat, useChatContext } from './chat-provider';
 import { useChatUploads } from './chat-uploads';
@@ -31,7 +32,7 @@ const AttachmentPreviews: FC<{ uploads: ReturnType<typeof useChatUploads> }> = (
   }
   return (
     <PromptInputHeader className="px-3 pt-2 pb-1">
-      <Attachments variant="inline">
+      <Attachments>
         {files.map((file) => {
           const upload = uploads.byUrl.get(file.url);
           return (
@@ -55,18 +56,22 @@ const AttachmentPreviews: FC<{ uploads: ReturnType<typeof useChatUploads> }> = (
 
 /** Prompt input bar with staged-attachment previews and the attach-file menu */
 export const PromptInputBar: FC<{ disabled?: boolean }> = ({ disabled = false }) => {
-  const { isWaiting, sendMessage, stop } = useChatContext();
+  const { isStopping, isWaiting, sendMessage, stop } = useChatContext();
   const { status } = useActiveChat();
   const uploads = useChatUploads();
-  // Block sending while attachments are uploading or failed, or a response is generating
-  // elsewhere. Shown as disabled rather than a spinner — the tiles already signal "uploading".
-  const disableSend = disabled || isWaiting || uploads.isUploading || uploads.hasError;
+  // Block sending while attachments are uploading or failed, a response is generating elsewhere,
+  // or a stop is still landing. Shown as disabled rather than a spinner — the tiles already signal
+  // "uploading".
+  const disableSend =
+    disabled || isWaiting || isStopping || uploads.isUploading || uploads.hasError;
 
   return (
     <PromptInput
       accept={CHAT_ALLOWED_FILE_TYPES.join(',')}
       maxFileSize={CHAT_MAX_FILE_SIZE}
       multiple
+      // Files the input rejects (wrong type, too large) would otherwise vanish without a word
+      onError={(error) => toast.error(error.message)}
       onSubmit={sendMessage}
     >
       <AttachmentPreviews uploads={uploads} />

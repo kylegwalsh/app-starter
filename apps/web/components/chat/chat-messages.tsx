@@ -12,7 +12,7 @@ import {
   Steps,
   ToolStep,
 } from '@repo/design';
-import { isFileUIPart } from 'ai';
+import { getToolName, isFileUIPart, isTextUIPart } from 'ai';
 import { CircleXIcon } from 'lucide-react';
 
 import { api } from '@/lib/api';
@@ -23,9 +23,8 @@ import {
   formatToolName,
   isProcessPart,
   isProcessPartActive,
-  isTextPart,
   type ChatMessage,
-  type ChatMessagePart,
+  type ProcessPart,
 } from './chat-utils';
 
 /** Thin wrapper that injects the chat context's localPreviews + the app's file-type map. */
@@ -47,7 +46,7 @@ const ChatMessageAttachments: FC<{
 /** User message bubble — right-aligned with rounded secondary background */
 export const UserMessage: FC<{ message: ChatMessage }> = ({ message }) => {
   const fileParts = message.parts.filter((p) => isFileUIPart(p));
-  const textParts = message.parts.filter((p) => isTextPart(p));
+  const textParts = message.parts.filter((p) => isTextUIPart(p));
 
   return (
     <div className="group/message w-full">
@@ -73,54 +72,30 @@ export const UserMessage: FC<{ message: ChatMessage }> = ({ message }) => {
  * open while streaming, tool calls open while their input is still streaming
  * or before the output arrives, everything else closes by default.
  */
-const ProcessSteps: FC<{ parts: ChatMessagePart[]; isAnimating: boolean }> = ({
+const ProcessSteps: FC<{ parts: ProcessPart[]; isAnimating: boolean }> = ({
   parts,
   isAnimating,
 }) => {
-  if (parts.length === 0) {
-    return null;
-  }
   // A stopped reply can leave tools mid-call, so only a streaming message has active steps
   const anyActive = isAnimating && parts.some((p) => isProcessPartActive(p));
   return (
     <Steps count={parts.length} defaultOpen={anyActive}>
-      {parts.map((part, index) => {
-        if (part.type === 'reasoning') {
-          const state = (part as { state?: 'streaming' | 'done' }).state ?? 'done';
-          return (
-            // oxlint-disable-next-line react/no-array-index-key -- reasoning parts have no stable id
-            <Reasoning key={`reasoning-${index}`} state={state}>
-              {(part as { text?: string }).text ?? ''}
-            </Reasoning>
-          );
-        }
-        if (part.type === 'dynamic-tool' || part.type.startsWith('tool-')) {
-          // Both static (`tool-${name}`) and dynamic-tool parts share the same
-          // shape modulo a `toolName` field on dynamic-tool.
-          const toolPart = part as {
-            type: string;
-            toolCallId: string;
-            toolName?: string;
-            state: string;
-            output?: unknown;
-            errorText?: string;
-          };
-          const rawToolName =
-            part.type === 'dynamic-tool'
-              ? (toolPart.toolName ?? 'tool')
-              : part.type.slice('tool-'.length);
-          return (
-            <ToolStep
-              defaultOpen={isAnimating && isProcessPartActive(part)}
-              failed={toolPart.state === 'output-error' || toolPart.errorText != null}
-              key={toolPart.toolCallId}
-              name={formatToolName(rawToolName)}
-              output={toolPart.output ?? undefined}
-            />
-          );
-        }
-        return null;
-      })}
+      {parts.map((part, index) =>
+        part.type === 'reasoning' ? (
+          // oxlint-disable-next-line react/no-array-index-key -- reasoning parts have no stable id
+          <Reasoning key={`reasoning-${index}`} state={part.state ?? 'done'}>
+            {part.text}
+          </Reasoning>
+        ) : (
+          <ToolStep
+            defaultOpen={isAnimating && isProcessPartActive(part)}
+            failed={part.state === 'output-error'}
+            key={part.toolCallId}
+            name={formatToolName(getToolName(part))}
+            output={part.output}
+          />
+        ),
+      )}
     </Steps>
   );
 };
@@ -153,20 +128,32 @@ export const AssistantMessage: FC<AssistantMessageProps> = ({
   // inline. This mirrors how ChatGPT / Claude show the model's process before
   // the final answer.
   const rendered: React.ReactNode[] = [];
-  let stepBuffer: ChatMessagePart[] = [];
-  const flushSteps = (key: string) => {
+  let stepBuffer: ProcessPart[] = [];
+  // Keyed by where the group starts, which doesn't move as later parts stream in, so the
+  // group isn't remounted (losing what the user opened) when the answer text arrives
+  let stepStart = 0;
+  const flushSteps = () => {
     if (stepBuffer.length === 0) {
       return;
     }
-    rendered.push(<ProcessSteps isAnimating={isAnimating} key={key} parts={stepBuffer} />);
+    rendered.push(
+      <ProcessSteps
+        isAnimating={isAnimating}
+        key={`${message.id}-steps-${stepStart}`}
+        parts={stepBuffer}
+      />,
+    );
     stepBuffer = [];
   };
   for (const [partIndex, part] of contentParts.entries()) {
     if (isProcessPart(part)) {
+      if (stepBuffer.length === 0) {
+        stepStart = partIndex;
+      }
       stepBuffer.push(part);
       continue;
     }
-    flushSteps(`${message.id}-steps-${partIndex}`);
+    flushSteps();
     if (part.type === 'text') {
       rendered.push(
         <MessageContent
@@ -179,7 +166,7 @@ export const AssistantMessage: FC<AssistantMessageProps> = ({
       );
     }
   }
-  flushSteps(`${message.id}-steps-end`);
+  flushSteps();
 
   return (
     <div className="group/message w-full">

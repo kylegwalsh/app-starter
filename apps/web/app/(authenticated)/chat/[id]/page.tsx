@@ -8,9 +8,8 @@ import { ChatView, useChatContext } from '@/components/chat';
 
 /** Existing conversation page — shows the conversation full screen */
 const ChatConversationPage = () => {
-  const params = useParams();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const id = params.id as string;
   const { openConversation } = useChatContext();
 
   // Show this conversation (a no-op if it's already active, e.g. just started or expanded from

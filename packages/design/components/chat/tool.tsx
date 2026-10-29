@@ -8,10 +8,8 @@ import {
 import { cn } from '@repo/design/lib/utils';
 import type { DynamicToolUIPart, ToolUIPart } from 'ai';
 import { ChevronRightIcon, WrenchIcon } from 'lucide-react';
-import type { ComponentProps, ReactNode } from 'react';
-import { isValidElement } from 'react';
+import type { ComponentProps } from 'react';
 
-import { CodeBlock } from './code-block';
 import { MessageResponse } from './message';
 
 export type ToolPart = ToolUIPart | DynamicToolUIPart;
@@ -47,20 +45,10 @@ export const ToolOutput = ({ className, output, ...props }: ToolOutputProps) => 
     );
   }
 
-  // Object outputs get a compact JSON block — structured data still benefits
-  // from formatting, but without the surrounding bordered card.
-  if (typeof output === 'object' && !isValidElement(output)) {
-    return (
-      <div className={cn('text-xs', className)} {...props}>
-        <CodeBlock code={JSON.stringify(output, null, 2)} language="json" />
-      </div>
-    );
-  }
-
-  // React node output — pass through as-is.
+  // Structured outputs get a highlighted JSON block, without the surrounding card
   return (
     <div className={cn('text-xs', className)} {...props}>
-      {output as ReactNode}
+      <MessageResponse>{`\`\`\`json\n${JSON.stringify(output, null, 2)}\n\`\`\``}</MessageResponse>
     </div>
   );
 };

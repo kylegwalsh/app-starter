@@ -50,5 +50,9 @@ export const conversationListCache = {
     }),
 };
 
-/** Loads the current user's conversations as a paginated infinite list */
-export const useConversations = () => useInfiniteQuery(chatListInfiniteOptions);
+/** Loads the current user's conversations as a paginated infinite list, flattened to one array */
+export const useConversations = () =>
+  useInfiniteQuery({
+    ...chatListInfiniteOptions,
+    select: (data) => data.pages.flatMap((page) => page.items),
+  });

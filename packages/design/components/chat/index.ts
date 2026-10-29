@@ -2,7 +2,6 @@ export * from './attachments';
 export * from './chat-error';
 export * from './chat-file';
 export * from './chat-image';
-export * from './code-block';
 export * from './conversation';
 export * from './copy-button';
 export * from './feedback-buttons';

@@ -16,7 +16,6 @@
 - Add Daytona setup to init script (sign up at daytona.io, get API key, `sst secret set DAYTONA_API_KEY <value>`)
 - Make Daytona sandbox manager fail gracefully when API key is not configured (return tool error, don't crash)
 - Clean up any generated code
-- Add new storybook stories for new design system files
 - Test compaction
 
 ## PRISMA V8

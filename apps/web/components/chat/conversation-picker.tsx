@@ -25,11 +25,10 @@ import { useChatContext } from './chat-provider';
 export const ConversationPicker = () => {
   const { conversationId, loadingConversationId, openConversation, startNewConversation } =
     useChatContext();
-  const { data, isPending } = useConversations();
+  const { data: conversations = [], isPending } = useConversations();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
-  const conversations = data?.pages.flatMap((page) => page.items) ?? [];
   // The list already has every title, so a conversation being loaded can show its title right away
   const selectedId = loadingConversationId ?? conversationId;
   const selected = conversations.find((c) => c.id === selectedId);
