@@ -23,23 +23,6 @@ export const chatSchema = {
     comment: z.string().max(1000).optional(),
   }),
 
-  /** Schema for message metadata — flows through the stream and persists with the message */
-  messageMetadata: z.object({
-    traceId: z.string().optional(),
-    feedback: z.boolean().optional(),
-    /** True if this assistant message was stopped by the user mid-stream. */
-    cancelled: z.boolean().optional(),
-  }),
-
-  /** Data parts the chat stream sends alongside the response (keyed by name, sent as `data-<name>`) */
-  dataParts: {
-    /**
-     * A new conversation's AI-generated title. It's generated alongside the response and sent as
-     * soon as it's ready, so the sidebar can show it without waiting for the response to finish.
-     */
-    'conversation-title': z.object({ title: z.string() }),
-  },
-
   /** Schema for cancelling a chat — `partial` is the assistant message the user saw before stopping */
   cancel: z.object({
     partial: z
@@ -61,4 +44,20 @@ export const chatSchema = {
       parts: z.array(z.object({ type: z.string() }).passthrough()),
     }),
   }),
+};
+
+/** Metadata attached to each message */
+export type ChatMessageMetadata = {
+  /** The id of the trace that generated this message */
+  traceId?: string;
+  /** Whether any feedback has been provided for this message */
+  feedback?: boolean;
+  /** True if this assistant message was stopped by the user mid-stream. */
+  cancelled?: boolean;
+};
+
+/** Data parts the chat stream sends alongside the response (keyed by name, sent as `data-<name>`) */
+export type ChatDataParts = {
+  /** A new conversation's AI-generated title, sent mid-stream so the sidebar can show it early */
+  'conversation-title': { title: string };
 };

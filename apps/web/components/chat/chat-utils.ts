@@ -1,4 +1,4 @@
-import type { chatSchema } from '@repo/schemas';
+import type { ChatDataParts, ChatMessageMetadata } from '@repo/schemas';
 import {
   type DynamicToolUIPart,
   isReasoningUIPart,
@@ -8,15 +8,11 @@ import {
   type ToolUIPart,
   type UIMessage,
 } from 'ai';
-import type { z } from 'zod';
 
 // ---------- Types ----------
 
 /** A chat message with our typed metadata (traceId, feedback, cancelled) */
-export type ChatMessage = UIMessage<
-  z.infer<typeof chatSchema.messageMetadata>,
-  { 'conversation-title': z.infer<(typeof chatSchema.dataParts)['conversation-title']> }
->;
+export type ChatMessage = UIMessage<ChatMessageMetadata, ChatDataParts>;
 export type ChatMessagePart = ChatMessage['parts'][number];
 
 // ---------- Part predicates ----------

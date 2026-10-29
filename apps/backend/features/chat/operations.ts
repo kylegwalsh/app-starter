@@ -26,7 +26,7 @@ import {
 } from './lib/attachments';
 import { compactContext } from './lib/compaction';
 import { conversationLock } from './lib/lock';
-import { loadMessages, toUIMessage } from './lib/messages';
+import { type ChatMessage, loadMessages, toUIMessage } from './lib/messages';
 import { getTitleSeed, saveGeneratedTitle, truncateTitle } from './lib/title';
 import { SYSTEM_PROMPT } from './prompts';
 
@@ -250,7 +250,7 @@ export const sendMessage = async (
     analytics.captureException(error, { conversationId: conversation.id, ...properties });
   };
 
-  return createUIMessageStream({
+  return createUIMessageStream<ChatMessage>({
     execute: async ({ writer }) => {
       // Title a new conversation alongside the response, so the sidebar can show it mid-stream
       const seed = isNew ? getTitleSeed(message) : undefined;
@@ -267,7 +267,7 @@ export const sendMessage = async (
       });
 
       writer.merge(
-        result.toUIMessageStream({
+        result.toUIMessageStream<ChatMessage>({
           generateMessageId: createIdGenerator({ prefix: 'msg', size: 16 }),
           // Attach the Langfuse trace ID so feedback can score it
           messageMetadata: ({ part }) => (part.type === 'finish' ? { traceId } : undefined),

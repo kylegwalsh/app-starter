@@ -2,7 +2,6 @@
 
 import { Chat, useChat } from '@ai-sdk/react';
 import { PromptInputProvider, type PromptInputMessage } from '@repo/design';
-import { chatSchema } from '@repo/schemas';
 import { useQueryClient } from '@tanstack/react-query';
 import { DefaultChatTransport } from 'ai';
 import { ApiError } from 'hono-tanstack-query';
@@ -89,8 +88,6 @@ const ChatProviderInner: FC<{ children: ReactNode }> = ({ children }) => {
       new Chat<ChatMessage>({
         id: conversationId,
         messages,
-        messageMetadataSchema: chatSchema.messageMetadata,
-        dataPartSchemas: chatSchema.dataParts,
         transport: new DefaultChatTransport<ChatMessage>({
           api: `${apiUrl}/chat`,
           credentials: 'include',
