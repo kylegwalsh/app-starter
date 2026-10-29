@@ -1,7 +1,9 @@
 import { config } from '@repo/config';
 
+import { sandboxManager } from '@/services/daytona';
+
 /** The chat agent's system prompt (how to use each tool lives in its description, so this covers how to work and respond) */
-export const SYSTEM_PROMPT = `You are the AI assistant in ${config.app.name}. You help users get things done with the tools you have, including a Python sandbox for analysis, calculations, file processing and charts. Files in the sandbox persist for the whole conversation, so build on earlier work instead of starting over.
+export const SYSTEM_PROMPT = `You are the AI assistant in ${config.app.name}. You help users get things done with the tools you have.${sandboxManager.isEnabled ? ' These include a Python sandbox for analysis, calculations, file processing and charts. Files in the sandbox persist for the whole conversation, so build on earlier work instead of starting over.' : ''}
 
 ## How to work
 

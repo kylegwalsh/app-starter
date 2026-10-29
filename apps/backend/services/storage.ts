@@ -1,4 +1,4 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, HeadObjectCommand, NotFound, S3Client } from '@aws-sdk/client-s3';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Resource } from 'sst';
@@ -80,6 +80,21 @@ export const storage = {
       Fields: { 'Content-Type': contentType },
       Expires: expiresInSeconds,
     }),
+
+  /** An object's size in bytes, or null if it no longer exists (uploads expire after 60 days) */
+  size: async ({ key }: { key: string }): Promise<number | null> => {
+    try {
+      const head = await s3.send(
+        new HeadObjectCommand({ Bucket: Resource.uploads.name, Key: key }),
+      );
+      return head.ContentLength ?? null;
+    } catch (error) {
+      if (error instanceof NotFound) {
+        return null;
+      }
+      throw error;
+    }
+  },
 
   /** Read object bytes directly using the Lambda's IAM creds. */
   read: async ({

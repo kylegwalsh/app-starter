@@ -11,12 +11,9 @@
 ## AI
 
 - Test that routes, docs, MCP all work without custom domain
-- Ensure unsupported files are sent to Daytona for code exec
-- Ensure we don't overly use Daytona (seems to want to save TODOs there or something)
-- Add Daytona setup to init script (sign up at daytona.io, get API key, `sst secret set DAYTONA_API_KEY <value>`)
-- Make Daytona sandbox manager fail gracefully when API key is not configured (return tool error, don't crash)
 - Clean up any generated code
 - Test compaction
+- Figure out crisp chat with new sidebar
 
 ## PRISMA V8
 

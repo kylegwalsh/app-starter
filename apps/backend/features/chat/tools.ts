@@ -4,15 +4,31 @@ import { createTool } from '@/ai/utils';
 import { BadRequestError, UnprocessableError } from '@/api/error';
 import { sandboxManager } from '@/services/daytona';
 
-// These tools are chat-only (`consumers: ['chat']`): MCP clients run their own code
+import { copyUploadsToSandbox } from './lib/attachments';
+import { loadMessages, toUIMessage } from './lib/messages';
 
-/** Get the sandbox, throwing if unavailable */
+// These tools are chat-only (MCP clients run their own code)
+
+/** Gets the conversation's sandbox with its attachments copied in, throwing if unavailable */
 const requireSandbox = async (conversationId: string | undefined) => {
   if (!conversationId) {
     throw new BadRequestError('Code execution requires an active conversation.');
   }
-  return sandboxManager.getOrCreate(conversationId);
+  const [sandbox, messages] = await Promise.all([
+    sandboxManager.getOrCreate(conversationId),
+    loadMessages(conversationId),
+  ]);
+  // Copied on first use rather than on upload, so attaching a file never starts a sandbox
+  await copyUploadsToSandbox(
+    sandbox,
+    messages.map((message) => toUIMessage(message)),
+  );
+  return sandbox;
 };
+
+/** Steers the model off using the sandbox when it doesn't need code */
+const SANDBOX_USE_GUIDANCE =
+  'Use it when the task genuinely calls for code, such as analysing data, calculations too involved to do reliably in your head, charts, or opening an attachment saved under /home/daytona/uploads. Simple tasks are better answered directly.';
 
 /** Formats a process's output as a code block, noting when it printed nothing */
 const formatOutput = (output: string) =>
@@ -35,14 +51,14 @@ const formatFailure = ({ exitCode, result }: { exitCode: number; result: string 
 /** Execute Python code in a persistent sandboxed environment */
 export const runCode = createTool({
   name: 'run-code',
-  description:
-    'Execute Python code in a persistent sandboxed environment. Files and variables persist across calls within the conversation. Use for data analysis, calculations, file processing, and generating charts. Save charts to /output/ directory.',
+  description: `Execute Python code in this conversation's sandbox. Files and variables persist across calls within the conversation. Save charts to /output/. ${SANDBOX_USE_GUIDANCE}`,
   inputSchema: {
     code: z.string().describe('Python code to execute'),
     timeout: z.number().optional().describe('Timeout in seconds (default 30)'),
   },
   annotations: { readOnlyHint: false, destructiveHint: false },
-  consumers: ['chat'],
+  // Disabled when the sandbox (Daytona) isn't configured
+  consumers: sandboxManager.isEnabled ? ['chat'] : [],
   handler: async (args, session) => {
     const sandbox = await requireSandbox(session.conversationId);
     const before = await listOutputImages(sandbox);
@@ -64,14 +80,14 @@ export const runCode = createTool({
 /** Write content to a file in the sandbox */
 export const sandboxWriteFile = createTool({
   name: 'write-file',
-  description:
-    'Write content to a file in the sandbox. Use for saving data, scripts, configs, or CSV files for analysis.',
+  description: `Write content to a file in the sandbox, as input for code you're about to run. ${SANDBOX_USE_GUIDANCE}`,
   inputSchema: {
     path: z.string().describe('File path in the sandbox (e.g., /home/daytona/data.csv)'),
     content: z.string().describe('File content to write'),
   },
   annotations: { readOnlyHint: false, destructiveHint: false },
-  consumers: ['chat'],
+  // Disabled when the sandbox (Daytona) isn't configured
+  consumers: sandboxManager.isEnabled ? ['chat'] : [],
   handler: async (args, session) => {
     const sandbox = await requireSandbox(session.conversationId);
     await sandbox.fs.uploadFile(Buffer.from(args.content, 'utf8'), args.path);
@@ -83,12 +99,13 @@ export const sandboxWriteFile = createTool({
 export const sandboxReadFile = createTool({
   name: 'read-file',
   description:
-    'Read a file from the sandbox. Use to check results, review generated data, or read analysis output.',
+    'Read a text file from the sandbox, such as code output or a text attachment saved under /home/daytona/uploads. Use run-code to open binary files (spreadsheets, archives, images).',
   inputSchema: {
     path: z.string().describe('File path to read'),
   },
   annotations: { readOnlyHint: true, destructiveHint: false },
-  consumers: ['chat'],
+  // Disabled when the sandbox (Daytona) isn't configured
+  consumers: sandboxManager.isEnabled ? ['chat'] : [],
   handler: async (args, session) => {
     const sandbox = await requireSandbox(session.conversationId);
     const content = await sandbox.fs.downloadFile(args.path);
@@ -127,14 +144,15 @@ const ALLOWED_COMMAND_PREFIXES = [
 /** Run a shell command in the sandbox */
 export const sandboxExecuteCommand = createTool({
   name: 'execute-command',
-  description: `Run a shell command in the sandbox. Allowed commands: ${ALLOWED_COMMAND_PREFIXES.join(', ')}. Use for installing packages and running scripts.`,
+  description: `Run a shell command in the sandbox. Allowed commands: ${ALLOWED_COMMAND_PREFIXES.join(', ')}. Use for installing packages and running scripts. ${SANDBOX_USE_GUIDANCE}`,
   inputSchema: {
     command: z.string().describe('Shell command to run'),
     cwd: z.string().optional().describe('Working directory'),
     timeout: z.number().optional().describe('Timeout in seconds (default 30)'),
   },
   annotations: { readOnlyHint: false, destructiveHint: false },
-  consumers: ['chat'],
+  // Disabled when the sandbox (Daytona) isn't configured
+  consumers: sandboxManager.isEnabled ? ['chat'] : [],
   handler: async (args, session) => {
     // Block shell metacharacters (and newlines) so one allowed command can't chain another
     if (/[;|&`$><\n\r]/.test(args.command)) {

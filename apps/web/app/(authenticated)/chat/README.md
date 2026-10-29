@@ -126,7 +126,12 @@ The bucket is never public. Every link is a presigned S3 URL that's valid for 24
 
 ### Sending Files to the Model
 
-When the AI SDK needs a file's contents and the model can't fetch the URL itself, the chat turn reads the bytes directly from S3 with the Lambda's IAM credentials (`downloadUploadsFromS3` in `apps/backend/features/chat/lib/attachments.ts`). An expired stored URL therefore never breaks a conversation. File names are also sanitized and made unique before reaching Bedrock, which rejects most punctuation and duplicate names.
+Bedrock's Converse API reads images (JPEG, PNG, GIF, WebP; up to 3.75 MB, 20 per request) and documents (PDF, Word, Excel, CSV, HTML, text, Markdown; up to 4.5 MB, 5 per request), and rejects the whole turn otherwise. Every turn resends the full history, so the caps apply to the whole conversation. Before each turn, `prepareAttachmentsForModel` (`apps/backend/features/chat/lib/attachments.ts`) checks each attachment's type and size (an S3 `HEAD`):
+
+- **Readable** files are sent as-is, followed by a short note giving their path in the sandbox, in case the task needs code.
+- **Everything else** is replaced by a note saying why and where it is in the sandbox: an unsupported type (JSON, XML, TSV, ZIP, PowerPoint), a file over the size limit, or one past the per-conversation caps (the newest files win). An expired upload becomes a note that it's gone.
+
+When the model does read a file, the chat turn fetches the bytes directly from S3 with the Lambda's IAM credentials (`downloadUploadsFromS3`), so an expired stored URL never breaks a conversation. File names are also sanitized and made unique before reaching Bedrock, which rejects most punctuation and duplicate names. Only the model's view changes; stored messages keep the original file parts.
 
 ### Sharing (Future)
 
@@ -199,6 +204,8 @@ Follows the ChatGPT pattern:
 
 Each conversation has a persistent sandboxed environment powered by [Daytona](https://daytona.io). The AI can run Python code, read/write files, and install packages. Files persist across messages.
 
+Daytona is optional, like Stripe and Langfuse, and `bun run init` offers to set it up. It's on once `DAYTONA_API_KEY` is declared in `infra/secrets.ts` (and set): the API reads the key (`sandboxManager.isEnabled`), and `infra/web.ts` tells the web app through `NEXT_PUBLIC_CODE_SANDBOX_ENABLED`. Otherwise chat runs without code execution: the sandbox tools aren't offered to the model, the system prompt doesn't mention a sandbox, attachment notes don't point at sandbox paths, and files only code can open (JSON, ZIP, PowerPoint…) can't be uploaded.
+
 ### How It Works
 
 ```
@@ -220,6 +227,14 @@ User: "Analyze this data"
 | `write-file`      | Write content to a file in the sandbox     |
 | `read-file`       | Read a file from the sandbox               |
 | `execute-command` | Run shell commands (pip install, ls, etc.) |
+
+### Attachments in the Sandbox
+
+Every attachment in the conversation is copied to `/home/daytona/uploads/<file name>` (with ` (2)` and so on for repeated names) the first time a code tool runs, and on later runs any new ones are added. Copying on first use rather than on upload means attaching a file never starts a sandbox.
+
+### Keeping Sandbox Use Proportionate
+
+Starting a sandbox takes seconds and costs money, so it should only come out when a task merits it. Every sandbox tool's description says to use it when the task genuinely calls for code (analysing data, involved calculations, charts, opening an attachment the model can't read) and to answer simple tasks directly.
 
 ### Sandbox Lifecycle
 

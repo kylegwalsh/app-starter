@@ -1,6 +1,6 @@
 'use client';
 
-import { CHAT_FILE_TYPES } from '@repo/constants';
+import { CHAT_FILE_TYPES, CHAT_SANDBOX_FILE_TYPES } from '@repo/constants';
 import {
   CopyButton,
   FeedbackButtons,
@@ -36,7 +36,7 @@ const ChatMessageAttachments: FC<{
   return (
     <MessageAttachments
       align={align}
-      fileTypes={CHAT_FILE_TYPES}
+      fileTypes={{ ...CHAT_FILE_TYPES, ...CHAT_SANDBOX_FILE_TYPES }}
       localPreviews={localPreviews}
       parts={parts}
     />

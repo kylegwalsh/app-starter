@@ -1,4 +1,4 @@
-import type { Conversation, Message, Prisma } from '@prisma/client';
+import type { Conversation, Prisma } from '@prisma/client';
 import { ai, models, type Observed } from '@repo/ai';
 import { analytics } from '@repo/analytics';
 import { log } from '@repo/logs';
@@ -18,9 +18,15 @@ import { ConflictError, NotFoundError } from '@/api/error';
 import { db } from '@/db';
 import { type AuthContext, sandboxManager } from '@/services';
 
-import { downloadUploadsFromS3, sanitizeFileFilenames, signFileUrls } from './lib/attachments';
+import {
+  downloadUploadsFromS3,
+  prepareAttachmentsForModel,
+  sanitizeFileFilenames,
+  signFileUrls,
+} from './lib/attachments';
 import { compactContext } from './lib/compaction';
 import { conversationLock } from './lib/lock';
+import { loadMessages, toUIMessage } from './lib/messages';
 import { getTitleSeed, saveGeneratedTitle, truncateTitle } from './lib/title';
 import { SYSTEM_PROMPT } from './prompts';
 
@@ -40,13 +46,6 @@ const requireOwned = (conversation: Conversation | null, { user, organization }:
 /** Finds a conversation belonging to the signed-in user and organization, or throws a 404 */
 const findOwnedConversation = async (id: string, context: AuthContext) =>
   requireOwned(await db.conversation.findUnique({ where: { id } }), context);
-
-/** Converts a stored message row into an AI SDK UI message */
-const toUIMessage = (message: Message): UIMessage => ({
-  id: message.id,
-  role: message.role as UIMessage['role'],
-  parts: message.parts as unknown as UIMessage['parts'],
-});
 
 /** Loads a conversation on follow-up sends, or creates it (with a seeded title) on the first */
 const findOrCreateConversation = async (
@@ -96,10 +95,7 @@ const prepareTurn = async (conversationId: string, message: UserMessage) => {
     db.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date() } }),
   ]);
 
-  const history = await db.message.findMany({
-    where: { conversationId },
-    orderBy: { createdAt: 'asc' },
-  });
+  const history = await loadMessages(conversationId);
   return { isRetry: saved !== null, messages: history.map((m) => toUIMessage(m)) };
 };
 
@@ -136,7 +132,10 @@ export const streamChatTurn = ai.observe(
       abortSignal?: AbortSignal;
     };
   }>) => {
-    const modelMessages = await convertToModelMessages(sanitizeFileFilenames(messages), {
+    // Send the model only the attachments it can read; the rest become notes pointing at the
+    // sandbox copy the code tools see
+    const readable = sanitizeFileFilenames(await prepareAttachmentsForModel(messages));
+    const modelMessages = await convertToModelMessages(readable, {
       // Drop any tool call left without a paired result from a cancelled run — without this
       // Claude rejects the request with "Tool results are missing for tool calls X, Y, Z".
       ignoreIncompleteToolCalls: true,
@@ -239,9 +238,9 @@ export const sendMessage = async (
     messageCount: turn.messages.length,
   });
 
-  // A failed turn reaches both error handlers below, so report only the first (the most detailed).
-  // A failed turn also isn't saved: the conversation then ends on the user's message, which the
-  // client offers to retry.
+  // A failed turn can reach both the reply's `onFinish` and the outer `onError`, so report only the
+  // first. A failed turn also isn't saved: the conversation then ends on the user's message, which
+  // the client offers to retry.
   let failed = false;
   const reportError = (error: unknown, properties?: Record<string, unknown>) => {
     if (failed) {
@@ -272,11 +271,14 @@ export const sendMessage = async (
           generateMessageId: createIdGenerator({ prefix: 'msg', size: 16 }),
           // Attach the Langfuse trace ID so feedback can score it
           messageMetadata: ({ part }) => (part.type === 'finish' ? { traceId } : undefined),
-          onError: (error) => {
-            reportError(error, { traceId });
-            return getErrorMessage(error);
-          },
-          onFinish: async ({ responseMessage, isAborted }) => {
+          // Also formats failed tool calls, which the model sees and usually recovers from, so a
+          // failed turn is judged by the outcome in `onFinish` instead
+          onError: (error) => getErrorMessage(error),
+          onFinish: async ({ responseMessage, isAborted, outcome }) => {
+            if (outcome.status === 'failed') {
+              reportError(outcome.error, { traceId });
+              return;
+            }
             // A cleared lock means the user cancelled, and the cancel saved what they saw
             if (failed || isAborted || !(await lease.extend())) {
               return;
@@ -403,10 +405,7 @@ export const listConversations = async (
 /** Gets a conversation with all of its messages (file URLs freshly signed) */
 export const getConversation = async (conversationId: string, context: AuthContext) => {
   const conversation = await findOwnedConversation(conversationId, context);
-  const storedMessages = await db.message.findMany({
-    where: { conversationId },
-    orderBy: { createdAt: 'asc' },
-  });
+  const storedMessages = await loadMessages(conversationId);
 
   const messages = await Promise.all(
     storedMessages.map(async (msg) => {

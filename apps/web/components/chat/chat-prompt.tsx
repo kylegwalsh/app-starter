@@ -1,6 +1,6 @@
 'use client';
 
-import { CHAT_ALLOWED_FILE_TYPES, CHAT_MAX_FILE_SIZE } from '@repo/constants';
+import { CHAT_FILE_TYPES, CHAT_MAX_FILE_SIZE, CHAT_SANDBOX_FILE_TYPES } from '@repo/constants';
 import {
   Attachment,
   AttachmentInfo,
@@ -23,6 +23,12 @@ import { toast } from 'sonner';
 
 import { useActiveChat, useChatContext } from './chat-provider';
 import { useChatUploads } from './chat-uploads';
+
+/** The input's `accept` list: files only code can open need the sandbox (set in `infra/web.ts`) */
+const ACCEPTED_FILE_TYPES = Object.keys({
+  ...CHAT_FILE_TYPES,
+  ...(process.env.NEXT_PUBLIC_CODE_SANDBOX_ENABLED === 'true' ? CHAT_SANDBOX_FILE_TYPES : {}),
+}).join(',');
 
 /** Attachment strip above the input — renders only when files are staged */
 const AttachmentPreviews: FC<{ uploads: ReturnType<typeof useChatUploads> }> = ({ uploads }) => {
@@ -67,7 +73,7 @@ export const PromptInputBar: FC<{ disabled?: boolean }> = ({ disabled = false })
 
   return (
     <PromptInput
-      accept={CHAT_ALLOWED_FILE_TYPES.join(',')}
+      accept={ACCEPTED_FILE_TYPES}
       maxFileSize={CHAT_MAX_FILE_SIZE}
       multiple
       // Files the input rejects (wrong type, too large) would otherwise vanish without a word

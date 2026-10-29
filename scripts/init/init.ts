@@ -1409,13 +1409,6 @@ const setupMarketingSite = async ({ domain }: { domain?: string }) => {
 
 // ---------- LANGFUSE HELPERS ----------
 const setupLangfuse = async () => {
-  log.step('Setting up Langfuse...');
-
-  // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) {
-    initSecrets();
-  }
-
   // Check if Langfuse is already configured in SST secrets
   if (
     devSecrets.LANGFUSE_SECRET_KEY &&
@@ -1476,6 +1469,66 @@ const setupLangfuse = async () => {
   log.success('Langfuse secrets have been set in SST.\n');
 
   return true;
+};
+
+// ---------- DAYTONA HELPERS ----------
+/** Sets up Daytona, the sandbox chat runs code in */
+const setupDaytona = async () => {
+  // Check if Daytona is already configured in SST secrets
+  if (devSecrets.DAYTONA_API_KEY && prodSecrets.DAYTONA_API_KEY) {
+    log.success('Daytona already configured.\n');
+    return true;
+  }
+
+  const doSetup = await promptYesNo(
+    "Would you like to set up a code execution sandbox with Daytona? It lets the chat agent run Python to analyze data, make charts and open files it can't read on its own (y/n) ",
+  );
+  if (!doSetup) {
+    console.log('Daytona setup skipped. Chat will run without code execution.\n');
+    return false;
+  }
+
+  // Guide the user through the setup steps
+  console.log('\nSign up at: https://app.daytona.io/');
+  console.log('1. Open https://app.daytona.io/dashboard/keys and click "Create Key"');
+  console.log('2. Give it the Sandboxes permissions (at least write:sandboxes)');
+  console.log('3. Copy the key (it is only shown once)');
+
+  let apiKey = '';
+  while (!apiKey) {
+    const input = await promptUser('Enter your Daytona API Key: ');
+    apiKey = input.trim();
+    if (!apiKey) {
+      console.log('Please enter a valid Daytona API Key.');
+    }
+  }
+
+  // Add the secret to SST and declare it, which turns code execution on for the API and web app
+  console.log('\nAdding the Daytona secret to SST...');
+  execSync(`bun tsx ${addEnvScript} DAYTONA_API_KEY "${apiKey}" "${apiKey}"`);
+  uncommentLines([
+    { filePath: path.resolve('infra/secrets.ts'), line: /export const DAYTONA_API_KEY = .*/ },
+  ]);
+  log.success('Daytona secret set in SST and code execution enabled.\n');
+
+  return true;
+};
+
+// ---------- AI HELPERS ----------
+/** Sets up the optional services around chat's AI (the models themselves need no setup) */
+const setupAi = async () => {
+  log.step('Setting up AI features...');
+  console.log(
+    'Chat runs on AWS Bedrock through the AWS account you configured above, so the models need no API keys.\n',
+  );
+
+  // If the secrets haven't been setup yet, let's try to init them
+  if (Object.keys(devSecrets).length === 0) {
+    initSecrets();
+  }
+
+  await setupLangfuse();
+  await setupDaytona();
 };
 
 // ---------- EMAIL SETUP HELPERS ----------
@@ -2341,8 +2394,8 @@ const init = async () => {
   // Setup docs site
   await setupDocsSite({ domain });
 
-  // Setup Langfuse
-  await setupLangfuse();
+  // Setup the AI extras
+  await setupAi();
 
   // Setup Stripe
   const stripeConfig = await setupStripe({ domain });

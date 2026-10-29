@@ -4,33 +4,28 @@ import { log } from '@repo/logs';
 
 import { db } from '@/db';
 
-/** Daytona SDK client — initialized lazily when first needed */
-let client: Daytona | undefined;
+const apiKey = (env as Record<string, string>).DAYTONA_API_KEY;
 
-const getClient = () => {
-  if (!client) {
-    const apiKey = (env as Record<string, string>).DAYTONA_API_KEY;
-    if (!apiKey) {
-      throw new Error('DAYTONA_API_KEY is not configured');
-    }
-    client = new Daytona({ apiKey });
-  }
-  return client;
-};
+/** Our Daytona client — undefined when Daytona is not configured */
+const daytona = apiKey ? new Daytona({ apiKey }) : undefined;
 
 /** Manages Daytona sandbox lifecycle for chat conversations */
 export const sandboxManager = {
+  /** Whether Daytona is configured. Without it, chat runs without the code tools */
+  isEnabled: daytona !== undefined,
   /**
    * Get or create a sandbox for a conversation.
    * Handles all state transitions: stopped → start, archived → recover, deleted → create new.
    */
   getOrCreate: async (conversationId: string) => {
+    // The code tools are hidden when Daytona isn't configured, so this is only a safeguard
+    if (!daytona) {
+      throw new Error('Code execution is not configured');
+    }
     const conversation = await db.conversation.findUnique({
       where: { id: conversationId },
       select: { sandboxId: true },
     });
-
-    const daytona = getClient();
 
     // Try to reuse existing sandbox
     if (conversation?.sandboxId) {
@@ -78,11 +73,14 @@ export const sandboxManager = {
   },
   /** Stops a conversation's sandbox (no-op if it's already gone) */
   stop: async (sandboxId: string) => {
+    if (!daytona) {
+      return;
+    }
     try {
-      const sandbox = await getClient().get(sandboxId);
+      const sandbox = await daytona.get(sandboxId);
       await sandbox.stop();
     } catch (error) {
-      // The sandbox may already be deleted or Daytona may not be configured — nothing to stop
+      // The sandbox may already be deleted — nothing to stop
       log.info({ err: error, sandboxId }, 'Skipped stopping sandbox');
     }
   },

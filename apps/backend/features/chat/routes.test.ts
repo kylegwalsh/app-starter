@@ -1,9 +1,22 @@
+import { analytics } from '@repo/analytics';
+
 import { db } from '@/db';
+import type { sandboxManager } from '@/services/daytona';
 import { type TestSession, sessionFactory } from '@/tests/factories';
 import { userFactory } from '@/tests/factories/user-factory';
 import { mockAi, mockChatModel } from '@/tests/mocks/ai';
 
 import { CLEARED_RESULT_NOTE } from './lib/compaction';
+
+// The code tools are offered, but never reach Daytona in tests
+const mockSandboxManager = vi.hoisted(() => ({
+  isEnabled: true,
+  getOrCreate: vi.fn<(typeof sandboxManager)['getOrCreate']>(),
+}));
+vi.mock('@/services/daytona', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/services/daytona')>();
+  return { sandboxManager: { ...original.sandboxManager, ...mockSandboxManager } };
+});
 
 /** Build a user message in the shape the chat route accepts */
 const userMessage = (id: string, text: string) => ({
@@ -222,6 +235,35 @@ describe('Chat Router', () => {
       const error = chunks.find((c) => c.type === 'error');
       expect(String(error?.errorText)).toContain('boom');
       // The conversation ends on the user's message, which the client offers to retry
+      expect(await getRoles('conv')).toEqual(['user']);
+      expect(await getLock('conv')).toBeNull();
+    });
+
+    it('saves the reply when a tool call fails and the model recovers', async () => {
+      mockSandboxManager.getOrCreate.mockRejectedValueOnce(new Error('Sandbox unavailable'));
+      const captureException = vi.spyOn(analytics, 'captureException');
+      mockChatModel({
+        toolCall: { toolName: 'run-code', input: { code: 'print(1)' } },
+        text: 'The sandbox is down, so here is the answer from memory.',
+      });
+
+      const { chunks } = await send('conv');
+
+      expect(chunks.some((c) => c.type === 'tool-output-error')).toBe(true);
+      expect(await getRoles('conv')).toEqual(['user', 'assistant']);
+      // The tool runner reports the failed call, but a recovered tool failure isn't a failed turn
+      const turnReports = captureException.mock.calls.filter(
+        ([, properties]) => properties && 'conversationId' in properties,
+      );
+      expect(turnReports).toHaveLength(0);
+    });
+
+    it('saves no reply when the model fails partway through', async () => {
+      mockChatModel({ text: 'Half an ans', error: new Error('model overloaded') });
+
+      const { chunks } = await send('conv');
+
+      expect(String(chunks.find((c) => c.type === 'error')?.errorText)).toContain('overloaded');
       expect(await getRoles('conv')).toEqual(['user']);
       expect(await getLock('conv')).toBeNull();
     });
