@@ -157,7 +157,7 @@ Additional commands:
 We use Vitest for testing. We focus on integration-style testing by dispatching requests in-process against the actual Hono router.
 
 - **Runner**: Vitest
-- **DB boundary**: `@/db` is swapped to a SQLite-backed client during tests
+- **DB boundary**: `@/db` is swapped to a PGlite-backed client during tests
 - **Setup/teardown**: generate the client, clean state between tests, disconnect on finish
 
 You can run tests by using one of the following commands:

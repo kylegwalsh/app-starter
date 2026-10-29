@@ -102,6 +102,7 @@
     "polyfillio",
     "postbuild",
     "posthog",
+    "sandboxed",
     "serviceworker",
     "shadcn",
     "sherif",

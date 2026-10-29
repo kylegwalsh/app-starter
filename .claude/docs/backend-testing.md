@@ -10,7 +10,7 @@ Use the `/test-backend` skill to run tests. It accepts an optional file path arg
 ## Rules
 
 - **Co-location**: Test next to source (`features/billing/routes.ts` → `features/billing/routes.test.ts`). Never a separate test directory.
-- **Database**: `import { db } from '@/db'` → isolated SQLite Prisma client (aliased in `vitest.config.ts`). Use like normal Prisma.
+- **Database**: `import { db } from '@/db'` → isolated PGlite Prisma client (aliased in `vitest.config.ts`). Use like normal Prisma.
 - **Session factory**: `apps/backend/tests/factories/session-factory.ts` creates a signed-in session (user + org + api client).
 - **Integration-style**: Exercise real routes + real DB. Mock only external services (e.g., Stripe).
 - **Mocking**: Mock by concrete path (`@/services/stripe`), not barrels (`@/services`). Never mock `@repo/config`.

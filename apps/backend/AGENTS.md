@@ -73,7 +73,7 @@ tests/          Vitest setup, factories, mocks (not test files — those live ne
 
 - Run tests with the `/test-backend` skill.
 - Co-locate tests next to source: `features/billing/routes.ts` → `features/billing/routes.test.ts`.
-- Integration-style: real routes, real DB (isolated SQLite). Mock only external services.
+- Integration-style: real routes, real DB (isolated PGlite). Mock only external services.
 - Use `sessionFactory.createSession()` from `@/tests/factories` for route tests (signed-in user + org + `api` client).
 - Use `mcpFactory.createClient()` for MCP tool tests (a real MCP client connected to our server in memory, with `callTool`).
 - For patterns and a full example, see `.claude/docs/backend-testing.md`.

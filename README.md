@@ -50,7 +50,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Authentication:** Built-in authentication powered by Better Auth.
 - **Payments:** Stripe integration for subscriptions and one-time payments.
 - **Database:** Supabase for scalable, hosted Postgres and real-time data.
-- **Backend:** Serverless backend managed with SST, deployed to AWS. Hono as the HTTP layer, with typed API endpoints consumed via Hono's `hc` client.
+- **Backend:** Serverless backend managed with SST, deployed to AWS. Hono as the HTTP layer.
 - **Web Frontend:** Next.js for fast, modern web applications.
 - **Admin Panel:** Internal admin dashboard for managing users and organizations, powered by Better Auth's admin plugin.
 - **Marketing Site:** A static Next.js marketing site (optional).
@@ -59,9 +59,9 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Alerts:** Slack integration for real-time notifications and alerts.
 - **Logging:** Shared logging package (Pino) with pretty local output, and production integration with Posthog and CloudWatch.
 - **AI Tracing & Evaluation:** Integrated with Langfuse for tracing, monitoring, and evaluating AI generations.
-- **AI Chat:** Built-in chat UI with streaming responses, conversation persistence, file uploads (S3 + CloudFront), user feedback (Langfuse), and sandboxed code execution (Daytona).
-- **MCP Server:** Built-in [Model Context Protocol](https://modelcontextprotocol.io/) server with OAuth authentication, allowing AI assistants (Claude, Cursor, etc.) to interact with your app's backend tools. Requires a custom domain (see the [backend README](apps/backend/README.md#connecting-an-mcp-client)).
-- **AI-Assisted Development:** Pre-configured with Cursor rules for AI-powered workflows.
+- **AI Chat:** Built-in chat UI with streaming responses, conversation persistence, file uploads, and sandboxed code execution.
+- **MCP Server:** Built-in [Model Context Protocol](https://modelcontextprotocol.io/) server letting AI assistants (Claude, Cursor, etc.) use your backend tools. Requires a custom domain ([setup](apps/backend/README.md#connecting-an-mcp-client)).
+- **AI-Assisted Development:** Pre-configured with AGENTS.md guidance for AI-powered workflows.
 - **Email:** Transactional emails (password resets, organization invitations, contact form messages) sent through PostHog, with templates kept in code and uploaded by `bun run init`.
 
 ---
@@ -181,7 +181,7 @@ This interactive script will guide you through configuring all the services and 
 - Sets up documentation site
 - Sets up Slack integration for CI notifications and error alerts
 - Sets up Crisp Chat for customer support
-- Sets up AI features: Langfuse for tracing and evals, and Daytona for code execution in chat (both optional; the models run on AWS Bedrock)
+- Sets up AI features: Langfuse for tracing and evals, and Daytona for code execution in chat
 - Sets up Stripe for payments
 
 #### 3. Complete Stripe Setup (Optional)
@@ -324,8 +324,8 @@ This monorepo is set up for robust testing of both backend and frontend applicat
 ### Backend
 
 - **Test Runner:** [Vitest](https://vitest.dev/)
-- **Database:** In-memory SQLite
-- **Purpose:** We use Vitest to run integration tests against the actual Hono router. The backend is tested with a real in-memory SQLite database (serves as a mock database), so you can verify the full behavior of your API with minimal mocking. This approach ensures that your tests are as close to production as possible, catching issues that might be missed with heavy mocking.
+- **Database:** In-memory PGlite (Postgres)
+- **Purpose:** We use Vitest to run integration tests against the actual Hono router. The backend is tested with a real in-memory PGlite (Postgres) database (serves as a mock database), so you can verify the full behavior of your API with minimal mocking. This approach ensures that your tests are as close to production as possible, catching issues that might be missed with heavy mocking.
 
 **How to run backend tests:**
 
