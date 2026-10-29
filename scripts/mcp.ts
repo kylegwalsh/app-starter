@@ -35,6 +35,16 @@ if (!apiUrl) {
   process.exit(1);
 }
 
+// API Gateway's default URL puts the stage in the path, but MCP clients look for OAuth metadata
+// at the domain root (and API Gateway renames the WWW-Authenticate header that could point
+// elsewhere), so sign-in only works on a custom domain
+if (new URL(apiUrl).hostname.endsWith('.amazonaws.com')) {
+  console.error(
+    `MCP needs a custom domain, but this stage's API is on API Gateway's default URL (${apiUrl}). Set baseDomain in infra/utils.ts (or run 'bun run init'), then restart 'bun dev' or redeploy.`,
+  );
+  process.exit(1);
+}
+
 const proxy = spawn(process.execPath, ['x', 'mcp-remote', `${apiUrl}/mcp`], { stdio: 'inherit' });
 
 // Keep the proxy's lifecycle tied to ours

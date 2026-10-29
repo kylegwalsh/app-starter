@@ -10,10 +10,13 @@
 
 ## AI
 
-- Test that routes, docs, MCP all work without custom domain
 - Clean up any generated code
-- Test compaction
 - Figure out crisp chat with new sidebar
+
+- Test chat
+- Test storybook
+- Test sandbox
+- Test compaction
 
 ## PRISMA V8
 

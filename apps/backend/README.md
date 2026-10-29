@@ -6,7 +6,7 @@ This app provides the serverless backend for the monorepo. It is built with SST 
 - Swagger UI for the generated OpenAPI spec at `/api` (local dev only)
 - Auth routes handled by Better Auth under `/api/auth`
 - AI chat streaming at `/api/chat` (Vercel AI SDK `useChat` compatible)
-- MCP server at `/mcp` (with code execution tools via Daytona)
+- MCP server at `/mcp` (needs a custom domain)
 
 ## Table of Contents
 
@@ -107,20 +107,11 @@ See [`ai/README.md`](ai/README.md) for the full walkthrough.
 
 ### Connecting an MCP client
 
-Add the server to your `.mcp.json` (root of this repo):
+> **MCP needs a custom domain.** Without one, the API is on API Gateway's default URL, which puts the stage in the path. MCP clients look for OAuth metadata at the domain root (`/.well-known/...`), which that URL can't serve.
 
-```json
-{
-  "mcpServers": {
-    "my-app": {
-      "type": "http",
-      "url": "https://<your-api-domain>/mcp"
-    }
-  }
-}
-```
+The repo's `.mcp.json` already includes the server for Claude Code. It runs `scripts/mcp.ts`, which reads your stage's API URL from `.sst/outputs.json` (written by `bun dev` / `bun deploy`) and connects through [mcp-remote](https://www.npmjs.com/package/mcp-remote), which handles the OAuth sign-in.
 
-Claude Code, Cursor, and other MCP clients will pick up this config and authenticate via OAuth on first connection.
+For other clients (Cursor, Claude Desktop), point them at `https://api.<your-domain>/mcp`. They authenticate via OAuth on first connection.
 
 ## Auth
 

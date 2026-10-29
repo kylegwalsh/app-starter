@@ -63,3 +63,5 @@ The chat endpoint is a protected Hono route (`features/chat/routes.ts`) backed b
 ## MCP Server
 
 The MCP server (`mcp/server.ts`) exposes tools to external MCP clients via OAuth-authenticated Streamable HTTP. Session state is persisted in the database (`mcp/session.ts`) to support org switching across stateless Lambda invocations. The adapter lives at `api/adapters/mcp.ts`.
+
+MCP needs a custom domain: clients look for OAuth metadata at the domain root, which API Gateway's default stage-prefixed URL can't serve. See [Connecting an MCP client](../README.md#connecting-an-mcp-client).

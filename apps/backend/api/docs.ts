@@ -199,7 +199,7 @@ const internalDocsHTML = `<!doctype html>
   <script>
     window.onload = () => {
       window.ui = SwaggerUIBundle({
-        url: '${SPEC_PATH}',
+        url: window.location.pathname.replace(/[/]+$/, '') + '/openapi.json',
         dom_id: '#swagger-ui',
         // Send the Better Auth session cookie so protected endpoints work once signed in
         requestInterceptor: (req) => { req.credentials = 'include'; return req; },

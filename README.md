@@ -60,7 +60,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Logging:** Shared logging package (Pino) with pretty local output, and production integration with Posthog and CloudWatch.
 - **AI Tracing & Evaluation:** Integrated with Langfuse for tracing, monitoring, and evaluating AI generations.
 - **AI Chat:** Built-in chat UI with streaming responses, conversation persistence, file uploads (S3 + CloudFront), user feedback (Langfuse), and sandboxed code execution (Daytona).
-- **MCP Server:** Built-in [Model Context Protocol](https://modelcontextprotocol.io/) server with OAuth authentication, allowing AI assistants (Claude, Cursor, etc.) to interact with your app's backend tools.
+- **MCP Server:** Built-in [Model Context Protocol](https://modelcontextprotocol.io/) server with OAuth authentication, allowing AI assistants (Claude, Cursor, etc.) to interact with your app's backend tools. Requires a custom domain (see the [backend README](apps/backend/README.md#connecting-an-mcp-client)).
 - **AI-Assisted Development:** Pre-configured with Cursor rules for AI-powered workflows.
 - **Email:** Transactional emails (password resets, organization invitations, contact form messages) sent through PostHog, with templates kept in code and uploaded by `bun run init`.
 
@@ -153,7 +153,7 @@ You'll also want to make sure you have an [AWS account](https://signin.aws.amazo
 
 Use this section when setting up the starter template for the first time or creating a new project.
 
-> **Note:** The setup script works best if you already have a domain purchased and managed by AWS Route 53
+> **Note:** The setup script works best if you already have a domain purchased and managed by AWS Route 53.
 
 #### 1. Install Base Dependencies
 
