@@ -22,7 +22,7 @@ const parseSecrets = async (): Promise<Secrets> => {
       .trim()
       .split('\n')
       .reduce<Secrets>((acc, line) => {
-        // Split on the first `=` only: values like connection URLs contain `=` in their query string
+        // Split on the first `=` only, since values can contain `=` (e.g. `?sslmode=require`)
         const separator = line.indexOf('=');
         const key = line.slice(0, separator).trim();
         const value = line.slice(separator + 1).trim();
