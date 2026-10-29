@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 
 import { useUser } from '@/hooks';
-import { storage } from '@/lib';
+import { identifySupportUser, resetSupportSession, storage } from '@/lib';
 
 /** Watches user changes and performs tasks */
 export const UserInitializer = () => {
@@ -30,6 +30,7 @@ export const UserInitializer = () => {
             createdAt: user.createdAt?.toISOString() ?? undefined,
           },
         });
+        identifySupportUser({ userId: user.id, email: user.email, name: user.name });
       }
     }
     // If the user logs out, reset their previously identified state
@@ -92,6 +93,7 @@ export const UserInitializer = () => {
 
       // Track sign out
       analytics.userSignedOut({});
+      resetSupportSession();
     }
   }, [isLoading, isLoggedIn, queryClient]);
 

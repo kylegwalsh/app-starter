@@ -22,14 +22,16 @@ import {
   useSidebar,
 } from '@repo/design';
 import { useAtomValue } from 'jotai';
-import { ChevronRight, LayoutDashboard, MessageSquare, Settings } from 'lucide-react';
+import { ChevronRight, LayoutDashboard, LifeBuoy, MessageSquare, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useSyncExternalStore, type ComponentType, type SVGProps } from 'react';
 
 import { chatDrawerOpenAtom } from '@/atoms/chat';
+import { supportUnreadCountAtom } from '@/atoms/support';
 import { OrganizationSwitcher, UserButton } from '@/components/auth';
 import { ChatDrawer } from '@/components/chat';
+import { isSupportChatEnabled, openSupportChat } from '@/lib';
 
 /** The type for a navigation item */
 type NavItem = {
@@ -76,6 +78,7 @@ export const AppSidebar: FC = ({ children }) => {
   const { open, setOpen } = useSidebar();
   const isDrawerOpen = useAtomValue(chatDrawerOpenAtom);
   const isNarrow = useIsNarrowForChatDrawer();
+  const supportUnreadCount = useAtomValue(supportUnreadCountAtom);
 
   // Collapse on chat routes, or when the chat drawer opens on a narrow screen. Close on entry only
   // if currently open, and re-open on exit only if we were the one who closed it — so a
@@ -128,6 +131,27 @@ export const AppSidebar: FC = ({ children }) => {
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
+          {isSupportChatEnabled && (
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={openSupportChat}
+                  tooltip={supportUnreadCount > 0 ? 'Support (new reply)' : 'Support'}
+                >
+                  <span className="relative shrink-0">
+                    <LifeBuoy className="size-4" />
+                    {supportUnreadCount > 0 && (
+                      <span className="bg-destructive ring-sidebar absolute -top-0.5 -right-0.5 size-2 rounded-full ring-2" />
+                    )}
+                  </span>
+                  <span>
+                    Support
+                    {supportUnreadCount > 0 && <span className="sr-only"> (new reply)</span>}
+                  </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          )}
           <AppSidebarGroup
             navItems={[
               {

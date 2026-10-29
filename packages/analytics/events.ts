@@ -4,14 +4,8 @@ import { time } from '@repo/utils';
 import type { PostHog as PostHogWeb } from 'posthog-js';
 import type { PostHog as PostHogBackend } from 'posthog-node';
 
-/** Shared properties for both web and backend analytics */
-type SharedAnalyticsProps = {
-  onIdentify?: (props: IdentifyEvent) => void;
-  onSignOut?: () => void;
-};
-
 /** Platform-specific properties for web analytics */
-type WebAnalyticsProps = SharedAnalyticsProps & {
+type WebAnalyticsProps = {
   platformAnalytics: PostHogWeb;
   platform: 'web';
   log?: typeof console;
@@ -19,7 +13,7 @@ type WebAnalyticsProps = SharedAnalyticsProps & {
 };
 
 /** Platform-specific properties for backend analytics */
-type BackendAnalyticsProps = SharedAnalyticsProps & {
+type BackendAnalyticsProps = {
   platformAnalytics: PostHogBackend;
   platform: 'backend';
   log?: typeof logMethod;
@@ -110,8 +104,6 @@ type OrganizationIdentifyEvent = {
 export const createAnalyticsEvents = <T extends 'web' | 'backend'>({
   platformAnalytics,
   platform,
-  onIdentify,
-  onSignOut,
   log = console,
   getLogMetadata,
 }: // Ensure our posthog library is typed correctly based on platform
@@ -189,12 +181,11 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
       try {
         // Build first and last name from full name
         if (traits?.name) {
-          const nameArray = traits.name.split(' ');
-          if (nameArray.length >= 1) {
-            traits.firstName = nameArray.splice(0, 1).join(' ');
-          }
-          if (nameArray.length >= 2) {
-            traits.firstName = nameArray.splice(1).join(' ');
+          // The first word is the first name, everything after it is the last name
+          const [firstName, ...lastNames] = traits.name.trim().split(/\s+/);
+          traits.firstName = firstName;
+          if (lastNames.length > 0) {
+            traits.lastName = lastNames.join(' ');
           }
         }
         // Build full name from first and last name
@@ -229,13 +220,6 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
             throw new Error('You forgot to define platform in when initializing analytics');
           }
         }
-
-        // If the platform defined an onIdentify function, run it
-        try {
-          onIdentify?.({ userId, traits });
-        } catch (error) {
-          log.error({ err: error }, '[analytics] Error on identify');
-        }
       });
     },
     /** Track when the user signs out */
@@ -264,13 +248,6 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         // Reset the analytics
         Analytics.reset();
       });
-
-      // If the platform defined an onSignOut function, run it
-      try {
-        onSignOut?.();
-      } catch {
-        // Do nothing
-      }
     },
     /** Track when the user signs in */
     userSignedIn: async (properties: EventProps<T>) => {

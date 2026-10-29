@@ -11,7 +11,6 @@
 ## AI
 
 - Clean up any generated code
-- Figure out crisp chat with new sidebar
 
 - Test chat
 - Test storybook
