@@ -1,7 +1,7 @@
 import { CHAT_ALLOWED_FILE_TYPES, CHAT_MAX_FILE_SIZE } from '@repo/constants';
 import { z } from 'zod';
 
-/** Chat-related schemas shared between frontend and backend */
+/** Schemas for chat */
 export const chatSchema = {
   /** Schema for the file upload request */
   uploadInput: z.object({
@@ -13,7 +13,7 @@ export const chatSchema = {
     fileSize: z.number().int().positive().max(CHAT_MAX_FILE_SIZE),
   }),
 
-  /** Schema for message feedback (thumbs up/down + optional comment) */
+  /** Schema for message feedback */
   feedback: z.object({
     /** The message ID to submit feedback for */
     messageId: z.string(),

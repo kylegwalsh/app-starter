@@ -5,6 +5,7 @@ import { useProviderAttachments, type PromptInputMessage } from '@repo/design';
 import { type QueryClient, queryOptions, useQueries } from '@tanstack/react-query';
 
 import { api } from '@/lib/api';
+import { downscaleImage } from '@/lib/image';
 
 type StagedFile = PromptInputMessage['files'][number];
 
@@ -29,7 +30,8 @@ const { mutationFn: createUploadUrl } = api.uploads['create-upload-url'].$post.m
 
 /** Uploads one staged file: presign via the API, then POST it to S3 */
 const uploadFile = async (staged: StagedFile): Promise<UploadedFile> => {
-  const blob = await fetch(staged.url).then((res) => res.blob());
+  const original = await fetch(staged.url).then((res) => res.blob());
+  const blob = await downscaleImage(new Blob([original], { type: staged.mediaType }));
   const file = new File([blob], staged.filename ?? 'upload', { type: staged.mediaType });
 
   const presigned = await createUploadUrl({
