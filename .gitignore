@@ -22,7 +22,6 @@ coverage
 next-env.d.ts
 
 # Storybook
-*storybook.log
 **/.storybook-static
 **/storybook-static
 
@@ -68,3 +67,4 @@ npm-debug.log*
 .claude/settings.local.json
 .claude/worktrees
 .omc
+*.log

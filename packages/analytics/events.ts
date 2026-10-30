@@ -4,14 +4,8 @@ import { time } from '@repo/utils';
 import type { PostHog as PostHogWeb } from 'posthog-js';
 import type { PostHog as PostHogBackend } from 'posthog-node';
 
-/** Shared properties for both web and backend analytics */
-type SharedAnalyticsProps = {
-  onIdentify?: (props: IdentifyEvent) => void;
-  onSignOut?: () => void;
-};
-
 /** Platform-specific properties for web analytics */
-type WebAnalyticsProps = SharedAnalyticsProps & {
+type WebAnalyticsProps = {
   platformAnalytics: PostHogWeb;
   platform: 'web';
   log?: typeof console;
@@ -19,7 +13,7 @@ type WebAnalyticsProps = SharedAnalyticsProps & {
 };
 
 /** Platform-specific properties for backend analytics */
-type BackendAnalyticsProps = SharedAnalyticsProps & {
+type BackendAnalyticsProps = {
   platformAnalytics: PostHogBackend;
   platform: 'backend';
   log?: typeof logMethod;
@@ -110,8 +104,6 @@ type OrganizationIdentifyEvent = {
 export const createAnalyticsEvents = <T extends 'web' | 'backend'>({
   platformAnalytics,
   platform,
-  onIdentify,
-  onSignOut,
   log = console,
   getLogMetadata,
 }: // Ensure our posthog library is typed correctly based on platform
@@ -128,7 +120,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
       }
     } catch (error) {
       // Catch any errors
-      log.error({ error }, '[analytics] Error invoking analytics');
+      log.error({ err: error }, '[analytics] Error invoking analytics');
     }
   };
 
@@ -189,12 +181,11 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
       try {
         // Build first and last name from full name
         if (traits?.name) {
-          const nameArray = traits.name.split(' ');
-          if (nameArray.length >= 1) {
-            traits.firstName = nameArray.splice(0, 1).join(' ');
-          }
-          if (nameArray.length >= 2) {
-            traits.firstName = nameArray.splice(1).join(' ');
+          // The first word is the first name, everything after it is the last name
+          const [firstName, ...lastNames] = traits.name.trim().split(/\s+/);
+          traits.firstName = firstName;
+          if (lastNames.length > 0) {
+            traits.lastName = lastNames.join(' ');
           }
         }
         // Build full name from first and last name
@@ -229,13 +220,6 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
             throw new Error('You forgot to define platform in when initializing analytics');
           }
         }
-
-        // If the platform defined an onIdentify function, run it
-        try {
-          onIdentify?.({ userId, traits });
-        } catch (error) {
-          log.error({ error }, '[analytics] Error on identify');
-        }
       });
     },
     /** Track when the user signs out */
@@ -264,13 +248,6 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         // Reset the analytics
         Analytics.reset();
       });
-
-      // If the platform defined an onSignOut function, run it
-      try {
-        onSignOut?.();
-      } catch {
-        // Do nothing
-      }
     },
     /** Track when the user signs in */
     userSignedIn: async (properties: EventProps<T>) => {
@@ -400,6 +377,126 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
         });
       });
     },
+    /** Track when the user sends a chat message */
+    chatMessageSent: async (
+      properties: EventProps<
+        T,
+        {
+          /** The conversation the message was sent to */
+          conversationId: string;
+          /** Whether this message started the conversation */
+          isNewConversation: boolean;
+          /** Whether this send retries an earlier message (regenerating its response) */
+          isRetry: boolean;
+          /** How many files were attached to the message */
+          attachmentCount: number;
+          /** How many messages the conversation has, including this one */
+          messageCount: number;
+        }
+      >,
+    ) => {
+      log.info('[analytics] Event: Chat Message Sent', {
+        category: 'Chat',
+        ...properties,
+      });
+      await safeInvoke(() => {
+        track('Chat Message Sent', {
+          category: 'Chat',
+          ...properties,
+        });
+      });
+    },
+    /** Track feedback on an AI feature (a chat response, or our MCP tools) */
+    feedbackSubmitted: async (
+      properties: EventProps<
+        T,
+        | {
+            /** A rating on a chat response */
+            feature: 'chat';
+            /** Thumbs up or down */
+            rating: 'up' | 'down';
+            /** The user's optional comment */
+            comment?: string;
+            /** The Langfuse trace of the rated AI response */
+            traceId?: string;
+          }
+        | {
+            /** Feedback an MCP client sent about our tools */
+            feature: 'mcp';
+            /** What kind of feedback it is */
+            feedbackType: 'bug' | 'feature-request' | 'workflow-friction' | 'praise';
+            /** What happened, and what would have made it better */
+            comment: string;
+            /** The tool the feedback is about */
+            toolName?: string;
+          }
+      >,
+    ) => {
+      log.info('[analytics] Event: Feedback Submitted', {
+        category: 'Feedback',
+        ...properties,
+      });
+      await safeInvoke(() => {
+        track('Feedback Submitted', {
+          category: 'Feedback',
+          ...properties,
+        });
+      });
+    },
+    /** Track when an MCP client connects (completes the initialize handshake) */
+    mcpClientConnected: async (
+      properties: EventProps<
+        T,
+        {
+          /** The new MCP session */
+          sessionId: string;
+          /** The client's self-reported name (e.g. "claude-ai", "cursor") */
+          clientName?: string;
+          /** The client's self-reported version */
+          clientVersion?: string;
+        }
+      >,
+    ) => {
+      log.info('[analytics] Event: MCP Client Connected', {
+        category: 'MCP',
+        ...properties,
+      });
+      await safeInvoke(() => {
+        track('MCP Client Connected', {
+          category: 'MCP',
+          ...properties,
+        });
+      });
+    },
+    /** Track when an MCP client calls one of our tools */
+    mcpToolCalled: async (
+      properties: EventProps<
+        T,
+        {
+          /** The tool that was called */
+          toolName: string;
+          /** The MCP session the call was made in */
+          sessionId?: string;
+          /** Whether the tool succeeded (failures are returned to the client as error results) */
+          success: boolean;
+          /** On failure, its HTTP-style status: 4xx means the caller's input was wrong, 5xx means the tool broke */
+          errorStatus?: number;
+          /** How long the tool took to run */
+          durationMs: number;
+        }
+      >,
+    ) => {
+      log.info('[analytics] Event: MCP Tool Called', {
+        category: 'MCP',
+        ...properties,
+      });
+      await safeInvoke(() => {
+        track('MCP Tool Called', {
+          category: 'MCP',
+          ...properties,
+        });
+      });
+    },
     /** Reset the analytics when the user signs out */
     reset: async () => {
       log.info('[analytics] Resetting user');
@@ -415,7 +512,10 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
       /** Any additional properties to attach to the error */
       properties?: Record<string, unknown>,
     ) => {
-      log.error(error);
+      log.error(
+        { ...properties, err: error },
+        error instanceof Error ? error.message : 'Unknown error',
+      );
 
       await safeInvoke(() => {
         // Track the error differently based on platform

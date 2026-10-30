@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
 
-import { authClient, signIn, signOut, useSession, type User } from '@/core/auth';
+import { authClient, signIn, signOut, useSession, type User } from '@/lib/auth';
 
 type AuthContextType = {
   user: User | null;

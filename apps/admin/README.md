@@ -38,7 +38,7 @@ apps/admin/
 │       └── organizations/     # Organization management pages
 ├── components/                # UI components (user management, org management, shared)
 ├── contexts/                  # Auth context provider
-├── core/                      # App-level singletons & clients
+├── lib/                       # App-level clients & utilities
 │   └── auth.ts                # Better Auth client (admin + organization plugins)
 ├── next.config.ts             # Next.js config
 ├── postcss.config.mjs         # PostCSS config
@@ -71,7 +71,7 @@ The shared `@repo/design` system standardizes UI across apps and bundles accessi
 
 ## Authentication
 
-Better Auth with admin + organization plugins. Client configured in `core/auth.ts`, session state managed via `contexts/auth-context.tsx`. All dashboard routes are gated by the `RequireAdmin` component — unauthenticated users redirect to `/login`, non-admins see an access denied page.
+Better Auth with admin + organization plugins. Client configured in `lib/auth.ts`, session state managed via `contexts/auth-context.tsx`. All dashboard routes are gated by the `RequireAdmin` component — unauthenticated users redirect to `/login`, non-admins see an access denied page.
 
 ## Features
 

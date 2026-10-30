@@ -46,11 +46,11 @@ const resolveWebAppUrl = ({
 
 /**
  * Resolve the API URL. Unlike web apps, the API URL is always known via an env var
- * (set by SST at build time) or the SST resource — never from window.location.origin.
+ * (set by SST at build time on the Next.js sites) or the SST `apiUrl` linkable.
  */
 const resolveApiUrl = () => {
   try {
-    return process.env.NEXT_PUBLIC_API_URL ?? resources?.api?.url ?? '';
+    return process.env.NEXT_PUBLIC_API_URL ?? resources?.apiUrl?.url ?? '';
   } catch {
     return '';
   }

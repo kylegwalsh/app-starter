@@ -9,7 +9,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    setupFiles: ['./tests/setup/setup.ts'],
+    setupFiles: ['./tests/setup/setup.ts', './tests/mocks/ai.ts'],
     globalSetup: ['./tests/setup/global-setup.ts'],
     pool: 'threads',
     env: {

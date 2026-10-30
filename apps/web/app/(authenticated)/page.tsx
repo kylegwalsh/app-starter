@@ -137,7 +137,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 /** Our main dashboard page */
-export default function DashboardPage() {
+const DashboardPage = () => {
   const isMobile = useIsMobile();
   const [selectedTimeRange, setTimeRange] = useState<string>();
   const timeRange = selectedTimeRange ?? (isMobile ? '7d' : '90d');
@@ -356,4 +356,6 @@ export default function DashboardPage() {
       </div>
     </>
   );
-}
+};
+
+export default DashboardPage;

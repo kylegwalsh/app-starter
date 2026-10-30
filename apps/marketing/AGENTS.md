@@ -2,7 +2,7 @@
 
 ## Stack
 
-Next.js static export (TypeScript), Tailwind CSS v4, `@repo/design` (form controls and buttons), `@repo/seo`, `@repo/analytics` (PostHog), oRPC client (contact form only)
+Next.js static export (TypeScript), Tailwind CSS v4, `@repo/design` (form controls and buttons), `@repo/seo`, `@repo/analytics` (PostHog), typed Hono `hc` client (contact form only)
 
 ## Directory Layout
 
@@ -10,7 +10,7 @@ Next.js static export (TypeScript), Tailwind CSS v4, `@repo/design` (form contro
 app/          Pages, metadata routes (sitemap, robots, OG image), globals.css (brand tokens)
 sections/     Page sections (hero, contact), composed in app/page.tsx
 components/   Building blocks and layout chrome (nav, footer, contact form, visual)
-lib/          The oRPC client
+lib/          The typed Hono API client
 ```
 
 ## Commands

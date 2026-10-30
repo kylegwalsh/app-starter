@@ -13,11 +13,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { DashboardLayout } from '@/components';
-import { auth } from '@/core';
 import { useUser } from '@/hooks';
+import { auth } from '@/lib';
 
 /** The organization settings page */
-export default function OrganizationSettingsPage() {
+const OrganizationSettingsPage = () => {
   const { isLoading, organization } = useUser();
   const { data: sessionData } = auth.useSession();
   const router = useRouter();
@@ -52,4 +52,6 @@ export default function OrganizationSettingsPage() {
       <DeleteOrganizationCard />
     </DashboardLayout>
   );
-}
+};
+
+export default OrganizationSettingsPage;

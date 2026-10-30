@@ -1,4 +1,4 @@
-import { gateway } from './gateway';
+import { apiUrl } from './gateway';
 import { domain } from './utils';
 import { web } from './web';
 
@@ -23,7 +23,7 @@ export const marketing = new sst.aws.StaticSite('marketing', {
   },
   environment: {
     NEXT_PUBLIC_STAGE: $app.stage,
-    NEXT_PUBLIC_API_URL: gateway.url,
+    NEXT_PUBLIC_API_URL: apiUrl.properties.url,
     // In `sst dev` the web app isn't deployed, so its url is a placeholder
     NEXT_PUBLIC_WEB_URL: $dev ? 'http://localhost:3000' : web.url,
     // The site can't reference its own url, so derive it from the domain (used for SEO metadata).

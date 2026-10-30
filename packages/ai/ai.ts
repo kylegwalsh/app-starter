@@ -1,75 +1,101 @@
-import type { LanguageModelV4 } from '@ai-sdk/provider';
-import {
-  getActiveTraceId,
-  observe,
-  type ObserveOptions,
-  propagateAttributes,
-} from '@langfuse/tracing';
+import { getActiveTraceId, propagateAttributes, startActiveObservation } from '@langfuse/tracing';
 import { config } from '@repo/config';
 import { getLogMetadata } from '@repo/logs';
 import { generateText, type OutputInterface, streamText, type ToolSet } from 'ai';
 
 import { langfuse, langfuseSpanProcessor } from './langfuse';
 import { defaultModel, models } from './models';
+import type {
+  GenerateTextOptions,
+  Observation,
+  ObserveConfig,
+  Observed,
+  ObservedArgs,
+  RuntimeContext,
+  StreamTextOptions,
+  TraceDetails,
+} from './types';
 
 // ---------- TRACING ----------
-/**
- * Wraps a function so every observation created inside it carries the current request's details
- * (trace name, route, user and request ID). Calls already inside an observation keep that
- * observation's details instead.
- */
+/** Tags new traces with the current request's details (route, user, organization, request ID) */
 const withRequestDetails = <TArgs extends unknown[], TReturn>(
   fn: (...args: TArgs) => TReturn,
-  traceName?: string,
+  getDetails?: (...args: TArgs) => TraceDetails,
 ) => {
   return (...args: TArgs): TReturn => {
     if (getActiveTraceId()) {
       return fn(...args);
     }
 
-    const { userId, awsRequestId, request } = getLogMetadata();
+    const { userId, organizationId, awsRequestId, request } = getLogMetadata();
     const route = request?.path ? `${request.method} ${request.path}` : undefined;
-    return propagateAttributes(
-      { traceName: traceName ?? route, userId, metadata: { route, awsRequestId } },
-      () => fn(...args),
+    const { traceName, sessionId } = getDetails?.(...args) ?? {};
+    // Langfuse warns about (and drops) undefined metadata, e.g. the request ID when running locally
+    const metadata = Object.fromEntries(
+      Object.entries({ route, organizationId, awsRequestId }).filter(
+        (entry): entry is [string, string] => entry[1] !== undefined,
+      ),
+    );
+    return propagateAttributes({ traceName: traceName ?? route, userId, sessionId, metadata }, () =>
+      fn(...args),
     );
   };
 };
-
-// ---------- TYPES ----------
-type RuntimeContext = NonNullable<Parameters<typeof generateText>[0]['runtimeContext']>;
-
-type WithDefaultModel<OPTIONS> = OPTIONS extends unknown
-  ? Omit<OPTIONS, 'model'> & {
-      /** The model to use for the generation (defaults to our default model) */
-      model?: LanguageModelV4;
-    }
-  : never;
-
-type GenerateTextOptions<TOOLS extends ToolSet, OUTPUT extends OutputInterface> = WithDefaultModel<
-  Parameters<typeof generateText<TOOLS, RuntimeContext, OUTPUT>>[0]
->;
-
-type StreamTextOptions<TOOLS extends ToolSet, OUTPUT extends OutputInterface> = WithDefaultModel<
-  Parameters<typeof streamText<TOOLS, RuntimeContext, OUTPUT>>[0]
->;
 
 // ---------- METHODS ----------
 /** Export methods related to AI */
 export const ai = {
   /** Our available AI models */
   models,
-  /**
-   * Wraps a function as a named Langfuse observation that records its input and output.
-   * Use it around each AI task so it can be found, replayed or converted into evals.
-   */
-  observe: <TArgs extends unknown[], TReturn>(
-    name: string,
-    fn: (...args: TArgs) => TReturn,
-    options?: Omit<ObserveOptions, 'name'>,
-  ) => withRequestDetails(observe(fn, { name, ...options }), name),
-  /** Gets the ID of the active trace so it can be scored later */
-  getTraceId: getActiveTraceId,
+  /** Wraps an AI task as a named Langfuse observation so it can be replayed or turned into evals */
+  observe: <TArgs extends ObservedArgs, TOutput>(
+    { name, endOnExit = true, sessionId }: ObserveConfig<TArgs>,
+    fn: (args: Observed<TArgs>) => Promise<TOutput>,
+  ) =>
+    withRequestDetails(
+      (args: TArgs) =>
+        startActiveObservation(
+          name,
+          async (span) => {
+            // Guard against ending twice (e.g. a stream error after the function already threw)
+            let ended = false;
+            const observation: Observation = {
+              traceId: span.traceId,
+              end: (result) => {
+                if (ended) {
+                  return;
+                }
+                ended = true;
+                if ('error' in result) {
+                  const { error } = result;
+                  span.update({
+                    level: 'ERROR',
+                    statusMessage: error instanceof Error ? error.message : String(error),
+                  });
+                } else {
+                  span.update({ output: result.output });
+                }
+                span.end();
+              },
+            };
+
+            span.update({ input: args.input });
+            try {
+              const output = await fn({ ...args, observation });
+              if (endOnExit) {
+                observation.end({ output });
+              }
+              return output;
+            } catch (error) {
+              observation.end({ error });
+              throw error;
+            }
+          },
+          // We end the observation ourselves so `endOnExit: false` can keep it open
+          { endOnExit: false },
+        ),
+      (args) => ({ traceName: name, sessionId: sessionId?.(args) }),
+    ),
   /** Scores a trace */
   scoreTrace: ({
     traceId,

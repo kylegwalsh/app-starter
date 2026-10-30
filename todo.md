@@ -8,12 +8,14 @@
     - We wouldn't want to email if the customer already saw the reply (maybe delay and add a condition)
   - Update onboarding script to use Posthog support
 
-# CHAT SDK
+## AI
 
-- Consider moving to REST API for increased timeouts + streaming support (urls are uglier)
-- Connect chat SDK
-- Create slack app
-- Build chat UI for web-app
+- Clean up any generated code
+
+- Test chat
+- Test storybook
+- Test sandbox
+- Test compaction
 
 ## PRISMA V8
 
@@ -26,14 +28,21 @@
   - Better Auth prisma adapter doesn't support v8: https://github.com/better-auth/better-auth/issues/9636 (first attempt closed: https://github.com/better-auth/better-auth/pull/10099)
   - No v8 PGlite adapter for tests: https://github.com/prisma/orm/issues/23752
 
+## SLACK
+
+- Create slack app using chat-sdk
+
 ## OTHER
 
+- Add new Posthog error trace support
+- Pass PostHog build number through with the source maps
+- NextJS does not reliably kill port and reload when making infra changes (and sometimes dies and has to restart when AI makes a lot of edits)
 - Update migrations once we finish updating schema (chat feature)
 - Add verification tool to record videos of changes
 - Upgrade oxlint and see if it removes the warnings for react/set-state-in-effect
 - Once API Gateway v2 supports response streaming, add it and test that the MCP and general AI apis stream output
 - Once Posthog adds transactional email to their SDK, replace the api call in the email package
-- When pushing final starter: Remove posthog settings from config / comment out the langfuse secrets / comment out the loops secret / remove loops setting from config / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend
+- When pushing final starter: Remove posthog settings from config / comment out the langfuse secrets / comment out stripe plugin in backend AND frontend / comment out stripe secrets / remove stripe publishable key from config / comment out stripe auth plugin in backend / custom domain
 
 ## MINOR IMPROVEMENTS
 

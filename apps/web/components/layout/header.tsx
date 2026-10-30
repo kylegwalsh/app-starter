@@ -11,6 +11,8 @@ import {
 import Link from 'next/link';
 import { Fragment } from 'react';
 
+import { ChatDrawerToggle } from '@/components/chat';
+
 type Props = {
   breadcrumbs: {
     label: string;
@@ -43,6 +45,9 @@ export const Header: FC<Props> = ({ breadcrumbs, children }) => (
         </BreadcrumbList>
       </Breadcrumb>
     </div>
-    {children}
+    <div className="flex items-center gap-2 px-4">
+      {children}
+      <ChatDrawerToggle />
+    </div>
   </header>
 );

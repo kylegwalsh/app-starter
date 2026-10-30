@@ -11,7 +11,7 @@ import {
   UserDetailsHeader,
   UserSessionsPanel,
 } from '@/components/user';
-import { adminApi, type Session, type User } from '@/core/auth';
+import { adminApi, type Session, type User } from '@/lib/auth';
 
 /**
  * User detail page — view user profile, manage sessions (view/revoke), and perform

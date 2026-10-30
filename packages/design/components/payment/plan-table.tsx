@@ -7,7 +7,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@repo/design/components/ui';
+} from '@repo/design/components/ui/table';
 import { cn } from '@repo/design/lib/utils';
 import { Check, Minus } from 'lucide-react';
 import { Fragment } from 'react';

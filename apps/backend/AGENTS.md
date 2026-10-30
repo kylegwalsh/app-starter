@@ -2,18 +2,20 @@
 
 ## Stack
 
-Node.js + TypeScript, SST (AWS Lambda), Hono, oRPC, Prisma (Postgres), Better Auth, Stripe, Vitest
+Node.js + TypeScript, SST (AWS Lambda), Hono (+ hono-openapi), Prisma (Postgres), Better Auth, Stripe, Vitest
 
 ## Directory Layout
 
 ```text
 lambda/         Lambda entrypoints (api, crons)
-api/            All of our API code (hono + oRPC)
-api/routes/     oRPC routers (most new API work happens here)
-api/middleware/ Hono middleware (CORS, timing)
-api/adapters/   Protocol adapters (MCP)
-mcp/            MCP server and tools
-core/           Core services (auth, stripe, re-usable business logic helpers)
+api/            The wiring for our Hono API
+features/       Vertical slices, one folder per feature domain:
+  routes.ts       Hono router: validate input → call an operation → respond
+  operations.ts   Business logic (DB work + decisions)
+  tools.ts        AI tools for chat/MCP (registered in `ai/tools.ts`)
+  lib/            Any additional helpers (use when operations gets too unwieldy)
+ai/             Tool registry, AI SDK + MCP tool adapters, MCP server
+services/       External integrations (auth, stripe, storage, daytona)
 db/             Prisma schema, migrations, connection utilities
 tests/          Vitest setup, factories, mocks (not test files — those live next to source)
 ```
@@ -28,14 +30,22 @@ tests/          Vitest setup, factories, mocks (not test files — those live ne
 
 - **Helpers**: Export as cohesive namespaced objects (`time.parse()`, `time.format()`), not scattered top-level functions.
 - **Naming**: Descriptive, no abbreviations. Functions = verbs, values = nouns.
-- **Errors**: Throw typed/semantic errors. Map to HTTP responses at the edge. Never swallow silently.
-- **Validation**: Validate external inputs with Zod schemas from `@repo/schemas`.
+- **Errors**: For caller mistakes (bad input, no access, not found), throw a named error from `@/api/error` (`BadRequestError`, `ForbiddenError`, …). For real failures, throw a plain `Error`. Never swallow errors.
+- **Validation**: Request body schemas live in `@repo/schemas` (shared with the frontend); routes validate with them and operations type their input with `z.infer`. Small route-only inputs (path params, pagination queries) can stay inline on the route.
 
 ## API & Routing
 
-- **Hono** is the unified HTTP entry point (`api/index.ts`). It handles non-API concerns first (auth, MCP, etc) then delegates to oRPC handlers.
-- **oRPC** is where almost all API logic lives. New endpoints go in `api/routes/` using `protectedProcedure` or `publicProcedure` from `api/procedures.ts`. Do not add business logic in Hono routes directly.
-- Two oRPC handlers serve the same router: **RPCHandler** (`/rpc/*`) for the typed frontend client, and **OpenAPIHandler** (`/api/*`) for external consumers and Swagger docs.
+- **Hono** is the unified HTTP entry point (`api/index.ts`). It handles non-API concerns first (auth, MCP, etc) then mounts the API router under `/api`.
+- New endpoints go in `features/<feature>/routes.ts` and are mounted in `api/router.ts` at their own prefix (`.route('/billing', billingRouter)`), with route paths relative to it (`'/charge'`, not `'/billing/charge'`). Chain routes off a single `new Hono<ProtectedEnv>().use(requireAuth)` expression — chaining is what lets the frontend's `hc` client infer types, so never split a router into separate statements.
+- Each route takes `describeRoute({ summary, tags })` for the OpenAPI spec, then `validator('json' | 'query' | 'param', schema)` (from `hono-openapi`) which both validates and documents the input. Read validated input with `c.req.valid('json')`.
+- Keep handlers thin: validate, call an operation, respond. Pass `c.var` (an `AuthContext` of `user` + `organization`, non-optional on routers that applied `requireAuth`) to operations so they work without HTTP (tests, MCP tools, crons).
+- Throw errors as described under Code Style; the global `onError` handler turns them into JSON responses.
+
+## AI Tools
+
+- Define tools with `createTool` in `features/<feature>/tools.ts` (see `ai/README.md`).
+- **Return Markdown** written inline: bullets for lists, **bold** for the key item, fenced code blocks for raw output, one sentence for confirmations. Never return an empty string.
+- On failure, throw with an actionable message (a named error when the caller is at fault); the model sees it and can recover.
 
 ## Database
 
@@ -46,7 +56,7 @@ tests/          Vitest setup, factories, mocks (not test files — those live ne
 
 ## Auth & Security
 
-- Better Auth: identity + org membership derived in request context, enforced via middleware/procedures.
+- Better Auth: identity + org membership derived in request context, enforced via middleware (`authMiddleware` + `requireAuth`).
 - Never log secrets or expose API keys to frontend. Use SST secrets.
 - Webhooks: verify signatures (e.g., Stripe), handle idempotency.
 
@@ -62,9 +72,10 @@ tests/          Vitest setup, factories, mocks (not test files — those live ne
 ## Testing
 
 - Run tests with the `/test-backend` skill.
-- Co-locate tests next to source: `api/routes/billing.ts` → `api/routes/billing.test.ts`.
-- Integration-style: real routes, real DB (isolated SQLite). Mock only external services.
+- Co-locate tests next to source: `features/billing/routes.ts` → `features/billing/routes.test.ts`.
+- Integration-style: real routes, real DB (isolated PGlite). Mock only external services.
 - Use `sessionFactory.createSession()` from `@/tests/factories` for route tests (signed-in user + org + `api` client).
+- Use `mcpFactory.createClient()` for MCP tool tests (a real MCP client connected to our server in memory, with `callTool`).
 - For patterns and a full example, see `.claude/docs/backend-testing.md`.
 
 ## Review & CI

@@ -11,8 +11,8 @@ export const BETTER_AUTH_SECRET = new sst.Secret('BETTER_AUTH_SECRET');
 // export const GOOGLE_GENERATIVE_AI_API_KEY = new sst.Secret('GOOGLE_GENERATIVE_AI_API_KEY');
 
 // Langfuse
-// export const LANGFUSE_SECRET_KEY = new sst.Secret('LANGFUSE_SECRET_KEY');
-// export const LANGFUSE_PUBLIC_KEY = new sst.Secret('LANGFUSE_PUBLIC_KEY');
+export const LANGFUSE_SECRET_KEY = new sst.Secret('LANGFUSE_SECRET_KEY');
+export const LANGFUSE_PUBLIC_KEY = new sst.Secret('LANGFUSE_PUBLIC_KEY');
 
 // PostHog
 // export const POSTHOG_SECRET_KEY = new sst.Secret('POSTHOG_SECRET_KEY');
@@ -21,5 +21,8 @@ export const BETTER_AUTH_SECRET = new sst.Secret('BETTER_AUTH_SECRET');
 // export const STRIPE_SECRET_KEY = new sst.Secret('STRIPE_SECRET_KEY');
 // export const STRIPE_WEBHOOK_SECRET = new sst.Secret('STRIPE_WEBHOOK_SECRET');
 
-// Set the default secrets for the stage...
+// Daytona
+export const DAYTONA_API_KEY = new sst.Secret('DAYTONA_API_KEY');
+
+// The current stage
 export const STAGE = new sst.Secret('STAGE', $app.stage);

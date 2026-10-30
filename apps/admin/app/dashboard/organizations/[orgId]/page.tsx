@@ -47,7 +47,7 @@ import {
   type Member,
   type Organization,
   type User,
-} from '@/core/auth';
+} from '@/lib/auth';
 
 type MemberWithUser = Member & {
   user?: User;

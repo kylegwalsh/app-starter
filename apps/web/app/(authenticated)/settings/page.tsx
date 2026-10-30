@@ -5,7 +5,7 @@ import { Separator } from '@repo/design';
 import { DashboardLayout } from '@/components';
 
 /** The general settings page */
-export default function GeneralSettingsPage() {
+const GeneralSettingsPage = () => {
   return (
     <DashboardLayout
       className="px-0"
@@ -17,4 +17,6 @@ export default function GeneralSettingsPage() {
       <Separator />
     </DashboardLayout>
   );
-}
+};
+
+export default GeneralSettingsPage;

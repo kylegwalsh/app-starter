@@ -15,7 +15,7 @@ import {
 import { CheckIcon, Loader2Icon, XIcon } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
-import { organizationApi, type Organization } from '@/core/auth';
+import { organizationApi, type Organization } from '@/lib/auth';
 
 // Auto-generate a slug from a name (replaces non-alphanumeric runs with hyphens)
 const generateSlug = (name: string) =>

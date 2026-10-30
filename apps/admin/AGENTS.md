@@ -10,7 +10,7 @@ Next.js (TypeScript), Tailwind CSS v4, shadcn/ui (`@repo/design`), lucide-react,
 app/          App Router: layouts, pages (all client-rendered)
 components/   Reusable UI (user management, org management, shared)
 contexts/     Auth context provider
-core/         Clients and core utilities (auth)
+lib/          Clients and core utilities (auth)
 ```
 
 ## Commands
@@ -35,7 +35,7 @@ core/         Clients and core utilities (auth)
 
 ## Authentication
 
-- Auth client configured in `core/auth.ts` with admin + organization plugins
+- Auth client configured in `lib/auth.ts` with admin + organization plugins
 - Session state managed via `contexts/auth-context.tsx`
 - Login page at `/login`, dashboard routes require admin role
 - `RequireAdmin` wrapper component gates dashboard routes

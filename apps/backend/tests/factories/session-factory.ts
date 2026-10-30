@@ -1,8 +1,8 @@
-import { createRouterClient } from '@orpc/server';
 import type { Organization, User } from '@prisma/client';
+import { hc } from 'hono/client';
 
-import { router } from '@/api/routes';
-import { auth } from '@/core';
+import { router } from '@/api/router';
+import { auth } from '@/services';
 
 import { organizationFactory } from './organization-factory';
 import { userFactory } from './user-factory';
@@ -36,12 +36,17 @@ export const sessionFactory = {
       session: { activeOrganizationId: organization.id },
     } as unknown as Awaited<ReturnType<typeof auth.api.getSession>>);
 
-    // Create the router client with a fake cookie so withAuth triggers session lookup
-    const headers = new Headers();
-    headers.set('cookie', 'better-auth.session_token=test-session');
-
-    const api = createRouterClient(router, {
-      context: { headers },
+    // Attaching a fake cookie on every request so `authMiddleware` triggers the
+    // mocked session lookup above.
+    const api = hc<typeof router>('http://test.local', {
+      fetch: (input: string | URL | Request, init?: RequestInit) => {
+        const headers = new Headers(init?.headers);
+        headers.set('cookie', 'better-auth.session_token=test-session');
+        return router.request(input instanceof Request ? input : String(input), {
+          ...init,
+          headers,
+        });
+      },
     });
 
     return { user, organization, api };
