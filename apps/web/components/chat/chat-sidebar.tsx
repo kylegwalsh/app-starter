@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
   Input,
   Skeleton,
-} from '@repo/design/components/ui';
+} from '@repo/design';
 import { cn } from '@repo/design/lib/utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2Icon, PlusIcon, MoreHorizontalIcon, PencilIcon, TrashIcon } from 'lucide-react';

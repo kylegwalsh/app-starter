@@ -1,4 +1,4 @@
-import { Skeleton } from '@repo/design/components/ui';
+import { Skeleton } from '@repo/design';
 
 /** Placeholder shaped like a conversation, shown while its messages load */
 export const ConversationSkeleton = () => (
