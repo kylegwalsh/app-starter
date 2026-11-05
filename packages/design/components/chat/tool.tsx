@@ -12,25 +12,20 @@ import type { ComponentProps } from 'react';
 
 import { MessageResponse } from './message';
 
+/** A tool call part from an AI SDK message */
 export type ToolPart = ToolUIPart | DynamicToolUIPart;
 
-// ---------- ToolOutput ----------
-// Renders a tool result in a styled block. Used both inside `ToolStep` and
-// externally for cases that want to show output without the collapsible
-// wrapper.
-
 export type ToolOutputProps = ComponentProps<'div'> & {
+  /** The tool's result */
   output: ToolPart['output'];
 };
 
+/** Renders a tool's result: Markdown text in a muted card, anything else as JSON */
 export const ToolOutput = ({ className, output, ...props }: ToolOutputProps) => {
   if (!output) {
     return null;
   }
 
-  // String outputs (the common case — tools return Markdown) render inside a
-  // subtle muted card, so they read as "content" and not as another header row,
-  // but without the heavy bordered look.
   if (typeof output === 'string') {
     return (
       <div
@@ -45,7 +40,6 @@ export const ToolOutput = ({ className, output, ...props }: ToolOutputProps) => 
     );
   }
 
-  // Structured outputs get a highlighted JSON block, without the surrounding card
   return (
     <div className={cn('text-xs', className)} {...props}>
       <MessageResponse>{`\`\`\`json\n${JSON.stringify(output, null, 2)}\n\`\`\``}</MessageResponse>
@@ -53,25 +47,19 @@ export const ToolOutput = ({ className, output, ...props }: ToolOutputProps) => 
   );
 };
 
-// ---------- ToolStep ----------
-// Subtle collapsible row for a single tool invocation — designed to live
-// inside a `Steps` group. Shows just an icon + name in the header; the chevron
-// fades in on hover. Expanded body renders `ToolOutput`.
-
 export type ToolStepProps = Omit<ComponentProps<typeof Collapsible>, 'children'> & {
   /** Display name for the tool (caller-formatted) */
   name: string;
-  /** Output payload from the tool */
+  /** The tool's result, shown when the row is expanded */
   output?: ToolPart['output'];
-  /** True when the tool execution failed — renders a static "(failed)" row. */
+  /** Whether the tool call failed */
   failed?: boolean;
 };
 
+/** A tool call row inside `Steps` that expands to show its output */
 export const ToolStep = ({ name, output, failed, className, ...props }: ToolStepProps) => {
-  // Errored tools render as a static "(failed)" row — no expansion, default
-  // muted color. The raw error text isn't useful to the user and a red
-  // expandable block reads heavier than the actual significance.
-  if (failed) {
+  // Failed and output-less calls have nothing to expand, so they render a plain row
+  if (failed || output == null) {
     return (
       <div
         className={cn(
@@ -80,24 +68,7 @@ export const ToolStep = ({ name, output, failed, className, ...props }: ToolStep
         )}
       >
         <WrenchIcon className="size-3.5" />
-        <span>{name} (failed)</span>
-      </div>
-    );
-  }
-
-  // No output — the tool hasn't produced anything meaningful to expand.
-  // Render a static row with no chevron / hover affordance so the user
-  // doesn't get a click target that opens an empty drawer.
-  if (output == null) {
-    return (
-      <div
-        className={cn(
-          'not-prose text-muted-foreground flex items-center gap-1.5 text-xs',
-          className,
-        )}
-      >
-        <WrenchIcon className="size-3.5" />
-        <span>{name}</span>
+        <span>{failed ? `${name} (failed)` : name}</span>
       </div>
     );
   }

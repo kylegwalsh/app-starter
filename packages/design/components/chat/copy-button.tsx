@@ -4,8 +4,13 @@ import { MessageAction } from '@repo/design/components/chat/message';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 import { useState } from 'react';
 
+export type CopyButtonProps = {
+  /** The text to copy */
+  text: string;
+};
+
 /** Copies text to the clipboard with brief check-mark feedback */
-export const CopyButton = ({ text }: { text: string }) => {
+export const CopyButton = ({ text }: CopyButtonProps) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {

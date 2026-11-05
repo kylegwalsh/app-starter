@@ -10,11 +10,11 @@ export type ChatErrorProps = {
   message?: string;
   /** Called when the user clicks "Try again" */
   onRetry?: () => void;
-  /** Additional class name */
+  /** Classes for the wrapper */
   className?: string;
 };
 
-/** Inline error message shown when a chat response fails — replaces the assistant's typing indicator */
+/** Inline error shown in place of the assistant's reply when a response fails */
 export const ChatError = ({
   message = 'There was an error generating a response.',
   onRetry,

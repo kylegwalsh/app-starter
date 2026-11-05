@@ -8,6 +8,7 @@ import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom';
 
 export type ConversationProps = ComponentProps<typeof StickToBottom>;
 
+/** Scrollable message list that stays pinned to the bottom as new content streams in */
 export const Conversation = ({ className, ...props }: ConversationProps) => (
   <StickToBottom
     className={cn('relative flex-1 overflow-y-hidden', className)}
@@ -20,12 +21,14 @@ export const Conversation = ({ className, ...props }: ConversationProps) => (
 
 export type ConversationContentProps = ComponentProps<typeof StickToBottom.Content>;
 
+/** The conversation's messages */
 export const ConversationContent = ({ className, ...props }: ConversationContentProps) => (
   <StickToBottom.Content className={cn('flex flex-col gap-8 p-4', className)} {...props} />
 );
 
 export type ConversationScrollButtonProps = ComponentProps<typeof Button>;
 
+/** Jumps back to the latest message; only shown when scrolled up */
 export const ConversationScrollButton = ({
   className,
   ...props

@@ -17,11 +17,7 @@ export type ImageLightboxProps = {
   imageClassName?: string;
 };
 
-/**
- * Click-to-expand image viewer built on Radix Dialog.
- * Semi-opaque backdrop, close button top-right, no open/close animation.
- * Focus trap and Esc-to-close come from Radix.
- */
+/** Wraps an image so that clicking it expands a dedicated image viewer */
 export const ImageLightbox = ({ src, alt, children, imageClassName }: ImageLightboxProps) => (
   <DialogPrimitive.Root>
     <DialogPrimitive.Trigger asChild>{children}</DialogPrimitive.Trigger>

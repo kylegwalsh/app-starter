@@ -13,9 +13,11 @@ import { memo } from 'react';
 import { Streamdown } from 'streamdown';
 
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {
+  /** Who sent the message, which sets its alignment and styling */
   from: UIMessage['role'];
 };
 
+/** A chat message; user messages align right */
 export const Message = ({ className, from, ...props }: MessageProps) => (
   <div
     className={cn(
@@ -29,10 +31,12 @@ export const Message = ({ className, from, ...props }: MessageProps) => (
 
 export type MessageContentProps = HTMLAttributes<HTMLDivElement>;
 
+/** A message's body; user messages get a bubble */
 export const MessageContent = ({ children, className, ...props }: MessageContentProps) => (
   <div
     className={cn(
       'is-user:dark flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-sm',
+      // Styled by the parent `Message`'s `is-user` / `is-assistant` class
       'group-[.is-user]:ml-auto group-[.is-user]:rounded-lg group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground',
       'group-[.is-assistant]:text-foreground',
       className,
@@ -45,6 +49,7 @@ export const MessageContent = ({ children, className, ...props }: MessageContent
 
 export type MessageActionsProps = ComponentProps<'div'>;
 
+/** A row of buttons under a message, such as copy and feedback */
 export const MessageActions = ({ className, children, ...props }: MessageActionsProps) => (
   <div className={cn('flex items-center gap-1', className)} {...props}>
     {children}
@@ -52,10 +57,13 @@ export const MessageActions = ({ className, children, ...props }: MessageActions
 );
 
 export type MessageActionProps = ComponentProps<typeof Button> & {
+  /** Shown above the button on hover */
   tooltip?: string;
+  /** Screen reader label (falls back to `tooltip`) */
   label?: string;
 };
 
+/** An icon button for `MessageActions`, with an optional tooltip */
 export const MessageAction = ({
   tooltip,
   children,
@@ -90,6 +98,7 @@ export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
 const streamdownPlugins = { cjk, code, math, mermaid };
 
+/** Renders streaming Markdown, including code, math and Mermaid diagrams */
 export const MessageResponse = memo(
   ({ className, ...props }: MessageResponseProps) => (
     <Streamdown
@@ -98,6 +107,7 @@ export const MessageResponse = memo(
       {...props}
     />
   ),
+  // Only re-render when the text or streaming state changes, since re-parsing Markdown is costly
   (prevProps, nextProps) =>
     prevProps.children === nextProps.children && nextProps.isAnimating === prevProps.isAnimating,
 );

@@ -7,12 +7,15 @@ import { Textarea } from '@repo/design/components/ui/textarea';
 import { SendIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react';
 import { useState } from 'react';
 
+/** Saves a rating, and an optional comment for thumbs-down, on a message */
 export type FeedbackHandler = (messageId: string, rating: 'up' | 'down', comment?: string) => void;
 
 export type FeedbackButtonsProps = {
+  /** The message being rated */
   messageId: string;
-  /** Persisted feedback for this message — locks the buttons once set. */
+  /** Saved rating (`true` is thumbs-up); once set, the buttons are locked */
   existingFeedback: boolean | null;
+  /** Called when the user rates the message */
   onFeedback: FeedbackHandler;
 };
 
@@ -40,8 +43,7 @@ export const FeedbackButtons = ({
     setComment('');
   };
 
-  // After submission, hide the icon the user didn't pick so the remaining
-  // (solid) icon stands alone as the completion signal.
+  // Once rated, only the chosen (filled) icon stays
   const showThumbsUp = !submitted || feedback === true;
   const showThumbsDown = !submitted || feedback === false;
 

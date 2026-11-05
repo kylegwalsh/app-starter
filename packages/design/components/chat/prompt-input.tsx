@@ -38,18 +38,18 @@ import {
   useState,
 } from 'react';
 
-// ============================================================================
-// Provider
-// ============================================================================
-
 /** A staged attachment (its `url` is a local blob URL) */
 export type PromptInputFile = FileUIPart & { id: string };
 
 /** The staged attachments and how to change them */
 export type PromptInputAttachments = {
+  /** The staged files, in the order they were added */
   files: PromptInputFile[];
+  /** Stages files */
   add: (files: File[] | FileList) => void;
+  /** Removes a staged file by its `id` */
   remove: (id: string) => void;
+  /** Removes every staged file */
   clear: () => void;
 };
 
@@ -131,10 +131,6 @@ export const PromptInputProvider = ({ children }: PropsWithChildren) => {
   return <PromptInputStateContext value={state}>{children}</PromptInputStateContext>;
 };
 
-// ============================================================================
-// Input
-// ============================================================================
-
 /** The input's attachments, with validated adds and a way to open the file picker */
 type PromptInputAttachmentsWithPicker = PromptInputAttachments & { openFileDialog: () => void };
 
@@ -149,8 +145,11 @@ export const usePromptInputAttachments = () => {
   return attachments;
 };
 
+/** What the user submitted */
 export type PromptInputMessage = {
+  /** The typed text */
   text: string;
+  /** The staged files, still pointing at local blob URLs */
   files: FileUIPart[];
 };
 
@@ -159,12 +158,15 @@ type PromptInputError = { code: 'max_files' | 'max_file_size' | 'accept'; messag
 export type PromptInputProps = Omit<HTMLAttributes<HTMLFormElement>, 'onSubmit' | 'onError'> & {
   /** Accepted MIME types, e.g. `image/*,application/pdf` (any if unset) */
   accept?: string;
+  /** Whether the file picker allows selecting several files */
   multiple?: boolean;
+  /** Most files that can be staged at once */
   maxFiles?: number;
-  /** In bytes */
+  /** Largest file allowed, in bytes */
   maxFileSize?: number;
   /** Called when added files are rejected by the constraints above */
   onError?: (error: PromptInputError) => void;
+  /** Called on submit; throw to keep the text and files in the input */
   onSubmit: (
     message: PromptInputMessage,
     event: FormEvent<HTMLFormElement>,
@@ -186,7 +188,7 @@ const matchesAccept = (file: File, accept: string | undefined) => {
   );
 };
 
-/** A chat input form; must be inside a `PromptInputProvider`, which holds its state */
+/** The chat input form. This must be inside a `PromptInputProvider`, which holds its state */
 export const PromptInput = ({
   className,
   accept,
@@ -303,6 +305,7 @@ export const PromptInput = ({
 
 export type PromptInputTextareaProps = ComponentProps<typeof InputGroupTextarea>;
 
+/** The prompt input's text box */
 export const PromptInputTextarea = ({
   onChange,
   onKeyDown,
@@ -368,12 +371,9 @@ export const PromptInputTextarea = ({
   );
 };
 
-// ============================================================================
-// Layout
-// ============================================================================
-
 export type PromptInputHeaderProps = Omit<ComponentProps<typeof InputGroupAddon>, 'align'>;
 
+/** Row above the text box, e.g. for staged attachments */
 export const PromptInputHeader = ({ className, ...props }: PromptInputHeaderProps) => (
   <InputGroupAddon
     align="block-end"
@@ -384,6 +384,7 @@ export const PromptInputHeader = ({ className, ...props }: PromptInputHeaderProp
 
 export type PromptInputFooterProps = Omit<ComponentProps<typeof InputGroupAddon>, 'align'>;
 
+/** Row below the text box, for tools and the submit button */
 export const PromptInputFooter = ({ className, ...props }: PromptInputFooterProps) => (
   <InputGroupAddon
     align="block-end"
@@ -394,25 +395,24 @@ export const PromptInputFooter = ({ className, ...props }: PromptInputFooterProp
 
 export type PromptInputToolsProps = HTMLAttributes<HTMLDivElement>;
 
+/** Group of buttons on the prompt input footer's left side */
 export const PromptInputTools = ({ className, ...props }: PromptInputToolsProps) => (
   <div className={cn('flex min-w-0 items-center gap-1', className)} {...props} />
 );
 
-// ============================================================================
-// Actions
-// ============================================================================
-
 export type PromptInputActionMenuProps = ComponentProps<typeof DropdownMenu>;
 
+/** Dropdown of extra input actions, like adding attachments */
 export const PromptInputActionMenu = (props: PromptInputActionMenuProps) => (
   <DropdownMenu {...props} />
 );
 
 export type PromptInputActionMenuTriggerProps = ComponentProps<typeof InputGroupButton> & {
-  /** Shown above the button on hover */
+  /** The tooltip message to show on hover */
   tooltip?: string;
 };
 
+/** Button that opens the action menu (a plus icon by default) */
 export const PromptInputActionMenuTrigger = ({
   className,
   children,
@@ -448,14 +448,17 @@ export const PromptInputActionMenuTrigger = ({
 
 export type PromptInputActionMenuContentProps = ComponentProps<typeof DropdownMenuContent>;
 
+/** The action menu's items */
 export const PromptInputActionMenuContent = (props: PromptInputActionMenuContentProps) => (
   <DropdownMenuContent align="start" {...props} />
 );
 
 export type PromptInputActionAddAttachmentsProps = ComponentProps<typeof DropdownMenuItem> & {
+  /** The label for the menu item */
   label?: string;
 };
 
+/** Menu item that opens the file picker */
 export const PromptInputActionAddAttachments = ({
   label = 'Add photos or files',
   ...props
@@ -469,10 +472,13 @@ export const PromptInputActionAddAttachments = ({
 };
 
 export type PromptInputSubmitProps = ComponentProps<typeof InputGroupButton> & {
+  /** The chat's status (controls the icon) */
   status?: ChatStatus;
+  /** The method to run to stop the response while streaming */
   onStop?: () => void;
 };
 
+/** Submit button that shows the chat's status and can stop a streaming reply */
 export const PromptInputSubmit = ({
   className,
   variant = 'default',

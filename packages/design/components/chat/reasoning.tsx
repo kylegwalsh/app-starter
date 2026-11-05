@@ -11,6 +11,7 @@ import { useEffect, useState, type ComponentProps } from 'react';
 
 import { Shimmer } from './shimmer';
 
+/** Formats milliseconds as e.g. "800ms" or "7.4s" */
 const formatDuration = (ms: number) => {
   if (ms < 1000) {
     return `${ms}ms`;
@@ -19,20 +20,16 @@ const formatDuration = (ms: number) => {
 };
 
 export type ReasoningProps = Omit<ComponentProps<typeof Collapsible>, 'children'> & {
-  /** Streaming = mid-thought; done = finished. Toggles the shimmer + locks the duration. */
+  /** Whether the model is still thinking or has finished */
   state?: 'streaming' | 'done';
-  /** The reasoning text — rendered inside the collapsible body. */
+  /** The reasoning text */
   children?: React.ReactNode;
 };
 
-/**
- * Collapsible reasoning section, mirrored after the Tool component pattern.
- * Header shows a live duration while streaming (e.g. "Thinking… (3.2s)") and
- * locks to "Thought for 7.4s" once the model finishes. Replayed parts that
- * mount in the 'done' state with no streaming history just show "Thought".
- */
+/** A model's reasoning that expands to show the text, with how long it thought */
 export const Reasoning = ({ state, className, children, ...props }: ReasoningProps) => {
-  // Re-render every 250ms while streaming so the live duration updates.
+  // `now` ticks every 250ms while streaming so the live duration updates. Reasoning loaded from
+  // history never streamed here, so it has no duration and just shows "Thought"
   const [now, setNow] = useState(() => Date.now());
   const [endedAt, setEndedAt] = useState<number | null>(null);
   const [startedAt, setStartedAt] = useState(() => (state === 'streaming' ? now : null));

@@ -17,10 +17,6 @@ import {
 import type { ComponentProps, HTMLAttributes } from 'react';
 import { createContext, useContext, useState } from 'react';
 
-// ============================================================================
-// File tiles
-// ============================================================================
-
 const WORD_MIME_TYPES = new Set<string>([
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -33,14 +29,13 @@ const SPREADSHEET_MIME_TYPES = new Set<string>([
 ]);
 
 export type FileTileStyle = {
+  /** The file-type icon */
   Icon: typeof ImageIcon;
+  /** Background color class for the icon's tile */
   iconBg: string;
 };
 
-/**
- * Maps a mime type to a coloured icon-tile style — shared between the message
- * attachment card and the inline attachment preview so the two read as a set.
- */
+/** The icon and color for a file type, shared by message attachments and staged attachments */
 export const getFileTileStyle = (mediaType: string): FileTileStyle => {
   if (mediaType === 'application/pdf') {
     return { Icon: FileTextIcon, iconBg: 'bg-red-500/80' };
@@ -62,10 +57,6 @@ export const getFileTileStyle = (mediaType: string): FileTileStyle => {
   }
   return { Icon: FileIcon, iconBg: 'bg-muted-foreground' };
 };
-
-// ============================================================================
-// Attachments
-// ============================================================================
 
 /** A staged file */
 export type AttachmentData = FileUIPart & { id: string };
@@ -95,7 +86,9 @@ export const Attachments = ({ className, ...props }: AttachmentsProps) => (
 );
 
 export type AttachmentProps = HTMLAttributes<HTMLDivElement> & {
+  /** The staged file */
   data: AttachmentData;
+  /** Removes the attachment; without it, `AttachmentRemove` renders nothing */
   onRemove?: () => void;
   /** Show a spinner overlay on the preview tile while the attachment uploads */
   loading?: boolean;
@@ -189,6 +182,7 @@ export const AttachmentInfo = ({ className, ...props }: AttachmentInfoProps) => 
 };
 
 export type AttachmentRemoveProps = ComponentProps<typeof Button> & {
+  /** Screen reader label */
   label?: string;
 };
 
@@ -211,6 +205,7 @@ export const AttachmentRemove = ({
         className,
       )}
       onClick={(e) => {
+        // Don't trigger the chip's own click handler
         e.stopPropagation();
         onRemove();
       }}

@@ -6,22 +6,17 @@ import { cn } from '@repo/design/lib/utils';
 import type { FileUIPart } from 'ai';
 
 export type MessageAttachmentsProps = {
+  /** The message's file parts */
   parts: FileUIPart[];
+  /** Which side of the conversation to align to */
   align: 'user' | 'assistant';
-  /** Map of `mediaType` → preferred extension label, passed through to `<ChatFile>`. */
+  /** Map of `mediaType` → preferred extension label, passed through to `<ChatFile>` */
   fileTypes: Record<string, string>;
-  /**
-   * CDN URL → local blob URL. When present, the local URL is preferred over the
-   * remote one so just-uploaded files render instantly without a re-fetch.
-   */
+  /** Uploaded URL → local blob URL, for files sent from this browser */
   localPreviews?: ReadonlyMap<string, string>;
 };
 
-/**
- * Image and file tiles shown above a message's text content. Images render on
- * top at their natural proportions; file cards render below so the compact
- * cards don't stretch to match image height in a shared row.
- */
+/** A message's images and files, shown above its text */
 export const MessageAttachments = ({
   parts,
   align,
@@ -34,13 +29,13 @@ export const MessageAttachments = ({
   const imageParts = parts.filter((p) => p.mediaType.startsWith('image/'));
   const fileParts = parts.filter((p) => !p.mediaType.startsWith('image/'));
 
-  // Prefer the in-memory blob URL when available so just-sent files render
-  // instantly instead of waiting on a round-trip fetch of the same bytes.
+  // Just-sent files show their local copy instead of downloading the same bytes again
   const displayUrlFor = (part: FileUIPart) =>
     (part.url && localPreviews?.get(part.url)) ?? part.url;
 
   return (
     <div className={cn('mb-2 flex flex-col gap-2', align === 'user' ? 'items-end' : 'items-start')}>
+      {/* Images and files get separate rows, so file cards don't stretch to the images' height */}
       {imageParts.length > 0 && (
         <div
           className={cn('flex flex-wrap gap-2', align === 'user' ? 'justify-end' : 'justify-start')}

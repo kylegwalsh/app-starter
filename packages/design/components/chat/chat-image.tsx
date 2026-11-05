@@ -4,8 +4,15 @@ import { ImageLightbox } from '@repo/design/components/image/image-lightbox';
 import { cn } from '@repo/design/lib/utils';
 import { useState } from 'react';
 
+export type ChatImageProps = {
+  /** The image's URL */
+  url: string;
+  /** Alt text for the image */
+  alt: string;
+};
+
 /** In-message image with skeleton placeholder and click-to-expand lightbox */
-export const ChatImage = ({ url, alt }: { url: string; alt: string }) => {
+export const ChatImage = ({ url, alt }: ChatImageProps) => {
   const [loaded, setLoaded] = useState(false);
   return (
     <ImageLightbox alt={alt} src={url}>

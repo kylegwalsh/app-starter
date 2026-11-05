@@ -3,7 +3,7 @@
 import { getFileTileStyle } from '@repo/design/components/chat/attachments';
 import { cn } from '@repo/design/lib/utils';
 
-/** Derives the extension-style type label (e.g. "PDF", "PNG") from media type + filename */
+/** The file's type label (e.g. "PDF"), from its media type or else its extension */
 const getTypeLabel = (
   mediaType: string,
   filename: string | undefined,
@@ -15,14 +15,17 @@ const getTypeLabel = (
 };
 
 export type ChatFileProps = {
+  /** Where to open the file; without one the card isn't a link */
   url: string | undefined;
+  /** The file's name */
   filename: string | undefined;
+  /** The file's MIME type */
   mediaType: string;
   /** Map of `mediaType` → preferred extension label (e.g. `{ "image/png": "png" }`) */
   fileTypes: Record<string, string>;
 };
 
-/** Non-image attachment card — colored icon tile, filename, and type label */
+/** Card for a non-image attachment, with a file-type icon, name and type label */
 export const ChatFile = ({ url, filename, mediaType, fileTypes }: ChatFileProps) => {
   const { Icon, iconBg } = getFileTileStyle(mediaType);
   const typeLabel = getTypeLabel(mediaType, filename, fileTypes);

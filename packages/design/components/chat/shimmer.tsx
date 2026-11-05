@@ -7,10 +7,7 @@ export type ShimmerProps = HTMLAttributes<HTMLSpanElement> & {
   duration?: number;
 };
 
-/**
- * Renders children with an animated shimmer/sweep highlight effect.
- * Uses a pure-CSS gradient animation — no external dependencies.
- */
+/** Renders children with an animated shimmer/sweep highlight effect */
 export const Shimmer = ({ className, children, duration = 2, style, ...props }: ShimmerProps) => (
   <span
     className={cn('animate-shimmer bg-clip-text text-transparent', className)}

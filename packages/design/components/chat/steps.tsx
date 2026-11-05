@@ -9,13 +9,6 @@ import { cn } from '@repo/design/lib/utils';
 import { ChevronRightIcon, SparklesIcon } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 
-/**
- * "Took N steps" collapsible wrapper for a sequence of process entries
- * (reasoning, tool calls, etc.) before a model's final answer. Mirrors the
- * compact pattern used by ChatGPT / Claude — header is a subtle row with a
- * sparkle icon, chevron fades in on hover, body renders the caller's steps
- * with a vertical connector line.
- */
 export type StepsProps = Omit<ComponentProps<typeof Collapsible>, 'children'> & {
   /** Number of steps — used to render the "Took N step(s)" label */
   count: number;
@@ -23,6 +16,10 @@ export type StepsProps = Omit<ComponentProps<typeof Collapsible>, 'children'> & 
   children?: ReactNode;
 };
 
+/**
+ * "Took N steps" collapsible wrapper for a sequence of process entries
+ * (reasoning, tool calls, etc.) before a model's final answer
+ */
 export const Steps = ({ count, className, children, ...props }: StepsProps) => (
   <Collapsible className={cn('not-prose', className)} {...props}>
     <CollapsibleTrigger className="group/steps text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs transition-colors">
