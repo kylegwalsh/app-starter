@@ -83,7 +83,7 @@ const ProcessSteps: FC<{ parts: ProcessPart[]; isAnimating: boolean }> = ({
       {parts.map((part, index) =>
         part.type === 'reasoning' ? (
           // oxlint-disable-next-line react/no-array-index-key -- reasoning parts have no stable id
-          <Reasoning key={`reasoning-${index}`} state={part.state ?? 'done'}>
+          <Reasoning key={`reasoning-${index}`} streaming={part.state === 'streaming'}>
             {part.text}
           </Reasoning>
         ) : (

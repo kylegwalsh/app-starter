@@ -18,7 +18,7 @@ const meta = {
   },
   render: (args) => (
     <Steps {...args}>
-      <Reasoning state="done">
+      <Reasoning>
         The user wants the primes below 50, so I'll run a quick sieve rather than list them from
         memory.
       </Reasoning>
