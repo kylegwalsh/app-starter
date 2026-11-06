@@ -19,13 +19,19 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
+  useSidebar,
 } from '@repo/design';
-import { ChevronRight, LayoutDashboard, Settings } from 'lucide-react';
+import { useAtomValue } from 'jotai';
+import { ChevronRight, LayoutDashboard, LifeBuoy, MessageSquare, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ComponentType, SVGProps } from 'react';
+import { useEffect, useRef, useSyncExternalStore, type ComponentType, type SVGProps } from 'react';
 
+import { chatDrawerOpenAtom } from '@/atoms/chat';
+import { supportUnreadCountAtom } from '@/atoms/support';
 import { OrganizationSwitcher, UserButton } from '@/components/auth';
+import { ChatDrawer } from '@/components/chat';
+import { isSupportChatEnabled, openSupportChat } from '@/lib';
 
 /** The type for a navigation item */
 type NavItem = {
@@ -41,8 +47,64 @@ type NavItem = {
   items?: NavItem[];
 };
 
+/**
+ * Route prefixes that should auto-collapse the app sidebar on entry
+ * (usually used when the page would otherwise feel cramped)
+ */
+const AUTO_COLLAPSE_ROUTES = ['/chat'];
+
+/** Below this width, opening the chat drawer collapses the app sidebar to make room */
+const CHAT_DRAWER_COLLAPSE_QUERY = '(max-width: 1535px)';
+
+/** Subscribes to changes in whether the viewport is below the chat drawer breakpoint */
+const subscribeToViewport = (onChange: () => void) => {
+  const mql = window.matchMedia(CHAT_DRAWER_COLLAPSE_QUERY);
+  mql.addEventListener('change', onChange);
+  return () => mql.removeEventListener('change', onChange);
+};
+
+/** Whether the screen is too narrow for both the app sidebar and the chat drawer */
+const useIsNarrowForChatDrawer = () =>
+  useSyncExternalStore(
+    subscribeToViewport,
+    () => window.matchMedia(CHAT_DRAWER_COLLAPSE_QUERY).matches,
+    // Rendered on the server before we know the viewport
+    () => false,
+  );
+
 /** The sidebar for the application */
 export const AppSidebar: FC = ({ children }) => {
+  const pathname = usePathname();
+  const { open, setOpen } = useSidebar();
+  const isDrawerOpen = useAtomValue(chatDrawerOpenAtom);
+  const isNarrow = useIsNarrowForChatDrawer();
+  const supportUnreadCount = useAtomValue(supportUnreadCountAtom);
+
+  // Collapse on chat routes, or when the chat drawer opens on a narrow screen. Close on entry only
+  // if currently open, and re-open on exit only if we were the one who closed it — so a
+  // manually-collapsed sidebar stays collapsed on return.
+  const shouldAutoCollapse =
+    AUTO_COLLAPSE_ROUTES.some((prefix) => pathname.startsWith(prefix)) ||
+    (isDrawerOpen && isNarrow);
+  const lastAutoCollapse = useRef<boolean | null>(null);
+  const autoCollapsedByUs = useRef(false);
+  useEffect(() => {
+    // Only act when the auto-collapse condition flips, not when the user toggles the sidebar
+    if (lastAutoCollapse.current === shouldAutoCollapse) {
+      return;
+    }
+    lastAutoCollapse.current = shouldAutoCollapse;
+    if (shouldAutoCollapse) {
+      if (open) {
+        autoCollapsedByUs.current = true;
+        setOpen(false);
+      }
+    } else if (autoCollapsedByUs.current) {
+      autoCollapsedByUs.current = false;
+      setOpen(true);
+    }
+  }, [shouldAutoCollapse, open, setOpen]);
+
   return (
     <>
       <Sidebar collapsible="icon">
@@ -59,11 +121,37 @@ export const AppSidebar: FC = ({ children }) => {
                   url: '/',
                   icon: LayoutDashboard,
                 },
+                {
+                  title: 'Chat',
+                  url: '/chat',
+                  icon: MessageSquare,
+                },
               ]}
             />
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
+          {isSupportChatEnabled && (
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={openSupportChat}
+                  tooltip={supportUnreadCount > 0 ? 'Support (new reply)' : 'Support'}
+                >
+                  <span className="relative shrink-0">
+                    <LifeBuoy className="size-4" />
+                    {supportUnreadCount > 0 && (
+                      <span className="bg-destructive ring-sidebar absolute -top-0.5 -right-0.5 size-2 rounded-full ring-2" />
+                    )}
+                  </span>
+                  <span>
+                    Support
+                    {supportUnreadCount > 0 && <span className="sr-only"> (new reply)</span>}
+                  </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          )}
           <AppSidebarGroup
             navItems={[
               {
@@ -83,12 +171,13 @@ export const AppSidebar: FC = ({ children }) => {
         <SidebarRail />
       </Sidebar>
       <SidebarInset>{children}</SidebarInset>
+      <ChatDrawer />
     </>
   );
 };
 
 /** Renders a group of navigation items in the sidebar */
-const AppSidebarGroup = ({ navItems, label }: { navItems: NavItem[]; label?: string }) => {
+const AppSidebarGroup: FC<{ navItems: NavItem[]; label?: string }> = ({ navItems, label }) => {
   const pathname = usePathname();
 
   return (
@@ -129,7 +218,11 @@ const AppSidebarGroup = ({ navItems, label }: { navItems: NavItem[]; label?: str
             </Collapsible>
           ) : (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild isActive={pathname === item.url} tooltip={item.title}>
+              <SidebarMenuButton
+                asChild
+                isActive={item.url === '/' ? pathname === item.url : pathname.startsWith(item.url)}
+                tooltip={item.title}
+              >
                 <Link href={item.url}>
                   {Icon ? <Icon /> : null}
                   <span>{item.title}</span>

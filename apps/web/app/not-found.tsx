@@ -1,7 +1,7 @@
 import { Button } from '@repo/design';
 import Link from 'next/link';
 
-export default function NotFound() {
+const NotFound = () => {
   return (
     <div className="flex min-h-svh w-full flex-col items-center justify-center px-4 py-12">
       <div className="text-center">
@@ -33,4 +33,6 @@ export default function NotFound() {
       </div>
     </div>
   );
-}
+};
+
+export default NotFound;

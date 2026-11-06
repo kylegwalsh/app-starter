@@ -2,18 +2,14 @@
 
 import { OrganizationSwitcher as BaseOrganizationSwitcher } from '@daveyplate/better-auth-ui';
 import { cn } from '@repo/design/lib/utils';
-import type { ComponentProps } from 'react';
 
 import { useUser } from '@/hooks';
 
-const DEFAULT_TRIGGER_BASE =
-  'w-full bg-background text-foreground shadow-md hover:bg-background hover:bg-background/30 dark:hover:bg-background/60 group-data-[collapsible=icon]:!bg-transparent group-data-[collapsible=icon]:!shadow-none group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:[&>svg]:hidden';
-
 /** Organization switcher with shared configuration for hiding personal org details */
-export const OrganizationSwitcher = ({
+export const OrganizationSwitcher: FC<typeof BaseOrganizationSwitcher> = ({
   classNames,
   ...props
-}: ComponentProps<typeof BaseOrganizationSwitcher>) => {
+}) => {
   const { organization } = useUser();
 
   return (
@@ -22,7 +18,10 @@ export const OrganizationSwitcher = ({
         ...classNames,
         trigger: {
           ...classNames?.trigger,
-          base: cn(DEFAULT_TRIGGER_BASE, classNames?.trigger?.base),
+          base: cn(
+            'w-full bg-background text-foreground shadow-md hover:bg-background hover:bg-background/30 dark:hover:bg-background/60 group-data-[collapsible=icon]:!bg-transparent group-data-[collapsible=icon]:!shadow-none group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:[&>svg]:hidden',
+            classNames?.trigger?.base,
+          ),
           user: {
             ...classNames?.trigger?.user,
             content: cn('group-data-[collapsible=icon]:hidden', classNames?.trigger?.user?.content),

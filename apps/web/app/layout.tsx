@@ -4,37 +4,35 @@ import { config } from '@repo/config';
 import { Toaster } from '@repo/design';
 import { createMetadata } from '@repo/seo';
 import Script from 'next/script';
-import type { ReactNode } from 'react';
 
-import { ErrorBoundary, Providers, UserInitializer } from '@/components';
+import { ErrorBoundary, Providers, SupportChatInitializer, UserInitializer } from '@/components';
 
 /** The default metadata for the app */
 export const metadata = createMetadata();
 
 /** Our primary layout wrapping the entire app */
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: ReactNode;
-}>) {
+const RootLayout: FC = ({ children }) => {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="flex min-h-svh flex-col antialiased">
+      <body className="flex h-svh flex-col overflow-hidden antialiased">
         <ErrorBoundary>
           <Providers>
             {children}
             <UserInitializer />
+            <SupportChatInitializer />
             <Toaster />
           </Providers>
           {/* Add third part scripts */}
           {/* Live chat widget */}
           {config.crisp.websiteId && (
             <Script id="chat">
-              {`window.$crisp=[];window.CRISP_WEBSITE_ID="${config.crisp.websiteId}";(function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();`}
+              {`window.$crisp=window.$crisp||[];window.$crisp.push(["do","chat:hide"]);window.CRISP_WEBSITE_ID="${config.crisp.websiteId}";(function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();`}
             </Script>
           )}
         </ErrorBoundary>
       </body>
     </html>
   );
-}
+};
+
+export default RootLayout;

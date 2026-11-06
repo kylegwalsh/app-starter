@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import { DashboardLayout, PlanCards } from '@/components';
 
 /** The plans settings page */
-export default function PlansPage() {
+const PlansPage = () => {
   // Plans only exist when Stripe is configured
   if (!config.stripe.isEnabled) {
     notFound();
@@ -17,4 +17,6 @@ export default function PlansPage() {
       <PlanCards />
     </DashboardLayout>
   );
-}
+};
+
+export default PlansPage;

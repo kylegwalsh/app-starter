@@ -34,7 +34,7 @@ import {
   ManagementRestrictedHeader,
   OrganizationPluginDisabledCard,
 } from '@/components/organizations/organization-plugin-disabled';
-import { organizationApi, type Organization } from '@/core/auth';
+import { organizationApi, type Organization } from '@/lib/auth';
 
 type SortField = 'name' | 'slug' | 'createdAt';
 type SortOrder = 'asc' | 'desc';

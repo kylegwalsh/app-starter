@@ -27,7 +27,7 @@ export const config = {
   /** Whether this application is running as one of our main deployments (not locally) */
   isDeployment,
   /** Whether this application has a custom domain configured */
-  hasCustomDomain: !apiUrl.endsWith('amazonaws.com'),
+  hasCustomDomain: !apiUrl.includes('amazonaws.com'),
   /** Whether we're running in an AWS deployment */
   isAWS: !!(process?.env?.LAMBDA_TASK_ROOT || process?.env?.AWS_EXECUTION_ENV),
   /** Whether the application is using production resources */

@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage, Badge, Card, CardContent } from '@repo/design';
 import { format } from '@repo/utils';
 
-import type { User } from '@/core/auth';
+import type { User } from '@/lib/auth';
 
 const UserStatusBadge = ({ user }: { user: User }) => {
   if (user.banned) {

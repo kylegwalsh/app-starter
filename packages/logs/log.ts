@@ -67,6 +67,7 @@ export const addLambdaRequestContext = lambdaRequestTracker();
 
 type LogMetadata = {
   userId?: string;
+  organizationId?: string;
   awsRequestId?: string;
   sessionId?: string;
   request?: { method?: string; path?: string };

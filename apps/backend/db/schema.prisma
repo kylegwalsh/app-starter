@@ -40,9 +40,8 @@ model User {
   oauthRefreshTokens    OauthRefreshToken[]
   oauthAccessTokens     OauthAccessToken[]
   oauthConsents         OauthConsent[]
+  conversations         Conversation[]
   mcpSessions           McpSession[]
-  // Unused but added by better auth migrations
-  stripeCustomerId      String?
 
   @@unique([email])
   @@map("user")
@@ -298,4 +297,49 @@ model McpSession {
 
   @@index([userId])
   @@map("mcp_session")
+}
+
+/// Conversation with the AI chat agent
+model Conversation {
+  id               String    @id @default(cuid())
+  title            String?
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId   String?
+  sandboxId        String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  lastMessageAt    DateTime?
+  /// While `sendMessage` is generating a response, this is set to `now + LOCK_TTL`
+  /// and bumped by a heartbeat. Cleared when the response finishes or is cancelled;
+  /// if the producer dies, it expires on its own.
+  generatingUntil  DateTime?
+  /// How many (model) messages of the thread have been swept by context compaction. Stored rather
+  /// than re-derived so the prompt prefix stays identical between sweeps (see `lib/compaction.ts`).
+  compactedThrough Int       @default(0)
+  /// The provider's measured size of the thread (prompt + reply tokens) after the last turn.
+  contextTokens    Int?
+  messages         Message[]
+
+  @@index([userId])
+  @@index([organizationId])
+  @@map("conversation")
+}
+
+/// Message in a conversation with the AI chat agent
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  parts          Json
+  traceId        String?
+  feedback       Boolean?
+  /// True if the assistant message was stopped by the user mid-stream. Set by
+  /// `cancelGeneration`; the frontend renders a "Stopped" badge for these rows.
+  cancelled      Boolean?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@map("message")
 }

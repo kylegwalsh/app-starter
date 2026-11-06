@@ -2,17 +2,16 @@
 
 ## Stack
 
-Next.js (TypeScript), Tailwind CSS v4, shadcn/ui (`@repo/design`), lucide-react, oRPC + TanStack Query, Jotai, Better Auth, react-hook-form
+Next.js (TypeScript), Tailwind CSS v4, shadcn/ui (`@repo/design`), lucide-react, Hono `hc` + hono-tanstack-query, Jotai, Better Auth, react-hook-form
 
 ## Directory Layout
 
 ```text
 app/          App Router: layouts, pages, API routes, route groups
 components/   Reusable UI (layout, providers, feature components)
-core/         Clients and core utilities (auth, oRPC, storage)
+lib/          Clients and core utilities (auth, api, query client, storage)
 hooks/        Reusable React hooks (user/session/organization)
 atoms/        Global state (Jotai atoms/selectors)
-tests/core/   Vitest unit tests
 tests/e2e/    Playwright end-to-end tests
 ```
 
@@ -33,7 +32,7 @@ tests/e2e/    Playwright end-to-end tests
 ## Forms
 
 - Use `react-hook-form` for all forms. Combine with Zod schemas from `@repo/schemas` for validation.
-- Re-use existing backend/shared schemas (e.g., oRPC input schemas) as form schemas rather than creating separate ones. Use `.pick()` / `.omit()` to narrow if needed.
+- Re-use existing backend/shared schemas (e.g., route input schemas) as form schemas rather than creating separate ones. Use `.pick()` / `.omit()` to narrow if needed.
 
 ## Next.js
 

@@ -5,15 +5,15 @@
 Use the `/test-backend` skill to run tests. It accepts an optional file path argument:
 
 - `/test-backend` — run all backend tests
-- `/test-backend api/routes/billing.test.ts` — run a specific test file
+- `/test-backend features/billing/routes.test.ts` — run a specific test file
 
 ## Rules
 
-- **Co-location**: Test next to source (`api/routes/billing.ts` → `api/routes/billing.test.ts`). Never a separate test directory.
-- **Database**: `import { db } from '@/db'` → isolated SQLite Prisma client (aliased in `vitest.config.ts`). Use like normal Prisma.
+- **Co-location**: Test next to source (`features/billing/routes.ts` → `features/billing/routes.test.ts`). Never a separate test directory.
+- **Database**: `import { db } from '@/db'` → isolated PGlite Prisma client (aliased in `vitest.config.ts`). Use like normal Prisma.
 - **Session factory**: `apps/backend/tests/factories/session-factory.ts` creates a signed-in session (user + org + api client).
 - **Integration-style**: Exercise real routes + real DB. Mock only external services (e.g., Stripe).
-- **Mocking**: Mock by concrete path (`@/core/stripe`), not barrels (`@/core`). Never mock `@repo/config`.
+- **Mocking**: Mock by concrete path (`@/services/stripe`), not barrels (`@/services`). Never mock `@repo/config`.
 - **Isolation**: Each test independent. DB state reset between tests.
 - **Errors**: Assert expected error types/messages for unhappy paths.
 
@@ -29,7 +29,7 @@ const { mockStripe } = vi.hoisted(() => ({
     invoices: { list: vi.fn() },
   },
 }));
-vi.mock('@/core/stripe', () => ({ stripe: mockStripe }));
+vi.mock('@/services/stripe', () => ({ stripe: mockStripe }));
 
 describe('Billing Router', () => {
   let api: TestSession['api'];

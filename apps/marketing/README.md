@@ -38,7 +38,7 @@ apps/marketing/
 │   └── sitemap.ts            # sitemap.xml
 ├── sections/                 # Page sections (hero, contact, ...)
 ├── components/               # Building blocks and layout (nav, footer, contact form, visual)
-├── lib/orpc.ts               # oRPC client for the backend's public endpoints
+├── lib/api.ts                # Hono client for the backend's public endpoints
 ├── instrumentation-client.ts # PostHog analytics
 ├── next.config.ts            # Next.js config (static export)
 ├── AGENTS.md                 # Design guidance for building out the site with AI

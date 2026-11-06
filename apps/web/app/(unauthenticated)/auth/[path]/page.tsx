@@ -8,12 +8,12 @@ import { AuthPageView } from '@/components';
 export const dynamicParams = false;
 
 /** Generate all possible route parameters for authentication pages (for static generation) */
-export function generateStaticParams() {
+export const generateStaticParams = () => {
   return Object.values(authViewPaths).map((path) => ({ path }));
-}
+};
 
 /** Handles all of our authentication routes */
-export default async function AuthPage({ params }: { params: Promise<{ path: string }> }) {
+const AuthPage: FC<{ params: Promise<{ path: string }> }> = async ({ params }) => {
   const { path } = await params;
   if (!Object.values(authViewPaths).includes(path)) {
     notFound();
@@ -26,4 +26,6 @@ export default async function AuthPage({ params }: { params: Promise<{ path: str
       </Suspense>
     </main>
   );
-}
+};
+
+export default AuthPage;

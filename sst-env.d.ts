@@ -14,7 +14,19 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "DAYTONA_API_KEY": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "DIRECT_DATABASE_URL": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "LANGFUSE_PUBLIC_KEY": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "LANGFUSE_SECRET_KEY": {
       "type": "sst.sst.Secret"
       "value": string
     }
@@ -27,12 +39,20 @@ declare module "sst" {
       "url": string
     }
     "api": {
-      "type": "sst.aws.ApiGatewayV2"
+      "type": "sst.aws.ApiGatewayV1"
       "url": string
     }
     "apiHandler": {
       "name": string
       "type": "sst.aws.Function"
+    }
+    "apiUrl": {
+      "type": "sst.sst.Linkable"
+      "url": string
+    }
+    "uploads": {
+      "name": string
+      "type": "sst.aws.Bucket"
     }
     "web": {
       "type": "sst.aws.Nextjs"

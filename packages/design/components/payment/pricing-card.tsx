@@ -1,16 +1,16 @@
 'use client';
 
+import { Badge } from '@repo/design/components/ui/badge';
+import { Button } from '@repo/design/components/ui/button';
 import {
-  Badge,
-  Button,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-  Skeleton,
-} from '@repo/design/components/ui';
+} from '@repo/design/components/ui/card';
+import { Skeleton } from '@repo/design/components/ui/skeleton';
 import { cn } from '@repo/design/lib/utils';
 import { Check } from 'lucide-react';
 

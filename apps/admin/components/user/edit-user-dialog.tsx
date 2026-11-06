@@ -21,7 +21,7 @@ import {
 import { Loader2Icon } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
-import { adminApi, type User } from '@/core/auth';
+import { adminApi, type User } from '@/lib/auth';
 
 // Persist profile edits via the admin API, then refetch and return the updated user
 const saveUser = async (

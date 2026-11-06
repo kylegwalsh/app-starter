@@ -1,12 +1,12 @@
 # Backend
 
-This app provides the serverless backend for the monorepo. It is built with SST (AWS), Hono, oRPC, Prisma/Postgres, and Better Auth. It exposes:
+This app provides the serverless backend for the monorepo. It is built with SST (AWS), Hono, Prisma/Postgres, and Better Auth. It exposes:
 
-- oRPC endpoints via **RPCHandler** at `/rpc` (typed frontend client)
-- oRPC endpoints via **OpenAPIHandler** at `/api` (external consumers, Postman)
+- REST endpoints under `/api`, consumed by the frontend through Hono's typed `hc` client
 - Swagger UI for the generated OpenAPI spec at `/api` (local dev only)
 - Auth routes handled by Better Auth under `/api/auth`
-- MCP server at `/mcp`
+- AI chat streaming at `/api/chat` (Vercel AI SDK `useChat` compatible)
+- MCP server at `/mcp` (needs a custom domain)
 
 ## Table of Contents
 
@@ -33,8 +33,8 @@ This app provides the serverless backend for the monorepo. It is built with SST 
 ## Overview
 
 - **Runtime/Infra**: SST deploys AWS Lambda + API Gateway. Common Lambda concerns (logging, analytics, AI tracing) are wrapped via `withLambdaContext`.
-- **HTTP Layer**: Hono is the unified HTTP entry point. It handles non-API concerns (auth, MCP, etc) then delegates to oRPC handlers.
-- **API**: oRPC is where almost all API logic lives. A central `router` composes feature routers (e.g., `billing`). Two handlers serve the same router: RPCHandler for the typed frontend client and OpenAPIHandler for external consumers and Swagger docs.
+- **HTTP Layer**: Hono is the unified HTTP entry point. It handles non-API concerns (auth, MCP, etc) then mounts the API router under `/api`.
+- **API**: A central `router` composes feature routers (e.g., `billing`) as chained Hono routes. The same routes serve both the frontend's typed `hc` client and the generated OpenAPI spec — `hono-openapi`'s `validator` validates requests and documents them in one step.
 - **Auth**: [Better Auth](https://better-auth.com/) with Prisma adapter. Organizations are first-class; each user maintains a default/active organization. Optional personal organizations are supported and auto-provisioned.
 - **DB**: Prisma client against Postgres. Schema lives in `db/schema.prisma`.
 
@@ -45,16 +45,16 @@ apps/backend/
 ├── lambda/            # Lambda entrypoints (api, crons)
 │   ├── api.ts         # Main Lambda handler
 │   └── crons/         # Scheduled Lambda functions
-├── api/               # All API code (Hono + oRPC)
-│   ├── index.ts       # Hono app, oRPC handlers, route mounting
-│   ├── procedures.ts  # oRPC procedures (public, protected)
-│   ├── error.ts       # Shared error handling (Hono + oRPC)
+├── api/               # All API code (Hono)
+│   ├── index.ts       # Hono app
+│   ├── router.ts      # Mounts every feature router
+│   ├── error.ts       # Shared error handling
 │   ├── docs.ts        # Swagger UI config, login page
-│   ├── routes/        # oRPC routers (most new work happens here)
-│   ├── middleware/    # Hono middleware (CORS, timing)
+│   ├── middleware/    # Hono middleware (auth, CORS, timing, timeout)
 │   └── adapters/      # Protocol adapters (MCP)
-├── mcp/               # MCP server and tools
-├── core/              # Core services (auth, stripe, etc)
+├── features/          # Vertical slices: routes, operations, tools (most new work happens here)
+├── ai/                # Tool registry, AI SDK + MCP adapters, MCP server
+├── services/          # External integrations (auth, stripe, storage, daytona)
 ├── db/                # Prisma schema and client wiring
 │   └── schema.prisma  # Database schema
 ├── tests/             # Vitest setup, factories, mocks
@@ -88,46 +88,38 @@ Infrastructure is managed by SST. See the root-level `sst.config.ts` and the `in
   - Better Auth for `/api/auth/*`
   - MCP adapter for `/mcp/*`
   - Swagger login page at `/api/login`
-  - RPCHandler at `/rpc/*` (typed frontend client)
-  - OpenAPIHandler at `/api/*` (external consumers, Swagger docs)
+  - Feature routers at `/api/*` (typed `hc` client, Swagger docs)
 
 ## MCP Server
 
 The backend includes a [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server at `/mcp`. This allows AI assistants like Claude, Cursor, and other MCP-compatible clients to interact with your app through typed tools.
 
 - **Auth**: Uses Better Auth's OAuth provider plugin — clients authenticate via standard OAuth 2.0 flow and receive a JWT access token.
-- **Tools**: Defined in `mcp/tools/`. Each tool uses `createTool` from `mcp/utils.ts` for type-safe input schemas and session access.
-- **Auto-registration**: Export a tool from `mcp/tools/index.ts` and it's automatically registered on the server.
+- **Tools**: Defined in the owning feature's `tools.ts` (e.g. `features/organization/tools.ts`). Each tool uses `createTool` from `ai/utils.ts` for type-safe input schemas and session access.
+- **Auto-registration**: Tool files re-exported from `ai/tools.ts` are registered automatically on the MCP server and/or in chat, depending on each tool's `consumers`.
 
 ### Adding a new tool
 
-1. Create a file in `mcp/tools/` (see `mcp/tools/example.ts` for reference).
-2. Export it from `mcp/tools/index.ts`.
+1. Add it to the owning feature's `tools.ts` (see `features/organization/tools.ts` for reference).
+2. Export the file from `ai/tools.ts`.
+
+See [`ai/README.md`](ai/README.md) for the full walkthrough.
 
 ### Connecting an MCP client
 
-Add the server to your `.mcp.json` (root of this repo):
+> **MCP needs a custom domain.** Without one, the API is on API Gateway's default URL, which puts the stage in the path. MCP clients look for OAuth metadata at the domain root (`/.well-known/...`), which that URL can't serve.
 
-```json
-{
-  "mcpServers": {
-    "my-app": {
-      "type": "http",
-      "url": "https://<your-api-domain>/mcp"
-    }
-  }
-}
-```
+The repo's `.mcp.json` already includes the server for Claude Code. It runs `scripts/mcp.ts`, which reads your stage's API URL from `.sst/outputs.json` (written by `bun dev` / `bun deploy`) and connects through [mcp-remote](https://www.npmjs.com/package/mcp-remote), which handles the OAuth sign-in.
 
-Claude Code, Cursor, and other MCP clients will pick up this config and authenticate via OAuth on first connection.
+For other clients (Cursor, Claude Desktop), point them at `https://api.<your-domain>/mcp`. They authenticate via OAuth on first connection.
 
 ## Auth
 
 Authentication is managed by Better Auth.
 
-- `core/auth.ts`: Central config for Better Auth (Prisma adapter, secrets, cookie settings) plus auth-event webhooks (e.g., user/org lifecycle, password reset email hooks, analytics).
+- `services/auth.ts`: Central config for Better Auth (Prisma adapter, secrets, cookie settings) plus auth-event webhooks (e.g., user/org lifecycle, password reset email hooks, analytics).
 - Routes: Auth HTTP routes are exposed under `/api/auth` (handled via Hono and forwarded to `auth.handler`).
-- Context: `api/procedures.ts` parses the Better Auth cookie from request headers to populate `user` and the active `organization` for oRPC procedures.
+- Context: `api/middleware/auth.ts` parses the Better Auth cookie from request headers to populate `user` and the active `organization` on the Hono context. Routers that require a signed-in user apply `requireAuth`.
 
 ## Database
 
@@ -162,10 +154,10 @@ Additional commands:
 
 ## Testing
 
-We use Vitest for testing. We focus on integration-style testing by running requests against the actual oRPC router.
+We use Vitest for testing. We focus on integration-style testing by dispatching requests in-process against the actual Hono router.
 
 - **Runner**: Vitest
-- **DB boundary**: `@/db` is swapped to a SQLite-backed client during tests
+- **DB boundary**: `@/db` is swapped to a PGlite-backed client during tests
 - **Setup/teardown**: generate the client, clean state between tests, disconnect on finish
 
 You can run tests by using one of the following commands:

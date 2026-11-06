@@ -79,18 +79,20 @@ export function SignUpForm() {
 }
 ```
 
-Using the same schema as an oRPC procedure input:
+Using the same schema to validate a route's input:
 
 ```ts
 import { signUpSchema } from '@repo/schemas';
+import { Hono } from 'hono';
+import { describeRoute, validator } from 'hono-openapi';
 
-import { orpc } from '@/core';
-
-import { publicProcedure } from '../procedures';
-
-export const authRouter = orpc.router({
-  signUp: publicProcedure.input(signUpSchema).handler(async ({ input, context }) => {
-    return { ok: true };
-  }),
-});
+export const authRouter = new Hono().post(
+  '/auth/sign-up',
+  describeRoute({ summary: 'Sign up', tags: ['Auth'] }),
+  validator('json', signUpSchema),
+  async (c) => {
+    const input = c.req.valid('json');
+    return c.json({ ok: true });
+  },
+);
 ```
