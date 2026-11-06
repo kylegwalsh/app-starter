@@ -13,7 +13,7 @@ export type FeedbackHandler = (messageId: string, rating: 'up' | 'down', comment
 export type FeedbackButtonsProps = {
   /** The message being rated */
   messageId: string;
-  /** Saved rating (`true` is thumbs-up); once set, the buttons are locked */
+  /** Saved rating (`true` is thumbs-up) */
   existingFeedback: boolean | null;
   /** Called when the user rates the message */
   onFeedback: FeedbackHandler;
