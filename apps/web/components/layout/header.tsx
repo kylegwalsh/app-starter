@@ -22,7 +22,7 @@ type Props = {
 
 /** The standard header used in our application */
 export const Header: FC<Props> = ({ breadcrumbs, children }) => (
-  <header className="bg-background sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-2">
+  <header className="bg-background sticky top-0 z-10 flex h-(--header-height) shrink-0 items-center justify-between gap-2">
     <div className="flex items-center gap-2 px-4">
       <SidebarTrigger className="-ml-1" />
       <Separator className="mr-2 h-4" orientation="vertical" />
