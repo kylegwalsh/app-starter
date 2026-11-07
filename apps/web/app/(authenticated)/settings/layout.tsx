@@ -44,8 +44,7 @@ const SettingsLayout: FC = ({ children }) => {
     <>
       <Header breadcrumbs={[{ label: 'Settings', href: '/settings' }]} />
 
-      {/* Settings Navigation Tabs */}
-      {/* Sticks directly beneath the sticky header (h-16) */}
+      {/* Settings Navigation Tabs (sticky beneath header) */}
       <Tabs className="bg-background sticky top-16 z-10 w-full" value={activeTab?.label}>
         <TabsList className="flex w-full items-end justify-start border-0 border-b bg-transparent p-0 md:px-2 lg:px-4">
           {settingsTabs.map((tab) => (
