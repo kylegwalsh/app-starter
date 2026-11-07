@@ -14,7 +14,7 @@ export type FeedbackButtonsProps = {
   /** The message being rated */
   messageId: string;
   /** Saved rating (`true` is thumbs-up) */
-  existingFeedback: boolean | null;
+  existingFeedback?: boolean;
   /** Called when the user rates the message */
   onFeedback: FeedbackHandler;
 };
@@ -25,11 +25,11 @@ export const FeedbackButtons = ({
   existingFeedback,
   onFeedback,
 }: FeedbackButtonsProps) => {
-  const [localFeedback, setLocalFeedback] = useState<boolean | null>(null);
+  const [localFeedback, setLocalFeedback] = useState<boolean>();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [comment, setComment] = useState('');
   const feedback = localFeedback ?? existingFeedback;
-  const submitted = feedback !== null;
+  const submitted = feedback !== undefined;
 
   const handleThumbsUp = () => {
     setLocalFeedback(true);

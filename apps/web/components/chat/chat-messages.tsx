@@ -185,7 +185,7 @@ export const AssistantMessage: FC<AssistantMessageProps> = ({
           <MessageActions>
             <CopyButton text={extractMessageText(message.parts)} />
             <FeedbackButtons
-              existingFeedback={message.metadata?.feedback ?? null}
+              existingFeedback={message.metadata?.feedback}
               messageId={message.id}
               onFeedback={submitFeedback}
             />

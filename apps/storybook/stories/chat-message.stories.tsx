@@ -91,7 +91,7 @@ export const WithActions: Story = {
       </MessageContent>
       <MessageActions>
         <CopyButton text="The 15 primes below 50 start with 2, 3, 5 and 7." />
-        <FeedbackButtons existingFeedback={null} messageId="message-1" onFeedback={fn()} />
+        <FeedbackButtons messageId="message-1" onFeedback={fn()} />
       </MessageActions>
     </Message>
   ),

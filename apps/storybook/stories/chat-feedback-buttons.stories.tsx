@@ -11,7 +11,6 @@ const meta = {
   component: FeedbackButtons,
   args: {
     messageId: 'message-1',
-    existingFeedback: null,
     onFeedback: fn(),
   },
   parameters: {
