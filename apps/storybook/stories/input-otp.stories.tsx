@@ -2,9 +2,7 @@ import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '@repo/
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from 'input-otp';
 
-/**
- * Accessible one-time password component with copy paste functionality.
- */
+/** Accessible one-time password component with copy paste functionality */
 const meta = {
   title: 'ui/InputOTP',
   component: InputOTP,
@@ -36,14 +34,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the InputOTP field.
- */
+/** The default form of the InputOTP field */
 export const Default: Story = {};
 
-/**
- * Use multiple groups to separate the input slots.
- */
+/** Use multiple groups to separate the input slots */
 export const SeparatedGroup: Story = {
   render: (args) => (
     <InputOTP {...args} render={undefined}>

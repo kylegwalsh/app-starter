@@ -6,10 +6,7 @@ const IMAGE_URL = `data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#e11d48"/></svg>',
 )}`;
 
-/**
- * A staged attachment chip above the chat input: a thumbnail or file-type tile, the file name, and
- * a remove button on hover. Shows a spinner while uploading and an error state if it failed.
- */
+/** A staged attachment chip above the chat input, with upload and error states */
 const meta = {
   title: 'chat/Attachment',
   component: Attachment,
@@ -39,14 +36,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * A file gets a coloured tile for its type.
- */
+/** A file gets a coloured tile for its type */
 export const File: Story = {};
 
-/**
- * An image shows its own thumbnail.
- */
+/** An image shows its own thumbnail */
 export const Image: Story = {
   args: {
     data: {
@@ -59,27 +52,21 @@ export const Image: Story = {
   },
 };
 
-/**
- * A spinner covers the tile while the file uploads.
- */
+/** A spinner covers the tile while the file uploads */
 export const Uploading: Story = {
   args: {
     loading: true,
   },
 };
 
-/**
- * A failed upload is outlined, with the error as the chip's tooltip.
- */
+/** A failed upload is outlined, with the error as the chip's tooltip */
 export const UploadFailed: Story = {
   args: {
     error: 'Failed to upload quarterly-report.pdf (AccessDenied)',
   },
 };
 
-/**
- * The remove button calls `onRemove`.
- */
+/** The remove button calls `onRemove` */
 export const Remove: Story = {
   play: async ({ args, canvasElement }) => {
     await userEvent.click(within(canvasElement).getByRole('button', { name: 'Remove' }));
@@ -87,9 +74,7 @@ export const Remove: Story = {
   },
 };
 
-/**
- * Several staged files wrap onto new lines.
- */
+/** Several staged files wrap onto new lines */
 export const Several: Story = {
   render: (args) => (
     <div className="w-96">

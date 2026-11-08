@@ -40,10 +40,7 @@ const Composer = ({
   </PromptInputProvider>
 );
 
-/**
- * The chat composer. Its text and staged attachments live in `PromptInputProvider`, so they
- * survive the input unmounting; Enter submits and Shift+Enter adds a newline.
- */
+/** The chat composer (Enter submits, Shift+Enter adds a newline) */
 const meta = {
   title: 'chat/PromptInput',
   component: PromptInput,
@@ -62,9 +59,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * Enter sends the message and clears the input.
- */
+/** Enter sends the message and clears the input */
 export const Default: Story = {
   play: async ({ args, canvasElement }) => {
     const textarea = within(canvasElement).getByPlaceholderText('Ask anything...');
@@ -77,16 +72,12 @@ export const Default: Story = {
   },
 };
 
-/**
- * While a response streams, the submit button becomes a stop button.
- */
+/** While a response streams, the submit button becomes a stop button */
 export const Streaming: Story = {
   render: (args) => <Composer {...args} status="streaming" />,
 };
 
-/**
- * Between sending and the first streamed chunk, the button shows a spinner and can't be pressed.
- */
+/** Between sending and the first streamed chunk, the button shows a spinner and is disabled */
 export const Submitted: Story = {
   render: (args) => <Composer {...args} status="submitted" />,
   play: async ({ canvasElement }) => {
@@ -94,9 +85,7 @@ export const Submitted: Story = {
   },
 };
 
-/**
- * After a failed response, the button shows an error icon but still submits.
- */
+/** After a failed response, the button shows an error icon but still submits */
 export const Errored: Story = {
   render: (args) => <Composer {...args} status="error" />,
 };

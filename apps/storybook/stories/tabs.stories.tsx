@@ -31,7 +31,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the tabs.
- */
+/** The default form of the tabs */
 export const Default: Story = {};

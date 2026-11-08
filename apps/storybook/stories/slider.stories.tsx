@@ -1,9 +1,7 @@
 import { Slider } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * An input where the user selects a value from within a given range.
- */
+/** An input where the user selects a value from within a given range */
 const meta = {
   title: 'ui/Slider',
   component: Slider,
@@ -18,23 +16,17 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the slider.
- */
+/** The default form of the slider */
 export const Default: Story = {};
 
-/**
- * Use the `inverted` prop to have the slider fill from right to left.
- */
+/** Use the `inverted` prop to have the slider fill from right to left */
 export const Inverted: Story = {
   args: {
     inverted: true,
   },
 };
 
-/**
- * Use the `disabled` prop to disable the slider.
- */
+/** Use the `disabled` prop to disable the slider */
 export const Disabled: Story = {
   args: {
     disabled: true,

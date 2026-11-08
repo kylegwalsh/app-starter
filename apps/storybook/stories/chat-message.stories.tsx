@@ -27,10 +27,7 @@ def primes(n):
 
 It runs in about *O(n log log n)* time.`;
 
-/**
- * A chat message. User messages render as a right-aligned bubble; assistant messages render
- * their Markdown (code blocks are highlighted, with a copy button) via `MessageResponse`.
- */
+/** A chat message, with user messages as a bubble and assistant messages as Markdown */
 const meta = {
   title: 'chat/Message',
   component: Message,
@@ -59,14 +56,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * An assistant answer with a code block and a table.
- */
+/** An assistant answer with a code block and a table */
 export const Assistant: Story = {};
 
-/**
- * A user message, shown as a bubble.
- */
+/** A user message, shown as a bubble */
 export const User: Story = {
   args: {
     from: 'user',
@@ -80,9 +73,7 @@ export const User: Story = {
   ),
 };
 
-/**
- * Use `MessageActions` under a finished answer for copy and feedback.
- */
+/** Use `MessageActions` under a finished answer for copy and feedback */
 export const WithActions: Story = {
   render: (args) => (
     <Message {...args}>
@@ -97,10 +88,7 @@ export const WithActions: Story = {
   ),
 };
 
-/**
- * Pass `isAnimating` while the answer streams, so incomplete Markdown (like an unclosed code
- * fence) renders cleanly.
- */
+/** Pass `isAnimating` while streaming so incomplete Markdown renders cleanly */
 export const Streaming: Story = {
   render: (args) => (
     <Message {...args}>

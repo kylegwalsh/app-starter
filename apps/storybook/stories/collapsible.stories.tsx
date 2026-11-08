@@ -2,9 +2,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@repo/desig
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { Info } from 'lucide-react';
 
-/**
- * An interactive component which expands/collapses a panel.
- */
+/** An interactive component which expands/collapses a panel */
 const meta = {
   title: 'ui/Collapsible',
   component: Collapsible,
@@ -32,14 +30,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the collapsible.
- */
+/** The default form of the collapsible */
 export const Default: Story = {};
 
-/**
- * Use the `disabled` prop to disable the interaction.
- */
+/** Use the `disabled` prop to disable the interaction */
 export const Disabled: Story = {
   args: {
     disabled: true,

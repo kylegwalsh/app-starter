@@ -38,7 +38,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default behavior of the accordion allows only one item to be open.
- */
+/** The default behavior of the accordion allows only one item to be open */
 export const Default: Story = {};

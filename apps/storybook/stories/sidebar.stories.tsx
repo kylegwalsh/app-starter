@@ -19,9 +19,7 @@ import {
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { Calendar, ChevronUp, Home, Inbox, Search, Settings, User2 } from 'lucide-react';
 
-/**
- * A composable, themeable and customizable sidebar component.
- */
+/** A composable, themeable and customizable sidebar component */
 const meta = {
   title: 'ui/Sidebar',
   component: Sidebar,
@@ -93,9 +91,7 @@ const items = [
   },
 ];
 
-/**
- * A simple sidebar with a group of menu items.
- */
+/** A simple sidebar with a group of menu items */
 export const Simple: Story = {
   render: (args) => (
     <Sidebar {...args}>
@@ -124,9 +120,7 @@ export const Simple: Story = {
   ),
 };
 
-/**
- * A simple sidebar with a footer menu item.
- */
+/** A simple sidebar with a footer menu item */
 export const Footer: Story = {
   render: (args) => (
     <Sidebar {...args}>

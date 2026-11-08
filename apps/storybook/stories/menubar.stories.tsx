@@ -51,14 +51,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the menubar.
- */
+/** The default form of the menubar */
 export const Default: Story = {};
 
-/**
- * A menubar with a submenu.
- */
+/** A menubar with a submenu */
 export const WithSubmenu: Story = {
   render: (args) => (
     <Menubar {...args}>
@@ -80,9 +76,7 @@ export const WithSubmenu: Story = {
   ),
 };
 
-/**
- * A menubar with radio items.
- */
+/** A menubar with radio items */
 export const WithRadioItems: Story = {
   render: (args) => (
     <Menubar {...args}>
@@ -101,9 +95,7 @@ export const WithRadioItems: Story = {
   ),
 };
 
-/**
- * A menubar with checkbox items.
- */
+/** A menubar with checkbox items */
 export const WithCheckboxItems: Story = {
   render: (args) => (
     <Menubar {...args}>

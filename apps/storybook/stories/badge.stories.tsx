@@ -1,9 +1,7 @@
 import { Badge } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * Displays a badge or a component that looks like a badge.
- */
+/** Displays a badge or a component that looks like a badge */
 const meta = {
   title: 'ui/Badge',
   component: Badge,
@@ -19,9 +17,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the badge.
- */
+/** The default form of the badge */
 export const Default: Story = {};
 
 /**

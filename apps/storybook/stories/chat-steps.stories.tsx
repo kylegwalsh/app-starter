@@ -2,10 +2,7 @@ import { Reasoning, Steps, ToolStep } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { expect, userEvent, within } from 'storybook/test';
 
-/**
- * Groups the model's reasoning and tool calls before its answer into one "Took N steps" row.
- * Each step inside is collapsible too.
- */
+/** The model's reasoning and tool calls before its answer, grouped into one "Took N steps" row */
 const meta = {
   title: 'chat/Steps',
   component: Steps,
@@ -38,9 +35,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * Collapsed, as a finished answer shows it. Clicking the row reveals each step.
- */
+/** Collapsed, as a finished answer shows it. Clicking the row reveals each step. */
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -50,18 +45,14 @@ export const Default: Story = {
   },
 };
 
-/**
- * Open, as it shows while the steps are still running.
- */
+/** Open, as it shows while the steps are still running */
 export const Open: Story = {
   args: {
     defaultOpen: true,
   },
 };
 
-/**
- * A single step reads "Took 1 step".
- */
+/** A single step reads "Took 1 step" */
 export const SingleStep: Story = {
   args: {
     count: 1,

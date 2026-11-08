@@ -1,10 +1,7 @@
 import { ToolStep } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * One tool call inside `Steps`. Expanding it shows the tool's output: Markdown for text results,
- * a highlighted JSON block for structured ones.
- */
+/** One tool call inside `Steps`, which expands to show the tool's output */
 const meta = {
   title: 'chat/ToolStep',
   component: ToolStep,
@@ -23,14 +20,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * Tools return Markdown, which renders as-is.
- */
+/** Tools return Markdown, which renders as-is */
 export const MarkdownOutput: Story = {};
 
-/**
- * A structured result renders as highlighted JSON.
- */
+/** A structured result renders as highlighted JSON */
 export const JsonOutput: Story = {
   args: {
     name: 'List organizations',
@@ -43,9 +36,7 @@ export const JsonOutput: Story = {
   },
 };
 
-/**
- * A failed call shows as a static "(failed)" row, since the raw error isn't useful to the user.
- */
+/** A failed call shows as a static "(failed)" row, since the raw error isn't useful to the user */
 export const Failed: Story = {
   args: {
     failed: true,
@@ -53,9 +44,7 @@ export const Failed: Story = {
   },
 };
 
-/**
- * Collapsed, as it shows once the step has finished.
- */
+/** Collapsed, as it shows once the step has finished */
 export const Collapsed: Story = {
   args: {
     defaultOpen: false,

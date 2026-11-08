@@ -2,9 +2,7 @@ import { Toaster, toast } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { action } from 'storybook/actions';
 
-/**
- * An opinionated toast component for React.
- */
+/** An opinionated toast component for React */
 const meta: Meta<typeof Toaster> = {
   title: 'ui/Toaster',
   component: Toaster,
@@ -20,9 +18,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the toaster.
- */
+/** The default form of the toaster */
 export const Default: Story = {
   render: (args) => (
     <div className="flex min-h-96 items-center justify-center space-x-2">

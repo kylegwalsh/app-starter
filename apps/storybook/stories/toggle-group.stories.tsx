@@ -2,9 +2,7 @@ import { ToggleGroup, ToggleGroupItem } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { Bold, Italic, Underline } from 'lucide-react';
 
-/**
- * A set of two-state buttons that can be toggled on or off.
- */
+/** A set of two-state buttons that can be toggled on or off */
 const meta = {
   title: 'ui/ToggleGroup',
   component: ToggleGroup,
@@ -42,9 +40,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the toggle group.
- */
+/** The default form of the toggle group */
 export const Default: Story = {};
 
 /**
@@ -87,9 +83,7 @@ export const Large: Story = {
   },
 };
 
-/**
- * Add the `disabled` prop to a button to prevent interactions.
- */
+/** Add the `disabled` prop to a button to prevent interactions */
 export const Disabled: Story = {
   args: {
     disabled: true,

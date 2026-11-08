@@ -47,14 +47,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the dropdown menu.
- */
+/** The default form of the dropdown menu */
 export const Default: Story = {};
 
-/**
- * A dropdown menu with shortcuts.
- */
+/** A dropdown menu with shortcuts */
 export const WithShortcuts: Story = {
   render: (args) => (
     <DropdownMenu {...args}>
@@ -74,9 +70,7 @@ export const WithShortcuts: Story = {
   ),
 };
 
-/**
- * A dropdown menu with submenus.
- */
+/** A dropdown menu with submenus */
 export const WithSubmenus: Story = {
   render: (args) => (
     <DropdownMenu {...args}>
@@ -118,9 +112,7 @@ export const WithSubmenus: Story = {
   ),
 };
 
-/**
- * A dropdown menu with radio items.
- */
+/** A dropdown menu with radio items */
 export const WithRadioItems: Story = {
   render: (args) => (
     <DropdownMenu {...args}>
@@ -137,9 +129,7 @@ export const WithRadioItems: Story = {
   ),
 };
 
-/**
- * A dropdown menu with checkboxes.
- */
+/** A dropdown menu with checkboxes */
 export const WithCheckboxes: Story = {
   render: (args) => (
     <DropdownMenu {...args}>

@@ -24,9 +24,7 @@ const notifications = [
   },
 ];
 
-/**
- * Displays a card with header, content, and footer.
- */
+/** Displays a card with header, content, and footer */
 const meta = {
   title: 'ui/Card',
   component: Card,
@@ -66,7 +64,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the card.
- */
+/** The default form of the card */
 export const Default: Story = {};

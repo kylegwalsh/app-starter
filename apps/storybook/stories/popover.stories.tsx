@@ -1,9 +1,7 @@
 import { Popover, PopoverContent, PopoverTrigger } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * Displays rich content in a portal, triggered by a button.
- */
+/** Displays rich content in a portal, triggered by a button */
 const meta = {
   title: 'ui/Popover',
   component: Popover,
@@ -23,7 +21,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the popover.
- */
+/** The default form of the popover */
 export const Default: Story = {};

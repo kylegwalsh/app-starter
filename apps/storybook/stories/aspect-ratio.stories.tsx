@@ -2,9 +2,7 @@ import { AspectRatio } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import Image from 'next/image';
 
-/**
- * Displays content within a desired ratio.
- */
+/** Displays content within a desired ratio */
 const meta: Meta<typeof AspectRatio> = {
   title: 'ui/AspectRatio',
   component: AspectRatio,
@@ -31,36 +29,28 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the aspect ratio.
- */
+/** The default form of the aspect ratio */
 export const Default: Story = {
   args: {
     ratio: 16 / 9,
   },
 };
 
-/**
- * Use the `1:1` aspect ratio to display a square image.
- */
+/** Use the `1:1` aspect ratio to display a square image */
 export const Square: Story = {
   args: {
     ratio: 1,
   },
 };
 
-/**
- * Use the `4:3` aspect ratio to display a landscape image.
- */
+/** Use the `4:3` aspect ratio to display a landscape image */
 export const Landscape: Story = {
   args: {
     ratio: 4 / 3,
   },
 };
 
-/**
- * Use the `2.35:1` aspect ratio to display a cinemascope image.
- */
+/** Use the `2.35:1` aspect ratio to display a cinemascope image */
 export const Cinemascope: Story = {
   args: {
     ratio: 2.35 / 1,

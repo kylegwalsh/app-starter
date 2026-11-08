@@ -2,10 +2,7 @@ import { FeedbackButtons } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
-/**
- * Thumbs up / down on an assistant message. Thumbs down opens a popover for an optional comment.
- * Once feedback is given, the other button hides and both lock.
- */
+/** Thumbs up / down on an assistant message, with an optional comment on thumbs down */
 const meta = {
   title: 'chat/FeedbackButtons',
   component: FeedbackButtons,
@@ -27,14 +24,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * No feedback yet.
- */
+/** No feedback yet */
 export const Default: Story = {};
 
-/**
- * Thumbs up submits straight away and locks the buttons.
- */
+/** Thumbs up submits straight away and locks the buttons */
 export const ThumbsUp: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
@@ -45,9 +38,7 @@ export const ThumbsUp: Story = {
   },
 };
 
-/**
- * Thumbs down asks how the response could be improved, then submits the comment.
- */
+/** Thumbs down asks how the response could be improved, then submits the comment */
 export const ThumbsDownWithComment: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
@@ -60,9 +51,7 @@ export const ThumbsDownWithComment: Story = {
   },
 };
 
-/**
- * Feedback saved earlier shows as the chosen, locked button.
- */
+/** Feedback saved earlier shows as the chosen, locked button */
 export const AlreadyHelpful: Story = {
   args: {
     existingFeedback: true,

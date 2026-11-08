@@ -10,9 +10,7 @@ import type {
 } from 'react-day-picker';
 import { action } from 'storybook/actions';
 
-/**
- * A date field component that allows users to enter and edit date.
- */
+/** A date field component that allows users to enter and edit date */
 const meta = {
   title: 'ui/Calendar',
   component: Calendar,
@@ -147,18 +145,14 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the calendar.
- */
+/** The default form of the calendar */
 export const Default: Story = {
   args: {
     selected: new Date(),
   },
 };
 
-/**
- * Use the `multiple` mode to select multiple dates.
- */
+/** Use the `multiple` mode to select multiple dates */
 export const Multiple: Story = {
   args: {
     mode: 'multiple',
@@ -167,9 +161,7 @@ export const Multiple: Story = {
   },
 };
 
-/**
- * Use the `range` mode to select a range of dates.
- */
+/** Use the `range` mode to select a range of dates */
 export const Range: Story = {
   args: {
     mode: 'range',
@@ -180,9 +172,7 @@ export const Range: Story = {
   },
 };
 
-/**
- * Use the `disabled` prop to disable specific dates.
- */
+/** Use the `disabled` prop to disable specific dates */
 export const Disabled: Story = {
   args: {
     selected: new Date(),
@@ -195,9 +185,7 @@ export const Disabled: Story = {
   },
 };
 
-/**
- * Use the `numberOfMonths` prop to display multiple months.
- */
+/** Use the `numberOfMonths` prop to display multiple months */
 export const MultipleMonths: Story = {
   args: {
     selected: new Date(),

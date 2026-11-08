@@ -5,10 +5,7 @@ const IMAGE_URL = `data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160"><rect width="240" height="160" fill="#2563eb"/><circle cx="120" cy="80" r="48" fill="#f8fafc"/></svg>',
 )}`;
 
-/**
- * The files sent with a message: images on top (click to expand), file cards below. Aligns right
- * for user messages and left for assistant messages.
- */
+/** The files sent with a message: images on top, file cards below */
 const meta = {
   title: 'chat/MessageAttachments',
   component: MessageAttachments,
@@ -45,23 +42,17 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * Files sent by the user.
- */
+/** Files sent by the user */
 export const User: Story = {};
 
-/**
- * Files returned by the assistant.
- */
+/** Files returned by the assistant */
 export const Assistant: Story = {
   args: {
     align: 'assistant',
   },
 };
 
-/**
- * Only file cards, with no images.
- */
+/** Only file cards, with no images */
 export const FilesOnly: Story = {
   args: {
     parts: [

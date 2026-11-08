@@ -1,10 +1,7 @@
 import { Reasoning } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * The model's (summarized) reasoning. While streaming it shows "Thinking…" and starts open; once
- * done it reads "Thought".
- */
+/** The model's reasoning, shown as "Thinking…" while streaming and "Thought" when done */
 const meta = {
   title: 'chat/Reasoning',
   component: Reasoning,
@@ -27,14 +24,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * Reasoning loaded from history.
- */
+/** Reasoning loaded from history */
 export const Done: Story = {};
 
-/**
- * Reasoning still streaming.
- */
+/** Reasoning still streaming */
 export const Streaming: Story = {
   args: {
     streaming: true,

@@ -17,10 +17,7 @@ const TURNS = Array.from({ length: 8 }, (_, index) => [
   },
 ]).flat();
 
-/**
- * The scrolling message list. It sticks to the bottom as new content streams in, and shows a
- * scroll-to-bottom button once the user scrolls up.
- */
+/** The scrolling message list, which sticks to the bottom as new content streams in */
 const meta = {
   title: 'chat/Conversation',
   component: Conversation,
@@ -53,7 +50,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * Starts at the latest message; scroll up to see the scroll-to-bottom button.
- */
+/** Starts at the latest message (scroll up to see the scroll-to-bottom button) */
 export const Default: Story = {};
