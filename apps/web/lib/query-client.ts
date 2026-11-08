@@ -1,18 +1,12 @@
-import { QueryClient, isServer } from '@tanstack/react-query';
+import { QueryClient, environmentManager } from '@tanstack/react-query';
 
 let browserQueryClient: QueryClient | undefined;
 
-/**
- * Returns the QueryClient for the current environment. The server gets a fresh
- * client per request so cached data never leaks between users; the browser
- * reuses one so module-level query options (and the `api` proxy in `./api`)
- * bind to the same cache the provider renders with.
- */
-export const getQueryClient = (): QueryClient => {
-  if (isServer) {
+/** Returns the QueryClient for the current environment */
+export const getQueryClient = () => {
+  // On the server, create a new client per request so cached data is never shared between users
+  if (environmentManager.isServer()) {
     return new QueryClient();
   }
-
-  browserQueryClient ??= new QueryClient();
-  return browserQueryClient;
+  return (browserQueryClient ??= new QueryClient());
 };
