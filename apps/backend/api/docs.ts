@@ -2,11 +2,7 @@ import { config } from '@repo/config';
 import type { Env, Hono, Schema } from 'hono';
 import { openAPIRouteHandler } from 'hono-openapi';
 
-/**
- * The HTML for the login page served at /api/login for Swagger authentication.
- * This allows users to login, which saves the session cookie in the browser so that they
- * can invoke protected endpoints.
- */
+/** Login page at /api/login that sets the session cookie for calling protected endpoints */
 export const internalDocsLoginHTML = `<!doctype html>
 <html lang="en">
 <head>
@@ -59,10 +55,7 @@ export const internalDocsLoginHTML = `<!doctype html>
 </body>
 </html>`;
 
-/**
- * Custom head content injected into the Swagger UI page.
- * It adds a custom login button redirecting to our login page.
- */
+/** Head content for the Swagger UI page, adding a login button that links to our login page */
 const internalDocsHead = `
 <style>
   /* Reduce top spacing in the info section */
@@ -120,9 +113,7 @@ const internalDocsHead = `
   .scheme-container section.schemes > :first-child { flex: 1; }
 </style>
 <script>
-  // Build from window.location so this works under any stage/path prefix
-  // (e.g. /api on a custom domain, /stage/api on the default API Gateway URL).
-  // We can't use relative URLs because the page is served at both /api and /api/.
+  // Build from window.location to work under any path prefix
   const apiBase = window.location.pathname.replace(/[/]+$/, '');
 
   // Fetch the session up front so the button can show who is signed in
@@ -134,8 +125,7 @@ const internalDocsHead = `
   const lockIcon = (name) =>
     '<svg width="15" height="17" viewBox="0 0 20 20" fill="#49cc90"><use href="#' + name + '" xlink:href="#' + name + '"></use></svg>';
 
-  // Inject an Authenticate button into the scheme-container (where Authorize normally sits)
-  // Swagger UI renders async, so we poll until the target element exists
+  // Inject our button where Authorize normally sits (Swagger renders async, so poll for it)
   const interval = setInterval(async () => {
     const target = document.querySelector('.scheme-container section.schemes');
     if (!target) return;
@@ -209,11 +199,7 @@ const internalDocsHTML = `<!doctype html>
 </body>
 </html>`;
 
-/**
- * Mounts the OpenAPI spec and Swagger UI for local development. The UI lives at
- * `/api` (a bare GET, so it doesn't shadow any API route) and reads the spec
- * generated from the router's `describeRoute`/`validator` definitions.
- */
+/** Mounts the OpenAPI spec and Swagger UI */
 export const mountInternalDocs = <E extends Env, S extends Schema, P extends string>(
   app: Hono,
   router: Hono<E, S, P>,
@@ -232,6 +218,5 @@ export const mountInternalDocs = <E extends Env, S extends Schema, P extends str
     }),
   );
 
-  // Also serve `/api/`, where the login page's `./` redirect lands
   app.on('GET', ['/api', '/api/'], (c) => c.html(internalDocsHTML));
 };
