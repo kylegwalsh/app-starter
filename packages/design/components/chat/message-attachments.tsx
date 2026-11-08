@@ -10,19 +10,12 @@ export type MessageAttachmentsProps = {
   parts: FileUIPart[];
   /** Which side of the conversation to align to */
   align: 'user' | 'assistant';
-  /** Map of `mediaType` → preferred extension label, passed through to `<ChatFile>` */
-  fileTypes: Record<string, string>;
   /** Uploaded URL → local blob URL, for files sent from this browser */
   localPreviews?: ReadonlyMap<string, string>;
 };
 
 /** A message's images and files, shown above its text */
-export const MessageAttachments = ({
-  parts,
-  align,
-  fileTypes,
-  localPreviews,
-}: MessageAttachmentsProps) => {
+export const MessageAttachments = ({ parts, align, localPreviews }: MessageAttachmentsProps) => {
   if (parts.length === 0) {
     return null;
   }
@@ -58,7 +51,6 @@ export const MessageAttachments = ({
             const key = part.url ?? part.filename ?? 'file';
             return (
               <ChatFile
-                fileTypes={fileTypes}
                 filename={part.filename}
                 key={key}
                 mediaType={part.mediaType}

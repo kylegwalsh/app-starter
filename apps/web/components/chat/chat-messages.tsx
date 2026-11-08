@@ -1,6 +1,5 @@
 'use client';
 
-import { CHAT_FILE_TYPES, CHAT_SANDBOX_FILE_TYPES } from '@repo/constants';
 import {
   CopyButton,
   FeedbackButtons,
@@ -27,20 +26,13 @@ import {
   type ProcessPart,
 } from './chat-utils';
 
-/** Thin wrapper that injects the chat context's localPreviews + the app's file-type map. */
+/** Thin wrapper that injects the chat context's localPreviews */
 const ChatMessageAttachments: FC<{
   parts: Parameters<typeof MessageAttachments>[0]['parts'];
   align: 'user' | 'assistant';
 }> = ({ parts, align }) => {
   const { localPreviews } = useChatContext();
-  return (
-    <MessageAttachments
-      align={align}
-      fileTypes={{ ...CHAT_FILE_TYPES, ...CHAT_SANDBOX_FILE_TYPES }}
-      localPreviews={localPreviews}
-      parts={parts}
-    />
-  );
+  return <MessageAttachments align={align} localPreviews={localPreviews} parts={parts} />;
 };
 
 /** User message bubble — right-aligned with rounded secondary background */

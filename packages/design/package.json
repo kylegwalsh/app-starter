@@ -50,6 +50,7 @@
     "@radix-ui/react-toggle-group": "1.1.10",
     "@radix-ui/react-tooltip": "1.2.7",
     "@repo/config": "workspace:*",
+    "@repo/constants": "workspace:*",
     "@streamdown/cjk": "1.0.3",
     "@streamdown/code": "1.1.1",
     "@streamdown/math": "1.0.2",

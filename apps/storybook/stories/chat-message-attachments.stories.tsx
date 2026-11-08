@@ -5,12 +5,6 @@ const IMAGE_URL = `data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160"><rect width="240" height="160" fill="#2563eb"/><circle cx="120" cy="80" r="48" fill="#f8fafc"/></svg>',
 )}`;
 
-const FILE_TYPES = {
-  'application/pdf': 'pdf',
-  'text/csv': 'csv',
-  'image/svg+xml': 'svg',
-};
-
 /**
  * The files sent with a message: images on top (click to expand), file cards below. Aligns right
  * for user messages and left for assistant messages.
@@ -20,7 +14,6 @@ const meta = {
   component: MessageAttachments,
   args: {
     align: 'user',
-    fileTypes: FILE_TYPES,
     parts: [
       { type: 'file', url: IMAGE_URL, mediaType: 'image/svg+xml', filename: 'diagram.svg' },
       {

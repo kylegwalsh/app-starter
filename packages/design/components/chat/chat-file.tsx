@@ -1,15 +1,15 @@
 'use client';
 
+import { CHAT_FILE_TYPES, CHAT_SANDBOX_FILE_TYPES } from '@repo/constants';
 import { getFileTileStyle } from '@repo/design/components/chat/attachments';
 import { cn } from '@repo/design/lib/utils';
 
+/** Map of `mediaType` → preferred extension label for every file type chat supports */
+const FILE_TYPES: Record<string, string> = { ...CHAT_FILE_TYPES, ...CHAT_SANDBOX_FILE_TYPES };
+
 /** The file's type label (e.g. "PDF"), from its media type or else its extension */
-const getTypeLabel = (
-  mediaType: string,
-  filename: string | undefined,
-  fileTypes: Record<string, string>,
-): string => {
-  const mapped = fileTypes[mediaType];
+const getTypeLabel = (mediaType: string, filename: string | undefined): string => {
+  const mapped = FILE_TYPES[mediaType];
   const filenameExt = filename?.split('.').pop();
   return (mapped ?? filenameExt ?? 'file').toUpperCase();
 };
@@ -21,14 +21,12 @@ export type ChatFileProps = {
   filename: string | undefined;
   /** The file's MIME type */
   mediaType: string;
-  /** Map of `mediaType` → preferred extension label (e.g. `{ "image/png": "png" }`) */
-  fileTypes: Record<string, string>;
 };
 
 /** Card for a non-image attachment, with a file-type icon, name and type label */
-export const ChatFile = ({ url, filename, mediaType, fileTypes }: ChatFileProps) => {
+export const ChatFile = ({ url, filename, mediaType }: ChatFileProps) => {
   const { Icon, iconBg } = getFileTileStyle(mediaType);
-  const typeLabel = getTypeLabel(mediaType, filename, fileTypes);
+  const typeLabel = getTypeLabel(mediaType, filename);
   const label = filename ?? 'file';
 
   const body = (
