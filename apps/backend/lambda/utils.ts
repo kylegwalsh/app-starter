@@ -10,7 +10,7 @@ export type EventType = 'sqs' | 'api' | undefined;
 /** The actual payload type of the event */
 export type HandlerEvent<T extends EventType> = T extends 'sqs' ? SQSEvent : LambdaEvent;
 
-/** Arbitrary Lambda handler shape — buffered or streaming, two- or three-arg. */
+/** Any Lambda handler shape (buffered or streaming) */
 type AnyLambdaHandler = (...args: never[]) => unknown;
 
 /** Flush all async observability tools */
@@ -22,7 +22,7 @@ const flushObservability = async () => {
   }
 };
 
-/** Pull `{ path, method }` out of either a v1 (REST) or v2 (HTTP) API Gateway event. */
+/** Pulls `{ path, method }` from a v1 (REST) or v2 (HTTP) API Gateway event */
 const extractHttpRequestInfo = (event: unknown): { path: string; method: string } | undefined => {
   if (typeof event !== 'object' || event === null || !('requestContext' in event)) {
     return undefined;
@@ -31,12 +31,12 @@ const extractHttpRequestInfo = (event: unknown): { path: string; method: string 
   if (typeof requestContext !== 'object' || requestContext === null) {
     return undefined;
   }
-  // API Gateway v2 (HTTP API) nests path + method inside `http`.
+  // v2 (HTTP API) nests path and method inside `http`
   if ('http' in requestContext) {
     const http = (requestContext as { http: { path: string; method: string } }).http;
     return { path: http.path, method: http.method };
   }
-  // API Gateway v1 (REST API) puts httpMethod on the request context and path on the event.
+  // v1 (REST API) puts httpMethod on the request context and path on the event
   if ('httpMethod' in requestContext && 'path' in event) {
     const method = (requestContext as { httpMethod: string }).httpMethod;
     const path = (event as { path: string }).path;
@@ -46,11 +46,8 @@ const extractHttpRequestInfo = (event: unknown): { path: string; method: string 
 };
 
 /**
- * Wraps any Lambda handler with logging context, error capture, and an
- * observability flush after each invocation. Forwards the original handler's
- * signature so streaming and buffered handlers are both supported, and copies
- * the streaming marker symbol so AWS keeps treating streamified handlers as
- * such after wrapping.
+ * Wraps a Lambda handler with logging context, error capture, and an
+ * observability flush after each invocation
  */
 export const withLambdaContext = <T extends AnyLambdaHandler>(handler: T): T => {
   const wrapped = (async (...args: Parameters<T>) => {
@@ -83,15 +80,6 @@ export const withLambdaContext = <T extends AnyLambdaHandler>(handler: T): T => 
     }
   }) as unknown as T;
 
-  // Forward every symbol-keyed property from the inner handler. `streamifyResponse`
-  // tags its return value with a marker the runtime checks to enable streaming
-  // mode; AWS prod uses `Symbol.for("aws.lambda.runtime.handler.streaming")`,
-  // SST's dev runtime uses `Symbol.for("aws.lambda.streaming")`. Copying every
-  // symbol keeps us correct in both environments without naming them.
-  for (const sym of Object.getOwnPropertySymbols(handler)) {
-    type Indexable = Record<symbol, unknown>;
-    (wrapped as Indexable)[sym] = (handler as Indexable)[sym];
-  }
-
-  return wrapped;
+  // Copy the handler's properties (including symbols) so streaming handlers stay marked as streaming
+  return Object.defineProperties(wrapped, Object.getOwnPropertyDescriptors(handler));
 };
