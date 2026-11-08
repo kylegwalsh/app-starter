@@ -182,10 +182,17 @@ const matchesAccept = (file: File, accept: string | undefined) => {
   if (patterns.length === 0) {
     return true;
   }
-  return patterns.some((pattern) =>
+  const fileName = file.name.toLowerCase();
+  return patterns.some((pattern) => {
+    // e.g. .py
+    if (pattern.startsWith('.')) {
+      return fileName.endsWith(pattern.toLowerCase());
+    }
     // e.g. image/* -> image/
-    pattern.endsWith('/*') ? file.type.startsWith(pattern.slice(0, -1)) : file.type === pattern,
-  );
+    return pattern.endsWith('/*')
+      ? file.type.startsWith(pattern.slice(0, -1))
+      : file.type === pattern;
+  });
 };
 
 /** The chat input form. This must be inside a `PromptInputProvider`, which holds its state */

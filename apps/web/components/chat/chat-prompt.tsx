@@ -1,11 +1,8 @@
 'use client';
 
-import { CHAT_FILE_TYPES, CHAT_MAX_FILE_SIZE, CHAT_SANDBOX_FILE_TYPES } from '@repo/constants';
+import { CHAT_FILE_TYPES, CHAT_MAX_FILE_SIZE, type ChatFileType } from '@repo/constants';
 import {
   Attachment,
-  AttachmentInfo,
-  AttachmentPreview,
-  AttachmentRemove,
   Attachments,
   PromptInput,
   PromptInputActionAddAttachments,
@@ -25,10 +22,13 @@ import { useActiveChat, useChatContext } from './chat-provider';
 import { useChatUploads } from './chat-uploads';
 
 /** The input's `accept` list: files only code can open need the sandbox (set in `infra/web.ts`) */
-const ACCEPTED_FILE_TYPES = Object.keys({
-  ...CHAT_FILE_TYPES,
-  ...(process.env.NEXT_PUBLIC_CODE_SANDBOX_ENABLED === 'true' ? CHAT_SANDBOX_FILE_TYPES : {}),
-}).join(',');
+const ACCEPTED_FILE_TYPES = Object.entries<ChatFileType>(CHAT_FILE_TYPES)
+  .filter(
+    ([, { sandboxOnly }]) =>
+      !sandboxOnly || process.env.NEXT_PUBLIC_CODE_SANDBOX_ENABLED === 'true',
+  )
+  .map(([extension]) => `.${extension}`)
+  .join(',');
 
 /** Attachment strip above the input — renders only when files are staged */
 const AttachmentPreviews: FC<{ uploads: ReturnType<typeof useChatUploads> }> = ({ uploads }) => {
@@ -48,11 +48,7 @@ const AttachmentPreviews: FC<{ uploads: ReturnType<typeof useChatUploads> }> = (
               key={file.id}
               loading={upload?.isPending}
               onRemove={() => remove(file.id)}
-            >
-              <AttachmentPreview />
-              <AttachmentInfo />
-              <AttachmentRemove />
-            </Attachment>
+            />
           );
         })}
       </Attachments>

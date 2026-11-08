@@ -49,14 +49,7 @@ export const MessageAttachments = ({ parts, align, localPreviews }: MessageAttac
         >
           {fileParts.map((part) => {
             const key = part.url ?? part.filename ?? 'file';
-            return (
-              <ChatFile
-                filename={part.filename}
-                key={key}
-                mediaType={part.mediaType}
-                url={displayUrlFor(part)}
-              />
-            );
+            return <ChatFile filename={part.filename} key={key} url={displayUrlFor(part)} />;
           })}
         </div>
       )}

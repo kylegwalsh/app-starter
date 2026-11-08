@@ -1,47 +1,100 @@
 /** Maximum file size for chat uploads (10MB) */
 export const CHAT_MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-/** File types the model reads directly: MIME type → file extension */
+/** Broad category of a file, used to pick its icon */
+export type ChatFileKind =
+  | 'image'
+  | 'pdf'
+  | 'word'
+  | 'spreadsheet'
+  | 'presentation'
+  | 'archive'
+  | 'code'
+  | 'text';
+
+/** What chat knows about a file type (see `CHAT_FILE_TYPES`) */
+export type ChatFileType = {
+  /** Canonical MIME type we store and send with the file */
+  mime: string;
+  /** Broad category, used for the file's icon */
+  kind: ChatFileKind;
+  /** Only code can open it, so it's accepted only when the code sandbox is enabled */
+  sandboxOnly?: boolean;
+};
+
+/** Every file type chat accepts, keyed by extension */
 export const CHAT_FILE_TYPES = {
   // Images
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/gif': 'gif',
-  'image/webp': 'webp',
-  // PDF
-  'application/pdf': 'pdf',
-  // Word
-  'application/msword': 'doc',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-  // Excel
-  'application/vnd.ms-excel': 'xls',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  jpg: { mime: 'image/jpeg', kind: 'image' },
+  jpeg: { mime: 'image/jpeg', kind: 'image' },
+  png: { mime: 'image/png', kind: 'image' },
+  gif: { mime: 'image/gif', kind: 'image' },
+  webp: { mime: 'image/webp', kind: 'image' },
+  // Documents
+  pdf: { mime: 'application/pdf', kind: 'pdf' },
+  doc: { mime: 'application/msword', kind: 'word' },
+  docx: {
+    mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    kind: 'word',
+  },
+  xls: { mime: 'application/vnd.ms-excel', kind: 'spreadsheet' },
+  xlsx: {
+    mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    kind: 'spreadsheet',
+  },
   // Text
-  'text/plain': 'txt',
-  'text/csv': 'csv',
-  'text/markdown': 'md',
-  'text/html': 'html',
-} as const;
+  txt: { mime: 'text/plain', kind: 'text' },
+  csv: { mime: 'text/csv', kind: 'spreadsheet' },
+  md: { mime: 'text/markdown', kind: 'text' },
+  html: { mime: 'text/html', kind: 'code' },
+  // Only code can open these
+  pptx: {
+    mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    kind: 'presentation',
+    sandboxOnly: true,
+  },
+  tsv: { mime: 'text/tab-separated-values', kind: 'spreadsheet', sandboxOnly: true },
+  zip: { mime: 'application/zip', kind: 'archive', sandboxOnly: true },
+  log: { mime: 'text/x-log', kind: 'text', sandboxOnly: true },
+  // Code, config and data
+  json: { mime: 'application/json', kind: 'code', sandboxOnly: true },
+  jsonl: { mime: 'application/x-ndjson', kind: 'code', sandboxOnly: true },
+  ndjson: { mime: 'application/x-ndjson', kind: 'code', sandboxOnly: true },
+  ipynb: { mime: 'application/x-ipynb+json', kind: 'code', sandboxOnly: true },
+  xml: { mime: 'application/xml', kind: 'code', sandboxOnly: true },
+  yaml: { mime: 'application/yaml', kind: 'code', sandboxOnly: true },
+  yml: { mime: 'application/yaml', kind: 'code', sandboxOnly: true },
+  toml: { mime: 'application/toml', kind: 'code', sandboxOnly: true },
+  ini: { mime: 'text/x-ini', kind: 'code', sandboxOnly: true },
+  sql: { mime: 'application/sql', kind: 'code', sandboxOnly: true },
+  sh: { mime: 'application/x-sh', kind: 'code', sandboxOnly: true },
+  css: { mime: 'text/css', kind: 'code', sandboxOnly: true },
+  py: { mime: 'text/x-python', kind: 'code', sandboxOnly: true },
+  js: { mime: 'text/javascript', kind: 'code', sandboxOnly: true },
+  jsx: { mime: 'text/javascript', kind: 'code', sandboxOnly: true },
+  ts: { mime: 'text/typescript', kind: 'code', sandboxOnly: true },
+  tsx: { mime: 'text/typescript', kind: 'code', sandboxOnly: true },
+} as const satisfies Record<string, ChatFileType>;
 
-/**
- * File types only code can open: MIME type → file extension. Accepted only when the code sandbox
- * (Daytona) is enabled, which copies every upload in when a code tool first runs.
- */
-export const CHAT_SANDBOX_FILE_TYPES = {
-  'application/json': 'json',
-  'application/xml': 'xml',
-  'text/xml': 'xml',
-  'text/tab-separated-values': 'tsv',
-  'application/zip': 'zip',
-  'application/x-zip-compressed': 'zip',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
-} as const;
+/** A file extension chat accepts, e.g. `pdf` */
+export type ChatFileExtension = keyof typeof CHAT_FILE_TYPES;
 
-/** The MIME type of a file that can be uploaded to chat */
-export type ChatFileMimeType = keyof typeof CHAT_FILE_TYPES | keyof typeof CHAT_SANDBOX_FILE_TYPES;
+/** The lowercase extension of a file name (the last dot segment), or undefined if it has none */
+export const getFileExtension = (fileName: string | undefined) => {
+  const dot = fileName?.lastIndexOf('.') ?? -1;
+  return dot > 0 && fileName ? fileName.slice(dot + 1).toLowerCase() : undefined;
+};
 
-/** Non-empty tuple of every uploadable MIME type — derived for `z.enum()` */
-export const CHAT_ALLOWED_FILE_TYPES = [
-  ...Object.keys(CHAT_FILE_TYPES),
-  ...Object.keys(CHAT_SANDBOX_FILE_TYPES),
-] as [ChatFileMimeType, ...ChatFileMimeType[]];
+/** Whether a string is an extension in `CHAT_FILE_TYPES` */
+const isChatFileExtension = (extension: string): extension is ChatFileExtension =>
+  Object.hasOwn(CHAT_FILE_TYPES, extension);
+
+/** Looks up a file's chat type by its name's extension (undefined if chat doesn't accept it) */
+export const getChatFileType = (fileName: string | undefined) => {
+  const extension = getFileExtension(fileName);
+  if (!extension || !isChatFileExtension(extension)) {
+    return;
+  }
+  const fileType: ChatFileType = CHAT_FILE_TYPES[extension];
+  return { extension, ...fileType };
+};

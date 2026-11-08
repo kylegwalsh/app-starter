@@ -15,9 +15,9 @@ describe('Uploads Router', () => {
 
   it('rejects files only code can open when the sandbox is disabled', async () => {
     const res = await api.uploads['create-upload-url'].$post({
-      json: { fileName: 'data.json', fileType: 'application/json', fileSize: 100 },
+      json: { fileName: 'data.json', fileSize: 100 },
     });
     expect(res.status).toBe(400);
-    expect(await res.text()).toContain("application/json files aren't supported");
+    expect(await res.text()).toContain(".json files aren't supported");
   });
 });

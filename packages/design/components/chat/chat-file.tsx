@@ -1,17 +1,40 @@
 'use client';
 
-import { CHAT_FILE_TYPES, CHAT_SANDBOX_FILE_TYPES } from '@repo/constants';
-import { getFileTileStyle } from '@repo/design/components/chat/attachments';
+import { type ChatFileKind, getChatFileType, getFileExtension } from '@repo/constants';
 import { cn } from '@repo/design/lib/utils';
+import {
+  FileArchiveIcon,
+  FileCodeIcon,
+  FileIcon,
+  FileSpreadsheetIcon,
+  FileTextIcon,
+  ImageIcon,
+  PresentationIcon,
+} from 'lucide-react';
 
-/** Map of `mediaType` → preferred extension label for every file type chat supports */
-const FILE_TYPES: Record<string, string> = { ...CHAT_FILE_TYPES, ...CHAT_SANDBOX_FILE_TYPES };
+export type FileTileStyle = {
+  /** The file-type icon */
+  Icon: typeof ImageIcon;
+  /** Background color class for the icon's tile */
+  iconBg: string;
+};
 
-/** The file's type label (e.g. "PDF"), from its media type or else its extension */
-const getTypeLabel = (mediaType: string, filename: string | undefined): string => {
-  const mapped = FILE_TYPES[mediaType];
-  const filenameExt = filename?.split('.').pop();
-  return (mapped ?? filenameExt ?? 'file').toUpperCase();
+/** The icon and tile color for each kind of file (the kind comes from `CHAT_FILE_TYPES`) */
+const TILE_STYLES = {
+  image: { Icon: ImageIcon, iconBg: 'bg-muted-foreground' },
+  pdf: { Icon: FileTextIcon, iconBg: 'bg-red-500/80' },
+  word: { Icon: FileTextIcon, iconBg: 'bg-blue-600/80' },
+  spreadsheet: { Icon: FileSpreadsheetIcon, iconBg: 'bg-emerald-600/80' },
+  presentation: { Icon: PresentationIcon, iconBg: 'bg-orange-500/80' },
+  archive: { Icon: FileArchiveIcon, iconBg: 'bg-amber-600/80' },
+  code: { Icon: FileCodeIcon, iconBg: 'bg-sky-600/80' },
+  text: { Icon: FileTextIcon, iconBg: 'bg-slate-500/80' },
+} satisfies Record<ChatFileKind, FileTileStyle>;
+
+/** The icon and color for a file, shared by message attachments and staged attachments */
+export const getFileTileStyle = (fileName: string | undefined): FileTileStyle => {
+  const kind = getChatFileType(fileName)?.kind;
+  return kind ? TILE_STYLES[kind] : { Icon: FileIcon, iconBg: 'bg-muted-foreground' };
 };
 
 export type ChatFileProps = {
@@ -19,14 +42,12 @@ export type ChatFileProps = {
   url: string | undefined;
   /** The file's name */
   filename: string | undefined;
-  /** The file's MIME type */
-  mediaType: string;
 };
 
 /** Card for a non-image attachment, with a file-type icon, name and type label */
-export const ChatFile = ({ url, filename, mediaType }: ChatFileProps) => {
-  const { Icon, iconBg } = getFileTileStyle(mediaType);
-  const typeLabel = getTypeLabel(mediaType, filename);
+export const ChatFile = ({ url, filename }: ChatFileProps) => {
+  const { Icon, iconBg } = getFileTileStyle(filename);
+  const typeLabel = (getFileExtension(filename) ?? 'file').toUpperCase();
   const label = filename ?? 'file';
 
   const body = (

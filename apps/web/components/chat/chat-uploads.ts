@@ -1,6 +1,6 @@
 'use client';
 
-import type { ChatFileMimeType } from '@repo/constants';
+import { getChatFileType } from '@repo/constants';
 import { useProviderAttachments, type PromptInputMessage } from '@repo/design';
 import { type QueryClient, queryOptions, useQueries } from '@tanstack/react-query';
 
@@ -32,13 +32,13 @@ const { mutationFn: createUploadUrl } = api.uploads['create-upload-url'].$post.m
 const uploadFile = async (staged: StagedFile): Promise<UploadedFile> => {
   const original = await fetch(staged.url).then((res) => res.blob());
   const blob = await downscaleImage(new Blob([original], { type: staged.mediaType }));
-  const file = new File([blob], staged.filename ?? 'upload', { type: staged.mediaType });
+  const mediaType = getChatFileType(staged.filename)?.mime ?? staged.mediaType;
+  const file = new File([blob], staged.filename ?? 'upload', { type: mediaType });
 
   const presigned = await createUploadUrl({
     json: {
-      fileName: file.name,
       // The prompt input only accepts allowed types, and the API validates it again
-      fileType: file.type as ChatFileMimeType,
+      fileName: file.name,
       fileSize: file.size,
     },
   });

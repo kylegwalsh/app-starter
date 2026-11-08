@@ -1,14 +1,15 @@
-import { CHAT_ALLOWED_FILE_TYPES, CHAT_MAX_FILE_SIZE } from '@repo/constants';
+import { CHAT_MAX_FILE_SIZE, getChatFileType } from '@repo/constants';
 import { z } from 'zod';
 
 /** Schemas for chat */
 export const chatSchema = {
   /** Schema for the file upload request */
   uploadInput: z.object({
-    /** Original file name */
-    fileName: z.string().min(1),
-    /** MIME type of the file */
-    fileType: z.enum(CHAT_ALLOWED_FILE_TYPES),
+    /** Original file name — its extension must be a type chat accepts */
+    fileName: z
+      .string()
+      .min(1)
+      .refine((name) => getChatFileType(name) !== undefined, 'Unsupported file type'),
     /** File size in bytes */
     fileSize: z.number().int().positive().max(CHAT_MAX_FILE_SIZE),
   }),

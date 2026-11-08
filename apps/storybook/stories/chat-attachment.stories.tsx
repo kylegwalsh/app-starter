@@ -1,10 +1,4 @@
-import {
-  Attachment,
-  AttachmentInfo,
-  AttachmentPreview,
-  AttachmentRemove,
-  Attachments,
-} from '@repo/design';
+import { Attachment, Attachments } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
@@ -36,11 +30,7 @@ const meta = {
   },
   render: (args) => (
     <Attachments>
-      <Attachment {...args}>
-        <AttachmentPreview />
-        <AttachmentInfo />
-        <AttachmentRemove />
-      </Attachment>
+      <Attachment {...args} />
     </Attachments>
   ),
 } satisfies Meta<typeof Attachment>;
@@ -117,11 +107,7 @@ export const Several: Story = {
             {...args}
             data={{ ...file, id: file.filename, type: 'file', url: url ?? `blob:${file.filename}` }}
             key={file.filename}
-          >
-            <AttachmentPreview />
-            <AttachmentInfo />
-            <AttachmentRemove />
-          </Attachment>
+          />
         ))}
       </Attachments>
     </div>
