@@ -73,28 +73,3 @@ export const Remove: Story = {
     await expect(args.onRemove).toHaveBeenCalledOnce();
   },
 };
-
-/** Several staged files wrap onto new lines */
-export const Several: Story = {
-  render: (args) => (
-    <div className="w-96">
-      <Attachments>
-        {[
-          { mediaType: 'application/pdf', filename: 'quarterly-report.pdf' },
-          { mediaType: 'text/csv', filename: 'revenue.csv' },
-          {
-            mediaType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            filename: 'notes.docx',
-          },
-          { mediaType: 'image/svg+xml', filename: 'red-square.svg', url: IMAGE_URL },
-        ].map(({ url, ...file }) => (
-          <Attachment
-            {...args}
-            data={{ ...file, id: file.filename, type: 'file', url: url ?? `blob:${file.filename}` }}
-            key={file.filename}
-          />
-        ))}
-      </Attachments>
-    </div>
-  ),
-};

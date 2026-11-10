@@ -44,23 +44,3 @@ export const Default: Story = {
     await expect(await canvas.findByText('Run code')).toBeVisible();
   },
 };
-
-/** Open, as it shows while the steps are still running */
-export const Open: Story = {
-  args: {
-    defaultOpen: true,
-  },
-};
-
-/** A single step reads "Took 1 step" */
-export const SingleStep: Story = {
-  args: {
-    count: 1,
-    defaultOpen: true,
-  },
-  render: (args) => (
-    <Steps {...args}>
-      <ToolStep name="Run code" output="_No output._" />
-    </Steps>
-  ),
-};

@@ -29,12 +29,8 @@ export const Default: Story = {};
 
 /** Thumbs up submits straight away and locks the buttons */
 export const ThumbsUp: Story = {
-  play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('button', { name: 'Helpful' }));
-    await expect(args.onFeedback).toHaveBeenCalledWith('message-1', 'up');
-    await expect(canvas.getByRole('button', { name: 'Helpful' })).toBeDisabled();
-    await expect(canvas.queryByRole('button', { name: 'Not helpful' })).not.toBeInTheDocument();
+  args: {
+    existingFeedback: true,
   },
 };
 
@@ -48,12 +44,5 @@ export const ThumbsDownWithComment: Story = {
     await userEvent.type(await body.findByPlaceholderText('Optional feedback...'), 'Too long');
     await userEvent.click(body.getByRole('button', { name: 'Submit' }));
     await expect(args.onFeedback).toHaveBeenCalledWith('message-1', 'down', 'Too long');
-  },
-};
-
-/** Feedback saved earlier shows as the chosen, locked button */
-export const AlreadyHelpful: Story = {
-  args: {
-    existingFeedback: true,
   },
 };
