@@ -37,7 +37,7 @@ type ChatViewProps = {
 export const ChatView: FC<ChatViewProps> = ({ showWelcome = true }) => {
   const { conversationId, isWaiting, loadingConversationId } = useChatContext();
   const { messages, status, regenerate } = useActiveChat();
-  // While a saved conversation loads, show a skeleton for its messages and keep the input disabled
+  // Show a skeleton and disable the input while a saved conversation loads
   const isLoadingConversation = loadingConversationId !== undefined;
 
   if (showWelcome && !isLoadingConversation && !conversationId) {
@@ -48,11 +48,9 @@ export const ChatView: FC<ChatViewProps> = ({ showWelcome = true }) => {
   const isBusy = isStreaming || isWaiting;
   const lastMessage = messages.at(-1);
   const lastHasContent = lastMessage?.role === 'assistant' && hasVisibleContent(lastMessage.parts);
-  // Keep the indicator up until the reply has something to render (the first chunks are often
-  // metadata, and smoothStream buffers to a word boundary)
+  // Early chunks are often metadata, so keep the indicator up until the reply has something to render
   const showThinking = isBusy && !lastHasContent;
-  // A failed turn, or one that never finished (e.g. the server died), leaves the user's message
-  // unanswered; the server keeps no error record, so this is the same live and after a reload
+  // A failed or unfinished turn leaves the user's message unanswered, so this matches live and after reload
   const showError = !isBusy && (status === 'error' || lastMessage?.role === 'user');
 
   // Hide empty replies from failed streams, but keep stopped ones for their badge
