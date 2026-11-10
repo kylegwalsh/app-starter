@@ -1,6 +1,6 @@
 /**
  * Keeps a chat prompt under the model's ceiling by sweeping old tool results out of the view we
- * send (stored history is never modified). See `apps/web/app/(authenticated)/chat/README.md` for
+ * send (stored history is never modified). See `apps/backend/features/chat/README.md` for
  * why each threshold is what it is.
  */
 import type {

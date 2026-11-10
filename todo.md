@@ -13,7 +13,6 @@
 - Clean up any generated code
 
 - Test chat
-- Test storybook
 - Test sandbox
 - Test compaction
 

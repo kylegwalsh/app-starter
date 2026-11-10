@@ -27,7 +27,7 @@ This app is a Next.js (App Router) frontend for the monorepo. It integrates Bett
 - Type-safe API calls with Hono `hc` + TanStack Query bound to the backend `AppRouter`
 - Better Auth UI integration and session-aware layouts
 - Shared design system and global styles from `@repo/design`
-- AI chat with streaming, file uploads, feedback, and code execution (see `app/(authenticated)/chat/README.md`)
+- AI chat with streaming, file uploads, feedback, and code execution
 
 ## Directory Structure
 
