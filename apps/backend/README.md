@@ -20,8 +20,6 @@ This app provides the serverless backend for the monorepo. It is built with SST 
 - [Infrastructure](#infrastructure)
 - [API Entrypoints](#api-entrypoints)
 - [MCP Server](#mcp-server)
-  - [Adding a new tool](#adding-a-new-tool)
-  - [Connecting an MCP client](#connecting-an-mcp-client)
 - [Auth](#auth)
 - [Database](#database)
   - [Migrations](#migrations)
@@ -33,8 +31,7 @@ This app provides the serverless backend for the monorepo. It is built with SST 
 ## Overview
 
 - **Runtime/Infra**: SST deploys AWS Lambda + API Gateway. Common Lambda concerns (logging, analytics, AI tracing) are wrapped via `withLambdaContext`.
-- **HTTP Layer**: Hono is the unified HTTP entry point. It handles non-API concerns (auth, MCP, etc) then mounts the API router under `/api`.
-- **API**: A central `router` composes feature routers (e.g., `billing`) as chained Hono routes. The same routes serve both the frontend's typed `hc` client and the generated OpenAPI spec — `hono-openapi`'s `validator` validates requests and documents them in one step.
+- **API**: A central `router` composes feature routers (e.g., `billing`) as Hono routes. The same routes serve both the frontend's typed `hc` client and the generated OpenAPI spec.
 - **Auth**: [Better Auth](https://better-auth.com/) with Prisma adapter. Organizations are first-class; each user maintains a default/active organization. Optional personal organizations are supported and auto-provisioned.
 - **DB**: Prisma client against Postgres. Schema lives in `db/schema.prisma`.
 
@@ -92,26 +89,7 @@ Infrastructure is managed by SST. See the root-level `sst.config.ts` and the `in
 
 ## MCP Server
 
-The backend includes a [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server at `/mcp`. This allows AI assistants like Claude, Cursor, and other MCP-compatible clients to interact with your app through typed tools.
-
-- **Auth**: Uses Better Auth's OAuth provider plugin — clients authenticate via standard OAuth 2.0 flow and receive a JWT access token.
-- **Tools**: Defined in the owning feature's `tools.ts` (e.g. `features/organization/tools.ts`). Each tool uses `createTool` from `ai/utils.ts` for type-safe input schemas and session access.
-- **Auto-registration**: Tool files re-exported from `ai/tools.ts` are registered automatically on the MCP server and/or in chat, depending on each tool's `consumers`.
-
-### Adding a new tool
-
-1. Add it to the owning feature's `tools.ts` (see `features/organization/tools.ts` for reference).
-2. Export the file from `ai/tools.ts`.
-
-See [`ai/README.md`](ai/README.md) for the full walkthrough.
-
-### Connecting an MCP client
-
-> **MCP needs a custom domain.** Without one, the API is on API Gateway's default URL, which puts the stage in the path. MCP clients look for OAuth metadata at the domain root (`/.well-known/...`), which that URL can't serve.
-
-The repo's `.mcp.json` already includes the server for Claude Code. It runs `scripts/mcp.ts`, which reads your stage's API URL from `.sst/outputs.json` (written by `bun dev` / `bun deploy`) and connects through [mcp-remote](https://www.npmjs.com/package/mcp-remote), which handles the OAuth sign-in.
-
-For other clients (Cursor, Claude Desktop), point them at `https://api.<your-domain>/mcp`. They authenticate via OAuth on first connection.
+The backend includes a [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server at `/mcp` that exposes our tools to clients like Claude and Cursor. It needs a custom domain. See [`ai/README.md`](ai/README.md) for adding tools, auth and connecting a client.
 
 ## Auth
 
@@ -119,7 +97,7 @@ Authentication is managed by Better Auth.
 
 - `services/auth.ts`: Central config for Better Auth (Prisma adapter, secrets, cookie settings) plus auth-event webhooks (e.g., user/org lifecycle, password reset email hooks, analytics).
 - Routes: Auth HTTP routes are exposed under `/api/auth` (handled via Hono and forwarded to `auth.handler`).
-- Context: `api/middleware/auth.ts` parses the Better Auth cookie from request headers to populate `user` and the active `organization` on the Hono context. Routers that require a signed-in user apply `requireAuth`.
+- Context: `api/middleware/auth.ts` parses the Better Auth cookie from request headers to populate `user` and the active `organization` on the Hono context.
 
 ## Database
 

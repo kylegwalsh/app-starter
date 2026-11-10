@@ -60,7 +60,7 @@ This starter template comes pre-configured with a robust set of features to acce
 - **Logging:** Shared logging package (Pino) with pretty local output, and production integration with Posthog and CloudWatch.
 - **AI Tracing & Evaluation:** Integrated with Langfuse for tracing, monitoring, and evaluating AI generations.
 - **AI Chat:** Built-in chat UI with streaming responses, conversation persistence, file uploads, and sandboxed code execution.
-- **MCP Server:** Built-in [Model Context Protocol](https://modelcontextprotocol.io/) server letting AI assistants (Claude, Cursor, etc.) use your backend tools. Requires a custom domain ([setup](apps/backend/README.md#connecting-an-mcp-client)).
+- **MCP Server:** Built-in [Model Context Protocol](https://modelcontextprotocol.io/) server letting AI assistants (Claude, Cursor, etc.) use your backend tools. Requires a custom domain ([setup](apps/backend/ai/README.md#connecting-an-mcp-client)).
 - **AI-Assisted Development:** Pre-configured with AGENTS.md guidance for AI-powered workflows.
 - **Email:** Transactional emails (password resets, organization invitations, contact form messages) sent through PostHog, with templates kept in code and uploaded by `bun run init`.
 

@@ -92,10 +92,7 @@ Better Auth powers authentication and provides hooks/UI for user and organizatio
 The app communicates with the backend via Hono's typed `hc` client, bound to TanStack Query by `hono-tanstack-query`.
 
 - Types: We import the backend `AppRouter` and create a typed client in `lib/api.ts`.
-- Usage: `useQuery(api.<path>.$get.queryOptions())` for reads, `useMutation(api.<path>.$post.mutationOptions())` for writes; TanStack Query manages caching and invalidation.
-- Inputs mirror the HTTP request: `{ json }` for bodies, `{ query }` for query strings (values must be strings), `{ param }` for path params — e.g. `api.chat.conversations[':id'].$patch.mutationOptions()` takes `{ param: { id }, json: { title } }`.
-- Mutations do **not** auto-invalidate (the client is configured with `invalidation: 'none'`), so cache updates are explicit.
-- Timestamps arrive as ISO strings, not `Date` objects — plain JSON has no date type.
+- Usage: `useQuery(api.<path>.$get.queryOptions())` for reads, `useMutation(api.<path>.$post.mutationOptions())` for writes.
 
 ## State
 

@@ -1,6 +1,6 @@
 # AI Integration
 
-AI capabilities for the backend — chat streaming, tool execution, and MCP server support. Built on the Vercel AI SDK with Langfuse observability.
+Tools and the MCP server. For how chat itself works, see `features/chat/README.md`.
 
 ```text
 ai/
@@ -14,10 +14,7 @@ ai/
 
 ## Tools
 
-Tools live with the feature they belong to (`features/<feature>/tools.ts`), are defined once, and are automatically available in two contexts:
-
-1. **Chat** — `streamChatTurn` (`features/chat/operations.ts`) converts tools to AI SDK format via `sdk.ts` and passes them to `streamText`
-2. **MCP** — the MCP server (`mcp/server.ts`) registers tools for external clients (e.g., Claude Desktop, Cursor)
+Tools live with the feature they belong to (`features/<feature>/tools.ts`) and are defined once. Chat converts them with `sdk.ts`, and the MCP server registers them for external clients like Claude Code and ChatGPT.
 
 ### Adding a New Tool
 
@@ -36,10 +33,7 @@ export const myTool = createTool({
     param: z.string().describe('Description of the parameter'),
   },
   annotations: { readOnlyHint: true, destructiveHint: false },
-  // Surfaces the tool is exposed through — explicit so we never accidentally
-  // ship a chat-only helper over MCP (or vice versa).
-  // Use ['chat'] for tools that don't make sense to external agents, or
-  // ['mcp'] for the inverse.
+  // Where the tool is exposed (explicit so chat-only tools never leak over MCP)
   consumers: ['chat', 'mcp'],
   handler: async (args, session) => {
     const result = doSomething(args.param);
@@ -56,12 +50,15 @@ export * from '@/features/my-feature/tools';
 
 That's it — the tool auto-registers in both chat and MCP.
 
-## Chat Streaming
-
-The chat endpoint is a protected Hono route (`features/chat/routes.ts`) backed by `sendMessage` in `features/chat/operations.ts`. It uses the [Vercel AI SDK](https://ai-sdk.dev) for streaming (`streamText`) and returns the result through `createUIMessageStreamResponse()`. The frontend consumes it with the SDK's own `DefaultChatTransport` in `useChat`.
-
 ## MCP Server
 
-The MCP server (`mcp/server.ts`) exposes tools to external MCP clients via OAuth-authenticated Streamable HTTP. Session state is persisted in the database (`mcp/session.ts`) to support org switching across stateless Lambda invocations. The adapter lives at `api/adapters/mcp.ts`.
+The MCP server (`mcp/server.ts`) exposes tools to external clients at `/mcp` over Streamable HTTP. The adapter lives at `api/adapters/mcp.ts`.
 
-MCP needs a custom domain: clients look for OAuth metadata at the domain root, which API Gateway's default stage-prefixed URL can't serve. See [Connecting an MCP client](../README.md#connecting-an-mcp-client).
+- **Auth**: Better Auth's OAuth provider plugin. Clients sign in with a standard OAuth 2.0 flow and receive a JWT access token.
+- **Sessions**: stored in the database (`mcp/session.ts`) so org switching works across stateless Lambda invocations.
+
+### Connecting an MCP client
+
+> **MCP needs a custom domain.** Without one, the API is on API Gateway's default URL, which puts the stage in the path. MCP clients look for OAuth metadata at the domain root (`/.well-known/...`), which that URL can't serve.
+
+The repo's `.mcp.json` already includes the server for Claude Code. It runs `scripts/mcp.ts`, which reads your stage's API URL from `.sst/outputs.json` (written by `bun dev` / `bun deploy`) and connects through [mcp-remote](https://www.npmjs.com/package/mcp-remote), which handles the OAuth sign-in.
