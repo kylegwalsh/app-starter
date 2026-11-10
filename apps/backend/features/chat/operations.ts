@@ -1,6 +1,7 @@
 import type { Conversation, Prisma } from '@prisma/client';
 import { ai, models, type Observed } from '@repo/ai';
 import { analytics } from '@repo/analytics';
+import { API_SOFT_TIMEOUT_MS } from '@repo/constants';
 import { log } from '@repo/logs';
 import type { chatSchema } from '@repo/schemas';
 import {
@@ -250,8 +251,21 @@ export const sendMessage = async (
     analytics.captureException(error, { conversationId: conversation.id, ...properties });
   };
 
+  // The timeout middleware can't cover streams, so abort the turn before AWS kills the Lambda
+  const timeoutSignal = AbortSignal.timeout(API_SOFT_TIMEOUT_MS);
+
   return createUIMessageStream<ChatMessage>({
     execute: async ({ writer }) => {
+      // An abort alone ends the stream cleanly, so tell the client the turn failed
+      timeoutSignal.addEventListener(
+        'abort',
+        () => {
+          reportError(new Error(`Chat turn exceeded ${API_SOFT_TIMEOUT_MS}ms timeout`));
+          writer.write({ type: 'error', errorText: 'The response took too long and was stopped.' });
+        },
+        { once: true },
+      );
+
       // Title a new conversation alongside the response, so the sidebar can show it mid-stream
       const seed = isNew ? getTitleSeed(message) : undefined;
       const titlePromise = seed ? saveGeneratedTitle(conversation.id, seed) : undefined;
@@ -263,7 +277,11 @@ export const sendMessage = async (
           compactedThrough: conversation.compactedThrough,
           contextTokens: conversation.contextTokens,
         },
-        context: { user, organization, abortSignal: abortController.signal },
+        context: {
+          user,
+          organization,
+          abortSignal: AbortSignal.any([abortController.signal, timeoutSignal]),
+        },
       });
 
       writer.merge(

@@ -1,4 +1,4 @@
-import { API_MAX_TIMEOUT_MINUTES, API_MAX_TIMEOUT_MS } from '@repo/constants';
+import { API_MAX_TIMEOUT_MS } from '@repo/constants';
 
 import { apiUrl, gateway } from './gateway';
 
@@ -11,7 +11,7 @@ const { uploadsBucket } = await import('./storage');
 const apiHandler = new sst.aws.Function('apiHandler', {
   handler: 'apps/backend/lambda/api.handler',
   streaming: true,
-  timeout: `${API_MAX_TIMEOUT_MINUTES} minutes`,
+  timeout: `${API_MAX_TIMEOUT_MS / 1000} seconds`,
   link: [
     web,
     admin,
@@ -25,6 +25,8 @@ const apiHandler = new sst.aws.Function('apiHandler', {
 gateway.route('ANY /{proxy+}', apiHandler.arn, {
   streaming: true,
   transform: {
+    // Requires the AWS quota "Maximum integration timeout in milliseconds" raised above its 29s default:
+    // https://us-east-1.console.aws.amazon.com/servicequotas/home/services/apigateway/quotas
     integration: { timeoutMilliseconds: API_MAX_TIMEOUT_MS },
   },
 });

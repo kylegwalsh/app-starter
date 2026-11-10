@@ -3,7 +3,7 @@ import { Skeleton } from '@repo/design';
 /** Placeholder shaped like a conversation, shown while its messages load */
 export const ConversationSkeleton = () => (
   <div className="flex h-full w-full flex-col">
-    <div className="flex flex-1 flex-col gap-4 px-4 py-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6">
       <div className="flex justify-end">
         <Skeleton className="h-14 w-[22rem] max-w-[80%] rounded-2xl rounded-br-lg" />
       </div>

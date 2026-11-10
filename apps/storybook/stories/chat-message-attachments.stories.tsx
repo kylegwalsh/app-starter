@@ -51,17 +51,3 @@ export const Assistant: Story = {
     align: 'assistant',
   },
 };
-
-/** Only file cards, with no images */
-export const FilesOnly: Story = {
-  args: {
-    parts: [
-      {
-        type: 'file',
-        url: 'https://example.com/report.pdf',
-        mediaType: 'application/pdf',
-        filename: 'quarterly-report.pdf',
-      },
-    ],
-  },
-};

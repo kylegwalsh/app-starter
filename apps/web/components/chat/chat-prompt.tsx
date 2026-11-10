@@ -70,6 +70,7 @@ export const PromptInputBar: FC<{ disabled?: boolean }> = ({ disabled = false })
   return (
     <PromptInput
       accept={ACCEPTED_FILE_TYPES}
+      className="[&_[data-slot=input-group]]:bg-muted/50 [&_[data-slot=input-group]]:border-transparent [&_[data-slot=input-group]]:shadow-none [&_[data-slot=input-group]]:has-[[data-slot=input-group-control]:focus-visible]:border-transparent [&_[data-slot=input-group]]:has-[[data-slot=input-group-control]:focus-visible]:ring-0"
       maxFileSize={CHAT_MAX_FILE_SIZE}
       multiple
       // Files the input rejects (wrong type, too large) would otherwise vanish without a word

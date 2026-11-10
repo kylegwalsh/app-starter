@@ -19,10 +19,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** "Try again" calls `onRetry` */
+/** "Retry" calls `onRetry` */
 export const Default: Story = {
   play: async ({ args, canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Try again' }));
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Retry' }));
     await expect(args.onRetry).toHaveBeenCalledOnce();
   },
 };

@@ -84,8 +84,3 @@ export const Submitted: Story = {
     await expect(within(canvasElement).getByRole('button', { name: 'Submit' })).toBeDisabled();
   },
 };
-
-/** After a failed response, the button shows an error icon but still submits */
-export const Errored: Story = {
-  render: (args) => <Composer {...args} status="error" />,
-};

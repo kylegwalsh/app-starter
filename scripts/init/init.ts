@@ -2321,8 +2321,11 @@ const printFinalNotes = ({
     }
   }
 
+  console.log('- Make sure you restart your terminal for your AWS profile changes to take effect.');
+
+  // Long-running AI requests exceed API Gateway's default 29s integration timeout
   console.log(
-    '- Make sure you restart your terminal for your AWS profile changes to take effect.\n',
+    '- To let AI requests run longer than ~30s, request a raise of the API Gateway quota "Maximum integration timeout in milliseconds": https://us-east-1.console.aws.amazon.com/servicequotas/home/services/apigateway/quotas\n',
   );
 
   // Mention anything left to do for email setup

@@ -16,7 +16,7 @@ import { Spinner } from '@repo/design/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@repo/design/components/ui/tooltip';
 import { cn } from '@repo/design/lib/utils';
 import type { ChatStatus, FileUIPart } from 'ai';
-import { CornerDownLeftIcon, ImageIcon, PlusIcon, SquareIcon, XIcon } from 'lucide-react';
+import { CornerDownLeftIcon, ImageIcon, PlusIcon, SquareIcon } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import type {
   ChangeEventHandler,
@@ -506,8 +506,6 @@ export const PromptInputSubmit = ({
     icon = <Spinner />;
   } else if (status === 'streaming') {
     icon = <SquareIcon className="size-4" />;
-  } else if (status === 'error') {
-    icon = <XIcon className="size-4" />;
   }
 
   return (

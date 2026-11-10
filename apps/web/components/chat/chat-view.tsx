@@ -7,6 +7,7 @@ import {
   ConversationScrollButton,
   ThinkingIndicator,
 } from '@repo/design';
+import { cn } from '@repo/design/lib/utils';
 
 import { AssistantMessage, UserMessage } from './chat-messages';
 import { PromptInputBar } from './chat-prompt';
@@ -14,10 +15,13 @@ import { useActiveChat, useChatContext } from './chat-provider';
 import { hasVisibleContent } from './chat-utils';
 import { ConversationSkeleton } from './conversation-skeleton';
 
+/** Centers messages and input in a readable column rather than spanning the full width */
+const CHAT_COLUMN = 'mx-auto w-full max-w-3xl';
+
 /** Centered welcome screen shown before any message has been sent */
 const WelcomeScreen = () => (
   <div className="flex h-full flex-col items-center justify-center px-4">
-    <div className="flex w-full max-w-2xl flex-col gap-6">
+    <div className="flex w-full max-w-3xl flex-col gap-6">
       <h1 className="text-center text-2xl font-medium">What's on your mind today?</h1>
       <PromptInputBar />
     </div>
@@ -66,7 +70,7 @@ export const ChatView: FC<ChatViewProps> = ({ showWelcome = true }) => {
         </div>
       ) : (
         <Conversation>
-          <ConversationContent className="gap-4 py-6">
+          <ConversationContent className={cn(CHAT_COLUMN, 'gap-4 py-6')}>
             {visibleMessages.map((message) => {
               if (message.role === 'user') {
                 return <UserMessage key={message.id} message={message} />;
@@ -96,8 +100,10 @@ export const ChatView: FC<ChatViewProps> = ({ showWelcome = true }) => {
         </Conversation>
       )}
 
-      <div className="border-t p-3">
-        <PromptInputBar disabled={isLoadingConversation} />
+      <div className="p-3">
+        <div className={CHAT_COLUMN}>
+          <PromptInputBar disabled={isLoadingConversation} />
+        </div>
       </div>
     </div>
   );

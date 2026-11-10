@@ -172,7 +172,7 @@ Presentational components with no AI SDK dependency:
 - `ChatMessages` — Scrollable container with smart auto-scroll
 - `ChatToolInvocation` — Tool call status (loading/result/error)
 - `ChatTypingIndicator` — Animated "Thinking..." indicator
-- `ChatError` — Inline error with "Try again" button
+- `ChatError` — Neutral notice with a "Retry" button
 
 ### App Components (`apps/web/components/chat/`)
 
@@ -188,7 +188,7 @@ Wire up the AI SDK:
 Follows the ChatGPT pattern:
 
 - Errors are shown **inline** where the assistant's response would appear (not a global banner)
-- A **"Try again"** button calls `regenerate()` to retry the last response
+- A **"Retry"** button calls `regenerate()` to retry the last response
 - The user's message is never lost
 - The error replaces the typing indicator
 - Failed turns aren't saved, so a conversation that ends on an unanswered user message (a failure, or a server that died mid-response) shows the same error after a reload
