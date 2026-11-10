@@ -36,8 +36,9 @@ export const createMcpServer = ({
   session,
   tools = registeredTools,
 }: {
+  /** The existing session to resume (if any) */
   session?: ToolSession;
-  /** The tools to offer (defaults to the registry; tests pass their own) */
+  /** The tools to offer (defaults to the registry) */
   tools?: AiTool[];
 }) => {
   const server = new McpServer({
@@ -65,6 +66,7 @@ export const createMcpServer = ({
         if (!session) {
           throw new Error('Tool called before the MCP session was resolved');
         }
+
         const start = Date.now();
         const outcome = await runTool({ tool, args, session });
         await analytics.mcpToolCalled({
@@ -76,6 +78,7 @@ export const createMcpServer = ({
           errorStatus: outcome.ok ? undefined : outcome.status,
           durationMs: Date.now() - start,
         });
+
         if (outcome.ok) {
           return { content: [{ type: 'text' as const, text: outcome.result }] };
         }
