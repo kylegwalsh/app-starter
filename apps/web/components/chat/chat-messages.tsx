@@ -58,12 +58,7 @@ export const UserMessage: FC<{ message: ChatMessage }> = ({ message }) => {
   );
 };
 
-/**
- * Renders a group of consecutive reasoning + tool parts as a "Took N steps"
- * collapsible block. Each step inside is itself collapsible — reasoning stays
- * open while streaming, tool calls open while their input is still streaming
- * or before the output arrives, everything else closes by default.
- */
+/** Renders consecutive reasoning and tool parts as a collapsible "Took N steps" block */
 const ProcessSteps: FC<{ parts: ProcessPart[]; isAnimating: boolean }> = ({
   parts,
   isAnimating,

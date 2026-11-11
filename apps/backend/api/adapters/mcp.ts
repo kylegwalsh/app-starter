@@ -11,14 +11,10 @@ import { auth } from '@/services';
 // ---------- BASE MCP HANDLER (/mcp/*) ----------
 /** MCP sub-app — mounted at /mcp in the main API */
 const mcpAdapter = new Hono();
-
 /** The base URL for the auth API */
 const baseAuthUrl = `${config.api.url}/api/auth`;
 
-// Health check specifically for the MCP server
-mcpAdapter.get('/health', (c) => c.json({ status: 'ok' }));
-
-/** Records a new MCP connection; best effort, so analytics can never break the handshake */
+/** Tracks a new MCP connection in analytics */
 const trackConnection = async ({
   sessionId,
   userId,
@@ -39,6 +35,7 @@ const trackConnection = async ({
       clientVersion: client?.version,
     });
   } catch (error) {
+    // Best effort and doesn't fail connection
     log.warn({ err: error, sessionId }, 'Failed to track MCP connection');
   }
 };

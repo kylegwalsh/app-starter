@@ -92,10 +92,7 @@ const getStatusBadgeVariant = (
   }
 };
 
-/**
- * Organization detail page — view org info, manage members (role changes, removal),
- * send/cancel invitations, and delete the organization.
- */
+/** Organization detail page: info, members, invitations, and deletion */
 export default function OrganizationDetailPage() {
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();

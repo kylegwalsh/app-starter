@@ -1,8 +1,3 @@
-/**
- * Keeps a chat prompt under the model's ceiling by sweeping old tool results out of the view we
- * send (stored history is never modified). See `apps/backend/features/chat/README.md` for
- * why each threshold is what it is.
- */
 import type {
   AssistantContent,
   LanguageModelUsage,
@@ -14,6 +9,11 @@ import type {
 
 // oxlint-disable-next-line no-namespace -- Namespace import used to read every registered tool's annotations
 import * as allTools from '@/ai/tools';
+
+/**
+ * Context compaction: keeps a chat prompt under the model's input limit as a thread grows, without
+ * changing the stored history. See `features/chat/README.md` for how and why it works.
+ */
 
 /** Claude Sonnet 5.5's input ceiling */
 export const MAX_INPUT_TOKENS = 1_000_000;

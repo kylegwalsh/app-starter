@@ -97,10 +97,7 @@ type OrganizationIdentifyEvent = {
   };
 };
 
-/**
- * Extends an analytics library and returns a list of available events
- * @param analytics - The analytics library being extended (must be a Segment library)
- */
+/** Extends an analytics library and returns its available events */
 export const createAnalyticsEvents = <T extends 'web' | 'backend'>({
   platformAnalytics,
   platform,
@@ -108,10 +105,7 @@ export const createAnalyticsEvents = <T extends 'web' | 'backend'>({
   getLogMetadata,
 }: // Ensure our posthog library is typed correctly based on platform
 T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
-  /**
-   * Safely invoke analytics functions (without crashing anything)
-   * @param func - Function to invoke
-   */
+  /** Invokes an analytics function without letting a failure crash anything */
   const safeInvoke = async (func: () => Promise<void> | void) => {
     try {
       // Only send analytics events if posthog is enabled
@@ -124,11 +118,7 @@ T extends 'web' ? WebAnalyticsProps : BackendAnalyticsProps) => {
     }
   };
 
-  /**
-   * A generic track method that determines the correct way to format the track call based on platform
-   * @param event - The name of the event we're sending
-   * @param properties - The additional properties to attach to the event
-   */
+  /** A generic track method that formats the call for the current platform */
   const track = (
     event: string,
     properties: T extends 'web'

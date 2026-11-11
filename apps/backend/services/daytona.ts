@@ -13,10 +13,7 @@ const daytona = apiKey ? new Daytona({ apiKey }) : undefined;
 export const sandboxManager = {
   /** Whether Daytona is configured. Without it, chat runs without the code tools */
   isEnabled: daytona !== undefined,
-  /**
-   * Get or create a sandbox for a conversation.
-   * Handles all state transitions: stopped → start, archived → recover, deleted → create new.
-   */
+  /** Gets or creates a conversation's sandbox, restoring stopped or archived ones */
   getOrCreate: async (conversationId: string) => {
     // The code tools are hidden when Daytona isn't configured, so this is only a safeguard
     if (!daytona) {

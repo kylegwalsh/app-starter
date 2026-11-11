@@ -45,10 +45,7 @@ const extractHttpRequestInfo = (event: unknown): { path: string; method: string 
   return undefined;
 };
 
-/**
- * Wraps a Lambda handler with logging context, error capture, and an
- * observability flush after each invocation
- */
+/** Wraps a Lambda handler with logging context, error capture, and an observability flush */
 export const withLambdaContext = <T extends AnyLambdaHandler>(handler: T): T => {
   const wrapped = (async (...args: Parameters<T>) => {
     const event = args[0] as LambdaEvent | SQSEvent;

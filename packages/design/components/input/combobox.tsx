@@ -352,11 +352,7 @@ const MultiBadgeList = ({
 
 // ─── Main component ──────────────────────────────────────────────────
 
-/**
- * A searchable combobox component that allows users to select from a list of options
- * or create new options dynamically. Supports both controlled and uncontrolled modes,
- * grouped options, custom rendering, and keyboard navigation.
- */
+/** A searchable select that supports creating new options, grouping, and custom rendering */
 export const Combobox = ({
   options,
   multiple = false,
@@ -750,11 +746,7 @@ export const Combobox = ({
     [closePopover, onCreateOption, multi, single, multiple, getOptionsByValues],
   );
 
-  /**
-   * Default render function for options in the list.
-   * Displays icon (if provided), label, badge (if provided), description (if provided), and a checkmark icon when selected.
-   * Can be overridden via renderOption prop.
-   */
+  /** Default option renderer, overridable via the renderOption prop */
   const defaultRenderOption = useCallback(
     (option: ComboboxOption, selected: boolean) => (
       <div className="flex w-full items-center gap-2">

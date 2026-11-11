@@ -52,17 +52,12 @@ export const createTool = <TInput extends z.ZodRawShape = z.ZodRawShape>(
   isTool: true as const,
 });
 
-/** Result of running a tool — discriminated so adapters can format consistently. */
+/** Result of running a tool — discriminated so adapters can format consistently */
 export type ToolRunResult =
   | { ok: true; result: string }
   | { ok: false; message: string; status: number };
 
-/**
- * Centralized tool invocation for every adapter (AI SDK chat + MCP). Logs the
- * start, success, and failure with `toolName` metadata, reports unexpected
- * errors via `handleError` (expected 4xx errors are only logged), and returns a
- * discriminated payload that each adapter formats into its native response shape.
- */
+/** Runs a tool for every adapter (chat and MCP) and handles errors */
 export const runTool = async ({
   tool,
   args,
@@ -76,6 +71,7 @@ export const runTool = async ({
   const start = Date.now();
   const context = { toolName: tool.name, consumer: session.consumer };
   log.info(context, `Running tool: ${tool.name}`);
+
   try {
     const result = await tool.handler(args, session);
     log.info({ ...context, durationMs: Date.now() - start }, 'Tool finished');

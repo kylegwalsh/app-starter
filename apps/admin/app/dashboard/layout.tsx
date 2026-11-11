@@ -41,10 +41,7 @@ const navItems = [
   },
 ];
 
-/**
- * Dashboard shell — sidebar navigation, user avatar, and logout. Wrapped in `RequireAdmin`
- * so unauthenticated / non-admin users are redirected to login.
- */
+/** Dashboard shell with sidebar navigation and the signed-in admin menu */
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const router = useRouter();

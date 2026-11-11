@@ -100,10 +100,7 @@ export const listUploads = (messages: Pick<UIMessage, 'parts'>[]): Upload[] => {
     });
 };
 
-/**
- * Decides which attachments the model can read. Unsupported types, oversized files and missing
- * ones can't be read; past the image and document caps, the newest files win.
- */
+/** Decides which attachments the model can read */
 export const routeAttachments = (
   uploads: Pick<Upload, 'part'>[],
   sizes: ReadonlyArray<number | null>,
@@ -136,10 +133,7 @@ export const routeAttachments = (
   return uploads.map((_, index) => unreadable.get(index));
 };
 
-/**
- * Returns the messages the model should see: readable attachments stay (with a note giving their
- * sandbox path, if there's a sandbox), and the rest are replaced by a note saying why.
- */
+/** Returns the messages the model should see, replacing unreadable attachments with a note */
 export const prepareAttachmentsForModel = async (messages: UIMessage[]): Promise<UIMessage[]> => {
   const uploads = listUploads(messages);
   if (uploads.length === 0) {

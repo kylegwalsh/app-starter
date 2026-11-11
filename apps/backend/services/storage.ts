@@ -31,12 +31,7 @@ export const storage = {
     return decoded.replace(/^\/+/, '') || null;
   },
 
-  /**
-   * Mint a short-lived presigned GET URL for a stored object. The caller is
-   * responsible for verifying that the recipient is allowed to read the file.
-   * Pass `downloadFilename` to set the browser-side download name; otherwise
-   * the URL's path tail is used.
-   */
+  /** Mints a presigned GET URL. The caller must check the recipient may read the file */
   signUrl: ({
     key,
     downloadFilename,

@@ -62,10 +62,7 @@ const AuthorizePage = () => {
     router.replace(`/auth/sign-in?redirectTo=${encodeURIComponent(redirectTo)}`);
   }, [isSessionPending, session, router]);
 
-  /**
-   * Submit consent decision to better-auth — the oauthProviderClient fetch plugin
-   * automatically attaches the signed OAuth query from window.location.search
-   */
+  /** Submits the consent decision (the plugin attaches the signed OAuth query) */
   const handleConsent = useCallback(
     async (accept: boolean) => {
       setIsSubmitting(true);

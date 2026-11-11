@@ -134,17 +134,15 @@ export const blocks = {
   }),
 };
 
-/**
- * The accent bar at the top of every email. Only the divider's border is colored: a row
- * background fills the full email width, and clients that pad the divider's cell show it
- * as a thick bar.
- */
+/** The accent bar at the top of every email */
 const topBar: Row = {
   blocks: [
     {
       type: 'divider',
       values: {
         width: '100%',
+        // Only the border is colored: a row background fills the full email width, and clients
+        // that pad the divider's cell would show it as a thick bar
         border: { borderTopWidth: '4px', borderTopStyle: 'solid', borderTopColor: palette.primary },
         textAlign: 'center',
         containerPadding: '0px',

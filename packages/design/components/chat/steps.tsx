@@ -16,10 +16,7 @@ export type StepsProps = Omit<ComponentProps<typeof Collapsible>, 'children'> & 
   children?: ReactNode;
 };
 
-/**
- * "Took N steps" collapsible wrapper for a sequence of process entries
- * (reasoning, tool calls, etc.) before a model's final answer
- */
+/** "Took N steps" collapsible wrapper for the process entries before a final answer */
 export const Steps = ({ count, className, children, ...props }: StepsProps) => (
   <Collapsible className={cn('not-prose', className)} {...props}>
     <CollapsibleTrigger className="group/steps text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs transition-colors">

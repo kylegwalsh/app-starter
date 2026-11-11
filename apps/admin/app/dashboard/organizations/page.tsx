@@ -43,10 +43,7 @@ type OrganizationWithMemberCount = Organization & {
   memberCount?: number;
 };
 
-/**
- * Organizations list — fetches all orgs with member counts, supports client-side search,
- * column sorting, and pagination. Falls back to a "plugin disabled" card on API errors.
- */
+/** Organizations list page: member counts, search, sorting, and pagination */
 export default function OrganizationsListPage() {
   const [organizations, setOrganizations] = useState<OrganizationWithMemberCount[]>([]);
   const [isLoading, setIsLoading] = useState(true);

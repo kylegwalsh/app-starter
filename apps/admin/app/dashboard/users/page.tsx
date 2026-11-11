@@ -39,9 +39,7 @@ const buildFilterParams = (status: FilterStatus) => {
   }
 };
 
-/**
- * Users list — server-side pagination, search, sorting, and filtering via Better Auth admin API.
- */
+/** Users list page: server-side pagination, search, sorting, and filtering */
 export default function UsersListPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [totalItems, setTotalItems] = useState(0);

@@ -7,11 +7,7 @@ import { Suspense, useEffect, useState, type FormEvent } from 'react';
 
 import { useAuth } from '@/contexts/auth-context';
 
-/**
- * Admin login page — authenticates via Better Auth email/password and verifies admin role.
- * Redirects to `?redirect=` param (or `/dashboard`) on success. Already-authenticated admins
- * are redirected immediately.
- */
+/** Login page: Better Auth email/password sign-in for admins */
 export default function LoginPage() {
   return (
     <Suspense>

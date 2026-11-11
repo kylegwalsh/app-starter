@@ -6,39 +6,31 @@ import { UnauthorizedError } from '@/api/error';
 import { db } from '@/db';
 import { type AuthContext, type AuthUser, auth } from '@/services';
 
-/** Context populated by {@link authMiddleware} — user/organization may be absent */
+/** Context for every route. user and organization are undefined when signed out */
 export type PublicEnv = {
-  Variables: {
-    user: AuthUser | undefined;
-    organization: Organization | undefined;
-  };
+  Variables: Partial<AuthContext>;
 };
 
-/**
- * Context guaranteed by {@link requireAuth}. Protected routers declare this env
- * so handlers read `c.get('user')` without null checks.
- */
+/** Context for routes behind requireAuth (where user and organization are always set) */
 export type ProtectedEnv = {
   Variables: AuthContext;
 };
 
-/**
- * Populates the auth context for every request. Applied once at the root of the API.
- */
+/** Loads the signed-in user and organization onto the context */
 export const authMiddleware = createMiddleware<PublicEnv>(async (c, next) => {
   let user: AuthUser | undefined;
   let organization: Organization | undefined;
   const cookies = c.req.header('cookie') ?? '';
 
   try {
-    // If we have a better auth cookie, we will attempt to populate the user and organization contexts
+    // Skip the session lookup entirely when there's no Better Auth cookie
     if (cookies.includes('better-auth')) {
       const sessionData = await auth.api.getSession({
         headers: new Headers(c.req.raw.headers),
       });
       user = sessionData?.user;
 
-      // If the user has an active organization, verify they're still a member
+      // Only keep the active organization if the user is still a member of it
       const activeOrganizationId = sessionData?.session?.activeOrganizationId;
       if (activeOrganizationId && user) {
         const membership = await db.member.findFirst({
@@ -49,10 +41,11 @@ export const authMiddleware = createMiddleware<PublicEnv>(async (c, next) => {
       }
     }
   } catch (error) {
+    // A failed lookup leaves the request signed out, and requireAuth rejects it where needed
     log.warn({ err: error }, 'Failed to get session');
   }
 
-  // Add some metadata to our logs
+  // Tag this request's logs with the user and organization
   addLogMetadata({
     userId: user?.id,
     organizationId: organization?.id,
@@ -64,10 +57,7 @@ export const authMiddleware = createMiddleware<PublicEnv>(async (c, next) => {
   await next();
 });
 
-/**
- * Rejects requests without a signed-in user and active organization. Protected
- * routers apply this before their routes so {@link ProtectedEnv} holds.
- */
+/** Throws UnauthorizedError unless a user and organization are present */
 export const requireAuth = createMiddleware<ProtectedEnv>(async (c, next) => {
   if (!(c.get('user') && c.get('organization'))) {
     throw new UnauthorizedError();

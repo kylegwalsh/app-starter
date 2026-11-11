@@ -116,10 +116,7 @@ export const sandboxReadFile = createTool({
   },
 });
 
-/**
- * Commands the model may run in the sandbox shell. This keeps it to the intended uses, but the
- * sandbox is the security boundary: `run-code` already runs arbitrary Python there.
- */
+/** Allowed sandbox shell commands. A guide only, since the sandbox is the security boundary */
 const ALLOWED_COMMAND_PREFIXES = [
   'pip install',
   'pip3 install',

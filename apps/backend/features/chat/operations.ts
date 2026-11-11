@@ -71,10 +71,7 @@ const findOrCreateConversation = async (
   return { conversation, isNew: true };
 };
 
-/**
- * Saves the user's message and returns the history to answer. Re-sending a saved message is a
- * retry: the replies after it are dropped so it gets answered fresh.
- */
+/** Saves the user's message and returns the history to answer, dropping replies on a retry */
 const prepareTurn = async (conversationId: string, message: UserMessage) => {
   const saved = await db.message.findUnique({ where: { id: message.id } });
   if (saved && saved.conversationId !== conversationId) {

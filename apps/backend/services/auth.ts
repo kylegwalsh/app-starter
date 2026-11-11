@@ -20,15 +20,12 @@ import { stripePluginInstance } from './stripe';
  */
 const SUPPORT_PERSONAL_ORGANIZATIONS = true;
 
-/**
- * Extract the base domain from the API URL (e.g. `api.example.com` → `example.com`).
- * Falls back to an empty string when the URL is missing — happens transiently
- * during SST live mode before the gateway link finishes resolving.
- */
+/** Base domain of the API URL (e.g. `api.example.com` → `example.com`) */
 const baseDomain = (() => {
   try {
     return new URL(config.api.url).hostname.split('.').slice(-2).join('.');
   } catch {
+    // The URL is missing transiently in SST live mode until the gateway link resolves
     return '';
   }
 })();
@@ -68,10 +65,7 @@ const getOrCreatePersonalOrganization = async ({ userId }: { userId: string }) =
   return personalOrg;
 };
 
-/**
- * Organization routes that change which organizations a user belongs to. Better Auth updates the
- * session row for these but not the cached session cookie, so we re-sync it afterwards.
- */
+/** Organization routes that change membership and leave Better Auth's session cookie stale */
 const MEMBERSHIP_CHANGE_PATHS = new Set([
   '/organization/accept-invitation',
   '/organization/delete',
@@ -130,10 +124,7 @@ const getActiveOrganization = async ({
   return activeOrganization;
 };
 
-/**
- * After membership changes, make sure the session points at an organization the user belongs to and
- * refresh the session cookie, so the frontend sees the change now instead of when the cookie cache expires.
- */
+/** After membership changes, repoints the session at a current org and refreshes its cookie */
 const syncActiveOrganization = createAuthMiddleware(async (ctx) => {
   // Only run this if it's one of the paths that triggers membership change
   if (!MEMBERSHIP_CHANGE_PATHS.has(ctx.path) || isAPIError(ctx.context.returned)) {

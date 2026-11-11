@@ -15,11 +15,7 @@ export const chatListInfiniteOptions = api.chat.conversations.$get.infiniteQuery
   getNextPageParam: (lastPage: ConversationListPage) => lastPage.nextCursor,
 });
 
-/**
- * Cache key for the conversation list, for updating or refetching it from elsewhere (e.g. adding
- * a new conversation). Read from the infinite query's options so it matches exactly —
- * `api.chat.conversations.$get.getQueryKey()` builds a regular-query key, which never matches.
- */
+/** Cache key for the conversation list, read from the infinite query so it matches exactly */
 export const chatListQueryKey = chatListInfiniteOptions.queryKey;
 
 /** Aggregated infinite-query cache shape */

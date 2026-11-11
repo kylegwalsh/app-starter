@@ -1,9 +1,6 @@
 import { formatHex, parse } from 'culori';
 
-/**
- * Reads a theme color from a stylesheet's first `:root` block and returns it as hex, so code
- * that can't use CSS variables (emails, generated images) shares the CSS as its source of truth.
- */
+/** Reads a theme color from the stylesheet as hex, for code that can't use CSS variables */
 export const readThemeColor = ({
   css,
   variable,

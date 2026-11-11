@@ -8,12 +8,7 @@ type ResourceWithUrl = {
   [K in keyof typeof resources]: (typeof resources)[K] extends { url: string } ? K : never;
 }[keyof typeof resources];
 
-/**
- * Resolve a URL for an SST resource. A dedicated URL (set by SST at build time) always wins,
- * which also covers static builds where there's no window. Otherwise, in the browser it returns
- * `window.location.origin` (the current app's own URL), and on the backend it reads the SST
- * resource URL directly, falling back to a local dev URL when SST returns a dev-mode placeholder.
- */
+/** Resolves a resource URL: build-time URL first, then the browser origin, then the SST resource */
 const resolveWebAppUrl = ({
   resource,
   localUrl,
@@ -44,10 +39,7 @@ const resolveWebAppUrl = ({
   return url;
 };
 
-/**
- * Resolve the API URL. Unlike web apps, the API URL is always known via an env var
- * (set by SST at build time on the Next.js sites) or the SST `apiUrl` linkable.
- */
+/** Resolves the API URL from the build-time env var or the SST `apiUrl` linkable */
 const resolveApiUrl = () => {
   try {
     return process.env.NEXT_PUBLIC_API_URL ?? resources?.apiUrl?.url ?? '';
@@ -67,11 +59,7 @@ export const appUrl = resolveWebAppUrl({
 /** The URL of our admin dashboard */
 export const adminUrl = resolveWebAppUrl({ resource: 'admin', localUrl: 'http://localhost:3001' });
 
-/**
- * Resolve the marketing site URL. The marketing site itself gets it via an env var (set by SST at
- * build time). The site is optional, so its resource only exists (and is linked to the backend)
- * when `infra/marketing.ts` is enabled.
- */
+/** Resolves the marketing site URL, which only exists when `infra/marketing.ts` is enabled */
 const resolveMarketingUrl = () => {
   try {
     return (
