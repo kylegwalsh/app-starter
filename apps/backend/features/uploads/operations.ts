@@ -24,28 +24,22 @@ export const createUploadUrl = async (
     throw new BadRequestError(`.${fileType.extension} files aren't supported`);
   }
 
-  // Unique S3 key scoped to the organization. The org prefix is the
-  // security boundary — only members can request a signed read URL.
-  // The nanoid prefix dedupes re-uploads of the same name; including the
-  // original filename keeps debugging/S3 browsing legible.
+  // The org prefix scopes access to members, and the nanoid keeps same-named uploads from colliding
   const key = `${organization.id}/${nanoid()}-${fileName}`;
 
   const [{ url: uploadUrl, fields }, viewUrl] = await Promise.all([
     storage.createUploadUrl({ key, contentType: fileType.mime, maxSizeBytes: CHAT_MAX_FILE_SIZE }),
-    // Mint an initial signed GET URL for the just-uploaded file. Reading a
-    // conversation re-signs it, so the stored URL doesn't need to live forever.
-    // Override the download name so browsers don't show the nanoid-prefixed key.
     storage.signUrl({ key, downloadFilename: fileName }),
   ]);
 
   return {
-    /** Presigned POST URL */
+    /** The S3 URL the browser POSTs the file to */
     uploadUrl,
-    /** Form fields to include with the POST */
+    /** Form fields that must be included in that POST */
     uploadFields: fields,
-    /** Signed GET URL — store this in the message part */
+    /** Signed URL to show the file right away */
     viewUrl,
-    /** The S3 object key */
+    /** The S3 object key, stored with the attachment to find the file later */
     key,
   };
 };

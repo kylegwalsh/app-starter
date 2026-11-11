@@ -4,7 +4,6 @@ import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
 // ---------- ERROR CLASSES ----------
-// Expected failures the caller can fix: returned to them and logged, not reported as exceptions
 
 /** 400: the input is invalid or not allowed */
 export class BadRequestError extends HTTPException {
