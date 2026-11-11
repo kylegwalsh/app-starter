@@ -38,8 +38,7 @@ app.route('/.well-known', mcpDiscovery);
 app.get('/api/login', (c) => c.html(internalDocsLoginHTML));
 
 // ---------- MAIN API ----------
-// Native Hono routes give us e2e type safety via the `hc` client, request
-// validation, and — through hono-openapi — a generated OpenAPI spec.
+// Hono routes give us typed `hc` clients, request validation, and a generated OpenAPI spec
 
 // Generate the swagger docs for our API
 // Note that we only do it for our internal API when running locally currently, but it would
