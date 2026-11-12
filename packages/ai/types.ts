@@ -18,19 +18,40 @@ export type Observation = {
   end: (result: { output?: unknown } | { error: unknown }) => void;
 };
 
-/** What an observed function is called with */
+/** What an observed function is defined with */
 export type ObservedArgs = {
   /** Everything needed to replay the task (stored in Langfuse) */
   input: unknown;
   /** Runtime dependencies that shouldn't be recorded (e.g. the signed-in user) */
-  context?: unknown;
+  context?: object;
 };
 
-/** An observed function's parameter: its args plus the handle to end the observation */
-export type Observed<TArgs extends ObservedArgs> = TArgs & { observation: Observation };
+/** An observed function's parameter: its args plus the session ID and the observation handle */
+export type Observed<TArgs extends ObservedArgs> = TArgs & {
+  context: Pick<ObservedCallContext, 'sessionId'>;
+  observation: Observation;
+};
+
+/** The context callers pass to an observed function */
+export type ObservedCallContext<TContext extends object = Record<never, never>> = TContext & {
+  /** Groups the trace into a Langfuse session (e.g. the turns of a chat conversation) */
+  sessionId?: string;
+};
+
+/** The type of `ai.observe` (context is optional for tasks that don't define one) */
+export type Observe = {
+  <TInput, TOutput>(
+    config: ObserveConfig,
+    fn: (args: Observed<{ input: TInput }>) => Promise<TOutput>,
+  ): (input: TInput, context?: ObservedCallContext) => Promise<TOutput>;
+  <TInput, TContext extends object, TOutput>(
+    config: ObserveConfig,
+    fn: (args: Observed<{ input: TInput; context: TContext }>) => Promise<TOutput>,
+  ): (input: TInput, context: ObservedCallContext<TContext>) => Promise<TOutput>;
+};
 
 /** Configuration for an observed AI task (see `ai.observe`) */
-export type ObserveConfig<TArgs extends ObservedArgs> = {
+export type ObserveConfig = {
   /** The observation's name in Langfuse (also the trace name when it starts a new trace) */
   name: string;
   /**
@@ -39,8 +60,6 @@ export type ObserveConfig<TArgs extends ObservedArgs> = {
    * yourself with `observation.end({ output })`.
    */
   endOnExit?: boolean;
-  /** Groups the trace into a Langfuse session (e.g. the turns of a chat conversation) */
-  sessionId?: (args: TArgs) => string | undefined;
 };
 
 // ---------- GENERATION ----------

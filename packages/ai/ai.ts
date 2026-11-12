@@ -8,9 +8,10 @@ import { defaultModel, models } from './models';
 import type {
   GenerateTextOptions,
   Observation,
+  Observe,
   ObserveConfig,
   Observed,
-  ObservedArgs,
+  ObservedCallContext,
   RuntimeContext,
   StreamTextOptions,
   TraceDetails,
@@ -42,60 +43,64 @@ const withRequestDetails = <TArgs extends unknown[], TReturn>(
   };
 };
 
+/** Records a task's input and output as a Langfuse observation, passing it the handle to end it */
+const observe: Observe = <TInput, TContext extends object, TOutput>(
+  { name, endOnExit = true }: ObserveConfig,
+  fn: (args: Observed<{ input: TInput; context: TContext }>) => Promise<TOutput>,
+) =>
+  withRequestDetails(
+    // Callers can omit the context for tasks that don't define one (see `Observe`)
+    (input: TInput, context: ObservedCallContext<TContext>) =>
+      startActiveObservation(
+        name,
+        async (span) => {
+          // Guard against ending twice (e.g. a stream error after the function already threw)
+          let ended = false;
+          const observation: Observation = {
+            traceId: span.traceId,
+            end: (result) => {
+              if (ended) {
+                return;
+              }
+              ended = true;
+              if ('error' in result) {
+                const { error } = result;
+                span.update({
+                  level: 'ERROR',
+                  statusMessage: error instanceof Error ? error.message : String(error),
+                });
+              } else {
+                span.update({ output: result.output });
+              }
+              span.end();
+            },
+          };
+
+          span.update({ input });
+          try {
+            const output = await fn({ input, context: { ...context }, observation });
+            if (endOnExit) {
+              observation.end({ output });
+            }
+            return output;
+          } catch (error) {
+            observation.end({ error });
+            throw error;
+          }
+        },
+        // We end the observation ourselves so `endOnExit: false` can keep it open
+        { endOnExit: false },
+      ),
+    (_input, context) => ({ traceName: name, sessionId: context?.sessionId }),
+  );
+
 // ---------- METHODS ----------
 /** Export methods related to AI */
 export const ai = {
   /** Our available AI models */
   models,
   /** Wraps an AI task as a named Langfuse observation so it can be replayed or turned into evals */
-  observe: <TArgs extends ObservedArgs, TOutput>(
-    { name, endOnExit = true, sessionId }: ObserveConfig<TArgs>,
-    fn: (args: Observed<TArgs>) => Promise<TOutput>,
-  ) =>
-    withRequestDetails(
-      (args: TArgs) =>
-        startActiveObservation(
-          name,
-          async (span) => {
-            // Guard against ending twice (e.g. a stream error after the function already threw)
-            let ended = false;
-            const observation: Observation = {
-              traceId: span.traceId,
-              end: (result) => {
-                if (ended) {
-                  return;
-                }
-                ended = true;
-                if ('error' in result) {
-                  const { error } = result;
-                  span.update({
-                    level: 'ERROR',
-                    statusMessage: error instanceof Error ? error.message : String(error),
-                  });
-                } else {
-                  span.update({ output: result.output });
-                }
-                span.end();
-              },
-            };
-
-            span.update({ input: args.input });
-            try {
-              const output = await fn({ ...args, observation });
-              if (endOnExit) {
-                observation.end({ output });
-              }
-              return output;
-            } catch (error) {
-              observation.end({ error });
-              throw error;
-            }
-          },
-          // We end the observation ourselves so `endOnExit: false` can keep it open
-          { endOnExit: false },
-        ),
-      (args) => ({ traceName: name, sessionId: sessionId?.(args) }),
-    ),
+  observe,
   /** Scores a trace */
   scoreTrace: ({
     traceId,

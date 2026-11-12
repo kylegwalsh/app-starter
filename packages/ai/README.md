@@ -42,7 +42,7 @@ const { output } = await ai.generateText({
 });
 ```
 
-You can wrap AI tasks with multiple steps with `ai.observe` so each one is traced in Langfuse with its overall input and output (calls outside it are still traced individually). An observed function takes one object: `input` is recorded on the trace, so it should hold everything needed to replay the task, and `context` holds runtime dependencies that shouldn't be recorded (e.g. the signed-in user):
+You can wrap AI tasks with multiple steps with `ai.observe` so each one is traced in Langfuse with its overall input and output (calls outside it are still traced individually). An observed function takes `input`, which is recorded on the trace and should hold everything needed to replay the task, and `context`, runtime dependencies that shouldn't be recorded (e.g. the signed-in user). Callers pass them as `fn(input, context)`:
 
 ```ts
 export const summarize = ai.observe(
@@ -53,7 +53,7 @@ export const summarize = ai.observe(
   },
 );
 
-await summarize({ input: { notes } });
+await summarize({ notes });
 ```
 
 For work that outlives the call (like a stream), set `endOnExit: false` and end the observation yourself. Annotate the parameter with `Observed<…>` to receive the `observation` handle:
@@ -64,8 +64,6 @@ export const chat = ai.observe(
     name: 'chat',
     // Do not end the trace after exiting the function (streaming is active)
     endOnExit: false,
-    // Group each conversation's traces into a Langfuse session
-    sessionId: ({ input }) => input.conversationId,
   },
   async ({
     input: { conversationId, messages },
@@ -85,5 +83,6 @@ export const chat = ai.observe(
   },
 );
 
-await chat({ input: { conversationId, messages }, context: { user } });
+// `sessionId` groups the trace into a Langfuse session
+await chat({ conversationId, messages }, { user, sessionId: conversationId });
 ```

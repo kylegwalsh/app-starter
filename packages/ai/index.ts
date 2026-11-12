@@ -1,3 +1,3 @@
 export * from './ai';
 export { models } from './models';
-export type { Observation, Observed, ObservedArgs } from './types';
+export type { Observation, Observed, ObservedArgs, ObservedCallContext } from './types';

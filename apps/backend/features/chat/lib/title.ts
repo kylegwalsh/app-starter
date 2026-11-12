@@ -19,14 +19,8 @@ export const truncateTitle = (seed: string) => {
 
 /** Generates a short sidebar title for a conversation from its first message */
 export const generateChatTitle = ai.observe(
-  { name: 'generateChatTitle', sessionId: ({ context }) => context.conversationId },
-  async ({
-    input: { seed },
-  }: {
-    input: { seed: string };
-    /** Only used to group the trace with the conversation's chat turns */
-    context: { conversationId: string };
-  }) => {
+  { name: 'generateChatTitle' },
+  async ({ input: { seed } }: { input: { seed: string } }) => {
     const { output } = await ai.generateText({
       output: Output.object({ schema: z.object({ title: z.string().max(80) }) }),
       prompt: `Generate a short, descriptive title (3-6 words) for a chat conversation that starts with this message. Aim to keep it under 35 characters so it fits comfortably in a sidebar — slightly longer is fine if needed for clarity.\n\n"${seed.slice(0, 500)}"`,
@@ -38,7 +32,7 @@ export const generateChatTitle = ai.observe(
 /** Generates an AI title for a new conversation and saves it, keeping the seeded title if that fails */
 export const saveGeneratedTitle = async (conversationId: string, seed: string) => {
   try {
-    const title = await generateChatTitle({ input: { seed }, context: { conversationId } });
+    const title = await generateChatTitle({ seed }, { sessionId: conversationId });
     if (!title) {
       return;
     }

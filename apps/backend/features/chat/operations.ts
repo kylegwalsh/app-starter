@@ -108,7 +108,6 @@ export const streamChatTurn = ai.observe(
     name: 'chat',
     // Stay open until the stream settles so the trace records the final response as its output
     endOnExit: false,
-    sessionId: ({ input }) => input.conversationId,
   },
   async ({
     input: { conversationId, messages, compactedThrough, contextTokens },
@@ -116,7 +115,7 @@ export const streamChatTurn = ai.observe(
     observation,
   }: Observed<{
     input: {
-      /** The conversation being answered (scopes the code sandbox and the trace session) */
+      /** The conversation being answered (scopes the code sandbox) */
       conversationId: string;
       /** The full conversation history, ending with the user's latest message */
       messages: UIMessage[];
@@ -267,19 +266,20 @@ export const sendMessage = async (
       const seed = isNew ? getTitleSeed(message) : undefined;
       const titlePromise = seed ? saveGeneratedTitle(conversation.id, seed) : undefined;
 
-      const { result, traceId, compaction } = await streamChatTurn({
-        input: {
+      const { result, traceId, compaction } = await streamChatTurn(
+        {
           conversationId: conversation.id,
           messages: turn.messages,
           compactedThrough: conversation.compactedThrough,
           contextTokens: conversation.contextTokens,
         },
-        context: {
+        {
           user,
           organization,
           abortSignal: AbortSignal.any([abortController.signal, timeoutSignal]),
+          sessionId: conversation.id,
         },
-      });
+      );
 
       writer.merge(
         result.toUIMessageStream<ChatMessage>({

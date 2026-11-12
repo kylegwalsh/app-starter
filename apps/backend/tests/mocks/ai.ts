@@ -15,8 +15,13 @@ const mockAi = vi.hoisted(() => ({
   generateText: vi.fn(),
   // Run observed functions directly (no Langfuse span in tests)
   observe: vi.fn(
-    (_config: unknown, fn: (args: Observed<ObservedArgs>) => unknown) => (args: ObservedArgs) =>
-      fn({ ...args, observation: { traceId: 'test-trace-id', end: () => {} } }),
+    (_config: unknown, fn: (args: Observed<ObservedArgs>) => unknown) =>
+      (input: unknown, context?: object) =>
+        fn({
+          input,
+          context: { ...context },
+          observation: { traceId: 'test-trace-id', end: () => {} },
+        }),
   ),
   scoreTrace: vi.fn(),
   flush: vi.fn(async () => {}),
