@@ -1,0 +1,115 @@
+'use client';
+
+import { Button } from '@repo/design/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@repo/design/components/ui/tooltip';
+import { cn } from '@repo/design/lib/utils';
+import { cjk } from '@streamdown/cjk';
+import { code } from '@streamdown/code';
+import { math } from '@streamdown/math';
+import { mermaid } from '@streamdown/mermaid';
+import type { UIMessage } from 'ai';
+import type { ComponentProps, HTMLAttributes } from 'react';
+import { memo } from 'react';
+import { Streamdown } from 'streamdown';
+
+export type MessageProps = HTMLAttributes<HTMLDivElement> & {
+  /** Who sent the message, which sets its alignment and styling */
+  from: UIMessage['role'];
+};
+
+/** A chat message; user messages align right */
+export const Message = ({ className, from, ...props }: MessageProps) => (
+  <div
+    className={cn(
+      'group flex w-full max-w-[95%] flex-col gap-2',
+      from === 'user' ? 'is-user ml-auto justify-end' : 'is-assistant',
+      className,
+    )}
+    {...props}
+  />
+);
+
+export type MessageContentProps = HTMLAttributes<HTMLDivElement>;
+
+/** A message's body; user messages get a bubble */
+export const MessageContent = ({ children, className, ...props }: MessageContentProps) => (
+  <div
+    className={cn(
+      'is-user:dark flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-sm',
+      // Styled by the parent `Message`'s `is-user` / `is-assistant` class
+      'group-[.is-user]:ml-auto group-[.is-user]:rounded-lg group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground',
+      'group-[.is-assistant]:text-foreground',
+      className,
+    )}
+    {...props}
+  >
+    {children}
+  </div>
+);
+
+export type MessageActionsProps = ComponentProps<'div'>;
+
+/** A row of buttons under a message, such as copy and feedback */
+export const MessageActions = ({ className, children, ...props }: MessageActionsProps) => (
+  <div className={cn('flex items-center gap-1', className)} {...props}>
+    {children}
+  </div>
+);
+
+export type MessageActionProps = ComponentProps<typeof Button> & {
+  /** Shown above the button on hover */
+  tooltip?: string;
+  /** Screen reader label (falls back to `tooltip`) */
+  label?: string;
+};
+
+/** An icon button for `MessageActions`, with an optional tooltip */
+export const MessageAction = ({
+  tooltip,
+  children,
+  label,
+  variant = 'ghost',
+  size = 'icon-sm',
+  ...props
+}: MessageActionProps) => {
+  const button = (
+    <Button size={size} type="button" variant={variant} {...props}>
+      {children}
+      <span className="sr-only">{label || tooltip}</span>
+    </Button>
+  );
+
+  if (tooltip) {
+    return (
+      // `Tooltip` brings its own provider
+      <Tooltip>
+        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipContent>
+          <p>{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return button;
+};
+
+export type MessageResponseProps = ComponentProps<typeof Streamdown>;
+
+const streamdownPlugins = { cjk, code, math, mermaid };
+
+/** Renders streaming Markdown, including code, math and Mermaid diagrams */
+export const MessageResponse = memo(
+  ({ className, ...props }: MessageResponseProps) => (
+    <Streamdown
+      className={cn('size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0', className)}
+      plugins={streamdownPlugins}
+      {...props}
+    />
+  ),
+  // Only re-render when the text or streaming state changes, since re-parsing Markdown is costly
+  (prevProps, nextProps) =>
+    prevProps.children === nextProps.children && nextProps.isAnimating === prevProps.isAnimating,
+);
+
+MessageResponse.displayName = 'MessageResponse';

@@ -10,7 +10,7 @@ import { BillingHistory, DashboardLayout } from '@/components';
 import { useSubscription } from '@/hooks';
 
 /** The payment and billing settings page */
-export default function BillingPage() {
+const BillingPage = () => {
   // Billing only exists when Stripe is configured
   if (!config.stripe.isEnabled) {
     notFound();
@@ -57,4 +57,6 @@ export default function BillingPage() {
       </div>
     </DashboardLayout>
   );
-}
+};
+
+export default BillingPage;

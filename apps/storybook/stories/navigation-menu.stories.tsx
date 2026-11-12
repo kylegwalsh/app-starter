@@ -9,9 +9,7 @@ import {
 } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * A collection of links for navigating websites.
- */
+/** A collection of links for navigating websites */
 const meta = {
   title: 'ui/NavigationMenu',
   component: NavigationMenu,
@@ -68,7 +66,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the navigation menu.
- */
+/** The default form of the navigation menu */
 export const Default: Story = {};

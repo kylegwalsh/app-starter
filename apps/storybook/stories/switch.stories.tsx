@@ -1,9 +1,7 @@
 import { Switch } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * A control that allows the user to toggle between checked and not checked.
- */
+/** A control that allows the user to toggle between checked and not checked */
 const meta = {
   title: 'ui/Switch',
   component: Switch,
@@ -24,18 +22,14 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the switch.
- */
+/** The default form of the switch */
 export const Default: Story = {
   args: {
     id: 'default-switch',
   },
 };
 
-/**
- * Use the `disabled` prop to disable the switch.
- */
+/** Use the `disabled` prop to disable the switch */
 export const Disabled: Story = {
   args: {
     id: 'disabled-switch',

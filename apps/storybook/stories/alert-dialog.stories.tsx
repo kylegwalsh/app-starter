@@ -45,7 +45,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the alert dialog.
- */
+/** The default form of the alert dialog */
 export const Default: Story = {};

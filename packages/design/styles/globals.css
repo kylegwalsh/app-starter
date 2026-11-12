@@ -1,11 +1,14 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @source "../../../node_modules/@daveyplate/better-auth-ui";
+@source "../../../node_modules/streamdown/dist/*.js";
 @source "../**/*.{ts,tsx}";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Height of the app header; sticky elements beneath it offset by this value */
+  --header-height: 4rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -113,6 +116,19 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% center;
+  }
+  to {
+    background-position: -200% center;
+  }
+}
+
+@theme inline {
+  --animate-shimmer: shimmer var(--animation-duration, 2s) linear infinite;
 }
 
 @layer base {

@@ -3,7 +3,7 @@ import { plans } from '@repo/constants';
 import { toast } from '@repo/design';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
-import { auth } from '@/core';
+import { auth } from '@/lib';
 
 import { useOrganization } from './use-organization';
 

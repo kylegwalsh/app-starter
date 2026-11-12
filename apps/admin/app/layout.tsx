@@ -9,9 +9,7 @@ import { AuthProvider } from '@/contexts/auth-context';
 
 const inter = Inter({ subsets: ['latin'] });
 
-/**
- * Root layout — wraps the entire app with the Inter font and AuthProvider for session state.
- */
+/** Root layout that provides the font and session state to the whole app */
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">

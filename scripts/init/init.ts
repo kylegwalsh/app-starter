@@ -424,11 +424,7 @@ export const getOrCreateStage = async () => {
   return stage;
 };
 
-/**
- * Parse the output from 'bun sst secret list' and extract all secrets
- * @param output The stdout from the secret list command
- * @returns Object containing all secrets as key-value pairs
- */
+/** Parses the output of `bun sst secret list` into key-value pairs */
 const getAllSecrets = (stage: string) => {
   const result: Record<string, string> = {};
   const output = execSync(`bun sst secret list --stage ${stage}`).toString();
@@ -487,11 +483,7 @@ const initSecrets = () => {
 };
 
 // ---------- AWS HELPERS ----------
-/**
- * Prompt the user to select an AWS profile or create a new one.
- * Updates ~/.aws/credentials, ~/.aws/config, .vscode/settings.json, and .zed/settings.json as needed.
- * Returns the selected profile name and credentials for personal and CI.
- */
+/** Prompts the user to select or create an AWS profile and returns its credentials */
 export const selectOrCreateAwsProfile = async ({
   existing,
 }: {
@@ -794,10 +786,7 @@ const generateSupabaseUrls = (baseUrl: string, password: string) => {
   return { directUrl, dbUrl };
 };
 
-/**
- * Prompt the user for a Supabase Transaction pooler URL and validate its format.
- * Keeps prompting until a valid URL is entered.
- */
+/** Prompts for a Supabase Transaction pooler URL until a valid one is entered */
 const promptValidSupabaseUrl = async (promptMsg: string): Promise<string> => {
   while (true) {
     const input = await promptUser(promptMsg);
@@ -811,10 +800,7 @@ const promptValidSupabaseUrl = async (promptMsg: string): Promise<string> => {
   }
 };
 
-/**
- * Guides the user through setting up Supabase, generates DATABASE_URL and DIRECT_DATABASE_URL
- * for dev and prod, and calls the env:add script to store them.
- */
+/** Guides Supabase setup and stores the dev and prod database URLs via env:add */
 const setupSupabase = async ({ projectName }: { projectName: string }) => {
   log.step('Setting up Supabase...');
 
@@ -1011,10 +997,7 @@ type PosthogPersonalApiKey = {
   scoped_teams?: number[] | null;
 };
 
-/**
- * Checks a setup key by reading its own scopes (any personal key can look itself up). Prints
- * what's wrong and returns undefined, or returns an API client for a key with everything setup needs.
- */
+/** Returns an API client for a setup key with the needed scopes, or prints what's wrong */
 const checkPosthogSetupKey = async ({
   setupKey,
   scopes,
@@ -1070,10 +1053,7 @@ const checkPosthogSetupKey = async ({
   return posthogApi;
 };
 
-/**
- * Asks for a setup key with these scopes (explaining how to create one), checks it right away,
- * and keeps asking until it's good. Setup keys are only used while setting up and never stored.
- */
+/** Asks for a setup key (never stored) and keeps asking until it has the needed scopes */
 const promptForPosthogSetupKey = async ({
   scopes,
   projectIds,
@@ -1238,10 +1218,7 @@ const setupPosthog = async ({ projectName }: { projectName: string }) => {
 };
 
 // ---------- SLACK HELPERS ----------
-/**
- * Guides the user through setting up Slack notifications for CI.
- * If the user opts in, instructs them to install the GitHub app and run the subscribe command.
- */
+/** Guides the user through setting up Slack notifications for CI */
 const setupSlack = async ({ githubUrl }: { githubUrl: string }) => {
   const wantsSlack = await promptYesNo(
     'Would you like to receive notifications for CI in Slack? (y/n) ',
@@ -1409,13 +1386,6 @@ const setupMarketingSite = async ({ domain }: { domain?: string }) => {
 
 // ---------- LANGFUSE HELPERS ----------
 const setupLangfuse = async () => {
-  log.step('Setting up Langfuse...');
-
-  // If the secrets haven't been setup yet, let's try to init them
-  if (Object.keys(devSecrets).length === 0) {
-    initSecrets();
-  }
-
   // Check if Langfuse is already configured in SST secrets
   if (
     devSecrets.LANGFUSE_SECRET_KEY &&
@@ -1476,6 +1446,66 @@ const setupLangfuse = async () => {
   log.success('Langfuse secrets have been set in SST.\n');
 
   return true;
+};
+
+// ---------- DAYTONA HELPERS ----------
+/** Sets up Daytona, the sandbox chat runs code in */
+const setupDaytona = async () => {
+  // Check if Daytona is already configured in SST secrets
+  if (devSecrets.DAYTONA_API_KEY && prodSecrets.DAYTONA_API_KEY) {
+    log.success('Daytona already configured.\n');
+    return true;
+  }
+
+  const doSetup = await promptYesNo(
+    "Would you like to set up a code execution sandbox with Daytona? It lets the chat agent run Python to analyze data, make charts and open files it can't read on its own (y/n) ",
+  );
+  if (!doSetup) {
+    console.log('Daytona setup skipped. Chat will run without code execution.\n');
+    return false;
+  }
+
+  // Guide the user through the setup steps
+  console.log('\nSign up at: https://app.daytona.io/');
+  console.log('1. Open https://app.daytona.io/dashboard/keys and click "Create Key"');
+  console.log('2. Give it the Sandboxes permissions (at least write:sandboxes)');
+  console.log('3. Copy the key (it is only shown once)');
+
+  let apiKey = '';
+  while (!apiKey) {
+    const input = await promptUser('Enter your Daytona API Key: ');
+    apiKey = input.trim();
+    if (!apiKey) {
+      console.log('Please enter a valid Daytona API Key.');
+    }
+  }
+
+  // Add the secret to SST and declare it, which turns code execution on for the API and web app
+  console.log('\nAdding the Daytona secret to SST...');
+  execSync(`bun tsx ${addEnvScript} DAYTONA_API_KEY "${apiKey}" "${apiKey}"`);
+  uncommentLines([
+    { filePath: path.resolve('infra/secrets.ts'), line: /export const DAYTONA_API_KEY = .*/ },
+  ]);
+  log.success('Daytona secret set in SST and code execution enabled.\n');
+
+  return true;
+};
+
+// ---------- AI HELPERS ----------
+/** Sets up the optional services around chat's AI (the models themselves need no setup) */
+const setupAi = async () => {
+  log.step('Setting up AI features...');
+  console.log(
+    'Chat runs on AWS Bedrock through the AWS account you configured above, so the models need no API keys.\n',
+  );
+
+  // If the secrets haven't been setup yet, let's try to init them
+  if (Object.keys(devSecrets).length === 0) {
+    initSecrets();
+  }
+
+  await setupLangfuse();
+  await setupDaytona();
 };
 
 // ---------- EMAIL SETUP HELPERS ----------
@@ -1700,11 +1730,7 @@ const requestSupportEmail = async () => {
   log.success('Support email saved to the config.\n');
 };
 
-/**
- * Sets up transactional emails (password reset, invitations, contact form) through PostHog: finds
- * each project's sender, uploads our templates, and stores a project secret key for sending them.
- * `force` re-checks everything without asking (used by `bun run init:email`).
- */
+/** Sets up PostHog transactional emails. `force` re-checks everything without asking */
 export const setupPosthogEmail = async ({
   domain,
   personalApiKey,
@@ -2268,8 +2294,11 @@ const printFinalNotes = ({
     }
   }
 
+  console.log('- Make sure you restart your terminal for your AWS profile changes to take effect.');
+
+  // Long-running AI requests exceed API Gateway's default 29s integration timeout
   console.log(
-    '- Make sure you restart your terminal for your AWS profile changes to take effect.\n',
+    '- To let AI requests run longer than ~30s, request a raise of the API Gateway quota "Maximum integration timeout in milliseconds": https://us-east-1.console.aws.amazon.com/servicequotas/home/services/apigateway/quotas\n',
   );
 
   // Mention anything left to do for email setup
@@ -2341,8 +2370,8 @@ const init = async () => {
   // Setup docs site
   await setupDocsSite({ domain });
 
-  // Setup Langfuse
-  await setupLangfuse();
+  // Setup the AI extras
+  await setupAi();
 
   // Setup Stripe
   const stripeConfig = await setupStripe({ domain });

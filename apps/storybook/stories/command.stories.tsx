@@ -9,9 +9,7 @@ import {
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { CommandSeparator } from 'cmdk';
 
-/**
- * Fast, composable, unstyled command menu for React.
- */
+/** Fast, composable, unstyled command menu for React */
 const meta = {
   title: 'ui/Command',
   component: Command,
@@ -46,7 +44,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the command.
- */
+/** The default form of the command */
 export const Default: Story = {};

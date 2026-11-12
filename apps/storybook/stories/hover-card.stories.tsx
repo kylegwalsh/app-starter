@@ -1,9 +1,7 @@
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * For sighted users to preview content available behind a link.
- */
+/** For sighted users to preview content available behind a link */
 const meta = {
   title: 'ui/HoverCard',
   component: HoverCard,
@@ -23,9 +21,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the hover card.
- */
+/** The default form of the hover card */
 export const Default: Story = {};
 
 /**

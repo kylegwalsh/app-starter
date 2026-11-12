@@ -1,4 +1,4 @@
-import { auth } from '@/core';
+import { auth } from '@/lib';
 
 import { useOrganization } from './use-organization';
 

@@ -11,7 +11,7 @@ import {
   UsersPagination,
   UsersTable,
 } from '@/components/user';
-import { adminApi, type User } from '@/core/auth';
+import { adminApi, type User } from '@/lib/auth';
 
 type SortField = 'email' | 'name' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
@@ -39,9 +39,7 @@ const buildFilterParams = (status: FilterStatus) => {
   }
 };
 
-/**
- * Users list — server-side pagination, search, sorting, and filtering via Better Auth admin API.
- */
+/** Users list page: server-side pagination, search, sorting, and filtering */
 export default function UsersListPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [totalItems, setTotalItems] = useState(0);

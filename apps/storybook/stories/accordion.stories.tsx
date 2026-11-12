@@ -1,10 +1,7 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * A vertically stacked set of interactive headings that each reveal a section
- * of content.
- */
+/** A vertically stacked set of interactive headings that each reveal a section of content */
 const meta = {
   title: 'ui/Accordion',
   component: Accordion,
@@ -38,7 +35,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default behavior of the accordion allows only one item to be open.
- */
+/** The default behavior of the accordion allows only one item to be open */
 export const Default: Story = {};

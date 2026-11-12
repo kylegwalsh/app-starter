@@ -61,7 +61,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the sheet.
- */
+/** The default form of the sheet */
 export const Default: Story = {};

@@ -76,7 +76,7 @@ export const format = {
       currency: 'USD',
     }).format(number),
   /** Formats date as "Oct 31, 2018" default case (can provide override format) */
-  date: (date: Date, dateFormat = 'MMM D, YYYY') => dayjs(date).format(dateFormat),
+  date: (date: string | Date, dateFormat = 'MMM D, YYYY') => dayjs(date).format(dateFormat),
   /** Formats time as "12:30 PM" */
-  time: (date: Date) => dayjs(date).format('h:mm A'),
+  time: (date: string | Date) => dayjs(date).format('h:mm A'),
 };

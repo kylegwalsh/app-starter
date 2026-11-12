@@ -10,9 +10,7 @@ import {
 } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * A drawer component for React.
- */
+/** A drawer component for React */
 const meta = {
   title: 'ui/Drawer',
   component: Drawer,
@@ -46,7 +44,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the drawer.
- */
+/** The default form of the drawer */
 export const Default: Story = {} as Story;

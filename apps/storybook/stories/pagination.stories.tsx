@@ -9,9 +9,7 @@ import {
 } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * Pagination with page navigation, next and previous links.
- */
+/** Pagination with page navigation, next and previous links */
 const meta = {
   title: 'ui/Pagination',
   component: Pagination,
@@ -48,7 +46,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the pagination.
- */
+/** The default form of the pagination */
 export const Default: Story = {};

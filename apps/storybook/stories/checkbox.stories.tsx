@@ -1,9 +1,7 @@
 import { Checkbox } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * A control that allows the user to toggle between checked and not checked.
- */
+/** A control that allows the user to toggle between checked and not checked */
 const meta: Meta<typeof Checkbox> = {
   title: 'ui/Checkbox',
   component: Checkbox,
@@ -31,14 +29,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the checkbox.
- */
+/** The default form of the checkbox */
 export const Default: Story = {};
 
-/**
- * Use the `disabled` prop to disable the checkbox.
- */
+/** Use the `disabled` prop to disable the checkbox */
 export const Disabled: Story = {
   args: {
     id: 'disabled-terms',

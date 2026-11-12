@@ -7,11 +7,7 @@ import { resetPasswordTemplate } from './reset-password';
 
 export type { EmailTemplateDefinition } from './design';
 
-/**
- * The transactional email templates we initialize projects with. These are uploaded to
- * Posthog during the `bun run init` setup process. Afterwards, they exist in Posthog and
- * can be edited there.
- */
+/** Starter transactional email templates, uploaded to PostHog by `bun run init` */
 export const initialEmailTemplates = {
   resetPassword: resetPasswordTemplate,
   contactFormSubmission: contactFormSubmissionTemplate,

@@ -11,12 +11,9 @@ import {
   UserDetailsHeader,
   UserSessionsPanel,
 } from '@/components/user';
-import { adminApi, type Session, type User } from '@/core/auth';
+import { adminApi, type Session, type User } from '@/lib/auth';
 
-/**
- * User detail page — view user profile, manage sessions (view/revoke), and perform
- * admin actions (ban, unban, delete, set password, impersonate). Edit opens a modal.
- */
+/** User detail page: profile, sessions, and admin actions */
 export default function UserDetailPage() {
   const { userId } = useParams<{ userId: string }>();
   const [user, setUser] = useState<User | null>(null);

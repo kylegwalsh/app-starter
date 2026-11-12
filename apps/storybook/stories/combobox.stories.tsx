@@ -430,7 +430,7 @@ export const Loading: Story = {
   },
 };
 
-/** Combobox with loading results. The search input remains enabled and shows a loading indicator in the results list */
+/** Combobox with loading results, where the search input stays enabled */
 export const LoadingResults: Story = {
   render: (args) => {
     const [loadingResults, setLoadingResults] = useState(false);
@@ -473,7 +473,7 @@ export const NonSearchable: Story = {
   },
 };
 
-/** Non-searchable combobox with multiple selection enabled. */
+/** Non-searchable combobox with multiple selection enabled */
 export const NonSearchableMultiple: Story = {
   args: {
     options: basicOptions,

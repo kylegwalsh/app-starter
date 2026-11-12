@@ -6,9 +6,9 @@ Monorepo managed with **bun + SST + Turborepo**. TypeScript everywhere.
 
 ```text
 apps/
-  web/           Next.js frontend (Tailwind v4, oRPC, Jotai, Better Auth)
+  web/           Next.js frontend (Tailwind v4, Hono hc, Jotai, Better Auth)
   admin/         Admin panel (Next.js App Router, Better Auth admin)
-  backend/       SST serverless backend (Hono, oRPC, Prisma, Stripe, Better Auth)
+  backend/       SST serverless backend (Hono, Prisma, Stripe, Better Auth)
   storybook/     Component stories
   marketing/     Marketing site (optional - static Next.js export)
   docs/          Documentation site (optional - Next.js App Router, Fumadocs)
@@ -46,9 +46,9 @@ When working in a git worktree (e.g. `.claude/worktrees/<name>`), run this once 
 bun setup-worktree
 ```
 
-This installs dependencies and symlinks `.sst/platform` from the main worktree so SST global types (`$app`, `sst`) are available for type-aware linting. Without this, `bun lint` will report `Cannot find name '$app'` / `Cannot find name 'sst'` errors.
+This installs dependencies and symlinks the `.sst` directory from the main worktree so SST global types (`$app`, `sst`), generated `Resource` types, and deployment state are all available. Without this, `bun lint` will report `Cannot find name '$app'` / `Cannot find name 'sst'` errors.
 
-> **Prerequisite:** The main repo must have `.sst/platform` already generated (run `bun dev` at least once in the main repo).
+> **Prerequisite:** The main repo must have `.sst` already generated (run `bun dev` at least once in the main repo).
 
 ## Principles
 
@@ -61,7 +61,7 @@ Clarity · Consistency · Simplicity · Reliability · Observability
 - **Named exports**: Always use named exports with descriptive names.
 - **Guard clauses**: Early returns, max 2 levels of nesting.
 - **No `any`**: Use `unknown` + type guards. Prefer `type` over `interface`.
-- **Comments**: Include helpful comments where appropriate.
+- **Comments**: Keep function/type JSDoc to one short line saying what it does (e.g. `/** Loads the organization's combined Stripe invoices and charges */`). Put any non-obvious "why" as a brief inline comment next to the code it explains, not in a multi-paragraph docblock.
 - **Formatting**: Multi-line readability over dense one-liners. Repo uses oxlint + oxfmt.
 
 ## TypeScript Conventions

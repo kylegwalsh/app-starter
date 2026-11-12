@@ -13,12 +13,12 @@
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.2",
-    "@orpc/client": "1.15.7",
     "@repo/analytics": "workspace:*",
     "@repo/config": "workspace:*",
     "@repo/design": "workspace:*",
     "@repo/schemas": "workspace:*",
     "@repo/seo": "workspace:*",
+    "hono": "4.8.4",
     "lucide-react": "0.475.0",
     "next": "16.4.2",
     "react": "19.3.1",

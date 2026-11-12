@@ -15,8 +15,8 @@ import { useMutation } from '@tanstack/react-query';
 import { Building2, Check } from 'lucide-react';
 import { useMemo } from 'react';
 
-import { auth, orpc } from '@/core';
 import { useUser } from '@/hooks';
+import { api, auth } from '@/lib';
 
 /** Access requests go through the contact endpoint, which needs a support inbox and an email template */
 const canRequestAccess = !!(
@@ -27,16 +27,18 @@ const canRequestAccess = !!(
 export const NoOrganizationState = () => {
   const { user } = useUser();
   // Requests go to the support inbox through the contact endpoint
-  const requestAccess = useMutation(orpc.contact.submit.mutationOptions());
+  const requestAccess = useMutation(api.contact.$post.mutationOptions());
 
   const handleRequestAccess = () => {
     if (!user) {
       return;
     }
     requestAccess.mutate({
-      name: user.name,
-      email: user.email,
-      message: '[Access request] Signed in to app without an organization.',
+      json: {
+        name: user.name,
+        email: user.email,
+        message: '[Access request] Signed in to app without an organization.',
+      },
     });
   };
 

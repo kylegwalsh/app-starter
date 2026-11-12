@@ -15,7 +15,7 @@ import {
 import { CheckIcon, Loader2Icon, XIcon } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
-import { organizationApi, type Organization } from '@/core/auth';
+import { organizationApi, type Organization } from '@/lib/auth';
 
 // Sanitize manual slug input (allows hyphens, strips invalid characters)
 const sanitizeSlug = (input: string) => input.toLowerCase().replaceAll(/[^a-z0-9-]/g, '');

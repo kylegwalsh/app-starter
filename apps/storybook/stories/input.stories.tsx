@@ -1,9 +1,7 @@
 import { Input } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * Displays a form input field or a component that looks like an input field.
- */
+/** Displays a form input field or a component that looks like an input field */
 const meta = {
   title: 'ui/Input',
   component: Input,
@@ -22,9 +20,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the input field.
- */
+/** The default form of the input field */
 export const Default: Story = {};
 
 /**

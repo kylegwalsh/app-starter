@@ -1,21 +1,33 @@
-import { gateway } from './gateway';
+import { API_MAX_TIMEOUT_MS } from '@repo/constants';
 
-// Import our apps so that we can access their URLs in our functions
+import { apiUrl, gateway } from './gateway';
+
 const { web } = await import('./web');
 const { admin } = await import('./admin');
+const { uploadsBucket } = await import('./storage');
 // const { marketing } = await import('./marketing');
 
-/** Single function handles all backend routes — Hono routes internally */
+/** Single function handles all backend routes — Hono routes internally. */
 const apiHandler = new sst.aws.Function('apiHandler', {
   handler: 'apps/backend/lambda/api.handler',
   streaming: true,
+  timeout: `${API_MAX_TIMEOUT_MS / 1000} seconds`,
   link: [
-    gateway,
     web,
     admin,
+    apiUrl,
+    uploadsBucket,
     // marketing
   ],
 });
 
-// One catch-all route — Hono handles all path routing internally
-gateway.route('$default', apiHandler.arn);
+// One catch-all route — Hono handles all path routing internally.
+gateway.route('ANY /{proxy+}', apiHandler.arn, {
+  streaming: true,
+  transform: {
+    // Requires the AWS quota "Maximum integration timeout in milliseconds" raised above its 29s default:
+    // https://us-east-1.console.aws.amazon.com/servicequotas/home/services/apigateway/quotas
+    integration: { timeoutMilliseconds: API_MAX_TIMEOUT_MS },
+  },
+});
+gateway.deploy();

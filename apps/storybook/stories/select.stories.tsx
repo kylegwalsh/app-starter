@@ -10,9 +10,7 @@ import {
 } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * Displays a list of options for the user to pick from—triggered by a button.
- */
+/** Displays a list of options for the user to pick from—triggered by a button */
 const meta: Meta<typeof Select> = {
   title: 'ui/Select',
   component: Select,
@@ -61,7 +59,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the select.
- */
+/** The default form of the select */
 export const Default: Story = {};

@@ -16,10 +16,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AuthorizeSkeleton } from '@/components';
-import { auth } from '@/core';
+import { auth } from '@/lib';
 
 /** OAuth consent page for MCP and third-party clients */
-export default function AuthorizePage() {
+const AuthorizePage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientId = searchParams.get('client_id');
@@ -62,10 +62,7 @@ export default function AuthorizePage() {
     router.replace(`/auth/sign-in?redirectTo=${encodeURIComponent(redirectTo)}`);
   }, [isSessionPending, session, router]);
 
-  /**
-   * Submit consent decision to better-auth — the oauthProviderClient fetch plugin
-   * automatically attaches the signed OAuth query from window.location.search
-   */
+  /** Submits the consent decision (the plugin attaches the signed OAuth query) */
   const handleConsent = useCallback(
     async (accept: boolean) => {
       setIsSubmitting(true);
@@ -156,4 +153,6 @@ export default function AuthorizePage() {
       </Card>
     </main>
   );
-}
+};
+
+export default AuthorizePage;

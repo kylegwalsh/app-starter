@@ -2,9 +2,7 @@ import { Alert, AlertDescription, AlertTitle } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { AlertCircle } from 'lucide-react';
 
-/**
- * Displays a callout for user attention.
- */
+/** Displays a callout for user attention */
 const meta = {
   title: 'ui/Alert',
   component: Alert,
@@ -22,14 +20,10 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
-/**
- * The default form of the alert.
- */
+/** The default form of the alert */
 export const Default: Story = {};
 
-/**
- * Use the `destructive` alert to indicate a destructive action.
- */
+/** Use the `destructive` alert to indicate a destructive action */
 export const Destructive: Story = {
   render: (args) => (
     <Alert {...args}>

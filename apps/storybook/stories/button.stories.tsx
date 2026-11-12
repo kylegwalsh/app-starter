@@ -2,9 +2,7 @@ import { Button } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { Loader2, Mail } from 'lucide-react';
 
-/**
- * Displays a button or a component that looks like a button.
- */
+/** Displays a button or a component that looks like a button */
 const meta = {
   title: 'ui/Button',
   component: Button,
@@ -22,9 +20,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the button, used for primary actions and commands.
- */
+/** The default form of the button, used for primary actions and commands */
 export const Default: Story = {};
 
 /**
@@ -37,10 +33,7 @@ export const Outline: Story = {
   },
 };
 
-/**
- * Use the `ghost` button is minimalistic and subtle, for less intrusive
- * actions.
- */
+/** Use the `ghost` button is minimalistic and subtle, for less intrusive actions */
 export const Ghost: Story = {
   args: {
     variant: 'ghost',
@@ -129,9 +122,7 @@ export const Large: Story = {
   },
 };
 
-/**
- * Use the "icon" size for a button with only an icon.
- */
+/** Use the "icon" size for a button with only an icon */
 export const Icon: Story = {
   args: {
     ...Secondary.args,
@@ -141,9 +132,7 @@ export const Icon: Story = {
   },
 };
 
-/**
- * Add the `disabled` prop to prevent interactions with the button.
- */
+/** Add the `disabled` prop to prevent interactions with the button */
 export const Disabled: Story = {
   args: {
     disabled: true,

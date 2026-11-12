@@ -2,9 +2,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@repo/desi
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { fn } from 'storybook/test';
 
-/**
- * Accessible resizable panel groups and layouts with keyboard support.
- */
+/** Accessible resizable panel groups and layouts with keyboard support */
 const meta: Meta<typeof ResizablePanelGroup> = {
   title: 'ui/ResizablePanelGroup',
   component: ResizablePanelGroup,
@@ -49,7 +47,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * The default form of the resizable panel group.
- */
+/** The default form of the resizable panel group */
 export const Default: Story = {};

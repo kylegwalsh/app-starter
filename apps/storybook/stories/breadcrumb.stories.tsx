@@ -9,9 +9,7 @@ import {
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { ArrowRightSquare } from 'lucide-react';
 
-/**
- * Displays the path to the current resource using a hierarchy of links.
- */
+/** Displays the path to the current resource using a hierarchy of links */
 const meta = {
   title: 'ui/Breadcrumb',
   component: Breadcrumb,
@@ -42,14 +40,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * Displays the path of links to the current resource.
- */
+/** Displays the path of links to the current resource */
 export const Default: Story = {};
 
-/**
- * Displays the path with a custom icon for the separator.
- */
+/** Displays the path with a custom icon for the separator */
 export const WithCustomSeparator: Story = {
   render: (args) => (
     <Breadcrumb {...args}>

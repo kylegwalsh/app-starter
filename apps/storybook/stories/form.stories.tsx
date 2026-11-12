@@ -13,9 +13,7 @@ import { useForm } from 'react-hook-form';
 import { action } from 'storybook/actions';
 import { z } from 'zod';
 
-/**
- * Building forms with React Hook Form and Zod.
- */
+/** Building forms with React Hook Form and Zod */
 const meta: Meta<typeof Form> = {
   title: 'ui/Form',
   component: Form,
@@ -71,7 +69,5 @@ const ProfileForm = (args: Story['args']) => {
   );
 };
 
-/**
- * The default form of the form.
- */
+/** The default form of the form */
 export const Default: Story = {};

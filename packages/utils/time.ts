@@ -1,9 +1,6 @@
 /** Contains methods relating to time */
 export const time = {
-  /**
-   * Wait a certain amount of time and then resolve
-   * @param ms - how many milliseconds to wait before resolving
-   */
+  /** Resolves after the given number of milliseconds */
   wait: (ms: number) =>
     // Our timeout promise
     new Promise((resolve) => {

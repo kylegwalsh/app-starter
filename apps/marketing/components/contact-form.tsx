@@ -19,7 +19,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 
-import { api } from '@/lib/orpc';
+import { api } from '@/lib/api';
 
 type ContactFormData = z.infer<typeof contactSchema.submit>;
 
@@ -37,7 +37,10 @@ export const ContactForm = () => {
     setSubmitError(undefined);
 
     try {
-      await api.contact.submit(data);
+      const res = await api.contact.$post({ json: data });
+      if (!res.ok) {
+        throw new Error(`Contact submission failed with status ${res.status}`);
+      }
       setIsSubmitted(true);
     } catch {
       setSubmitError(
