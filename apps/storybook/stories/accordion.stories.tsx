@@ -1,10 +1,7 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@repo/design';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-/**
- * A vertically stacked set of interactive headings that each reveal a section
- * of content.
- */
+/** A vertically stacked set of interactive headings that each reveal a section of content */
 const meta = {
   title: 'ui/Accordion',
   component: Accordion,

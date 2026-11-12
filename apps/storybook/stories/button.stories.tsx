@@ -33,10 +33,7 @@ export const Outline: Story = {
   },
 };
 
-/**
- * Use the `ghost` button is minimalistic and subtle, for less intrusive
- * actions.
- */
+/** Use the `ghost` button is minimalistic and subtle, for less intrusive actions */
 export const Ghost: Story = {
   args: {
     variant: 'ghost',
